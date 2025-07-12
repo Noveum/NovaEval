@@ -17,27 +17,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         cache: 'pip'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .
+        pip install -r requirements.txt
         pip install -r requirements-dev.txt
-    
+        pip install -e .
+
     - name: Lint with ruff
       run: |
         ruff check src/novaeval tests
-    
+
     - name: Format check with black
       run: |
         black --check src/novaeval tests
-    
+
     - name: Import sort check with isort
       run: |
         isort --check-only src/novaeval tests
@@ -46,19 +47,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         cache: 'pip'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -e .
         pip install mypy types-PyYAML types-requests
-    
+
     - name: Type check with mypy
       run: |
         mypy src/novaeval
@@ -74,26 +75,27 @@ jobs:
           # Exclude problematic combinations
           - os: windows-latest
             python-version: "3.12"
-    
+
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
         pip install -e .
-        pip install pytest pytest-cov pytest-asyncio pytest-mock
-    
+
     - name: Run tests
       run: |
         pytest tests/ -v --cov=novaeval --cov-report=xml --cov-report=term-missing
-    
+
     - name: Upload coverage to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
       uses: codecov/codecov-action@v4
@@ -106,23 +108,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         cache: 'pip'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -e .
         pip install bandit safety
-    
+
     - name: Run bandit security linter
       run: |
         bandit -r src/novaeval -f json -o bandit-report.json || true
-    
+
     - name: Run safety check
       run: |
         safety check --json --output safety-report.json || true
@@ -133,19 +135,20 @@ jobs:
     needs: [lint, type-check, test]
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         cache: 'pip'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
         pip install -e .
-        pip install pytest pytest-asyncio
-    
+
     - name: Run integration tests
       run: |
         pytest tests/integration/ -v --tb=short
@@ -157,26 +160,26 @@ jobs:
     needs: [lint, type-check, test]
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
         cache: 'pip'
-    
+
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
         pip install build twine
-    
+
     - name: Build package
       run: |
         python -m build
-    
+
     - name: Check package
       run: |
         twine check dist/*
-    
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
@@ -188,15 +191,14 @@ jobs:
     needs: [lint, type-check, test]
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-    
+
     - name: Build Docker image
       run: |
         docker build -t novaeval:test .
-    
+
     - name: Test Docker image
       run: |
         docker run --rm novaeval:test novaeval --version
-
