@@ -1,0 +1,223 @@
+"""
+Base scorer class for NovaEval.
+
+This module defines the abstract base class for all scoring mechanisms.
+"""
+
+from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Union
+
+
+class BaseScorer(ABC):
+    """
+    Abstract base class for all scorers.
+    
+    This class defines the interface that all scorers must implement.
+    """
+    
+    def __init__(
+        self,
+        name: str,
+        description: Optional[str] = None,
+        **kwargs
+    ):
+        """
+        Initialize the scorer.
+        
+        Args:
+            name: Name of the scorer
+            description: Description of what the scorer measures
+            **kwargs: Additional scorer-specific parameters
+        """
+        self.name = name
+        self.description = description or f"{name} scorer"
+        self.kwargs = kwargs
+        
+        # Statistics tracking
+        self.total_scores = 0
+        self.score_sum = 0.0
+        self.scores_history = []
+    
+    @abstractmethod
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[Dict[str, Any]] = None
+    ) -> Union[float, Dict[str, float]]:
+        """
+        Score a prediction against ground truth.
+        
+        Args:
+            prediction: Model's prediction/output
+            ground_truth: Expected/correct output
+            context: Additional context information (e.g., original sample)
+            
+        Returns:
+            Score value (float) or dictionary of scores
+        """
+        pass
+    
+    def score_batch(
+        self,
+        predictions: List[str],
+        ground_truths: List[str],
+        contexts: Optional[List[Dict[str, Any]]] = None
+    ) -> List[Union[float, Dict[str, float]]]:
+        """
+        Score multiple predictions in batch.
+        
+        Args:
+            predictions: List of model predictions
+            ground_truths: List of expected outputs
+            contexts: List of context information
+            
+        Returns:
+            List of scores
+        """
+        if contexts is None:
+            contexts = [None] * len(predictions)
+        
+        scores = []
+        for pred, truth, ctx in zip(predictions, ground_truths, contexts):
+            try:
+                score = self.score(pred, truth, ctx)
+                scores.append(score)
+                self._track_score(score)
+            except Exception as e:
+                # Handle scoring errors gracefully
+                scores.append(0.0)
+                print(f"Warning: Scoring failed for {self.name}: {e}")
+        
+        return scores
+    
+    def get_info(self) -> Dict[str, Any]:
+        """
+        Get information about the scorer.
+        
+        Returns:
+            Dictionary containing scorer metadata
+        """
+        return {
+            "name": self.name,
+            "description": self.description,
+            "type": self.__class__.__name__,
+            "total_scores": self.total_scores,
+            "average_score": self.score_sum / self.total_scores if self.total_scores > 0 else 0.0,
+            "config": self.kwargs,
+        }
+    
+    def reset_stats(self) -> None:
+        """Reset scoring statistics."""
+        self.total_scores = 0
+        self.score_sum = 0.0
+        self.scores_history = []
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """
+        Get scoring statistics.
+        
+        Returns:
+            Dictionary containing scoring statistics
+        """
+        if not self.scores_history:
+            return {
+                "count": 0,
+                "mean": 0.0,
+                "min": 0.0,
+                "max": 0.0,
+                "std": 0.0,
+            }
+        
+        import statistics
+        
+        # Convert to numeric values if scores are dicts
+        numeric_scores = []
+        for score in self.scores_history:
+            if isinstance(score, dict):
+                # Use the first numeric value or a default key
+                if "score" in score:
+                    numeric_scores.append(score["score"])
+                else:
+                    numeric_scores.append(list(score.values())[0])
+            else:
+                numeric_scores.append(float(score))
+        
+        return {
+            "count": len(numeric_scores),
+            "mean": statistics.mean(numeric_scores),
+            "min": min(numeric_scores),
+            "max": max(numeric_scores),
+            "std": statistics.stdev(numeric_scores) if len(numeric_scores) > 1 else 0.0,
+        }
+    
+    def _track_score(self, score: Union[float, Dict[str, float]]) -> None:
+        """
+        Track a score for statistics.
+        
+        Args:
+            score: Score to track
+        """
+        self.total_scores += 1
+        self.scores_history.append(score)
+        
+        # Update sum for numeric scores
+        if isinstance(score, (int, float)):
+            self.score_sum += float(score)
+        elif isinstance(score, dict) and "score" in score:
+            self.score_sum += float(score["score"])
+        elif isinstance(score, dict):
+            # Use first numeric value
+            self.score_sum += float(list(score.values())[0])
+    
+    def validate_inputs(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """
+        Validate scorer inputs.
+        
+        Args:
+            prediction: Model prediction
+            ground_truth: Expected output
+            context: Additional context
+            
+        Returns:
+            True if inputs are valid, False otherwise
+        """
+        if not isinstance(prediction, str) or not isinstance(ground_truth, str):
+            return False
+        
+        if context is not None and not isinstance(context, dict):
+            return False
+        
+        return True
+    
+    @classmethod
+    def from_config(cls, config: Dict[str, Any]) -> "BaseScorer":
+        """
+        Create a scorer from configuration.
+        
+        Args:
+            config: Configuration dictionary
+            
+        Returns:
+            Configured scorer instance
+        """
+        return cls(**config)
+    
+    def __str__(self) -> str:
+        """String representation of the scorer."""
+        return f"{self.__class__.__name__}(name='{self.name}')"
+    
+    def __repr__(self) -> str:
+        """Detailed string representation of the scorer."""
+        return (
+            f"{self.__class__.__name__}("
+            f"name='{self.name}', "
+            f"description='{self.description}'"
+            f")"
+        )
+

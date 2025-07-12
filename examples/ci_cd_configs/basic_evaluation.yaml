@@ -1,0 +1,71 @@
+# Basic NovaEval Configuration for CI/CD
+# This configuration evaluates AI models for production deployment
+
+name: "AI Model Quality Gate"
+description: "Automated evaluation of AI models before production deployment"
+version: "1.0"
+
+# Models to evaluate
+models:
+  - provider: "openai"
+    model_name: "gpt-4"
+    temperature: 0.0
+    max_tokens: 1000
+    timeout: 60
+    retry_attempts: 3
+
+  - provider: "anthropic"
+    model_name: "claude-3-sonnet-20240229"
+    temperature: 0.0
+    max_tokens: 1000
+    timeout: 60
+    retry_attempts: 3
+
+# Datasets for evaluation
+datasets:
+  - type: "custom"
+    path: "./test_data/qa_dataset.jsonl"
+    split: "test"
+    limit: 50
+    shuffle: false
+
+  - type: "mmlu"
+    subset: "computer_science"
+    split: "test"
+    limit: 20
+
+# Evaluation metrics
+scorers:
+  - type: "accuracy"
+    threshold: 0.8
+    weight: 1.0
+
+  - type: "g_eval"
+    threshold: 0.75
+    weight: 1.0
+    parameters:
+      criteria: "correctness"
+      use_cot: true
+
+# Output configuration
+output:
+  formats: ["json", "junit_xml", "html"]
+  directory: "./evaluation_results"
+  filename_prefix: "quality_gate"
+  include_raw_results: true
+  include_summary: true
+
+# CI/CD configuration
+ci:
+  fail_on_threshold: true
+  fail_threshold: 0.75
+  generate_badges: true
+  upload_artifacts: true
+  notify_on_regression: true
+
+# Execution settings
+parallel_models: true
+parallel_datasets: true
+max_workers: 4
+timeout: 1800  # 30 minutes
+

@@ -1,0 +1,248 @@
+# GitHub Actions Workflow for NovaEval AI Model Evaluation
+# This workflow runs automated AI model evaluation on every pull request and main branch push
+
+name: AI Model Evaluation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual triggering
+
+env:
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  NOVEUM_API_KEY: ${{ secrets.NOVEUM_API_KEY }}
+  NOVEUM_API_BASE: ${{ secrets.NOVEUM_API_BASE }}
+
+jobs:
+  ai-model-evaluation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    strategy:
+      matrix:
+        evaluation-config:
+          - "basic_evaluation.yaml"
+          - "panel_judge_evaluation.yaml"
+      fail-fast: false  # Continue other evaluations even if one fails
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install NovaEval
+      run: |
+        pip install --upgrade pip
+        pip install -e .
+        pip install -r requirements.txt
+    
+    - name: Prepare test data
+      run: |
+        mkdir -p test_data
+        # Create sample test data (replace with your actual test data)
+        echo '{"input": "What is machine learning?", "expected_output": "Machine learning is a subset of AI that enables computers to learn from data."}' > test_data/qa_dataset.jsonl
+        echo '{"input": "Explain neural networks", "expected_output": "Neural networks are computing systems inspired by biological neural networks."}' >> test_data/qa_dataset.jsonl
+    
+    - name: Run AI Model Evaluation
+      id: evaluation
+      run: |
+        # Run NovaEval with the specified configuration
+        novaeval run examples/ci_cd_configs/${{ matrix.evaluation-config }} \
+          --output-dir ./evaluation_results \
+          --verbose
+      continue-on-error: true  # Don't fail the job immediately
+    
+    - name: Check evaluation results
+      run: |
+        # Check if evaluation passed CI requirements
+        if [ -f "./evaluation_results/evaluation_*_junit.xml" ]; then
+          echo "JUnit XML results found"
+          # Parse results and set job status
+          if grep -q 'failures="0"' ./evaluation_results/evaluation_*_junit.xml; then
+            echo "✅ All evaluations passed!"
+            echo "EVALUATION_STATUS=passed" >> $GITHUB_ENV
+          else
+            echo "❌ Some evaluations failed!"
+            echo "EVALUATION_STATUS=failed" >> $GITHUB_ENV
+            exit 1
+          fi
+        else
+          echo "❌ No evaluation results found!"
+          echo "EVALUATION_STATUS=error" >> $GITHUB_ENV
+          exit 1
+        fi
+    
+    - name: Upload evaluation results
+      uses: actions/upload-artifact@v3
+      if: always()  # Upload results even if evaluation failed
+      with:
+        name: evaluation-results-${{ matrix.evaluation-config }}
+        path: |
+          evaluation_results/
+          !evaluation_results/**/*.log
+        retention-days: 30
+    
+    - name: Publish test results
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: AI Model Evaluation Results (${{ matrix.evaluation-config }})
+        path: 'evaluation_results/*_junit.xml'
+        reporter: java-junit
+        fail-on-error: true
+    
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Read evaluation summary
+          const resultsDir = './evaluation_results';
+          let summaryContent = '## 🤖 AI Model Evaluation Results\n\n';
+          
+          try {
+            const files = fs.readdirSync(resultsDir);
+            const jsonFiles = files.filter(f => f.endsWith('.json'));
+            
+            if (jsonFiles.length > 0) {
+              const resultsFile = path.join(resultsDir, jsonFiles[0]);
+              const results = JSON.parse(fs.readFileSync(resultsFile, 'utf8'));
+              
+              summaryContent += `**Configuration:** ${{ matrix.evaluation-config }}\n`;
+              summaryContent += `**Status:** ${process.env.EVALUATION_STATUS === 'passed' ? '✅ PASSED' : '❌ FAILED'}\n`;
+              summaryContent += `**Average Score:** ${results.summary?.average_score?.toFixed(3) || 'N/A'}\n`;
+              summaryContent += `**Models Evaluated:** ${results.summary?.models_evaluated || 'N/A'}\n`;
+              summaryContent += `**Datasets Used:** ${results.summary?.datasets_used || 'N/A'}\n\n`;
+              
+              if (results.ci_status && !results.ci_status.passed) {
+                summaryContent += `**⚠️ Recommendation:** ${results.ci_status.recommendation}\n\n`;
+                
+                if (results.ci_status.failed_details?.length > 0) {
+                  summaryContent += '**Failed Evaluations:**\n';
+                  results.ci_status.failed_details.forEach(failure => {
+                    summaryContent += `- ${failure.model} on ${failure.dataset}: ${failure.score.toFixed(3)} (threshold: ${failure.threshold})\n`;
+                  });
+                }
+              }
+            }
+          } catch (error) {
+            summaryContent += `**Error:** Could not read evaluation results - ${error.message}\n`;
+          }
+          
+          summaryContent += '\n📊 Detailed results are available in the workflow artifacts.';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: summaryContent
+          });
+    
+    - name: Generate evaluation badge
+      if: github.ref == 'refs/heads/main'
+      run: |
+        # Generate a badge showing evaluation status
+        if [ "$EVALUATION_STATUS" = "passed" ]; then
+          BADGE_COLOR="brightgreen"
+          BADGE_MESSAGE="passing"
+        else
+          BADGE_COLOR="red"
+          BADGE_MESSAGE="failing"
+        fi
+        
+        # Create badge URL (using shields.io)
+        BADGE_URL="https://img.shields.io/badge/AI%20Evaluation-${BADGE_MESSAGE}-${BADGE_COLOR}"
+        echo "Badge URL: $BADGE_URL"
+        
+        # You can save this to a file or use it in documentation
+        echo "$BADGE_URL" > evaluation_badge_url.txt
+    
+    - name: Notify on failure
+      if: failure() && github.ref == 'refs/heads/main'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 AI Model Evaluation Failed on Main Branch',
+            body: `
+              The AI model evaluation failed on the main branch.
+              
+              **Configuration:** ${{ matrix.evaluation-config }}
+              **Commit:** ${context.sha}
+              **Workflow:** ${context.workflow}
+              
+              Please check the evaluation results and fix any issues before deploying to production.
+              
+              [View workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId})
+            `,
+            labels: ['bug', 'ai-evaluation', 'urgent']
+          });
+
+  # Aggregate results from all evaluation configurations
+  aggregate-results:
+    needs: ai-model-evaluation
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Aggregate evaluation results
+      run: |
+        echo "## 📊 Aggregated AI Evaluation Results" > evaluation_summary.md
+        echo "" >> evaluation_summary.md
+        
+        # Count passed and failed evaluations
+        TOTAL_CONFIGS=0
+        PASSED_CONFIGS=0
+        
+        for config_dir in evaluation-results-*; do
+          if [ -d "$config_dir" ]; then
+            TOTAL_CONFIGS=$((TOTAL_CONFIGS + 1))
+            
+            # Check if this configuration passed
+            if find "$config_dir" -name "*_junit.xml" -exec grep -l 'failures="0"' {} \; | grep -q .; then
+              PASSED_CONFIGS=$((PASSED_CONFIGS + 1))
+              echo "✅ ${config_dir#evaluation-results-}: PASSED" >> evaluation_summary.md
+            else
+              echo "❌ ${config_dir#evaluation-results-}: FAILED" >> evaluation_summary.md
+            fi
+          fi
+        done
+        
+        echo "" >> evaluation_summary.md
+        echo "**Summary:** $PASSED_CONFIGS/$TOTAL_CONFIGS configurations passed" >> evaluation_summary.md
+        
+        # Set overall status
+        if [ "$PASSED_CONFIGS" -eq "$TOTAL_CONFIGS" ]; then
+          echo "OVERALL_STATUS=passed" >> $GITHUB_ENV
+        else
+          echo "OVERALL_STATUS=failed" >> $GITHUB_ENV
+        fi
+        
+        cat evaluation_summary.md
+    
+    - name: Update deployment status
+      if: github.ref == 'refs/heads/main'
+      run: |
+        if [ "$OVERALL_STATUS" = "passed" ]; then
+          echo "🚀 All AI evaluations passed - Ready for deployment!"
+        else
+          echo "🛑 Some AI evaluations failed - Deployment not recommended!"
+          exit 1
+        fi
+

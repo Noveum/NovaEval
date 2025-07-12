@@ -1,0 +1,137 @@
+# Advanced NovaEval Configuration with Panel of LLMs as Judge
+# This configuration uses multiple LLMs to evaluate AI model outputs for robust assessment
+
+name: "Multi-Judge AI Evaluation Pipeline"
+description: "Comprehensive evaluation using panel of LLM judges for production readiness"
+version: "1.0"
+
+# Models to evaluate
+models:
+  - provider: "openai"
+    model_name: "gpt-4"
+    temperature: 0.0
+    max_tokens: 1500
+
+  - provider: "anthropic"
+    model_name: "claude-3-sonnet-20240229"
+    temperature: 0.0
+    max_tokens: 1500
+
+  - provider: "noveum"
+    model_name: "custom-model-v1"
+    api_base: "${NOVEUM_API_BASE}"
+    temperature: 0.0
+    max_tokens: 1500
+
+# Comprehensive datasets
+datasets:
+  - type: "custom"
+    path: "./test_data/customer_support_qa.jsonl"
+    split: "test"
+    limit: 100
+    preprocessing:
+      normalize_text: true
+      remove_duplicates: true
+
+  - type: "custom"
+    path: "./test_data/technical_documentation.jsonl"
+    split: "test"
+    limit: 50
+
+  - type: "mmlu"
+    subset: "professional_psychology"
+    split: "test"
+    limit: 30
+
+# Advanced scoring with Panel of Judges
+scorers:
+  # Traditional accuracy scorer
+  - type: "accuracy"
+    threshold: 0.8
+    weight: 0.3
+
+  # G-Eval for detailed assessment
+  - type: "g_eval"
+    threshold: 0.75
+    weight: 0.3
+    parameters:
+      criteria: "correctness, completeness, clarity"
+      use_cot: true
+      num_iterations: 3
+
+  # Panel of LLMs as Judge (custom implementation)
+  - type: "custom"
+    name: "panel_judge"
+    threshold: 0.8
+    weight: 0.4
+    parameters:
+      judges:
+        - model_provider: "openai"
+          model_name: "gpt-4"
+          weight: 1.0
+          specialty: "accuracy"
+          temperature: 0.0
+        
+        - model_provider: "anthropic"
+          model_name: "claude-3-sonnet-20240229"
+          weight: 1.0
+          specialty: "clarity"
+          temperature: 0.0
+        
+        - model_provider: "openai"
+          model_name: "gpt-3.5-turbo"
+          weight: 0.8
+          specialty: "completeness"
+          temperature: 0.1
+      
+      aggregation_method: "weighted_mean"
+      require_consensus: true
+      consensus_threshold: 0.7
+      evaluation_criteria: "overall quality, factual accuracy, and user helpfulness"
+
+  # RAG metrics for context-aware evaluation
+  - type: "rag_answer_relevancy"
+    threshold: 0.7
+    weight: 0.2
+
+  # Conversational metrics for dialogue evaluation
+  - type: "conversational_metrics"
+    threshold: 0.75
+    weight: 0.3
+    parameters:
+      weights:
+        knowledge_retention: 0.3
+        completeness: 0.3
+        relevancy: 0.2
+        role_adherence: 0.2
+
+# Comprehensive output configuration
+output:
+  formats: ["json", "html", "csv", "junit_xml"]
+  directory: "./evaluation_results"
+  filename_prefix: "panel_evaluation"
+  include_raw_results: true
+  include_summary: true
+  include_metadata: true
+
+# Strict CI/CD requirements
+ci:
+  fail_on_threshold: true
+  fail_threshold: 0.8  # Higher threshold for production
+  generate_badges: true
+  post_to_pr: true
+  upload_artifacts: true
+  notify_on_regression: true
+
+# Performance optimization
+parallel_models: true
+parallel_datasets: false  # Sequential for better resource management
+max_workers: 6
+timeout: 3600  # 1 hour for comprehensive evaluation
+
+# Environment variables
+environment:
+  EVALUATION_ENV: "production"
+  LOG_LEVEL: "INFO"
+  CACHE_ENABLED: "true"
+
