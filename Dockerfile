@@ -56,7 +56,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Labels for GitHub Container Registry
 LABEL maintainer="Noveum Team <team@noveum.ai>" \
-      version="0.3.1" \
+      version="0.3.2" \
       description="A comprehensive, open-source LLM evaluation framework for testing and benchmarking AI models" \
       org.opencontainers.image.source="https://github.com/Noveum/NovaEval" \
       org.opencontainers.image.description="A comprehensive, open-source LLM evaluation framework for testing and benchmarking AI models" \
