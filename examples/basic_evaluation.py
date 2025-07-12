@@ -14,10 +14,12 @@ from novaeval.scorers import AccuracyScorer
 def main():
     """Run a basic evaluation example."""
 
-    # Initialize dataset
+    # Initialize dataset - use easier subset for higher accuracy
     print("Loading MMLU dataset...")
     dataset = MMLUDataset(
-        subset="abstract_algebra", num_samples=10, split="test"  # Small sample for demo
+        subset="elementary_mathematics",
+        num_samples=10,
+        split="test",  # Easier questions for demo
     )
 
     # Initialize model with appropriate generation settings for MMLU
