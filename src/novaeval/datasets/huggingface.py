@@ -29,8 +29,8 @@ class HuggingFaceDataset(BaseDataset):
         num_samples: Optional[int] = None,
         split: str = "test",
         seed: int = 42,
-        preprocessing_fn: Optional[Callable] = None,
-        **kwargs,
+        preprocessing_fn: Optional[Callable[..., Any]] = None,
+        **kwargs: Any,
     ):
         """
         Initialize the HuggingFace dataset.
@@ -198,7 +198,12 @@ class CommonHFDatasets:
             raise ValueError(f"Unsupported GLUE task: {task}")
 
         config = task_configs[task]
-        return HuggingFaceDataset(dataset_name="glue", subset=task, **config)
+        return HuggingFaceDataset(
+            dataset_name="glue",
+            subset=task,
+            input_column=config["input_column"],
+            target_column=config["target_column"],
+        )
 
     @staticmethod
     def hellaswag() -> HuggingFaceDataset:

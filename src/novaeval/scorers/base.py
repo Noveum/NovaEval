@@ -7,6 +7,23 @@ This module defines the abstract base class for all scoring mechanisms.
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Union
 
+from pydantic import BaseModel, Field
+
+
+class ScoreResult(BaseModel):
+    """
+    Result of a scoring operation.
+
+    Contains the score, pass/fail status, reasoning, and additional metadata.
+    """
+
+    score: float = Field(description="Numerical score value")
+    passed: bool = Field(description="Whether the score passes the threshold")
+    reasoning: str = Field(description="Explanation of the scoring decision")
+    metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Additional metadata about the scoring"
+    )
+
 
 class BaseScorer(ABC):
     """
@@ -15,7 +32,7 @@ class BaseScorer(ABC):
     This class defines the interface that all scorers must implement.
     """
 
-    def __init__(self, name: str, description: Optional[str] = None, **kwargs):
+    def __init__(self, name: str, description: Optional[str] = None, **kwargs: Any):
         """
         Initialize the scorer.
 
@@ -31,7 +48,7 @@ class BaseScorer(ABC):
         # Statistics tracking
         self.total_scores = 0
         self.score_sum = 0.0
-        self.scores_history = []
+        self.scores_history: list[Union[float, dict[str, float]]] = []
 
     @abstractmethod
     def score(
@@ -71,7 +88,7 @@ class BaseScorer(ABC):
             List of scores
         """
         if contexts is None:
-            contexts = [None] * len(predictions)
+            contexts = [None] * len(predictions)  # type: ignore
 
         scores = []
         for pred, truth, ctx in zip(predictions, ground_truths, contexts):

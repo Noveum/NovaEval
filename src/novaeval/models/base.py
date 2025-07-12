@@ -21,7 +21,7 @@ class BaseModel(ABC):
         model_name: str,
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         """
         Initialize the model.
@@ -43,7 +43,7 @@ class BaseModel(ABC):
         self.total_requests = 0
         self.total_tokens = 0
         self.total_cost = 0.0
-        self.errors = []
+        self.errors: list[str] = []
 
     @abstractmethod
     def generate(
@@ -52,7 +52,7 @@ class BaseModel(ABC):
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         stop: Optional[Union[str, list[str]]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """
         Generate text from the model.
@@ -76,7 +76,7 @@ class BaseModel(ABC):
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         stop: Optional[Union[str, list[str]]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[str]:
         """
         Generate text for multiple prompts in batch.

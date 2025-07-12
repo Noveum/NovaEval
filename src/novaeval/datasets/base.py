@@ -23,7 +23,7 @@ class BaseDataset(ABC):
         num_samples: Optional[int] = None,
         split: str = "test",
         seed: int = 42,
-        **kwargs,
+        **kwargs: Any,
     ):
         """
         Initialize the dataset.
@@ -40,7 +40,7 @@ class BaseDataset(ABC):
         self.split = split
         self.seed = seed
         self.kwargs = kwargs
-        self._data = None
+        self._data: Optional[list[dict[str, Any]]] = None
         self._loaded = False
 
     @abstractmethod
@@ -64,7 +64,7 @@ class BaseDataset(ABC):
         if not self._loaded:
             self._data = self.load_data()
             self._loaded = True
-        return len(self._data)
+        return len(self._data) if self._data is not None else 0
 
     def __iter__(self) -> Iterator[dict[str, Any]]:
         """
@@ -77,7 +77,8 @@ class BaseDataset(ABC):
             self._data = self.load_data()
             self._loaded = True
 
-        yield from self._data
+        if self._data is not None:
+            yield from self._data
 
     def __getitem__(self, index: int) -> dict[str, Any]:
         """
@@ -92,7 +93,9 @@ class BaseDataset(ABC):
         if not self._loaded:
             self._data = self.load_data()
             self._loaded = True
-        return self._data[index]
+        if self._data is not None:
+            return self._data[index]
+        raise IndexError("No data available")
 
     def get_sample(self, index: int) -> dict[str, Any]:
         """
@@ -191,7 +194,9 @@ class BaseDataset(ABC):
             json.dump(self._data, f, indent=2)
 
     @classmethod
-    def load_from_file(cls, file_path: Union[str, Path], **kwargs) -> "BaseDataset":
+    def load_from_file(
+        cls, file_path: Union[str, Path], **kwargs: Any
+    ) -> "BaseDataset":
         """
         Load a dataset from a file.
 

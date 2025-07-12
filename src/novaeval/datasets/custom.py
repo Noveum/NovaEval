@@ -24,15 +24,15 @@ class CustomDataset(BaseDataset):
 
     def __init__(
         self,
-        data_source: Union[str, Path, list[dict[str, Any]], Callable],
+        data_source: Union[str, Path, list[dict[str, Any]], Callable[..., Any]],
         input_column: str = "input",
         target_column: str = "expected",
         id_column: Optional[str] = None,
         num_samples: Optional[int] = None,
         split: str = "test",
         seed: int = 42,
-        preprocessing_fn: Optional[Callable] = None,
-        **kwargs,
+        preprocessing_fn: Optional[Callable[..., Any]] = None,
+        **kwargs: Any,
     ):
         """
         Initialize the custom dataset.
@@ -127,14 +127,14 @@ class CustomDataset(BaseDataset):
             data = json.load(f)
 
         if isinstance(data, list):
-            return data
+            return data  # type: ignore
         elif isinstance(data, dict):
             # If it's a dict, try to find a list of samples
             for key in ["data", "samples", "examples", "items"]:
                 if key in data and isinstance(data[key], list):
-                    return data[key]
+                    return data[key]  # type: ignore
             # If no list found, treat the dict as a single sample
-            return [data]
+            return [data]  # type: ignore
         else:
             raise ValueError("JSON file must contain a list or dict")
 
@@ -151,12 +151,12 @@ class CustomDataset(BaseDataset):
     def _load_csv(self, file_path: Path) -> list[dict[str, Any]]:
         """Load data from CSV file."""
         df = pd.read_csv(file_path)
-        return df.to_dict("records")
+        return df.to_dict("records")  # type: ignore
 
     def _load_excel(self, file_path: Path) -> list[dict[str, Any]]:
         """Load data from Excel file."""
         df = pd.read_excel(file_path)
-        return df.to_dict("records")
+        return df.to_dict("records")  # type: ignore
 
     def _convert_sample(
         self, item: dict[str, Any], index: int
@@ -240,7 +240,7 @@ class CustomDataset(BaseDataset):
         samples: list[dict[str, Any]],
         input_column: str = "input",
         target_column: str = "expected",
-        **kwargs,
+        **kwargs: Any,
     ) -> "CustomDataset":
         """
         Create a dataset from a list of samples.
@@ -267,7 +267,7 @@ class CustomDataset(BaseDataset):
         generator_fn: Callable[[], list[dict[str, Any]]],
         input_column: str = "input",
         target_column: str = "expected",
-        **kwargs,
+        **kwargs: Any,
     ) -> "CustomDataset":
         """
         Create a dataset from a generator function.

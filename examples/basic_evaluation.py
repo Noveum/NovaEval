@@ -22,7 +22,7 @@ def main():
 
     # Initialize model
     print("Initializing OpenAI model...")
-    model = OpenAIModel(model_name="gpt-3.5-turbo", temperature=0.0)
+    model = OpenAIModel(model_name="gpt-4o-mini", temperature=0.0)
 
     # Initialize scorer
     print("Setting up accuracy scorer...")

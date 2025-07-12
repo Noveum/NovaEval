@@ -1,13 +1,13 @@
 """
 Logging utilities for NovaEval.
 
-This module provides logging setup and configuration functionality.
+This module provides logging setup and configuration utilities.
 """
 
 import logging
 import sys
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 
 def setup_logging(
@@ -19,15 +19,15 @@ def setup_logging(
     include_name: bool = True,
 ) -> logging.Logger:
     """
-    Setup logging configuration for NovaEval.
+    Set up logging configuration.
 
     Args:
-        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        log_file: Optional file path to write logs
-        format_string: Custom format string for log messages
-        include_timestamp: Whether to include timestamp in logs
-        include_level: Whether to include log level in logs
-        include_name: Whether to include logger name in logs
+        level: Logging level (e.g., 'DEBUG', 'INFO', 'WARNING', 'ERROR')
+        log_file: Path to log file (optional)
+        format_string: Custom format string (optional)
+        include_timestamp: Whether to include timestamp in log messages
+        include_level: Whether to include log level in log messages
+        include_name: Whether to include logger name in log messages
 
     Returns:
         Configured logger instance
@@ -111,19 +111,19 @@ class LoggerMixin:
         """Get logger for this class."""
         return logging.getLogger(self.__class__.__name__)
 
-    def log_info(self, message: str, *args, **kwargs) -> None:
+    def log_info(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log info message."""
         self.logger.info(message, *args, **kwargs)
 
-    def log_warning(self, message: str, *args, **kwargs) -> None:
+    def log_warning(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log warning message."""
         self.logger.warning(message, *args, **kwargs)
 
-    def log_error(self, message: str, *args, **kwargs) -> None:
+    def log_error(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log error message."""
         self.logger.error(message, *args, **kwargs)
 
-    def log_debug(self, message: str, *args, **kwargs) -> None:
+    def log_debug(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log debug message."""
         self.logger.debug(message, *args, **kwargs)
 
@@ -139,7 +139,7 @@ def configure_third_party_loggers(level: Union[str, int] = "WARNING") -> None:
         level = getattr(logging, level.upper())
 
     # Common noisy loggers
-    noisy_loggers = [
+    noisy_loggers: list[str] = [
         "urllib3",
         "requests",
         "httpx",
@@ -156,7 +156,7 @@ def configure_third_party_loggers(level: Union[str, int] = "WARNING") -> None:
 
 
 def log_evaluation_start(
-    dataset_name: str, model_names: list, scorer_names: list, num_samples: int
+    dataset_name: str, model_names: list[str], scorer_names: list[str], num_samples: int
 ) -> None:
     """
     Log evaluation start information.
@@ -203,7 +203,7 @@ def log_evaluation_end(
     logger.info("=" * 60)
 
 
-def log_model_results(model_name: str, results: dict) -> None:
+def log_model_results(model_name: str, results: dict[str, Any]) -> None:
     """
     Log model evaluation results.
 

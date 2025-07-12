@@ -5,6 +5,6 @@ This package contains scoring mechanisms for evaluating AI model outputs.
 """
 
 from novaeval.scorers.accuracy import AccuracyScorer
-from novaeval.scorers.base import BaseScorer
+from novaeval.scorers.base import BaseScorer, ScoreResult
 
-__all__ = ["AccuracyScorer", "BaseScorer"]
+__all__ = ["AccuracyScorer", "BaseScorer", "ScoreResult"]

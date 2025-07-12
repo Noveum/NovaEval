@@ -77,7 +77,7 @@ class MetricsCalculator:
     cost, and quality metrics.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize metrics calculator."""
         self.request_metrics: list[RequestMetrics] = []
 
@@ -162,15 +162,15 @@ class MetricsCalculator:
 
         # Performance metrics
         avg_latency = statistics.mean(latencies)
-        p50_latency = np.percentile(latencies, 50)
-        p95_latency = np.percentile(latencies, 95)
-        p99_latency = np.percentile(latencies, 99)
+        p50_latency = float(np.percentile(latencies, 50))
+        p95_latency = float(np.percentile(latencies, 95))
+        p99_latency = float(np.percentile(latencies, 99))
 
         # TTFB metrics
         avg_ttfb = statistics.mean(ttfbs) if ttfbs else None
-        p50_ttfb = np.percentile(ttfbs, 50) if ttfbs else None
-        p95_ttfb = np.percentile(ttfbs, 95) if ttfbs else None
-        p99_ttfb = np.percentile(ttfbs, 99) if ttfbs else None
+        p50_ttfb = float(np.percentile(ttfbs, 50)) if ttfbs else None
+        p95_ttfb = float(np.percentile(ttfbs, 95)) if ttfbs else None
+        p99_ttfb = float(np.percentile(ttfbs, 99)) if ttfbs else None
 
         # Success metrics
         total_requests = len(filtered_metrics)
@@ -306,7 +306,7 @@ class MetricsCalculator:
         self, failed_metrics: list[RequestMetrics]
     ) -> dict[str, int]:
         """Calculate error type breakdown."""
-        error_counts = defaultdict(int)
+        error_counts: dict[str, int] = defaultdict(int)
         for metric in failed_metrics:
             error_type = metric.error_type or "unknown"
             error_counts[error_type] += 1

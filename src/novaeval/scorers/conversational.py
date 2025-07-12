@@ -10,7 +10,7 @@ This module implements metrics for evaluating conversational AI systems includin
 """
 
 import asyncio
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -49,8 +49,9 @@ class KnowledgeRetentionScorer(BaseScorer):
     information shared in previous turns.
     """
 
-    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs):
-        super().__init__(threshold=threshold, **kwargs)
+    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.threshold = threshold
         self.model = model
 
     async def evaluate(
@@ -60,7 +61,7 @@ class KnowledgeRetentionScorer(BaseScorer):
         expected_output: Optional[str] = None,
         context: Optional[str] = None,
         conversation: Optional[Conversation] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate knowledge retention in conversation."""
 
@@ -98,7 +99,7 @@ class KnowledgeRetentionScorer(BaseScorer):
             ...
             """
 
-            key_info_response = await self.model.generate(key_info_prompt)
+            key_info_response = await self.model.generate(key_info_prompt)  # type: ignore
             key_information = self._parse_information(key_info_response)
 
             if not key_information:
@@ -143,7 +144,7 @@ class KnowledgeRetentionScorer(BaseScorer):
             Reasoning: [Brief explanation of the score]
             """
 
-            retention_response = await self.model.generate(retention_prompt)
+            retention_response = await self.model.generate(retention_prompt)  # type: ignore
             retention_score, reasoning = self._parse_retention_score(retention_response)
 
             # Normalize score to 0-1 range
@@ -177,6 +178,29 @@ class KnowledgeRetentionScorer(BaseScorer):
                 reasoning=f"Knowledge retention evaluation failed: {e!s}",
                 metadata={"error": str(e)},
             )
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract conversation from context if available
+        conversation = context.get("conversation") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                conversation=conversation,
+            )
+        )
+
+        return result.score
 
     def _parse_information(self, response: str) -> list[str]:
         """Parse key information from LLM response."""
@@ -241,8 +265,9 @@ class ConversationCompletenessScorer(BaseScorer):
     and brings the conversation to a natural completion.
     """
 
-    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs):
-        super().__init__(threshold=threshold, **kwargs)
+    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.threshold = threshold
         self.model = model
 
     async def evaluate(
@@ -252,7 +277,7 @@ class ConversationCompletenessScorer(BaseScorer):
         expected_output: Optional[str] = None,
         context: Optional[str] = None,
         conversation: Optional[Conversation] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate conversation completeness."""
 
@@ -301,7 +326,7 @@ class ConversationCompletenessScorer(BaseScorer):
             Reasoning: [Brief explanation]
             """
 
-            completeness_response = await self.model.generate(completeness_prompt)
+            completeness_response = await self.model.generate(completeness_prompt)  # type: ignore
             completeness_score, reasoning = self._parse_completeness_score(
                 completeness_response
             )
@@ -337,6 +362,29 @@ class ConversationCompletenessScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract conversation from context if available
+        conversation = context.get("conversation") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                conversation=conversation,
+            )
+        )
+
+        return result.score
+
     def _parse_completeness_score(self, response: str) -> tuple[float, str]:
         """Parse completeness score and reasoning from LLM response."""
         import re
@@ -365,8 +413,9 @@ class ConversationRelevancyScorer(BaseScorer):
     for the conversation flow.
     """
 
-    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs):
-        super().__init__(threshold=threshold, **kwargs)
+    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.threshold = threshold
         self.model = model
 
     async def evaluate(
@@ -376,7 +425,7 @@ class ConversationRelevancyScorer(BaseScorer):
         expected_output: Optional[str] = None,
         context: Optional[str] = None,
         conversation: Optional[Conversation] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate conversation relevancy."""
 
@@ -437,7 +486,7 @@ class ConversationRelevancyScorer(BaseScorer):
             Reasoning: [Brief explanation]
             """
 
-            relevancy_response = await self.model.generate(relevancy_prompt)
+            relevancy_response = await self.model.generate(relevancy_prompt)  # type: ignore
             relevancy_score, reasoning = self._parse_relevancy_score(relevancy_response)
 
             # Normalize score to 0-1 range
@@ -471,6 +520,29 @@ class ConversationRelevancyScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract conversation from context if available
+        conversation = context.get("conversation") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                conversation=conversation,
+            )
+        )
+
+        return result.score
+
     def _parse_relevancy_score(self, response: str) -> tuple[float, str]:
         """Parse relevancy score and reasoning from LLM response."""
         import re
@@ -499,8 +571,9 @@ class RoleAdherenceScorer(BaseScorer):
     and behavioral guidelines throughout the conversation.
     """
 
-    def __init__(self, model: LLMModel, threshold: float = 0.8, **kwargs):
-        super().__init__(threshold=threshold, **kwargs)
+    def __init__(self, model: LLMModel, threshold: float = 0.8, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.threshold = threshold
         self.model = model
 
     async def evaluate(
@@ -511,7 +584,7 @@ class RoleAdherenceScorer(BaseScorer):
         context: Optional[str] = None,
         conversation: Optional[Conversation] = None,
         role_description: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate role adherence."""
 
@@ -583,7 +656,7 @@ class RoleAdherenceScorer(BaseScorer):
             Reasoning: [Brief explanation]
             """
 
-            adherence_response = await self.model.generate(adherence_prompt)
+            adherence_response = await self.model.generate(adherence_prompt)  # type: ignore
             adherence_score, reasoning = self._parse_adherence_score(adherence_response)
 
             # Normalize score to 0-1 range
@@ -620,6 +693,31 @@ class RoleAdherenceScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract conversation from context if available
+        conversation = context.get("conversation") if context else None
+        role_description = context.get("role_description") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                conversation=conversation,
+                role_description=role_description,
+            )
+        )
+
+        return result.score
+
     def _parse_adherence_score(self, response: str) -> tuple[float, str]:
         """Parse adherence score and reasoning from LLM response."""
         import re
@@ -653,9 +751,10 @@ class ConversationalMetricsScorer(BaseScorer):
         model: LLMModel,
         threshold: float = 0.7,
         weights: Optional[dict[str, float]] = None,
-        **kwargs,
-    ):
-        super().__init__(threshold=threshold, **kwargs)
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.threshold = threshold
         self.model = model
 
         # Default weights for different metrics
@@ -679,7 +778,7 @@ class ConversationalMetricsScorer(BaseScorer):
         expected_output: Optional[str] = None,
         context: Optional[str] = None,
         conversation: Optional[Conversation] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate using comprehensive conversational metrics."""
 
@@ -740,9 +839,12 @@ class ConversationalMetricsScorer(BaseScorer):
                 if isinstance(result, Exception):
                     scores[metric_name] = 0.0
                     reasonings[metric_name] = f"Error: {result!s}"
+                elif hasattr(result, "score") and hasattr(result, "reasoning"):
+                    scores[metric_name] = result.score  # type: ignore
+                    reasonings[metric_name] = result.reasoning  # type: ignore
                 else:
-                    scores[metric_name] = result.score
-                    reasonings[metric_name] = result.reasoning
+                    scores[metric_name] = 0.0
+                    reasonings[metric_name] = "Unknown result type"
 
             # Calculate weighted average
             total_weight = sum(self.weights.values())

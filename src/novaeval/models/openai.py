@@ -39,7 +39,7 @@ class OpenAIModel(BaseModel):
         organization: Optional[str] = None,
         max_retries: int = 3,
         timeout: float = 60.0,
-        **kwargs,
+        **kwargs: Any,
     ):
         """
         Initialize the OpenAI model.
@@ -80,7 +80,7 @@ class OpenAIModel(BaseModel):
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         stop: Optional[Union[str, list[str]]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """
         Generate text using OpenAI's API.
@@ -143,7 +143,7 @@ class OpenAIModel(BaseModel):
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         stop: Optional[Union[str, list[str]]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[str]:
         """
         Generate text for multiple prompts.

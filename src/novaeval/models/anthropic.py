@@ -38,7 +38,7 @@ class AnthropicModel(BaseModel):
         base_url: Optional[str] = None,
         max_retries: int = 3,
         timeout: float = 60.0,
-        **kwargs,
+        **kwargs: Any,
     ):
         """
         Initialize the Anthropic model.
@@ -76,7 +76,7 @@ class AnthropicModel(BaseModel):
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         stop: Optional[Union[str, list[str]]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """
         Generate text using Anthropic's API.
@@ -141,7 +141,7 @@ class AnthropicModel(BaseModel):
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         stop: Optional[Union[str, list[str]]] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> list[str]:
         """
         Generate text for multiple prompts.
@@ -219,8 +219,8 @@ class AnthropicModel(BaseModel):
         """
         try:
             # Use Anthropic's token counting if available
-            response = self.client.count_tokens(text)
-            return response.count
+            response = self.client.count_tokens(text)  # type: ignore
+            return response.count  # type: ignore
         except Exception:
             # Fallback to simple approximation
             return super().count_tokens(text)

@@ -88,7 +88,7 @@ class MMLUDataset(BaseDataset):
         split: str = "test",
         seed: int = 42,
         few_shot: int = 0,
-        **kwargs,
+        **kwargs: Any,
     ):
         """
         Initialize the MMLU dataset.
@@ -142,7 +142,7 @@ class MMLUDataset(BaseDataset):
 
         return samples
 
-    def _process_subject_data(self, dataset, subject: str) -> list[dict[str, Any]]:
+    def _process_subject_data(self, dataset: Any, subject: str) -> list[dict[str, Any]]:
         """
         Process data for a specific subject.
 

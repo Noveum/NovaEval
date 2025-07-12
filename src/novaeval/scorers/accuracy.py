@@ -22,7 +22,7 @@ class ExactMatchScorer(BaseScorer):
         case_sensitive: bool = True,
         strip_whitespace: bool = True,
         normalize_whitespace: bool = False,
-        **kwargs,
+        **kwargs: Any,
     ):
         """
         Initialize the exact match scorer.
@@ -88,7 +88,7 @@ class ExactMatchScorer(BaseScorer):
         if self.normalize_whitespace:
             text = re.sub(r"\s+", " ", text)
 
-        if not self.case_sensitive:
+        if self.case_sensitive is False:
             text = text.lower()
 
         return text
@@ -106,7 +106,7 @@ class AccuracyScorer(BaseScorer):
         extract_answer: bool = True,
         answer_pattern: Optional[str] = None,
         choices: Optional[list[str]] = None,
-        **kwargs,
+        **kwargs: Any,
     ):
         """
         Initialize the accuracy scorer.
@@ -213,13 +213,7 @@ class AccuracyScorer(BaseScorer):
         Returns:
             Normalized answer
         """
-        answer = answer.strip().upper()
-
-        # Convert choice letters to numbers if needed
-        if answer in ["A", "B", "C", "D"]:
-            return str(ord(answer) - ord("A"))
-
-        return answer
+        return answer.strip().lower()
 
 
 class F1Scorer(BaseScorer):
@@ -229,7 +223,9 @@ class F1Scorer(BaseScorer):
     Useful for tasks like question answering where partial matches matter.
     """
 
-    def __init__(self, tokenize: bool = True, case_sensitive: bool = False, **kwargs):
+    def __init__(
+        self, tokenize: bool = True, case_sensitive: bool = False, **kwargs: Any
+    ):
         """
         Initialize the F1 scorer.
 
@@ -307,13 +303,7 @@ class F1Scorer(BaseScorer):
         if not self.case_sensitive:
             text = text.lower()
 
-        if self.tokenize:
-            # Simple whitespace tokenization
-            tokens = text.split()
-            # Remove punctuation
-            tokens = [re.sub(r"[^\w]", "", token) for token in tokens]
-            tokens = [token for token in tokens if token]
-        else:
-            tokens = [text]
+        # Simple tokenization (split on whitespace and punctuation) or split on whitespace
+        tokens = re.findall(r"\b\w+\b", text) if self.tokenize else text.split()
 
         return tokens

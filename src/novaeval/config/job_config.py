@@ -11,7 +11,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 import yaml
 from pydantic import ValidationError
@@ -67,7 +67,7 @@ class ModelFactory:
     """Factory for creating model instances from configuration."""
 
     @staticmethod
-    def create_model(model_config) -> BaseModel:
+    def create_model(model_config: Any) -> BaseModel:
         """Create model instance from configuration."""
 
         provider = model_config.provider
@@ -100,9 +100,10 @@ class ModelFactory:
             )
 
         elif provider == ModelProvider.NOVEUM:
-            from novaeval.integrations.noveum import NoveumModel
+            # Note: NoveumModel not implemented yet, falling back to OpenAI model
+            from novaeval.models.openai import OpenAIModel
 
-            return NoveumModel(
+            return OpenAIModel(
                 model_name=model_config.model_name,
                 api_key=model_config.api_key or os.getenv("NOVEUM_API_KEY"),
                 api_base=model_config.api_base or os.getenv("NOVEUM_API_BASE"),
@@ -121,7 +122,7 @@ class DatasetFactory:
     """Factory for creating dataset instances from configuration."""
 
     @staticmethod
-    def create_dataset(dataset_config) -> BaseDataset:
+    def create_dataset(dataset_config: Any) -> BaseDataset:
         """Create dataset instance from configuration."""
 
         dataset_type = dataset_config.type
@@ -141,7 +142,7 @@ class DatasetFactory:
             from novaeval.datasets.huggingface import HuggingFaceDataset
 
             return HuggingFaceDataset(
-                name=dataset_config.name,
+                dataset_name=dataset_config.name,
                 subset=dataset_config.subset,
                 split=dataset_config.split,
                 limit=dataset_config.limit,
@@ -158,7 +159,7 @@ class DatasetFactory:
             from novaeval.datasets.custom import CustomDataset
 
             return CustomDataset(
-                path=dataset_config.path,
+                data_source=dataset_config.path,
                 format=dataset_type.value,
                 limit=dataset_config.limit,
                 shuffle=dataset_config.shuffle,
@@ -174,7 +175,7 @@ class ScorerFactory:
     """Factory for creating scorer instances from configuration."""
 
     @staticmethod
-    def create_scorer(scorer_config, model: BaseModel) -> BaseScorer:
+    def create_scorer(scorer_config: Any, model: BaseModel) -> BaseScorer:
         """Create scorer instance from configuration."""
 
         scorer_type = scorer_config.type
@@ -189,7 +190,7 @@ class ScorerFactory:
         elif scorer_type == ScorerType.G_EVAL:
             from novaeval.scorers.g_eval import GEvalScorer
 
-            return GEvalScorer(
+            return GEvalScorer(  # type: ignore
                 model=model,
                 threshold=scorer_config.threshold,
                 **scorer_config.parameters,
@@ -216,7 +217,7 @@ class ScorerFactory:
         elif scorer_type == ScorerType.RAGAS:
             from novaeval.scorers.rag import RAGASScorer
 
-            return RAGASScorer(
+            return RAGASScorer(  # type: ignore
                 model=model,
                 threshold=scorer_config.threshold,
                 **scorer_config.parameters,
@@ -225,7 +226,7 @@ class ScorerFactory:
         elif scorer_type == ScorerType.CONVERSATIONAL_METRICS:
             from novaeval.scorers.conversational import ConversationalMetricsScorer
 
-            return ConversationalMetricsScorer(
+            return ConversationalMetricsScorer(  # type: ignore
                 model=model,
                 threshold=scorer_config.threshold,
                 **scorer_config.parameters,
@@ -238,11 +239,11 @@ class ScorerFactory:
 class JobRunner:
     """Runs evaluation jobs based on YAML configuration."""
 
-    def __init__(self, config: EvaluationJobConfig):
+    def __init__(self, config: EvaluationJobConfig) -> None:
         self.config = config
-        self.start_time = None
-        self.end_time = None
-        self.results = {}
+        self.start_time: Optional[float] = None
+        self.end_time: Optional[float] = None
+        self.results: dict[str, Any] = {}
 
         # Set up environment variables
         for key, value in config.environment.items():
@@ -301,7 +302,7 @@ class JobRunner:
 
             # Compile final results
             self.end_time = time.time()
-            final_results = self._compile_results(evaluation_results)
+            final_results = self._compile_results(evaluation_results)  # type: ignore
 
             # Generate outputs
             await self._generate_outputs(final_results)
@@ -332,7 +333,11 @@ class JobRunner:
             }
 
     async def _evaluate_model_dataset(
-        self, model_config, model, dataset_config, dataset
+        self,
+        model_config: Any,
+        model: BaseModel,
+        dataset_config: Any,
+        dataset: BaseDataset,
     ) -> dict[str, Any]:
         """Evaluate a single model-dataset combination."""
 
@@ -346,11 +351,11 @@ class JobRunner:
 
         # Create evaluator
         evaluator = Evaluator(
-            model=model, dataset=dataset, scorers=[scorer for _, scorer in scorers]
+            models=[model], dataset=dataset, scorers=[scorer for _, scorer in scorers]
         )
 
         # Run evaluation
-        evaluation_result = await evaluator.evaluate()
+        evaluation_result = await evaluator.run_evaluation()  # type: ignore
 
         return {
             "model": {
@@ -380,8 +385,8 @@ class JobRunner:
         """Compile evaluation results into final format."""
 
         # Group results by model and dataset
-        grouped_results = {}
-        overall_scores = []
+        grouped_results: dict[str, Any] = {}
+        overall_scores: list[float] = []
 
         for result in evaluation_results:
             model_key = f"{result['model']['provider']}:{result['model']['name']}"
@@ -417,12 +422,14 @@ class JobRunner:
                 "start_time": self.start_time,
                 "end_time": self.end_time,
                 "duration": (
-                    (self.end_time - self.start_time) if self.end_time else None
+                    (self.end_time - self.start_time)
+                    if self.end_time and self.start_time
+                    else None
                 ),
             },
         }
 
-    async def _generate_outputs(self, results: dict[str, Any]):
+    async def _generate_outputs(self, results: dict[str, Any]) -> None:
         """Generate output files in specified formats."""
 
         output_dir = Path(self.config.output.directory)
@@ -591,7 +598,7 @@ class JobRunner:
 
 
 # CLI integration
-def main():
+def main() -> int:
     """Main CLI entry point for running evaluation jobs."""
 
     import argparse

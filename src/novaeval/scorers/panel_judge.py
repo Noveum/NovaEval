@@ -45,7 +45,7 @@ class JudgeConfig(BaseModel):
     )
 
     @validator("weight")
-    def validate_weight(cls, v):
+    def validate_weight(cls, v: float) -> float:
         if v < 0.0:
             raise ValueError("Judge weight must be non-negative")
         return v
@@ -85,9 +85,10 @@ class PanelOfJudgesScorer(BaseScorer):
         require_consensus: bool = False,
         consensus_threshold: float = 0.8,
         evaluation_criteria: Optional[str] = None,
-        **kwargs,
-    ):
-        super().__init__(threshold=threshold, **kwargs)
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.threshold = threshold
 
         if not judges:
             raise ValueError("At least one judge must be provided")
@@ -113,7 +114,7 @@ class PanelOfJudgesScorer(BaseScorer):
         output_text: str,
         expected_output: Optional[str] = None,
         context: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate using a panel of LLM judges."""
 
@@ -152,8 +153,16 @@ class PanelOfJudgesScorer(BaseScorer):
                 )
 
             # Extract scores and reasonings
-            individual_scores = [result[1]["score"] for result in valid_results]
-            individual_reasonings = [result[1]["reasoning"] for result in valid_results]
+            individual_scores = [
+                result[1]["score"]
+                for result in valid_results
+                if isinstance(result[1], dict)
+            ]
+            individual_reasonings = [
+                result[1]["reasoning"]
+                for result in valid_results
+                if isinstance(result[1], dict)
+            ]
             judge_names = [
                 result[0].name or f"Judge_{i}" for i, result in enumerate(valid_results)
             ]
@@ -277,7 +286,7 @@ class PanelOfJudgesScorer(BaseScorer):
                 judge.model.temperature = judge.temperature
 
             # Get evaluation from judge
-            response = await judge.model.generate(prompt)
+            response = await judge.model.generate(prompt)  # type: ignore
 
             # Restore original temperature
             if original_temp is not None and hasattr(judge.model, "temperature"):
@@ -437,7 +446,7 @@ class SpecializedPanelScorer(PanelOfJudgesScorer):
         cls,
         models: list[LLMModel],
         evaluation_criteria: str = "overall quality and correctness",
-        **kwargs,
+        **kwargs: Any,
     ) -> "SpecializedPanelScorer":
         """Create a diverse panel with different model types."""
 
@@ -466,7 +475,7 @@ class SpecializedPanelScorer(PanelOfJudgesScorer):
 
     @classmethod
     def create_consensus_panel(
-        cls, models: list[LLMModel], consensus_threshold: float = 0.8, **kwargs
+        cls, models: list[LLMModel], consensus_threshold: float = 0.8, **kwargs: Any
     ) -> "SpecializedPanelScorer":
         """Create a panel that requires high consensus."""
 
@@ -489,7 +498,7 @@ class SpecializedPanelScorer(PanelOfJudgesScorer):
     def create_weighted_expert_panel(
         cls,
         expert_models: list[tuple[LLMModel, float]],  # (model, expertise_weight)
-        **kwargs,
+        **kwargs: Any,
     ) -> "SpecializedPanelScorer":
         """Create a panel with weighted expert judges."""
 

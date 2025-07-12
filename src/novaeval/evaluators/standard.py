@@ -126,7 +126,7 @@ class Evaluator(BaseEvaluator):
         Returns:
             Dictionary containing model evaluation results
         """
-        model_results = {
+        model_results: dict[str, Any] = {
             "samples": [],
             "scores": {},
             "errors": [],
@@ -271,7 +271,7 @@ class Evaluator(BaseEvaluator):
         Returns:
             Dictionary containing summary statistics
         """
-        summary = {
+        summary: dict[str, Any] = {
             "total_models": len(model_results),
             "total_samples": 0,
             "total_errors": 0,
@@ -280,20 +280,27 @@ class Evaluator(BaseEvaluator):
 
         # Calculate totals
         for _model_name, results in model_results.items():
-            summary["total_samples"] += len(results["samples"])
-            summary["total_errors"] += len(results["errors"])
+            if isinstance(results, dict):
+                summary["total_samples"] += len(results.get("samples", []))
+                summary["total_errors"] += len(results.get("errors", []))
 
         # Find best model for each scorer
         for model_name, results in model_results.items():
-            for scorer_name, score_info in results.get("scores", {}).items():
-                if (
-                    scorer_name not in summary["best_model"]
-                    or score_info["mean"] > summary["best_model"][scorer_name]["score"]
-                ):
-                    summary["best_model"][scorer_name] = {
-                        "model": model_name,
-                        "score": score_info["mean"],
-                    }
+            if isinstance(results, dict):
+                for scorer_name, score_info in results.get("scores", {}).items():
+                    if (
+                        isinstance(score_info, dict)
+                        and "mean" in score_info
+                        and (
+                            scorer_name not in summary["best_model"]
+                            or score_info["mean"]
+                            > summary["best_model"][scorer_name]["score"]
+                        )
+                    ):
+                        summary["best_model"][scorer_name] = {
+                            "model": model_name,
+                            "score": score_info["mean"],
+                        }
 
         return summary
 

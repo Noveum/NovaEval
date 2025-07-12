@@ -39,6 +39,35 @@ Thank you for your interest in contributing to NovaEval! This document provides 
    pytest tests/
    ```
 
+### Pre-commit Hooks
+
+We use pre-commit hooks to ensure code quality before commits:
+
+```bash
+# Install hooks (run once after cloning)
+pre-commit install
+
+# Run hooks on all files manually
+pre-commit run --all-files
+
+# Run specific hooks
+pre-commit run black --all-files
+pre-commit run ruff --all-files
+pre-commit run mypy --all-files
+
+# Update hook versions
+pre-commit autoupdate
+```
+
+**Available hooks:**
+- **black** - Code formatting
+- **isort** - Import sorting
+- **ruff** - Fast Python linter
+- **mypy** - Type checking
+- **check-yaml** - YAML validation
+- **bandit** - Security linting
+- **safety** - Dependency vulnerability scanning
+
 ## 🛠️ Development Workflow
 
 ### Code Style
@@ -280,6 +309,157 @@ We are committed to providing a welcoming and inclusive environment. Please read
 ## 📄 License
 
 By contributing to NovaEval, you agree that your contributions will be licensed under the Apache License 2.0.
+
+## 📦 Release Process
+
+### For Maintainers: Publishing to PyPI
+
+**Prerequisites:**
+- PyPI account with API token
+- Push access to the main repository
+- All tests passing on main branch
+
+**Step 1: Prepare Release**
+```bash
+# Ensure you're on main branch and up-to-date
+git checkout main
+git pull origin main
+
+# Update version in pyproject.toml (semantic versioning)
+# Update CHANGELOG.md with new version and changes
+# Commit version bump
+git add pyproject.toml CHANGELOG.md
+git commit -m "chore: bump version to X.Y.Z"
+git push origin main
+```
+
+**Step 2: Create Release Tag**
+```bash
+# Create and push git tag
+git tag -a v0.1.0 -m "Release v0.1.0"
+git push origin v0.1.0
+```
+
+**Step 3: Build Package**
+```bash
+# Clean previous builds
+rm -rf dist/ build/ src/*.egg-info
+
+# Build wheel and source distribution
+python -m build
+
+# Verify package quality
+twine check dist/*
+```
+
+**Step 4: Upload to PyPI**
+```bash
+# Upload to PyPI (production)
+twine upload dist/*
+
+# When prompted:
+# Username: __token__
+# Password: pypi-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (your API token)
+```
+
+**Step 5: Verify Release**
+```bash
+# Test installation from PyPI
+pip install novaeval==X.Y.Z
+
+# Test CLI works
+novaeval --version
+```
+
+### PyPI Configuration
+
+**Set up API Token:**
+1. Go to https://pypi.org/manage/account/token/
+2. Create new token with "Entire account" scope
+3. Store securely (use in upload command)
+
+**For TestPyPI (optional testing):**
+```bash
+# Upload to TestPyPI first
+twine upload --repository testpypi dist/*
+
+# Test install from TestPyPI
+pip install --index-url https://test.pypi.org/simple/ novaeval
+```
+
+### Version Management
+
+We follow [Semantic Versioning](https://semver.org/):
+
+- **MAJOR** (X.0.0) - Incompatible API changes
+- **MINOR** (X.Y.0) - New features (backwards compatible)
+- **PATCH** (X.Y.Z) - Bug fixes (backwards compatible)
+
+**Pre-release versions:**
+- **Alpha** (X.Y.Z-alpha.N) - Early development
+- **Beta** (X.Y.Z-beta.N) - Feature complete, testing
+- **RC** (X.Y.Z-rc.N) - Release candidate
+
+### Release Checklist
+
+- [ ] All CI checks passing
+- [ ] Version bumped in `pyproject.toml`
+- [ ] `CHANGELOG.md` updated
+- [ ] Git tag created
+- [ ] Package builds successfully
+- [ ] Package passes `twine check`
+- [ ] Uploaded to PyPI
+- [ ] Installation verified
+- [ ] Release notes published
+- [ ] Documentation updated
+
+### Automated Releases (Future)
+
+Consider setting up automated releases with:
+- GitHub Actions for CI/CD
+- Automatic PyPI publishing on tag creation
+- Changelog generation from commit messages
+- Release notes from GitHub releases
+
+## 🔧 Administrative Tasks
+
+### Updating Dependencies
+
+```bash
+# Update all dependencies
+pip-compile requirements.in
+pip-compile requirements-dev.in
+
+# Update pre-commit hooks
+pre-commit autoupdate
+
+# Test with updated dependencies
+pip install -r requirements-dev.txt
+pytest tests/
+```
+
+### Security Scanning
+
+```bash
+# Check for security vulnerabilities
+safety check
+
+# Run security linting
+bandit -r src/novaeval/
+
+# Check for outdated packages
+pip list --outdated
+```
+
+### Performance Monitoring
+
+```bash
+# Profile code performance
+python -m cProfile -o profile.stats examples/basic_evaluation.py
+
+# Memory usage analysis
+python -m memory_profiler examples/basic_evaluation.py
+```
 
 ## 🙏 Recognition
 

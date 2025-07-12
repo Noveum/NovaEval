@@ -5,7 +5,7 @@ G-Eval is a framework that uses LLMs with chain-of-thought (CoT) reasoning
 to evaluate LLM outputs based on custom criteria.
 """
 
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -39,7 +39,7 @@ class GEvalScorer(BaseScorer):
         threshold: float = 0.5,
         use_cot: bool = True,
         num_iterations: int = 1,
-        **kwargs,
+        **kwargs: Any,
     ):
         """
         Initialize G-Eval scorer.
@@ -51,7 +51,8 @@ class GEvalScorer(BaseScorer):
             use_cot: Whether to use chain-of-thought reasoning
             num_iterations: Number of evaluation iterations for consistency
         """
-        super().__init__(threshold=threshold, **kwargs)
+        super().__init__(name="g_eval", threshold=threshold, **kwargs)
+        self.threshold = threshold
         self.model = model
         self.use_cot = use_cot
         self.num_iterations = num_iterations
@@ -175,7 +176,7 @@ class GEvalScorer(BaseScorer):
         prompt = self._build_prompt(input_text, output_text, context)
 
         try:
-            response = await self.model.generate(prompt)
+            response = await self.model.generate(prompt)  # type: ignore
             score, reasoning = self._parse_response(response)
             return score, reasoning
         except Exception as e:
@@ -187,7 +188,7 @@ class GEvalScorer(BaseScorer):
         output_text: str,
         expected_output: Optional[str] = None,
         context: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """
         Evaluate the output using G-Eval methodology.

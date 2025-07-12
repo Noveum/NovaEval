@@ -5,11 +5,10 @@ This module provides integration with the Noveum.ai platform for
 dataset management, model access, and evaluation result reporting.
 """
 
-import time
 from pathlib import Path
 from typing import Any, Optional, Union
 
-import requests
+import requests  # type: ignore
 
 from novaeval.utils.logging import get_logger
 
@@ -76,7 +75,7 @@ class NoveumIntegration:
         Returns:
             List of dataset information
         """
-        params = {}
+        params: dict[str, str] = {}
         if category:
             params["category"] = category
         if tags:
@@ -89,7 +88,10 @@ class NoveumIntegration:
                 f"{self.base_url}/v1/datasets", params=params, timeout=self.timeout
             )
             response.raise_for_status()
-            return response.json().get("datasets", [])
+            data = response.json()
+            if isinstance(data, dict):
+                return data.get("datasets", [])  # type: ignore
+            return []
         except Exception as e:
             logger.error(f"Failed to fetch datasets: {e}")
             return []
@@ -114,7 +116,10 @@ class NoveumIntegration:
         try:
             response = self.session.get(url, timeout=self.timeout)
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            if isinstance(data, dict):
+                return data
+            return None
         except Exception as e:
             logger.error(f"Failed to fetch dataset {dataset_id}: {e}")
             return None
@@ -139,7 +144,7 @@ class NoveumIntegration:
             True if successful, False otherwise
         """
         url = f"{self.base_url}/v1/datasets/{dataset_id}/download"
-        params = {"format": format}
+        params: dict[str, str] = {"format": format}
         if version:
             params["version"] = version
 
@@ -173,7 +178,7 @@ class NoveumIntegration:
         Returns:
             List of model information
         """
-        params = {}
+        params: dict[str, str] = {}
         if provider:
             params["provider"] = provider
 
@@ -182,7 +187,10 @@ class NoveumIntegration:
                 f"{self.base_url}/v1/models", params=params, timeout=self.timeout
             )
             response.raise_for_status()
-            return response.json().get("models", [])
+            data = response.json()
+            if isinstance(data, dict):
+                return data.get("models", [])  # type: ignore
+            return []
         except Exception as e:
             logger.error(f"Failed to fetch models: {e}")
             return []
@@ -212,32 +220,35 @@ class NoveumIntegration:
         Returns:
             Job ID if successful, None otherwise
         """
-        payload = {
+        if not self.project_id:
+            logger.error("Project ID is required for creating evaluation jobs")
+            return None
+
+        job_data: dict[str, Any] = {
             "name": name,
+            "project_id": self.project_id,
             "dataset_id": dataset_id,
             "model_ids": model_ids,
             "primary_metric": primary_metric,
             "evaluator_type": evaluator_type,
-            "project_id": self.project_id,
         }
 
         if description:
-            payload["description"] = description
+            job_data["description"] = description
         if config:
-            payload["config"] = config
+            job_data["config"] = config
 
         try:
             response = self.session.post(
                 f"{self.base_url}/v1/evaluation-jobs",
-                json=payload,
+                json=job_data,
                 timeout=self.timeout,
             )
             response.raise_for_status()
-            job_data = response.json()
-            job_id = job_data.get("job_id")
-            logger.info(f"Created evaluation job {job_id}")
-            return job_id
-
+            data = response.json()
+            if isinstance(data, dict):
+                return data.get("job_id")
+            return None
         except Exception as e:
             logger.error(f"Failed to create evaluation job: {e}")
             return None
@@ -257,9 +268,12 @@ class NoveumIntegration:
                 f"{self.base_url}/v1/evaluation-jobs/{job_id}", timeout=self.timeout
             )
             response.raise_for_status()
-            return response.json()
+            data = response.json()
+            if isinstance(data, dict):
+                return data
+            return None
         except Exception as e:
-            logger.error(f"Failed to fetch evaluation job {job_id}: {e}")
+            logger.error(f"Failed to get evaluation job {job_id}: {e}")
             return None
 
     def upload_evaluation_results(
@@ -273,23 +287,17 @@ class NoveumIntegration:
 
         Args:
             job_id: Job identifier
-            results: Evaluation results
+            results: Results dictionary
             artifacts: List of artifact file paths
 
         Returns:
             True if successful, False otherwise
         """
-        payload = {
-            "results": results,
-            "status": "completed",
-            "completed_at": time.time(),
-        }
-
         try:
-            # Upload main results
-            response = self.session.put(
+            # Upload results
+            response = self.session.post(
                 f"{self.base_url}/v1/evaluation-jobs/{job_id}/results",
-                json=payload,
+                json=results,
                 timeout=self.timeout,
             )
             response.raise_for_status()
@@ -297,9 +305,11 @@ class NoveumIntegration:
             # Upload artifacts if provided
             if artifacts:
                 for artifact_path in artifacts:
-                    self._upload_artifact(job_id, artifact_path)
+                    success = self._upload_artifact(job_id, artifact_path)
+                    if not success:
+                        logger.warning(f"Failed to upload artifact: {artifact_path}")
 
-            logger.info(f"Uploaded results for evaluation job {job_id}")
+            logger.info(f"Uploaded results for job {job_id}")
             return True
 
         except Exception as e:
@@ -307,15 +317,26 @@ class NoveumIntegration:
             return False
 
     def _upload_artifact(self, job_id: str, artifact_path: str) -> bool:
-        """Upload artifact file to Noveum platform."""
-        try:
-            artifact_path = Path(artifact_path)
-            if not artifact_path.exists():
-                logger.warning(f"Artifact file not found: {artifact_path}")
-                return False
+        """
+        Upload artifact file to Noveum platform.
 
-            with open(artifact_path, "rb") as f:
-                files = {"file": (artifact_path.name, f, "application/octet-stream")}
+        Args:
+            job_id: Job identifier
+            artifact_path: Path to artifact file
+
+        Returns:
+            True if successful, False otherwise
+        """
+        artifact_path_obj = Path(artifact_path)
+        if not artifact_path_obj.exists():
+            logger.error(f"Artifact file not found: {artifact_path}")
+            return False
+
+        try:
+            with open(artifact_path_obj, "rb") as f:
+                files = {
+                    "file": (artifact_path_obj.name, f, "application/octet-stream")
+                }
                 response = self.session.post(
                     f"{self.base_url}/v1/evaluation-jobs/{job_id}/artifacts",
                     files=files,
@@ -323,6 +344,7 @@ class NoveumIntegration:
                 )
                 response.raise_for_status()
 
+            logger.info(f"Uploaded artifact: {artifact_path}")
             return True
 
         except Exception as e:
@@ -342,34 +364,41 @@ class NoveumIntegration:
         Get request logs from Noveum platform.
 
         Args:
-            project_id: Filter by project
+            project_id: Project ID (uses default if not provided)
             provider: Filter by provider
             model: Filter by model
             limit: Maximum number of logs to return
-            start_time: Start timestamp
-            end_time: End timestamp
+            start_time: Start time as Unix timestamp
+            end_time: End time as Unix timestamp
 
         Returns:
-            List of request logs
+            List of request log entries
         """
-        params = {"limit": limit}
+        params: dict[str, str] = {"limit": str(limit)}
+
         if project_id:
             params["project_id"] = project_id
+        elif self.project_id:
+            params["project_id"] = self.project_id
+
         if provider:
             params["provider"] = provider
         if model:
             params["model"] = model
         if start_time:
-            params["start_time"] = start_time
+            params["start_time"] = str(int(start_time))
         if end_time:
-            params["end_time"] = end_time
+            params["end_time"] = str(int(end_time))
 
         try:
             response = self.session.get(
-                f"{self.base_url}/v1/logs", params=params, timeout=self.timeout
+                f"{self.base_url}/v1/request-logs", params=params, timeout=self.timeout
             )
             response.raise_for_status()
-            return response.json().get("logs", [])
+            data = response.json()
+            if isinstance(data, dict):
+                return data.get("logs", [])  # type: ignore
+            return []
         except Exception as e:
             logger.error(f"Failed to fetch request logs: {e}")
             return []
@@ -388,28 +417,33 @@ class NoveumIntegration:
             name: Dataset name
             log_ids: List of log IDs to include
             description: Dataset description
-            tags: Dataset tags
+            tags: List of tags
 
         Returns:
             Dataset ID if successful, None otherwise
         """
-        payload = {"name": name, "log_ids": log_ids, "type": "request_logs"}
+        dataset_data = {
+            "name": name,
+            "log_ids": log_ids,
+            "project_id": self.project_id,
+        }
 
         if description:
-            payload["description"] = description
+            dataset_data["description"] = description
         if tags:
-            payload["tags"] = tags
+            dataset_data["tags"] = tags
 
         try:
             response = self.session.post(
-                f"{self.base_url}/v1/datasets", json=payload, timeout=self.timeout
+                f"{self.base_url}/v1/datasets/from-logs",
+                json=dataset_data,
+                timeout=self.timeout,
             )
             response.raise_for_status()
-            dataset_data = response.json()
-            dataset_id = dataset_data.get("dataset_id")
-            logger.info(f"Created dataset {dataset_id} from logs")
-            return dataset_id
-
+            data = response.json()
+            if isinstance(data, dict):
+                return data.get("dataset_id")
+            return None
         except Exception as e:
             logger.error(f"Failed to create dataset from logs: {e}")
             return None
@@ -425,7 +459,9 @@ class NoveumIntegration:
             response = self.session.get(
                 f"{self.base_url}/v1/health", timeout=self.timeout
             )
-            return response.status_code == 200
+            response.raise_for_status()
+            data = response.json()
+            return isinstance(data, dict) and data.get("status") == "ok"
         except Exception as e:
-            logger.error(f"Failed to validate Noveum connection: {e}")
+            logger.error(f"Failed to validate connection: {e}")
             return False

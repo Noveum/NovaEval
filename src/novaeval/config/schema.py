@@ -112,13 +112,13 @@ class ScorerConfig(BaseModel):
     )
 
     @validator("threshold")
-    def validate_threshold(cls, v):
+    def validate_threshold(cls, v: float) -> float:
         if not 0.0 <= v <= 1.0:
             raise ValueError("Threshold must be between 0.0 and 1.0")
         return v
 
     @validator("weight")
-    def validate_weight(cls, v):
+    def validate_weight(cls, v: float) -> float:
         if v < 0.0:
             raise ValueError("Weight must be non-negative")
         return v
@@ -162,7 +162,7 @@ class CIConfig(BaseModel):
     )
 
     @validator("fail_threshold")
-    def validate_fail_threshold(cls, v):
+    def validate_fail_threshold(cls, v: float) -> float:
         if not 0.0 <= v <= 1.0:
             raise ValueError("Fail threshold must be between 0.0 and 1.0")
         return v
@@ -203,19 +203,19 @@ class EvaluationJobConfig(BaseModel):
     )
 
     @validator("models")
-    def validate_models(cls, v):
+    def validate_models(cls, v: list[ModelConfig]) -> list[ModelConfig]:
         if not v:
             raise ValueError("At least one model must be specified")
         return v
 
     @validator("datasets")
-    def validate_datasets(cls, v):
+    def validate_datasets(cls, v: list[DatasetConfig]) -> list[DatasetConfig]:
         if not v:
             raise ValueError("At least one dataset must be specified")
         return v
 
     @validator("scorers")
-    def validate_scorers(cls, v):
+    def validate_scorers(cls, v: list[ScorerConfig]) -> list[ScorerConfig]:
         if not v:
             raise ValueError("At least one scorer must be specified")
         return v

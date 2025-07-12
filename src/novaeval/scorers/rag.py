@@ -11,7 +11,7 @@ This module implements various metrics for evaluating RAG systems including:
 """
 
 import asyncio
-from typing import Optional
+from typing import Any, Optional, Union
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -33,9 +33,10 @@ class AnswerRelevancyScorer(BaseScorer):
         model: LLMModel,
         threshold: float = 0.7,
         embedding_model: str = "all-MiniLM-L6-v2",
-        **kwargs,
-    ):
-        super().__init__(threshold=threshold, **kwargs)
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.threshold = threshold
         self.model = model
         self.embedding_model = SentenceTransformer(embedding_model)
 
@@ -45,7 +46,7 @@ class AnswerRelevancyScorer(BaseScorer):
         output_text: str,
         expected_output: Optional[str] = None,
         context: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate answer relevancy."""
 
@@ -66,7 +67,7 @@ class AnswerRelevancyScorer(BaseScorer):
         try:
             generated_questions_response = await self.model.generate(
                 question_generation_prompt
-            )
+            )  # type: ignore
             generated_questions = self._parse_questions(generated_questions_response)
 
             if not generated_questions:
@@ -123,6 +124,29 @@ class AnswerRelevancyScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
+
     def _parse_questions(self, response: str) -> list[str]:
         """Parse generated questions from LLM response."""
         questions = []
@@ -154,8 +178,9 @@ class FaithfulnessScorer(BaseScorer):
     verified from the given context without hallucinations.
     """
 
-    def __init__(self, model: LLMModel, threshold: float = 0.8, **kwargs):
-        super().__init__(threshold=threshold, **kwargs)
+    def __init__(self, model: LLMModel, threshold: float = 0.8, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.threshold = threshold
         self.model = model
 
     async def evaluate(
@@ -164,7 +189,7 @@ class FaithfulnessScorer(BaseScorer):
         output_text: str,
         expected_output: Optional[str] = None,
         context: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate faithfulness to context."""
 
@@ -191,7 +216,7 @@ class FaithfulnessScorer(BaseScorer):
         """
 
         try:
-            claims_response = await self.model.generate(claims_extraction_prompt)
+            claims_response = await self.model.generate(claims_extraction_prompt)  # type: ignore
             claims = self._parse_claims(claims_response)
 
             if not claims:
@@ -219,7 +244,7 @@ class FaithfulnessScorer(BaseScorer):
                 Explanation: [Brief explanation]
                 """
 
-                verification_response = await self.model.generate(verification_prompt)
+                verification_response = await self.model.generate(verification_prompt)  # type: ignore
                 verification_results.append((claim, verification_response))
 
             # Calculate faithfulness score
@@ -269,6 +294,29 @@ class FaithfulnessScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
+
     def _parse_claims(self, response: str) -> list[str]:
         """Parse claims from LLM response."""
         claims = []
@@ -313,8 +361,9 @@ class ContextualPrecisionScorer(BaseScorer):
     information for answering the question.
     """
 
-    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs):
-        super().__init__(threshold=threshold, **kwargs)
+    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.threshold = threshold
         self.model = model
 
     async def evaluate(
@@ -323,7 +372,7 @@ class ContextualPrecisionScorer(BaseScorer):
         output_text: str,
         expected_output: Optional[str] = None,
         context: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate contextual precision."""
 
@@ -371,7 +420,7 @@ class ContextualPrecisionScorer(BaseScorer):
                 Explanation: [Brief explanation]
                 """
 
-                relevance_response = await self.model.generate(relevance_prompt)
+                relevance_response = await self.model.generate(relevance_prompt)  # type: ignore
                 score = self._parse_relevance_score(relevance_response)
                 relevance_scores.append(score)
 
@@ -404,6 +453,29 @@ class ContextualPrecisionScorer(BaseScorer):
                 reasoning=f"Contextual precision evaluation failed: {e!s}",
                 metadata={"error": str(e)},
             )
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
 
     def _split_context(self, context: str) -> list[str]:
         """Split context into chunks for evaluation."""
@@ -453,8 +525,9 @@ class ContextualRecallScorer(BaseScorer):
     the question is present in the retrieved context.
     """
 
-    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs):
-        super().__init__(threshold=threshold, **kwargs)
+    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.threshold = threshold
         self.model = model
 
     async def evaluate(
@@ -463,7 +536,7 @@ class ContextualRecallScorer(BaseScorer):
         output_text: str,
         expected_output: Optional[str] = None,
         context: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate contextual recall."""
 
@@ -490,7 +563,7 @@ class ContextualRecallScorer(BaseScorer):
             ...
             """
 
-            key_info_response = await self.model.generate(key_info_prompt)
+            key_info_response = await self.model.generate(key_info_prompt)  # type: ignore
             key_information = self._parse_claims(key_info_response)
 
             if not key_information:
@@ -518,7 +591,7 @@ class ContextualRecallScorer(BaseScorer):
                 Explanation: [Brief explanation]
                 """
 
-                recall_response = await self.model.generate(recall_prompt)
+                recall_response = await self.model.generate(recall_prompt)  # type: ignore
                 recall_results.append((info, recall_response))
 
             # Calculate recall score
@@ -566,6 +639,31 @@ class ContextualRecallScorer(BaseScorer):
                 reasoning=f"Contextual recall evaluation failed: {e!s}",
                 metadata={"error": str(e)},
             )
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        expected_output = context.get("expected_output") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+                expected_output=expected_output,
+            )
+        )
+
+        return result.score
 
     def _parse_claims(self, response: str) -> list[str]:
         """Parse claims/information from LLM response."""
@@ -615,9 +713,10 @@ class RAGASScorer(BaseScorer):
         model: LLMModel,
         threshold: float = 0.7,
         weights: Optional[dict[str, float]] = None,
-        **kwargs,
-    ):
-        super().__init__(threshold=threshold, **kwargs)
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(**kwargs)
+        self.threshold = threshold
         self.model = model
 
         # Default weights for different metrics
@@ -642,7 +741,7 @@ class RAGASScorer(BaseScorer):
         output_text: str,
         expected_output: Optional[str] = None,
         context: Optional[str] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate using RAGAS methodology."""
 
@@ -679,9 +778,12 @@ class RAGASScorer(BaseScorer):
                 if isinstance(result, Exception):
                     scores[metric_name] = 0.0
                     reasonings[metric_name] = f"Error: {result!s}"
+                elif hasattr(result, "score") and hasattr(result, "reasoning"):
+                    scores[metric_name] = result.score  # type: ignore
+                    reasonings[metric_name] = result.reasoning  # type: ignore
                 else:
-                    scores[metric_name] = result.score
-                    reasonings[metric_name] = result.reasoning
+                    scores[metric_name] = 0.0
+                    reasonings[metric_name] = "Unknown result type"
 
             # Calculate weighted average
             total_weight = sum(self.weights.values())
