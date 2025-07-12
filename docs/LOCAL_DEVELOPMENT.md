@@ -13,23 +13,70 @@ This guide helps you build and test the NovaEval documentation locally using Jek
 
 ### 1. Install Ruby
 
-**macOS (using Homebrew):**
-```bash
-# Install Homebrew if you don't have it
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+**⚠️ Important**: Jekyll 3.10.0 (required for GitHub Pages compatibility) requires Ruby 3.2 or lower. Newer Ruby versions (≥3.3) will cause native-extension build errors with gems like psych and nokogiri.
 
-# Install Ruby
-brew install ruby
+**Recommended: Use a Ruby Version Manager**
+
+Using a Ruby version manager makes it easy to switch between Ruby versions:
+
+**Install rbenv (recommended):**
+```bash
+# macOS
+brew install rbenv ruby-build
+echo 'eval "$(rbenv init -)"' >> ~/.zshrc
+source ~/.zshrc
+
+# Ubuntu/Debian
+curl -fsSL https://github.com/rbenv/rbenv-installer/raw/HEAD/bin/rbenv-installer | bash
+echo 'export PATH="$HOME/.rbenv/bin:$PATH"' >> ~/.bashrc
+echo 'eval "$(rbenv init -)"' >> ~/.bashrc
+source ~/.bashrc
+
+# Install Ruby 3.2.x
+rbenv install 3.2.2
+rbenv global 3.2.2
+```
+
+**Alternative: Install asdf:**
+```bash
+# macOS
+brew install asdf
+echo '. $(brew --prefix asdf)/libexec/asdf.sh' >> ~/.zshrc
+source ~/.zshrc
+
+# Ubuntu/Debian
+git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.13.1
+echo '. "$HOME/.asdf/asdf.sh"' >> ~/.bashrc
+source ~/.bashrc
+
+# Install Ruby plugin and Ruby 3.2.x
+asdf plugin add ruby
+asdf install ruby 3.2.2
+asdf global ruby 3.2.2
+```
+
+**Direct Installation (if you must):**
+
+**macOS:**
+```bash
+# Install specific Ruby version via Homebrew
+brew install ruby@3.2
+echo 'export PATH="/opt/homebrew/opt/ruby@3.2/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
 ```
 
 **Ubuntu/Debian:**
 ```bash
+# Install Ruby 3.2 via apt (if available)
 sudo apt-get update
 sudo apt-get install ruby-full build-essential zlib1g-dev
+
+# Note: This may install Ruby 3.3+, which is incompatible
+# Use rbenv or asdf for better control
 ```
 
 **Windows:**
-- Install [Ruby+Devkit](https://rubyinstaller.org/downloads/)
+- Install [Ruby+Devkit 3.2.x](https://rubyinstaller.org/downloads/) (avoid 3.3+)
 - Use the RubyInstaller for Windows
 
 ### 2. Install Bundler
@@ -119,24 +166,51 @@ bundle update github-pages
 # Check Ruby version
 ruby --version
 
-# Should be 2.7.0 or higher
+# Should be 3.2.x or lower (NOT 3.3+)
+# Jekyll 3.10.0 is incompatible with Ruby 3.3+
 ```
 
-**2. Permission errors on macOS**
+**If you have Ruby 3.3+, downgrade using a version manager:**
+```bash
+# Using rbenv
+rbenv install 3.2.2
+rbenv global 3.2.2
+
+# Using asdf
+asdf install ruby 3.2.2
+asdf global ruby 3.2.2
+
+# Verify the change
+ruby --version
+```
+
+**2. Native extension build errors**
+```bash
+# If you see errors like:
+# - "psych" gem failed to build
+# - "nokogiri" gem failed to build
+# - "ffi" gem failed to build
+
+# This usually means Ruby version is too new (≥3.3)
+# Downgrade to Ruby 3.2.x using the commands above
+```
+
+**3. Permission errors on macOS**
 ```bash
 # If you get permission errors, use:
 sudo gem install bundler
 
-# Or better, use rbenv/rvm for Ruby version management
+# Or better, use rbenv/asdf for Ruby version management
+# This avoids system Ruby conflicts entirely
 ```
 
-**3. Port already in use**
+**4. Port already in use**
 ```bash
 # Use a different port
 bundle exec jekyll serve --port 4001
 ```
 
-**4. Bundler::GemNotFound errors**
+**5. Bundler::GemNotFound errors**
 ```bash
 # Clean and reinstall
 bundle clean --force
@@ -190,6 +264,8 @@ bundle exec jekyll serve --no-watch
 ## 🌐 GitHub Pages Simulation
 
 **Important**: We use Jekyll 3.10.0 (via the `github-pages` gem) instead of Jekyll 4.x to ensure 100% compatibility with GitHub Pages hosting environment. This prevents deployment issues and ensures your local development exactly matches the production environment.
+
+**⚠️ Ruby Version Compatibility**: Jekyll 3.10.0 requires Ruby 3.2 or lower. If you encounter native-extension build errors (psych, nokogiri, etc.), your Ruby version is likely too new (≥3.3). Use a Ruby version manager like rbenv or asdf to downgrade to Ruby 3.2.x.
 
 To exactly match GitHub Pages environment:
 

@@ -87,8 +87,8 @@ venv\Scripts\activate
 # Install development dependencies
 pip install -e ".[dev]"
 
-# Install pre-commit hooks
-pre-commit install
+# Install hooks
+pre-commit install --hook-type pre-commit --hook-type commit-msg
 ```
 
 ### 4. Verify Installation
