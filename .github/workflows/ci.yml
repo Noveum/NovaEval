@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   schedule:
@@ -94,15 +94,14 @@ jobs:
 
     - name: Run tests
       run: |
-        pytest tests/ -v --cov=novaeval --cov-report=xml --cov-report=term-missing
+        pytest tests/ -v --cov=src/novaeval --cov-report=xml --cov-report=term-missing
 
-    - name: Upload coverage to Codecov
+    - name: Upload coverage reports to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: Noveum/NovaEval
 
   security:
     runs-on: ubuntu-latest
