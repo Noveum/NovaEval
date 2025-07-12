@@ -7,7 +7,7 @@ dataset:
   subset: "abstract_algebra"      # Specific subset (for MMLU)
   num_samples: 100               # Number of samples to evaluate (null for all)
   split: "test"                  # Dataset split to use
-  
+
   # Additional dataset-specific options
   few_shot: 0                    # Number of few-shot examples
   seed: 42                       # Random seed for reproducibility
@@ -19,12 +19,12 @@ models:
     temperature: 0.0
     max_tokens: 10
     # api_key: "your-api-key"     # Can be set via environment variable
-    
+
   - type: "openai"
     model_name: "gpt-3.5-turbo"
     temperature: 0.0
     max_tokens: 10
-    
+
   - type: "anthropic"
     model_name: "claude-3-sonnet-20240229"
     temperature: 0.0
@@ -36,11 +36,11 @@ scorers:
   - type: "accuracy"
     extract_answer: true
     answer_pattern: "(?:Answer|answer):\\s*([A-Za-z0-9]+)"
-    
+
   - type: "exact_match"
     case_sensitive: false
     strip_whitespace: true
-    
+
   - type: "f1"
     tokenize: true
     case_sensitive: false
@@ -49,7 +49,7 @@ scorers:
 output:
   directory: "./results"
   formats: ["json", "csv", "html"]
-  
+
   # Cloud storage options (optional)
   upload_to_s3: false
   s3_bucket: "my-eval-results"
@@ -66,7 +66,7 @@ evaluation:
 logging:
   level: "INFO"                  # Log level (DEBUG, INFO, WARNING, ERROR)
   log_file: null                 # Log file path (null for console only)
-  
+
 # Integration settings (optional)
 integrations:
   # Credential store integration
@@ -74,17 +74,16 @@ integrations:
     type: "env"                  # Environment variables
     # type: "aws_secrets"        # AWS Secrets Manager
     # type: "azure_keyvault"     # Azure Key Vault
-    
+
   # Artifact storage
   artifacts:
     enabled: true
     store_predictions: true
     store_intermediate: false
-    
+
   # Monitoring and tracking
   tracking:
     enabled: false
     # provider: "wandb"          # Weights & Biases
     # project: "novaeval"
     # tags: ["evaluation", "llm"]
-

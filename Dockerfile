@@ -18,16 +18,19 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
-COPY pyproject.toml setup.cfg ./
+COPY pyproject.toml requirements.txt requirements-dev.txt ./
 
 # Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install -e .
+    pip install -r requirements.txt
 
 # Copy source code
 COPY src/ ./src/
 COPY examples/ ./examples/
-COPY README.md LICENSE ./
+COPY README.md LICENSE MANIFEST.in ./
+
+# Install the package in development mode
+RUN pip install -e .
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash novaeval && \
@@ -53,4 +56,3 @@ LABEL maintainer="Noveum Team <team@noveum.ai>" \
       org.opencontainers.image.source="https://github.com/Noveum/NovaEval" \
       org.opencontainers.image.documentation="https://noveum.github.io/NovaEval" \
       org.opencontainers.image.licenses="Apache-2.0"
-

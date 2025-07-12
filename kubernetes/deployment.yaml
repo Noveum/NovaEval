@@ -175,22 +175,22 @@ data:
     logging:
       level: INFO
       format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    
+
     evaluation:
       max_workers: 4
       batch_size: 1
       timeout: 60
       max_retries: 3
-    
+
     output:
       directory: "/app/results"
       formats: ["json", "csv", "html"]
-    
+
     integrations:
       noveum:
         base_url: "https://api.noveum.ai"
         timeout: 30
-      
+
       s3:
         bucket: "novaeval-results"
         region: "us-east-1"
@@ -210,4 +210,3 @@ data:
   # anthropic-api-key: <base64-encoded-key>
   # aws-access-key-id: <base64-encoded-key>
   # aws-secret-access-key: <base64-encoded-key>
-

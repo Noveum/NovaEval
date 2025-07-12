@@ -257,7 +257,7 @@ class MyCustomDataset(BaseDataset):
     def load_data(self):
         # Implement data loading logic
         return samples
-    
+
     def get_sample(self, index):
         # Return individual sample
         return sample
@@ -329,5 +329,4 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ---
 
-Made with ❤️ by the Noveum team
-
+Made with ❤️ by the Noveum.ai team

@@ -7,7 +7,7 @@ name = "novaeval"
 version = "0.1.0"
 description = "A comprehensive, open-source LLM evaluation framework for testing and benchmarking AI models"
 readme = "README.md"
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
 authors = [
     {name = "Noveum AI", email = "team@noveum.ai"},
 ]
@@ -15,14 +15,13 @@ maintainers = [
     {name = "Noveum AI", email = "team@noveum.ai"},
 ]
 keywords = [
-    "llm", "evaluation", "ai", "machine-learning", "benchmarking", 
+    "llm", "evaluation", "ai", "machine-learning", "benchmarking",
     "testing", "rag", "agents", "conversational-ai", "g-eval"
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
@@ -170,6 +169,8 @@ known_third_party = ["pytest", "pydantic", "httpx", "typer", "rich"]
 [tool.ruff]
 target-version = "py39"
 line-length = 88
+
+[tool.ruff.lint]
 select = [
     "E",  # pycodestyle errors
     "W",  # pycodestyle warnings
@@ -190,11 +191,15 @@ select = [
 ignore = [
     "E501",  # line too long, handled by black
     "B008",  # do not perform function calls in argument defaults
+    "B904",  # raise exceptions with raise ... from err (not critical)
     "C901",  # too complex
     "W191",  # indentation contains tabs
+    "PERF203",  # try-except within a loop incurs performance overhead
+    "PERF102",  # when using only values of dict use values() method
+    "RUF012",  # mutable class attributes should be annotated with ClassVar
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/**/*" = ["ARG001", "S101"]
 
@@ -266,4 +271,3 @@ skip_covered = false
 
 [tool.coverage.html]
 directory = "htmlcov"
-

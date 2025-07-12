@@ -1,0 +1,47 @@
+# Include documentation files
+include README.md
+include CHANGELOG.md
+include LICENSE
+include CONTRIBUTING.md
+include ROADMAP.md
+
+# Include configuration files
+include pyproject.toml
+include requirements.txt
+include requirements-dev.txt
+
+# Include example files
+recursive-include examples *.py *.yaml *.yml *.json *.txt *.md
+
+# Include package data
+include src/novaeval/py.typed
+recursive-include src/novaeval *.yaml *.yml *.json *.j2 *.txt
+
+# Include test files for development
+recursive-include tests *.py *.yaml *.yml *.json *.txt
+
+# Include CI/CD configurations
+include .pre-commit-config.yaml
+recursive-include .github *.yml *.yaml
+
+# Include Docker and Kubernetes files
+include Dockerfile
+recursive-include kubernetes *.yaml *.yml
+
+# Exclude unwanted files
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude .DS_Store
+global-exclude *.so
+global-exclude .git*
+global-exclude .venv*
+global-exclude .pytest_cache
+global-exclude .mypy_cache
+global-exclude .ruff_cache
+global-exclude htmlcov
+global-exclude .coverage
+global-exclude coverage.xml
+global-exclude .tox
+global-exclude build
+global-exclude dist
+global-exclude *.egg-info

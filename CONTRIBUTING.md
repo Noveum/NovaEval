@@ -290,4 +290,3 @@ Contributors will be recognized in:
 - The project's contributors page
 
 Thank you for contributing to NovaEval! 🎉
-

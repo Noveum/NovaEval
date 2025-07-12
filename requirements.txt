@@ -25,4 +25,3 @@ sentence-transformers>=2.2.0
 # rouge-score>=0.1.2  # For ROUGE metrics
 # bert-score>=0.3.13  # For BERTScore
 # sacrebleu>=2.3.0  # For BLEU metrics
-

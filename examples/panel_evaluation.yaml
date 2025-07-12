@@ -1,0 +1,52 @@
+name: "Panel of LLMs Evaluation"
+description: "Multi-judge evaluation for robust assessment"
+
+# Models to evaluate
+models:
+  - provider: "openai"
+    model_name: "gpt-4"
+    temperature: 0.0
+
+  - provider: "anthropic"
+    model_name: "claude-3-sonnet-20240229"
+    temperature: 0.0
+
+# Dataset
+datasets:
+  - type: "custom"
+    path: "./test_data/qa_dataset.jsonl"
+    limit: 50
+
+# Panel of Judges Scorer
+scorers:
+  - type: "panel_judge"
+    threshold: 0.8
+    weight: 1.0
+    parameters:
+      judges:
+        - model_provider: "openai"
+          model_name: "gpt-4"
+          weight: 1.0
+          specialty: "accuracy"
+          temperature: 0.0
+
+        - model_provider: "anthropic"
+          model_name: "claude-3-sonnet-20240229"
+          weight: 1.0
+          specialty: "clarity"
+          temperature: 0.0
+
+        - model_provider: "openai"
+          model_name: "gpt-3.5-turbo"
+          weight: 0.8
+          specialty: "completeness"
+          temperature: 0.1
+
+      aggregation_method: "weighted_mean"
+      require_consensus: true
+      consensus_threshold: 0.7
+      evaluation_criteria: "overall quality and helpfulness"
+
+output:
+  formats: ["json", "html"]
+  directory: "./panel_results"
