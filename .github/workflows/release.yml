@@ -33,6 +33,9 @@ jobs:
     - name: Run tests
       run: |
         pytest tests/ -v
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
   build:
     needs: test

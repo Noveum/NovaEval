@@ -203,31 +203,33 @@ class TestOpenAIModel:
 
     def test_estimate_cost_known_model(self):
         """Test cost estimation for known model."""
-        model = OpenAIModel(model_name="gpt-4")
+        with patch("novaeval.models.openai.OpenAI"):
+            model = OpenAIModel(model_name="gpt-4")
 
-        # Mock token counting
-        model.count_tokens = Mock(return_value=1000)
+            # Mock token counting
+            model.count_tokens = Mock(return_value=1000)
 
-        prompt = "Test prompt"
-        response = "Test response"
+            prompt = "Test prompt"
+            response = "Test response"
 
-        cost = model.estimate_cost(prompt, response)
+            cost = model.estimate_cost(prompt, response)
 
-        # Expected cost: (1000 input + 1000 output) / 1K * pricing
-        # gpt-4 pricing: $0.03 input, $0.06 output per 1K tokens
-        expected_cost = (1000 / 1000) * 0.03 + (1000 / 1000) * 0.06
+            # Expected cost: (1000 input + 1000 output) / 1K * pricing
+            # gpt-4 pricing: $0.03 input, $0.06 output per 1K tokens
+            expected_cost = (1000 / 1000) * 0.03 + (1000 / 1000) * 0.06
 
-        # Use floating point comparison with reasonable tolerance
-        assert abs(cost - expected_cost) < 1e-6
+            # Use floating point comparison with reasonable tolerance
+            assert abs(cost - expected_cost) < 1e-6
 
     def test_estimate_cost_unknown_model(self):
         """Test cost estimation for unknown model."""
-        model = OpenAIModel(model_name="unknown-model")
+        with patch("novaeval.models.openai.OpenAI"):
+            model = OpenAIModel(model_name="unknown-model")
 
-        cost = model.estimate_cost("Test prompt", "Test response")
+            cost = model.estimate_cost("Test prompt", "Test response")
 
-        # Should return 0.0 for unknown models
-        assert cost == 0.0
+            # Should return 0.0 for unknown models
+            assert cost == 0.0
 
     def test_count_tokens(self):
         """Test token counting."""
@@ -243,39 +245,41 @@ class TestOpenAIModel:
 
     def test_count_tokens_tiktoken_fallback(self):
         """Test token counting when tiktoken is not available."""
-        model = OpenAIModel()
+        with patch("novaeval.models.openai.OpenAI"):
+            model = OpenAIModel()
 
-        # Mock the import of tiktoken to raise ImportError
-        def mock_import(name, *args, **kwargs):
-            if name == "tiktoken":
-                raise ImportError("tiktoken not available")
-            return __import__(name, *args, **kwargs)
+            # Mock the import of tiktoken to raise ImportError
+            def mock_import(name, *args, **kwargs):
+                if name == "tiktoken":
+                    raise ImportError("tiktoken not available")
+                return __import__(name, *args, **kwargs)
 
-        with patch("builtins.__import__", side_effect=mock_import):
-            # This should fall back to base model's count_tokens
-            tokens = model.count_tokens("Hello world")
-            assert isinstance(tokens, int)
-            assert tokens > 0
+            with patch("builtins.__import__", side_effect=mock_import):
+                # This should fall back to base model's count_tokens
+                tokens = model.count_tokens("Hello world")
+                assert isinstance(tokens, int)
+                assert tokens > 0
 
     def test_count_tokens_different_models(self):
         """Test token counting for different model types."""
-        # Test GPT-4
-        model_gpt4 = OpenAIModel(model_name="gpt-4")
-        tokens_gpt4 = model_gpt4.count_tokens("Hello world")
-        assert isinstance(tokens_gpt4, int)
-        assert tokens_gpt4 > 0
+        with patch("novaeval.models.openai.OpenAI"):
+            # Test GPT-4
+            model_gpt4 = OpenAIModel(model_name="gpt-4")
+            tokens_gpt4 = model_gpt4.count_tokens("Hello world")
+            assert isinstance(tokens_gpt4, int)
+            assert tokens_gpt4 > 0
 
-        # Test GPT-3.5
-        model_gpt35 = OpenAIModel(model_name="gpt-3.5-turbo")
-        tokens_gpt35 = model_gpt35.count_tokens("Hello world")
-        assert isinstance(tokens_gpt35, int)
-        assert tokens_gpt35 > 0
+            # Test GPT-3.5
+            model_gpt35 = OpenAIModel(model_name="gpt-3.5-turbo")
+            tokens_gpt35 = model_gpt35.count_tokens("Hello world")
+            assert isinstance(tokens_gpt35, int)
+            assert tokens_gpt35 > 0
 
-        # Test other model (uses cl100k_base)
-        model_other = OpenAIModel(model_name="text-davinci-003")
-        tokens_other = model_other.count_tokens("Hello world")
-        assert isinstance(tokens_other, int)
-        assert tokens_other > 0
+            # Test other model (uses cl100k_base)
+            model_other = OpenAIModel(model_name="text-davinci-003")
+            tokens_other = model_other.count_tokens("Hello world")
+            assert isinstance(tokens_other, int)
+            assert tokens_other > 0
 
     def test_validate_connection_success(self):
         """Test successful connection validation."""
