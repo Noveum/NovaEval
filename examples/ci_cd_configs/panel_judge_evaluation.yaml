@@ -71,19 +71,19 @@ scorers:
           weight: 1.0
           specialty: "accuracy"
           temperature: 0.0
-        
+
         - model_provider: "anthropic"
           model_name: "claude-3-sonnet-20240229"
           weight: 1.0
           specialty: "clarity"
           temperature: 0.0
-        
+
         - model_provider: "openai"
           model_name: "gpt-3.5-turbo"
           weight: 0.8
           specialty: "completeness"
           temperature: 0.1
-      
+
       aggregation_method: "weighted_mean"
       require_consensus: true
       consensus_threshold: 0.7
@@ -134,4 +134,3 @@ environment:
   EVALUATION_ENV: "production"
   LOG_LEVEL: "INFO"
   CACHE_ENABLED: "true"
-

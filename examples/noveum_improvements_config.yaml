@@ -1,0 +1,296 @@
+name: "Noveum.ai Improvement Evaluation"
+description: "Find LLMs that produce better outputs than ai-gateway logged responses"
+version: "1.0"
+
+# Data source configuration
+data_source:
+  type: "ai_gateway_logs"
+  logs_path: "./ai_gateway_logs.jsonl"
+  selected_log_ids: []  # Will be populated from Noveum.ai interface
+
+  # Processing options
+  preprocessing:
+    extract_baseline_responses: true
+    include_metadata: true
+    filter_by_provider: null  # Optional: filter by specific provider
+    filter_by_model: null     # Optional: filter by specific model
+    min_response_length: 10   # Minimum response length to include
+
+# Candidate models to evaluate (potential improvements)
+candidate_models:
+  - provider: "openai"
+    model_name: "gpt-4o"
+    temperature: 0.7
+    system_prompt: "You are a helpful AI assistant. Provide accurate, complete, and helpful responses."
+
+  - provider: "anthropic"
+    model_name: "claude-3-5-sonnet-20241022"
+    temperature: 0.7
+    system_prompt: "You are Claude, an AI assistant. Be helpful, accurate, and thorough in your responses."
+
+  - provider: "openai"
+    model_name: "o1-preview"
+    temperature: 0.0
+    system_prompt: "You are an advanced AI assistant. Think carefully and provide well-reasoned responses."
+
+  - provider: "openai"
+    model_name: "gpt-4o-mini"
+    temperature: 0.7
+    system_prompt: "You are a helpful AI assistant. Focus on clarity and accuracy."
+
+  - provider: "anthropic"
+    model_name: "claude-3-5-haiku-20241022"
+    temperature: 0.7
+    system_prompt: "You are Claude, an AI assistant. Provide concise yet comprehensive responses."
+
+# Evaluation methodology
+evaluation:
+  type: "comparative_improvement"
+
+  # Comparison panels for different aspects
+  comparison_panels:
+    # Main comparison panel
+    - name: "primary_comparison"
+      weight: 0.4
+      judges:
+        - model_provider: "openai"
+          model_name: "gpt-4o"
+          weight: 1.5
+          specialty: "comparative_analysis"
+          temperature: 0.0
+          name: "Comparison Expert"
+
+        - model_provider: "anthropic"
+          model_name: "claude-3-5-sonnet-20241022"
+          weight: 1.5
+          specialty: "quality_evaluation"
+          temperature: 0.0
+          name: "Quality Assessor"
+
+        - model_provider: "openai"
+          model_name: "o1-preview"
+          weight: 2.0
+          specialty: "logical_assessment"
+          temperature: 0.0
+          name: "Reasoning Evaluator"
+
+      aggregation_method: "weighted_mean"
+      consensus_threshold: 0.7
+      evaluation_criteria: "comparative quality, improvement detection, and objective assessment"
+
+    # Quality assessment panel
+    - name: "quality_assessment"
+      weight: 0.3
+      judges:
+        - model_provider: "openai"
+          model_name: "gpt-4o"
+          weight: 1.0
+          specialty: "factual_accuracy"
+          temperature: 0.0
+          name: "Accuracy Judge"
+
+        - model_provider: "anthropic"
+          model_name: "claude-3-5-sonnet-20241022"
+          weight: 1.0
+          specialty: "user_helpfulness"
+          temperature: 0.0
+          name: "Helpfulness Judge"
+
+        - model_provider: "openai"
+          model_name: "gpt-4o-mini"
+          weight: 0.8
+          specialty: "response_completeness"
+          temperature: 0.1
+          name: "Completeness Judge"
+
+      aggregation_method: "mean"
+      evaluation_criteria: "absolute quality assessment independent of comparison"
+
+    # Improvement detection panel
+    - name: "improvement_detection"
+      weight: 0.3
+      judges:
+        - model_provider: "openai"
+          model_name: "o1-preview"
+          weight: 2.0
+          specialty: "improvement_identification"
+          temperature: 0.0
+          name: "Improvement Detector"
+
+        - model_provider: "anthropic"
+          model_name: "claude-3-5-sonnet-20241022"
+          weight: 1.5
+          specialty: "enhancement_assessment"
+          temperature: 0.0
+          name: "Enhancement Evaluator"
+
+      aggregation_method: "weighted_mean"
+      evaluation_criteria: "specific improvement detection and categorization"
+
+# Improvement detection settings
+improvement_detection:
+  # Types of improvements to detect
+  improvement_types:
+    - "accuracy"
+    - "completeness"
+    - "clarity"
+    - "helpfulness"
+    - "factual_correctness"
+    - "relevance"
+    - "overall_quality"
+
+  # Thresholds for improvement detection
+  thresholds:
+    minimum_improvement_score: 0.1  # Minimum score difference to consider improvement
+    confidence_threshold: 0.6       # Minimum confidence for improvement claims
+    consensus_threshold: 0.7        # Required consensus among judges
+
+  # Reward system for improvements
+  reward_system:
+    enable_rewards: true
+    reward_multipliers:
+      accuracy: 1.5
+      completeness: 1.2
+      clarity: 1.1
+      helpfulness: 1.3
+      factual_correctness: 1.6
+      relevance: 1.1
+      overall_quality: 1.0
+
+# Output configuration
+output:
+  formats: ["json", "html", "csv"]
+  directory: "./results/noveum_improvement"
+  include_metadata: true
+
+  # Improvement-specific outputs
+  improvement_analysis:
+    include_detailed_comparisons: true
+    include_improvement_breakdown: true
+    include_model_rankings: true
+    include_recommendations: true
+    generate_improvement_report: true
+
+  # Baseline analysis
+  baseline_analysis:
+    analyze_baseline_quality: true
+    identify_weak_baselines: true
+    suggest_dataset_improvements: true
+
+  # Model performance analysis
+  model_analysis:
+    win_loss_breakdown: true
+    improvement_type_analysis: true
+    confidence_analysis: true
+    cost_benefit_analysis: true
+
+# Quality gates for improvement detection
+quality_gates:
+  minimum_requirements:
+    win_rate: 0.3              # At least 30% win rate against baselines
+    improvement_rate: 0.5      # At least 50% improvement or tie rate
+    average_improvement_score: 0.2  # Average improvement score threshold
+    confidence_level: 0.6      # Minimum confidence in assessments
+
+  excellence_thresholds:
+    win_rate: 0.6              # Excellent win rate
+    improvement_rate: 0.8      # Excellent improvement rate
+    average_improvement_score: 0.4  # Excellent improvement score
+    confidence_level: 0.8      # High confidence threshold
+
+# Cost management
+cost_management:
+  enable_cost_tracking: true
+  cost_limit_usd: 100.0
+
+  # Cost optimization
+  optimization:
+    use_cheaper_models_for_initial_screening: true
+    batch_similar_requests: true
+    cache_judge_responses: true
+
+  # Cost alerts
+  cost_alerts:
+    - threshold: 50.0
+      action: "warn"
+    - threshold: 80.0
+      action: "slow_down"
+    - threshold: 100.0
+      action: "stop"
+
+# Reporting and recommendations
+reporting:
+  generate_executive_summary: true
+  include_cost_analysis: true
+  include_performance_metrics: true
+
+  # Improvement-specific reporting
+  improvement_reports:
+    model_improvement_matrix: true
+    improvement_type_heatmap: true
+    baseline_weakness_analysis: true
+    recommendation_prioritization: true
+
+  # Business impact analysis
+  business_impact:
+    estimate_quality_improvements: true
+    calculate_potential_cost_savings: true
+    assess_user_satisfaction_impact: true
+    provide_migration_recommendations: true
+
+# Advanced features
+advanced_features:
+  # Continuous improvement
+  continuous_improvement:
+    enable_feedback_loop: true
+    update_baselines_with_improvements: true
+    track_improvement_trends: true
+
+  # A/B testing support
+  ab_testing:
+    enable_statistical_testing: true
+    significance_level: 0.05
+    minimum_sample_size: 30
+
+  # Bias detection
+  bias_detection:
+    detect_judge_bias: true
+    analyze_model_preferences: true
+    ensure_fair_comparison: true
+
+# Integration with Noveum.ai
+noveum_integration:
+  # API endpoints for integration
+  api_endpoints:
+    submit_evaluation_request: "/api/v1/evaluation/submit"
+    get_evaluation_status: "/api/v1/evaluation/status/{job_id}"
+    get_evaluation_results: "/api/v1/evaluation/results/{job_id}"
+
+  # Webhook for completion notification
+  webhooks:
+    on_completion: "${NOVEUM_WEBHOOK_URL}"
+    on_failure: "${NOVEUM_ERROR_WEBHOOK_URL}"
+
+  # Data export for Noveum.ai dashboard
+  data_export:
+    export_format: "noveum_json"
+    include_visualizations: true
+    include_actionable_insights: true
+
+# Environment variables
+environment:
+  required_vars:
+    - OPENAI_API_KEY
+    - ANTHROPIC_API_KEY
+    - NOVEUM_API_KEY
+  optional_vars:
+    - NOVEUM_WEBHOOK_URL
+    - NOVEUM_ERROR_WEBHOOK_URL
+    - COST_ALERT_EMAIL
+
+# Metadata
+metadata:
+  created_by: "NovaEval for Noveum.ai"
+  purpose: "Identify LLMs that improve upon ai-gateway logged responses"
+  tags: ["improvement_evaluation", "comparative_analysis", "noveum_integration"]
+  documentation: "https://github.com/Noveum/NovaEval/blob/main/docs/noveum_integration.md"

@@ -1,0 +1,57 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: debug-statements
+
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        language_version: python3
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.5
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+
+  # TODO: Re-enable mypy once type annotations are improved
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.13.0
+  #   hooks:
+  #     - id: mypy
+  #       additional_dependencies: [types-PyYAML, types-requests]
+  #       exclude: ^(tests/|examples/)
+  #       args: [--ignore-missing-imports]
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.0
+    hooks:
+      - id: bandit
+        args: ["-r", "src/", "-f", "screen", "--exit-zero"]
+        exclude: ^tests/
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: safety
+        name: safety
+        entry: safety
+        language: python
+        args: ["check", "--json", "--continue-on-error", "-r", "requirements.txt"]
+        files: requirements.*\.txt$
+        require_serial: true
+        pass_filenames: false

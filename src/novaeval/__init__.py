@@ -12,51 +12,44 @@ __author__ = "Noveum Team"
 __license__ = "Apache 2.0"
 
 # Core imports
-from novaeval.evaluators.base import BaseEvaluator
-from novaeval.evaluators.standard import Evaluator
-
 # Dataset imports
 from novaeval.datasets.base import BaseDataset
+from novaeval.evaluators.base import BaseEvaluator
+from novaeval.evaluators.standard import Evaluator
+from novaeval.models.anthropic import AnthropicModel
 
-# Model imports  
+# Model imports
 from novaeval.models.base import BaseModel
 from novaeval.models.openai import OpenAIModel
-from novaeval.models.anthropic import AnthropicModel
+from novaeval.scorers.accuracy import AccuracyScorer
 
 # Scorer imports
 from novaeval.scorers.base import BaseScorer
-from novaeval.scorers.accuracy import AccuracyScorer
 
 # Utility imports
 from novaeval.utils.config import Config
-from novaeval.utils.logging import setup_logging, get_logger
+from novaeval.utils.logging import get_logger, setup_logging
 
 __all__ = [
-    # Core classes
-    "BaseEvaluator",
-    "Evaluator",
-    
+    "AccuracyScorer",
+    "AnthropicModel",
     # Datasets
     "BaseDataset",
-    
+    # Core classes
+    "BaseEvaluator",
     # Models
     "BaseModel",
-    "OpenAIModel",
-    "AnthropicModel",
-    
     # Scorers
-    "BaseScorer", 
-    "AccuracyScorer",
-    
+    "BaseScorer",
     # Utilities
     "Config",
-    "setup_logging",
-    "get_logger",
-    
+    "Evaluator",
+    "OpenAIModel",
+    "__author__",
+    "__license__",
+    "__title__",
     # Metadata
     "__version__",
-    "__title__",
-    "__author__",
-    "__license__"
+    "get_logger",
+    "setup_logging",
 ]
-

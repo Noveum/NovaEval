@@ -1,0 +1,3 @@
+{"input": "What is the capital of France?", "expected": "Paris", "metadata": {"difficulty": "easy", "category": "geography"}}
+{"input": "Explain the concept of machine learning in simple terms.", "expected": "Machine learning is a subset of artificial intelligence where computers learn patterns from data to make predictions or decisions without being explicitly programmed for each task.", "metadata": {"difficulty": "medium", "category": "technology"}}
+{"input": "What are the main causes of climate change?", "expected": "The main causes of climate change include greenhouse gas emissions from burning fossil fuels, deforestation, industrial processes, and agriculture.", "metadata": {"difficulty": "medium", "category": "science"}}

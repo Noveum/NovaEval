@@ -1,0 +1,2 @@
+# This file marks the package as supporting type checking
+# It enables mypy and other type checkers to find type information

@@ -1,3 +1,0 @@
-[console_scripts]
-novaeval = novaeval.cli:main
-

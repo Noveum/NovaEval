@@ -1,0 +1,141 @@
+name: "Panel of LLMs Evaluation with Latest Models"
+description: "Multi-judge evaluation for robust assessment using latest OpenAI and Anthropic models"
+
+# Models to evaluate
+models:
+  - provider: "openai"
+    model_name: "gpt-4o"
+    temperature: 0.0
+
+  - provider: "anthropic"
+    model_name: "claude-3-5-sonnet-20241022"
+    temperature: 0.0
+
+  - provider: "openai"
+    model_name: "gpt-4o-mini"
+    temperature: 0.0
+
+# Dataset
+datasets:
+  - type: "custom"
+    path: "./test_data/qa_dataset.jsonl"
+    limit: 50
+
+  # Optional: Add interesting HuggingFace datasets
+  - type: "huggingface"
+    name: "berkeley-nest/Nectar"
+    split: "train"
+    input_column: "prompt"
+    limit: 25
+    preprocessing:
+      extract_human_question: true
+      extract_best_answer: true
+
+# Panel of Judges Scorer with Latest Models
+scorers:
+  - type: "panel_judge"
+    threshold: 0.8
+    weight: 1.0
+    parameters:
+      judges:
+        # Latest GPT-4o as primary judge
+        - model_provider: "openai"
+          model_name: "gpt-4o"
+          weight: 1.5
+          specialty: "accuracy_and_reasoning"
+          temperature: 0.0
+          name: "GPT-4o Expert"
+
+        # Latest Claude 3.5 Sonnet as co-primary judge
+        - model_provider: "anthropic"
+          model_name: "claude-3-5-sonnet-20241022"
+          weight: 1.5
+          specialty: "clarity_and_helpfulness"
+          temperature: 0.0
+          name: "Claude-3.5-Sonnet Expert"
+
+        # GPT-4o-mini for efficiency and completeness
+        - model_provider: "openai"
+          model_name: "gpt-4o-mini"
+          weight: 1.0
+          specialty: "completeness_and_efficiency"
+          temperature: 0.1
+          name: "GPT-4o-Mini Judge"
+
+        # Claude 3.5 Haiku for conciseness
+        - model_provider: "anthropic"
+          model_name: "claude-3-5-haiku-20241022"
+          weight: 0.8
+          specialty: "conciseness_and_relevance"
+          temperature: 0.1
+          name: "Claude-3.5-Haiku Judge"
+
+      aggregation_method: "weighted_mean"
+      require_consensus: true
+      consensus_threshold: 0.7
+      evaluation_criteria: "overall quality, factual accuracy, helpfulness, and clarity"
+
+  # Optional: Reasoning-focused panel for complex tasks
+  - type: "panel_judge"
+    name: "reasoning_panel"
+    threshold: 0.85
+    weight: 0.5
+    parameters:
+      judges:
+        # o1-preview for advanced reasoning
+        - model_provider: "openai"
+          model_name: "o1-preview"
+          weight: 2.0
+          specialty: "complex_reasoning_and_analysis"
+          temperature: 0.0
+          name: "o1-Preview Reasoning Expert"
+
+        # GPT-4o for general accuracy
+        - model_provider: "openai"
+          model_name: "gpt-4o"
+          weight: 1.5
+          specialty: "accuracy_and_completeness"
+          temperature: 0.0
+          name: "GPT-4o General Expert"
+
+        # Claude 3.5 Sonnet for explanation clarity
+        - model_provider: "anthropic"
+          model_name: "claude-3-5-sonnet-20241022"
+          weight: 1.5
+          specialty: "clarity_and_explanation"
+          temperature: 0.0
+          name: "Claude-3.5-Sonnet Clarity Expert"
+
+      aggregation_method: "weighted_mean"
+      require_consensus: true
+      consensus_threshold: 0.75
+      evaluation_criteria: "reasoning quality, logical consistency, accuracy, and explanation clarity"
+
+output:
+  formats: ["json", "html", "csv"]
+  directory: "./panel_results"
+  include_metadata: true
+
+  # Panel-specific outputs
+  panel_analysis:
+    include_individual_scores: true
+    include_consensus_analysis: true
+    include_judge_reasoning: true
+    generate_disagreement_report: true
+
+# Quality gates
+quality_gates:
+  minimum_scores:
+    panel_judge: 0.8
+    reasoning_panel: 0.85
+
+  consensus_requirements:
+    minimum_consensus_level: 0.7
+    maximum_disagreement_cases: 5
+
+# Evaluation settings
+evaluation:
+  parallel_execution: true
+  max_concurrent_requests: 4
+  retry_failed_requests: 3
+  timeout_seconds: 120

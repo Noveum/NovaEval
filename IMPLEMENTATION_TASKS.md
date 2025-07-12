@@ -192,7 +192,7 @@ This document outlines the specific implementation tasks needed to complete the 
 # File: src/novaeval/exceptions.py
 class NovaEvalException(Exception):
     """Base exception for all NovaEval errors."""
-    
+
     def __init__(self, message: str, error_code: str = None, details: dict = None):
         super().__init__(message)
         self.error_code = error_code
@@ -224,13 +224,13 @@ class StructuredPromptBuilder:
     def build_json_prompt(content: str, schema: dict) -> str:
         return f"""
         {content}
-        
+
         Please respond in the following JSON format:
         {json.dumps(schema, indent=2)}
-        
+
         Ensure your response is valid JSON and follows the schema exactly.
         """
-    
+
     @staticmethod
     def parse_json_response(response: str, schema: dict) -> dict:
         try:
@@ -258,14 +258,14 @@ class CacheManager:
             self.client = {}
         else:
             raise ValueError(f"Unsupported cache backend: {backend}")
-    
+
     async def get(self, key: str) -> Optional[Any]:
         if isinstance(self.client, dict):
             return self.client.get(key)
         else:
             result = await self.client.get(key)
             return pickle.loads(result) if result else None
-    
+
     async def set(self, key: str, value: Any, ttl: int = 3600):
         if isinstance(self.client, dict):
             self.client[key] = value
@@ -282,16 +282,16 @@ class RateLimiter:
         self.max_calls = max_calls
         self.time_window = time_window
         self.calls = []
-    
+
     async def acquire(self):
         now = time.time()
         # Remove old calls outside the time window
         self.calls = [call_time for call_time in self.calls if now - call_time < self.time_window]
-        
+
         if len(self.calls) >= self.max_calls:
             sleep_time = self.time_window - (now - self.calls[0])
             await asyncio.sleep(sleep_time)
-        
+
         self.calls.append(now)
 ```
 
@@ -372,4 +372,3 @@ class RateLimiter:
 ---
 
 This implementation plan provides a clear roadmap for completing the NovaEval project. Each task includes specific deliverables and success criteria to ensure high-quality implementation.
-

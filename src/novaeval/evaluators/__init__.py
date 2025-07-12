@@ -8,4 +8,3 @@ from novaeval.evaluators.base import BaseEvaluator
 from novaeval.evaluators.standard import Evaluator
 
 __all__ = ["BaseEvaluator", "Evaluator"]
-

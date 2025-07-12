@@ -6,14 +6,13 @@ evaluation datasets.
 """
 
 from novaeval.datasets.base import BaseDataset
-from novaeval.datasets.mmlu import MMLUDataset
-from novaeval.datasets.huggingface import HuggingFaceDataset
 from novaeval.datasets.custom import CustomDataset
+from novaeval.datasets.huggingface import HuggingFaceDataset
+from novaeval.datasets.mmlu import MMLUDataset
 
 __all__ = [
     "BaseDataset",
-    "MMLUDataset", 
-    "HuggingFaceDataset",
     "CustomDataset",
+    "HuggingFaceDataset",
+    "MMLUDataset",
 ]
-

@@ -5,11 +5,6 @@ This package contains utility functions and classes.
 """
 
 from novaeval.utils.config import Config
-from novaeval.utils.logging import setup_logging, get_logger
+from novaeval.utils.logging import get_logger, setup_logging
 
-__all__ = [
-    "Config",
-    "setup_logging",
-    "get_logger"
-]
-
+__all__ = ["Config", "get_logger", "setup_logging"]
