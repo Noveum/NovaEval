@@ -20,21 +20,20 @@ def main():
         subset="abstract_algebra", num_samples=10, split="test"  # Small sample for demo
     )
 
-    # Initialize model with specific generation settings for MMLU
+    # Initialize model with appropriate generation settings for MMLU
     print("Initializing OpenAI model...")
     model = OpenAIModel(
         model_name="gpt-4o-mini",
         temperature=0.0,
-        max_tokens=5,  # We only need the letter answer
-        stop=["\n", "Question:"],  # Stop at newlines or next question
+        max_tokens=500,  # Allow full reasoning and explanation
+        # Let the model complete its reasoning naturally
     )
 
-    # Initialize scorer with better pattern for MMLU
+    # Initialize scorer - use built-in robust answer extraction
     print("Setting up accuracy scorer...")
     scorer = AccuracyScorer(
         extract_answer=True,
-        # Updated pattern to catch letter answers better
-        answer_pattern=r"(?:Answer|answer):\s*([A-D])|(?:^|\s)([A-D])(?:\.|$|\s)",
+        # Use the built-in patterns which are more robust
     )
 
     # Create evaluator
