@@ -12,7 +12,19 @@ from novaeval.scorers import AccuracyScorer
 
 
 def main():
-    """Run a basic evaluation example."""
+    """
+    Run a basic evaluation example.
+
+    Note: This example uses max_tokens=500 to allow detailed reasoning,
+    but this significantly increases API costs. Adjust MAX_TOKENS based
+    on your use case and budget constraints.
+    """
+
+    # Configure max_tokens based on your use case and budget
+    # For MMLU multiple choice: 5-10 tokens (just the letter answer)
+    # For reasoning evaluation: 100 tokens (explanation + answer)
+    # Note: Higher values increase API costs and latency significantly
+    MAX_TOKENS = 100  # Configurable - adjust based on your needs and budget
 
     # Initialize dataset - use easier subset for higher accuracy
     print("Loading MMLU dataset...")
@@ -24,10 +36,14 @@ def main():
 
     # Initialize model with appropriate generation settings for MMLU
     print("Initializing OpenAI model...")
+    print(
+        f"⚠️  Using max_tokens={MAX_TOKENS} - this may increase API costs significantly"
+    )
+    print("   For budget-conscious evaluation, consider reducing MAX_TOKENS to 5-10")
     model = OpenAIModel(
         model_name="gpt-4o-mini",
         temperature=0.0,
-        max_tokens=500,  # Allow full reasoning and explanation
+        max_tokens=MAX_TOKENS,  # Configurable - see MAX_TOKENS comment above
         # Let the model complete its reasoning naturally
     )
 

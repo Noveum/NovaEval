@@ -64,7 +64,8 @@ jobs:
       run: |
         mypy src/novaeval
 
-  test:
+  # Run unit tests on PRs and pushes - faster feedback, no API costs
+  unit-test:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -92,9 +93,9 @@ jobs:
         pip install -r requirements-dev.txt
         pip install -e .
 
-    - name: Run tests
+    - name: Run unit tests
       run: |
-        pytest tests/ -v --cov=src/novaeval --cov-report=xml --cov-report=term-missing
+        pytest tests/unit/ -v --cov=src/novaeval --cov-report=xml --cov-report=term-missing
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -131,10 +132,11 @@ jobs:
       run: |
         safety check --json --output safety-report.json || true
 
+  # Run integration tests only on main branch - includes API calls
   integration-test:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [lint, type-check, test]
+    needs: [lint, type-check, unit-test]
     steps:
     - uses: actions/checkout@v4
 
@@ -151,17 +153,23 @@ jobs:
         pip install -r requirements-dev.txt
         pip install -e .
 
-    - name: Run integration tests
+    - name: Run full test suite (unit + integration)
       run: |
-        pytest tests/integration/ -v --tb=short
+        pytest tests/ -v --cov=src/novaeval --cov-report=xml --cov-report=term-missing
       env:
         INTEGRATION_TESTS: "true"
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
+    - name: Upload coverage reports to Codecov (main branch)
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        slug: Noveum/NovaEval
+
   build:
     runs-on: ubuntu-latest
-    needs: [lint, type-check, test]
+    needs: [lint, type-check, unit-test]
     steps:
     - uses: actions/checkout@v4
 
@@ -192,7 +200,7 @@ jobs:
 
   docker:
     runs-on: ubuntu-latest
-    needs: [lint, type-check, test]
+    needs: [lint, type-check, unit-test]
     steps:
     - uses: actions/checkout@v4
 

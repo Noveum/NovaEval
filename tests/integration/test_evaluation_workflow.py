@@ -408,7 +408,9 @@ class TestErrorRecovery:
         def error_score(*args, **kwargs):
             try:
                 return original_score(*args, **kwargs)
-            except Exception:
+            except (ValueError, TypeError, KeyError, AttributeError) as e:
+                # Log the error for debugging
+                print(f"Scorer error (expected in test): {e}")
                 return 0.0  # Return default score on error
 
         scorer.score = error_score

@@ -12,6 +12,62 @@ import pytest
 from novaeval.utils.logging import get_logger, setup_logging
 
 
+def _safely_cleanup_log_file(log_file_path):
+    """
+    Safely cleanup log file by closing handlers first.
+
+    This is necessary on Windows where log files can remain locked
+    by Python's logging system after tests complete.
+    """
+    import os
+
+    try:
+        # Close all handlers for the root logger and specific loggers
+        root_logger = logging.getLogger()
+        for handler in root_logger.handlers[:]:
+            if isinstance(handler, logging.FileHandler):
+                try:
+                    handler.close()
+                    root_logger.removeHandler(handler)
+                except Exception:
+                    pass
+
+        # Also close handlers for any other loggers that might be holding the file
+        for logger_name in logging.Logger.manager.loggerDict:
+            logger = logging.getLogger(logger_name)
+            for handler in logger.handlers[:]:
+                if isinstance(handler, logging.FileHandler):
+                    try:
+                        handler.close()
+                        logger.removeHandler(handler)
+                    except Exception:
+                        pass
+
+        # Now try to delete the file
+        if os.path.exists(log_file_path):
+            try:
+                os.unlink(log_file_path)
+            except (PermissionError, OSError):
+                # On Windows, file might still be locked
+                # Try a few times with small delays
+                import time
+
+                for i in range(3):
+                    time.sleep(0.1)
+                    try:
+                        os.unlink(log_file_path)
+                        break
+                    except (PermissionError, OSError):
+                        if i == 2:  # Last attempt
+                            # If we still can't delete, that's okay for tests
+                            pass
+                        continue
+
+    except Exception:
+        # If cleanup fails, don't fail the test
+        pass
+
+
 class TestLoggingUtilities:
     """Test cases for logging utility functions."""
 
@@ -81,22 +137,25 @@ class TestLoggingUtilities:
             assert os.path.exists(log_file)
 
         finally:
-            if os.path.exists(log_file):
-                os.unlink(log_file)
+            _safely_cleanup_log_file(log_file)
 
     def test_setup_logging_with_path_object(self):
         """Test setup_logging with Path object."""
         import os
 
-        # Use temporary directory
+        # Use temporary directory with proper cleanup
         with tempfile.TemporaryDirectory() as temp_dir:
             log_file = Path(temp_dir) / "test.log"
 
-            logger = setup_logging(level="DEBUG", log_file=log_file)
+            try:
+                logger = setup_logging(level="DEBUG", log_file=log_file)
 
-            assert isinstance(logger, logging.Logger)
-            assert logger.level == logging.DEBUG
-            assert os.path.exists(log_file)
+                assert isinstance(logger, logging.Logger)
+                assert logger.level == logging.DEBUG
+                assert os.path.exists(log_file)
+            finally:
+                # Clean up log file before temp directory cleanup
+                _safely_cleanup_log_file(log_file)
 
     def test_setup_logging_with_format_string(self):
         """Test setup_logging with custom format string."""
@@ -110,15 +169,19 @@ class TestLoggingUtilities:
         """Test that setup_logging creates parent directories."""
         import os
 
-        # Use temporary directory
+        # Use temporary directory with proper cleanup
         with tempfile.TemporaryDirectory() as temp_dir:
             log_file = Path(temp_dir) / "subdir" / "test.log"
 
-            logger = setup_logging(log_file=log_file)
+            try:
+                logger = setup_logging(log_file=log_file)
 
-            assert isinstance(logger, logging.Logger)
-            assert os.path.exists(log_file)
-            assert os.path.exists(log_file.parent)
+                assert isinstance(logger, logging.Logger)
+                assert os.path.exists(log_file)
+                assert os.path.exists(log_file.parent)
+            finally:
+                # Clean up log file before temp directory cleanup
+                _safely_cleanup_log_file(log_file)
 
     def test_setup_logging_invalid_level(self):
         """Test setup_logging with invalid log level."""
@@ -141,7 +204,6 @@ class TestLoggingIntegration:
 
     def test_actual_logging_to_file(self):
         """Test that messages are actually written to file."""
-        import os
 
         # Use temporary file
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".log") as f:
@@ -164,12 +226,10 @@ class TestLoggingIntegration:
             assert "test_integration" in content
 
         finally:
-            if os.path.exists(log_file):
-                os.unlink(log_file)
+            _safely_cleanup_log_file(log_file)
 
     def test_multiple_loggers_same_config(self):
         """Test that multiple loggers work with same configuration."""
-        import os
 
         # Use temporary file
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".log") as f:
@@ -195,12 +255,10 @@ class TestLoggingIntegration:
             assert "Message from module2" in content
 
         finally:
-            if os.path.exists(log_file):
-                os.unlink(log_file)
+            _safely_cleanup_log_file(log_file)
 
     def test_log_level_filtering(self):
         """Test that log level filtering works correctly."""
-        import os
 
         # Use temporary file
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".log") as f:
@@ -230,8 +288,7 @@ class TestLoggingIntegration:
             assert "Error message - should appear" in content
 
         finally:
-            if os.path.exists(log_file):
-                os.unlink(log_file)
+            _safely_cleanup_log_file(log_file)
 
 
 class TestLoggingEdgeCases:
@@ -239,7 +296,6 @@ class TestLoggingEdgeCases:
 
     def test_setup_logging_called_multiple_times(self):
         """Test that setup_logging can be called multiple times."""
-        import os
 
         # Use temporary file
         with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".log") as f:
@@ -267,8 +323,7 @@ class TestLoggingEdgeCases:
             assert "Test message" in content
 
         finally:
-            if os.path.exists(log_file):
-                os.unlink(log_file)
+            _safely_cleanup_log_file(log_file)
 
     def test_get_logger_with_empty_name(self):
         """Test get_logger with empty string name."""
@@ -288,7 +343,7 @@ class TestLoggingEdgeCases:
         """Test setup_logging when log file cannot be created."""
         import os
 
-        # Use temporary directory approach
+        # Use temporary directory approach with proper cleanup
         with tempfile.TemporaryDirectory() as temp_dir:
             non_existent_dir = os.path.join(
                 temp_dir, "non_existent", "deeply", "nested"
@@ -304,6 +359,9 @@ class TestLoggingEdgeCases:
             except (OSError, PermissionError):
                 # If permission error occurs, that's also acceptable
                 pass
+            finally:
+                # Clean up log file before temp directory cleanup
+                _safely_cleanup_log_file(log_file)
 
 
 class TestLoggerMixin:
@@ -325,7 +383,6 @@ class TestLoggerMixin:
 
     def test_logger_mixin_log_methods(self):
         """Test LoggerMixin log methods."""
-        import os
 
         from novaeval.utils.logging import LoggerMixin
 
@@ -357,8 +414,7 @@ class TestLoggerMixin:
                 assert "Debug message" in content
 
         finally:
-            if os.path.exists(log_file):
-                os.unlink(log_file)
+            _safely_cleanup_log_file(log_file)
 
 
 class TestThirdPartyLoggers:
@@ -402,7 +458,6 @@ class TestEvaluationLogging:
 
     def test_log_evaluation_start(self):
         """Test log_evaluation_start function."""
-        import os
 
         from novaeval.utils.logging import log_evaluation_start
 
@@ -431,12 +486,10 @@ class TestEvaluationLogging:
                 assert "100" in content
 
         finally:
-            if os.path.exists(log_file):
-                os.unlink(log_file)
+            _safely_cleanup_log_file(log_file)
 
     def test_log_evaluation_end(self):
         """Test log_evaluation_end function."""
-        import os
 
         from novaeval.utils.logging import log_evaluation_end
 
@@ -462,12 +515,10 @@ class TestEvaluationLogging:
                 assert "5.25" in content
 
         finally:
-            if os.path.exists(log_file):
-                os.unlink(log_file)
+            _safely_cleanup_log_file(log_file)
 
     def test_log_model_results(self):
         """Test log_model_results function."""
-        import os
 
         from novaeval.utils.logging import log_model_results
 
@@ -497,8 +548,7 @@ class TestEvaluationLogging:
                 assert "0.7800" in content
 
         finally:
-            if os.path.exists(log_file):
-                os.unlink(log_file)
+            _safely_cleanup_log_file(log_file)
 
 
 class TestLoggingSetupVariations:
