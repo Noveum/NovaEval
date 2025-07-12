@@ -201,22 +201,32 @@ class AccuracyScorer(BaseScorer):
         if match:
             return match.group(1)
 
-        # Pattern 4: Stand-alone letter choice (A, B, C, D) near end of text
-        lines = prediction.strip().split("\n")
-        for line in reversed(lines[-3:]):  # Check last 3 lines
-            match = re.search(r"\b([A-D])\b", line)
-            if match:
-                return match.group(1)
-
-        # Pattern 5: Choice letters at the beginning of a line
-        match = re.search(r"^([A-D])\.", prediction, re.MULTILINE)
+        # Pattern 4: Just a single letter at start of response
+        match = re.search(r"^([A-D])\.?\s*$", prediction.strip(), re.IGNORECASE)
         if match:
             return match.group(1)
 
-        # Fallback: find any choice letter in the text
-        choice_match = re.search(r"\b([A-D])\b", prediction)
-        if choice_match:
-            return choice_match.group(1)
+        # Pattern 5: Letter followed by period or colon at start of line
+        match = re.search(r"^([A-D])[\.\:]", prediction, re.MULTILINE | re.IGNORECASE)
+        if match:
+            return match.group(1)
+
+        # Pattern 6: Stand-alone letter choice (A, B, C, D) near end of text
+        lines = prediction.strip().split("\n")
+        for line in reversed(lines[-3:]):  # Check last 3 lines
+            match = re.search(r"\b([A-D])\b", line, re.IGNORECASE)
+            if match:
+                return match.group(1)
+
+        # Pattern 7: Letter at the very end of the response
+        match = re.search(r"([A-D])\s*$", prediction.strip(), re.IGNORECASE)
+        if match:
+            return match.group(1)
+
+        # Fallback: find any choice letter in the text (prefer later occurrences)
+        choice_matches = list(re.finditer(r"\b([A-D])\b", prediction, re.IGNORECASE))
+        if choice_matches:
+            return choice_matches[-1].group(1)  # Return last occurrence
 
         # Final fallback: return first word
         words = prediction.strip().split()

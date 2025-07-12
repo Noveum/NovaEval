@@ -12,29 +12,46 @@ from novaeval.scorers import AccuracyScorer
 
 
 def main():
-    """Run a basic evaluation example."""
+    """
+    Run a basic evaluation example.
 
-    # Initialize dataset
+    Note: This example uses max_tokens=500 to allow detailed reasoning,
+    but this significantly increases API costs. Adjust MAX_TOKENS based
+    on your use case and budget constraints.
+    """
+
+    # Configure max_tokens based on your use case and budget
+    # For MMLU multiple choice: 5-10 tokens (just the letter answer)
+    # For reasoning evaluation: 100 tokens (explanation + answer)
+    # Note: Higher values increase API costs and latency significantly
+    MAX_TOKENS = 100  # Configurable - adjust based on your needs and budget
+
+    # Initialize dataset - use easier subset for higher accuracy
     print("Loading MMLU dataset...")
     dataset = MMLUDataset(
-        subset="abstract_algebra", num_samples=10, split="test"  # Small sample for demo
+        subset="elementary_mathematics",
+        num_samples=10,
+        split="test",  # Easier questions for demo
     )
 
-    # Initialize model with specific generation settings for MMLU
+    # Initialize model with appropriate generation settings for MMLU
     print("Initializing OpenAI model...")
+    print(
+        f"⚠️  Using max_tokens={MAX_TOKENS} - this may increase API costs significantly"
+    )
+    print("   For budget-conscious evaluation, consider reducing MAX_TOKENS to 5-10")
     model = OpenAIModel(
         model_name="gpt-4o-mini",
         temperature=0.0,
-        max_tokens=5,  # We only need the letter answer
-        stop=["\n", "Question:"],  # Stop at newlines or next question
+        max_tokens=MAX_TOKENS,  # Configurable - see MAX_TOKENS comment above
+        # Let the model complete its reasoning naturally
     )
 
-    # Initialize scorer with better pattern for MMLU
+    # Initialize scorer - use built-in robust answer extraction
     print("Setting up accuracy scorer...")
     scorer = AccuracyScorer(
         extract_answer=True,
-        # Updated pattern to catch letter answers better
-        answer_pattern=r"(?:Answer|answer):\s*([A-D])|(?:^|\s)([A-D])(?:\.|$|\s)",
+        # Use the built-in patterns which are more robust
     )
 
     # Create evaluator

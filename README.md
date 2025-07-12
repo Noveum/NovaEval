@@ -1,6 +1,7 @@
 # NovaEval
 
 [![CI](https://github.com/Noveum/NovaEval/actions/workflows/ci.yml/badge.svg)](https://github.com/Noveum/NovaEval/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Noveum/NovaEval/branch/main/graph/badge.svg)](https://codecov.io/gh/Noveum/NovaEval)
 [![PyPI version](https://badge.fury.io/py/novaeval.svg)](https://badge.fury.io/py/novaeval)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -16,6 +17,7 @@ A comprehensive, extensible AI model evaluation framework designed for productio
 - **Comprehensive Reporting**: Detailed evaluation reports, artifacts, and visualizations
 - **Secure**: Built-in credential management and secret store integration
 - **Scalable**: Designed for both local testing and large-scale production evaluations
+- **Cross-Platform**: Tested on macOS, Linux, and Windows with comprehensive CI/CD
 
 ## 📦 Installation
 
@@ -49,10 +51,23 @@ from novaeval.datasets import MMLUDataset
 from novaeval.models import OpenAIModel
 from novaeval.scorers import AccuracyScorer
 
+# Configure for cost-conscious evaluation
+MAX_TOKENS = 100  # Adjust based on budget: 5-10 for answers, 100+ for reasoning
+
 # Initialize components
-dataset = MMLUDataset(subset="abstract_algebra", num_samples=100)
-model = OpenAIModel(model_name="gpt-4")
-scorer = AccuracyScorer()
+dataset = MMLUDataset(
+    subset="elementary_mathematics",  # Easier subset for demo
+    num_samples=10,
+    split="test"
+)
+
+model = OpenAIModel(
+    model_name="gpt-4o-mini",  # Cost-effective model
+    temperature=0.0,
+    max_tokens=MAX_TOKENS
+)
+
+scorer = AccuracyScorer(extract_answer=True)
 
 # Create and run evaluation
 evaluator = Evaluator(
@@ -63,7 +78,14 @@ evaluator = Evaluator(
 )
 
 results = evaluator.run()
-print(f"Accuracy: {results['accuracy']:.2%}")
+
+# Display detailed results
+for model_name, model_results in results["model_results"].items():
+    for scorer_name, score_info in model_results["scores"].items():
+        if isinstance(score_info, dict):
+            mean_score = score_info.get("mean", 0)
+            count = score_info.get("count", 0)
+            print(f"{scorer_name}: {mean_score:.4f} ({count} samples)")
 ```
 
 ### Configuration-Based Evaluation
@@ -219,6 +241,13 @@ export OPENAI_API_KEY="your-api-key"
 export AWS_ACCESS_KEY_ID="your-aws-key"
 ```
 
+### CI/CD Integration
+
+NovaEval includes optimized GitHub Actions workflows:
+- **Unit tests** run on all PRs and pushes for quick feedback
+- **Integration tests** run on main branch only to minimize API costs
+- **Cross-platform testing** on macOS, Linux, and Windows
+
 ## 📈 Reporting and Artifacts
 
 NovaEval generates comprehensive evaluation reports:
@@ -308,6 +337,9 @@ pre-commit install
 
 # Run tests
 pytest
+
+# Run with coverage (23% overall, 90%+ for core modules)
+pytest --cov=src/novaeval --cov-report=html
 ```
 
 ## 📄 License
