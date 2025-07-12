@@ -5,6 +5,7 @@ This module tests the fix for the aggregation bug that occurred when using
 multiple scorers with different return types (float vs dict).
 """
 
+from typing import Union
 from unittest.mock import Mock
 
 from novaeval.evaluators.standard import Evaluator
@@ -19,7 +20,9 @@ class MockScorer(BaseScorer):
         super().__init__(name=name, **kwargs)
         self.return_type = return_type
 
-    def score(self, prediction: str, ground_truth: str, context=None) -> float:
+    def score(
+        self, prediction: str, ground_truth: str, context=None
+    ) -> Union[float, dict, str]:
         """Mock score method."""
         if self.return_type == "float":
             return 0.8
