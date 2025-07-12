@@ -54,10 +54,14 @@ CMD ["novaeval", "--help"]
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import novaeval; print('NovaEval is healthy')" || exit 1
 
-# Labels
+# Labels for GitHub Container Registry
 LABEL maintainer="Noveum Team <team@noveum.ai>" \
-      version="0.1.0" \
-      description="NovaEval - AI Model Evaluation Framework" \
+      version="0.3.1" \
+      description="A comprehensive, open-source LLM evaluation framework for testing and benchmarking AI models" \
       org.opencontainers.image.source="https://github.com/Noveum/NovaEval" \
-      org.opencontainers.image.documentation="https://noveum.github.io/NovaEval" \
-      org.opencontainers.image.licenses="Apache-2.0"
+      org.opencontainers.image.description="A comprehensive, open-source LLM evaluation framework for testing and benchmarking AI models" \
+      org.opencontainers.image.url="https://github.com/Noveum/NovaEval" \
+      org.opencontainers.image.documentation="https://noveum.ai/en/docs" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.title="NovaEval" \
+      org.opencontainers.image.vendor="Noveum AI"

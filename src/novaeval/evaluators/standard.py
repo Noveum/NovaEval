@@ -252,12 +252,59 @@ class Evaluator(BaseEvaluator):
                     scores.append(score)
 
             if scores:
-                aggregated[scorer_name] = {
-                    "mean": sum(scores) / len(scores),
-                    "count": len(scores),
-                    "min": min(scores),
-                    "max": max(scores),
-                }
+                # Handle different score types
+                numeric_scores = []
+                detailed_scores: dict[str, list[float]] = {}
+
+                for score in scores:
+                    if isinstance(score, (int, float)):
+                        # Simple numeric score
+                        numeric_scores.append(float(score))
+                    elif isinstance(score, dict):
+                        # Dict score (e.g., from F1Scorer)
+                        if "score" in score:
+                            # Use the main score for aggregation
+                            numeric_scores.append(float(score["score"]))
+                        else:
+                            # Use the first numeric value
+                            numeric_values = [
+                                v for v in score.values() if isinstance(v, (int, float))
+                            ]
+                            if numeric_values:
+                                numeric_scores.append(float(numeric_values[0]))
+                            else:
+                                numeric_scores.append(0.0)
+
+                        # Collect detailed scores for dict-based scorers
+                        for key, value in score.items():
+                            if isinstance(value, (int, float)):
+                                if key not in detailed_scores:
+                                    detailed_scores[key] = []
+                                detailed_scores[key].append(float(value))
+                    else:
+                        # Unknown score type, convert to float or use 0
+                        try:
+                            numeric_scores.append(float(score))
+                        except (ValueError, TypeError):
+                            numeric_scores.append(0.0)
+
+                if numeric_scores:
+                    # Calculate basic statistics
+                    result = {
+                        "mean": sum(numeric_scores) / len(numeric_scores),
+                        "count": len(numeric_scores),
+                        "min": min(numeric_scores),
+                        "max": max(numeric_scores),
+                    }
+
+                    # Add detailed scores if available (for dict-based scorers)
+                    if detailed_scores:
+                        for key, values in detailed_scores.items():
+                            result[f"{key}_mean"] = sum(values) / len(values)
+                            result[f"{key}_min"] = min(values)
+                            result[f"{key}_max"] = max(values)
+
+                    aggregated[scorer_name] = result
 
         return aggregated
 

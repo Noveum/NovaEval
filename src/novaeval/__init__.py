@@ -6,7 +6,7 @@ providers, datasets, and metrics. It supports both standalone usage and integrat
 with the Noveum.ai platform for enhanced analytics and reporting.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.3.1"
 __title__ = "novaeval"
 __author__ = "Noveum Team"
 __license__ = "Apache 2.0"
@@ -21,7 +21,7 @@ from novaeval.models.anthropic import AnthropicModel
 # Model imports
 from novaeval.models.base import BaseModel
 from novaeval.models.openai import OpenAIModel
-from novaeval.scorers.accuracy import AccuracyScorer
+from novaeval.scorers.accuracy import AccuracyScorer, ExactMatchScorer, F1Scorer
 
 # Scorer imports
 from novaeval.scorers.base import BaseScorer
@@ -44,6 +44,8 @@ __all__ = [
     # Utilities
     "Config",
     "Evaluator",
+    "ExactMatchScorer",
+    "F1Scorer",
     "OpenAIModel",
     "__author__",
     "__license__",

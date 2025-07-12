@@ -1,0 +1,94 @@
+# Jekyll configuration for NovaEval documentation
+title: NovaEval Documentation
+description: A comprehensive, open-source LLM evaluation framework for testing and benchmarking AI models
+url: https://noveum.github.io/NovaEval
+baseurl: /NovaEval
+
+# Theme and plugins
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Markdown settings
+markdown: kramdown
+highlighter: rouge
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+
+# Site settings
+lang: en
+author:
+  name: Noveum AI
+  email: team@noveum.ai
+  url: https://noveum.ai
+
+# Social links
+github_username: Noveum
+twitter_username: noveumAI
+
+# Navigation
+nav_links:
+  - title: Home
+    url: /
+  - title: Getting Started
+    url: /getting-started/
+  - title: User Guide
+    url: /user-guide/
+  - title: API Reference
+    url: /api-reference/
+  - title: Examples
+    url: /examples/
+  - title: Local Development
+    url: /local-development/
+  - title: Contributing
+    url: /contributing/
+
+# Footer links
+footer_links:
+  - title: Noveum.ai
+    url: https://noveum.ai
+  - title: Documentation
+    url: https://noveum.ai/en/docs
+  - title: GitHub
+    url: https://github.com/Noveum/NovaEval
+  - title: Issues
+    url: https://github.com/Noveum/NovaEval/issues
+
+# SEO
+google_analytics: # Add your GA tracking ID
+logo: /assets/images/logo.png
+
+# Build settings
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/
+
+# Collections
+collections:
+  guides:
+    output: true
+    permalink: /:collection/:name/
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "default"
+  - scope:
+      path: ""
+      type: "posts"
+    values:
+      layout: "post"
+  - scope:
+      path: ""
+      type: "guides"
+    values:
+      layout: "guide"

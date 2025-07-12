@@ -2,7 +2,7 @@
 
 This document outlines the development roadmap for NovaEval, including planned features, improvements, and integrations.
 
-## Current Status (v0.1.0)
+## Current Status (v0.2.2)
 
 ### ✅ Completed Features
 - [x] Core evaluation framework architecture
