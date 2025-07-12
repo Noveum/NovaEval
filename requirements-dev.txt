@@ -14,3 +14,4 @@ safety>=2.3.0
 coverage>=7.3.0
 types-requests>=2.31.0
 types-PyYAML>=6.0.0
+commitizen>=3.12.0

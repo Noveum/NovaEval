@@ -91,6 +91,7 @@ dev = [
     "myst-parser>=2.0.0",
     "jupyter>=1.0.0",
     "ipykernel>=6.25.0",
+    "commitizen>=3.12.0",
 ]
 docs = [
     "sphinx>=7.2.0",
@@ -274,3 +275,95 @@ skip_covered = false
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+# Commitizen configuration
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.2.2"
+version_scheme = "pep440"
+version_provider = "pep621"
+update_changelog_on_bump = true
+major_version_zero = true
+tag_format = "v$major.$minor.$patch$prerelease"
+bump_message = "bump: version $current_version → $new_version"
+changelog_file = "CHANGELOG.md"
+changelog_format = "CHANGELOG.md"
+changelog_merge_prerelease = true
+style = [
+    ["qmark", "fg:#ff9d00 bold"],
+    ["question", "bold"],
+    ["answer", "fg:#ff9d00 bold"],
+    ["pointer", "fg:#ff9d00 bold"],
+    ["highlighted", "fg:#ff9d00 bold"],
+    ["selected", "fg:#cc5454"],
+    ["separator", "fg:#cc5454"],
+    ["instruction", ""],
+    ["text", ""],
+    ["disabled", "fg:#858585 italic"]
+]
+
+[tool.commitizen.customize]
+message_template = "{{change_type}}{{scope}}: {{message}}"
+example = "feature: add hat wobble"
+schema = "<type>(<scope>): <subject>"
+schema_pattern = "^(build|ci|docs|feat|fix|perf|refactor|style|test|chore)(\\(.+\\))?!?: .+$"
+info_path = "cz_info.txt"
+info = """
+This is a customized info for commitizen.
+
+Types:
+  build: Changes that affect the build system or external dependencies
+  ci: Changes to CI configuration files and scripts
+  docs: Documentation only changes
+  feat: A new feature
+  fix: A bug fix
+  perf: A code change that improves performance
+  refactor: A code change that neither fixes a bug nor adds a feature
+  style: Changes that do not affect the meaning of the code (white-space, formatting, etc)
+  test: Adding missing tests or correcting existing tests
+  chore: Changes to the build process or auxiliary tools and libraries
+
+Breaking changes:
+  Add ! after the type/scope to indicate a breaking change
+  Example: feat!: remove deprecated API endpoints
+"""
+
+[[tool.commitizen.customize.questions]]
+type = "list"
+name = "change_type"
+choices = [
+    {value = "feat", name = "feat: ✨ A new feature"},
+    {value = "fix", name = "fix: 🐛 A bug fix"},
+    {value = "docs", name = "docs: 📚 Documentation only changes"},
+    {value = "style", name = "style: 💎 Changes that do not affect the meaning of the code"},
+    {value = "refactor", name = "refactor: 📦 A code change that neither fixes a bug nor adds a feature"},
+    {value = "perf", name = "perf: 🚀 A code change that improves performance"},
+    {value = "test", name = "test: 🚨 Adding missing tests or correcting existing tests"},
+    {value = "build", name = "build: 🛠 Changes that affect the build system or external dependencies"},
+    {value = "ci", name = "ci: ⚙️ Changes to CI configuration files and scripts"},
+    {value = "chore", name = "chore: ♻️ Changes to the build process or auxiliary tools and libraries"},
+]
+message = "Select the type of change that you're committing:"
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "scope"
+message = "What is the scope of this change? (class or file name): (press [enter] to skip)"
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "message"
+message = "Write a short and imperative summary of the code changes: (lower case and no period)"
+
+[[tool.commitizen.customize.questions]]
+type = "confirm"
+name = "is_breaking_change"
+message = "Is this a BREAKING CHANGE? Correlates with MAJOR in SemVer"
+default = false
+
+[[tool.commitizen.customize.questions]]
+type = "input"
+name = "breaking_change_desc"
+message = "Describe the breaking change:"
+filter = "lambda x: x.strip()"
+when = "{{ cookiecutter.is_breaking_change }}"
