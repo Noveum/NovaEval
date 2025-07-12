@@ -432,7 +432,7 @@ class NoveumImprovementRunner:
                 )
 
                 # Generate candidate response
-                candidate_response = await model.generate(sample["input"])
+                candidate_response = model.generate(sample["input"])
 
                 # Compare against baseline
                 comparison = await self.evaluator.compare_responses(

@@ -32,6 +32,8 @@ class AggregationMethod(str, Enum):
 class JudgeConfig(BaseModel):
     """Configuration for a single judge in the panel."""
 
+    model_config = {"arbitrary_types_allowed": True}
+
     model: LLMModel = Field(description="The LLM model acting as judge")
     weight: float = Field(default=1.0, description="Weight of this judge's opinion")
     name: Optional[str] = Field(
@@ -85,9 +87,10 @@ class PanelOfJudgesScorer(BaseScorer):
         require_consensus: bool = False,
         consensus_threshold: float = 0.8,
         evaluation_criteria: Optional[str] = None,
+        name: str = "panel_judge",
         **kwargs: Any,
     ) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name=name, **kwargs)
         self.threshold = threshold
 
         if not judges:
@@ -220,6 +223,49 @@ class PanelOfJudgesScorer(BaseScorer):
                 reasoning=f"Panel evaluation failed: {e!s}",
                 metadata={"error": str(e)},
             )
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> float:
+        """
+        Synchronous wrapper around the async evaluate method.
+
+        Args:
+            prediction: Model's prediction
+            ground_truth: Expected output
+            context: Additional context information
+
+        Returns:
+            Score value between 0 and 1
+        """
+        # Create event loop if none exists
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+        # Run the async evaluation
+        try:
+            # Extract input text from context if available, otherwise use ground_truth
+            input_text = context.get("input", ground_truth) if context else ground_truth
+            context_str = context.get("context") if context else None
+
+            result = loop.run_until_complete(
+                self.evaluate(
+                    input_text=input_text,
+                    output_text=prediction,
+                    expected_output=ground_truth,
+                    context=context_str,
+                )
+            )
+            return result.score
+        except Exception as e:
+            print(f"Warning: Panel scoring failed: {e}")
+            return 0.0
 
     def _build_evaluation_prompt(
         self,

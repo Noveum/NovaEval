@@ -156,6 +156,13 @@ class AccuracyScorer(BaseScorer):
         else:
             extracted_pred = prediction.strip()
 
+        # For MMLU-style questions, convert letter to full choice if available
+        if context and "choices" in context and "answer_index" in context:
+            # Try to convert extracted letter to choice text
+            converted_pred = self._convert_letter_to_choice(extracted_pred, context)
+            if converted_pred:
+                extracted_pred = converted_pred
+
         # Normalize answers
         pred_answer = self._normalize_answer(extracted_pred)
         true_answer = self._normalize_answer(ground_truth)
@@ -175,33 +182,73 @@ class AccuracyScorer(BaseScorer):
         Returns:
             Extracted answer
         """
-        # Try regex pattern first
+        # Try multiple patterns in order of preference
+
+        # Pattern 1: "Answer: X" or "answer: X"
         match = re.search(self.answer_pattern, prediction, re.IGNORECASE)
+        if match:
+            return match.group(1) if match.group(1) else match.group(2)
+
+        # Pattern 2: "The answer is X" or "The correct answer is X"
+        match = re.search(
+            r"(?:the\s+(?:correct\s+)?answer\s+is\s+)([A-D])", prediction, re.IGNORECASE
+        )
         if match:
             return match.group(1)
 
-        # Try to find choice letters (A, B, C, D)
+        # Pattern 3: "**X.**" (bold letter with period)
+        match = re.search(r"\*\*([A-D])\.\s*[^*]*\*\*", prediction, re.IGNORECASE)
+        if match:
+            return match.group(1)
+
+        # Pattern 4: Stand-alone letter choice (A, B, C, D) near end of text
+        lines = prediction.strip().split("\n")
+        for line in reversed(lines[-3:]):  # Check last 3 lines
+            match = re.search(r"\b([A-D])\b", line)
+            if match:
+                return match.group(1)
+
+        # Pattern 5: Choice letters at the beginning of a line
+        match = re.search(r"^([A-D])\.", prediction, re.MULTILINE)
+        if match:
+            return match.group(1)
+
+        # Fallback: find any choice letter in the text
         choice_match = re.search(r"\b([A-D])\b", prediction)
         if choice_match:
             return choice_match.group(1)
 
-        # Try to find choice numbers (1, 2, 3, 4)
-        number_match = re.search(r"\b([1-4])\b", prediction)
-        if number_match:
-            return number_match.group(1)
-
-        # If we have choices from context, try to match them
-        if context and "choices" in context:
-            choices = context["choices"]
-            prediction_lower = prediction.lower()
-
-            for i, choice in enumerate(choices):
-                if choice.lower() in prediction_lower:
-                    return str(i)  # Return index
-
-        # Fallback: return first word
+        # Final fallback: return first word
         words = prediction.strip().split()
         return words[0] if words else ""
+
+    def _convert_letter_to_choice(
+        self, extracted_answer: str, context: dict[str, Any]
+    ) -> Optional[str]:
+        """
+        Convert letter answer (A, B, C, D) to full choice text.
+
+        Args:
+            extracted_answer: Extracted letter answer
+            context: Context containing choices
+
+        Returns:
+            Full choice text or None if conversion fails
+        """
+        if not extracted_answer or "choices" not in context:
+            return None
+
+        # Map letters to indices
+        letter_to_index = {"A": 0, "B": 1, "C": 2, "D": 3}
+        letter = extracted_answer.strip().upper()
+
+        if letter in letter_to_index:
+            choices = context["choices"]
+            index = letter_to_index[letter]
+            if 0 <= index < len(choices):
+                return choices[index]
+
+        return None
 
     def _normalize_answer(self, answer: str) -> str:
         """

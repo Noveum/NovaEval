@@ -126,7 +126,7 @@ def run_basic_evaluation():
     models_to_evaluate, panel_scorer = create_latest_models_evaluation()
 
     # Set up dataset
-    dataset = CustomDataset(path="./test_data/qa_dataset.jsonl")
+    dataset = CustomDataset(data_source="./test_data/qa_dataset.jsonl")
 
     # Run evaluation
     evaluator = Evaluator(
@@ -142,12 +142,16 @@ def run_basic_evaluation():
     print("\n📊 Evaluation Results:")
     for model_name, model_results in results["model_results"].items():
         panel_score = model_results["scores"]["panel_judge"]["mean"]
-        consensus = model_results["scores"]["panel_judge"]["metadata"][
-            "consensus_level"
-        ]
+        # Safely get consensus level from metadata
+        panel_judge_scores = model_results["scores"]["panel_judge"]
+        consensus = panel_judge_scores.get("metadata", {}).get("consensus_level", "N/A")
+
         print(f"  {model_name}:")
         print(f"    Panel Score: {panel_score:.3f}")
-        print(f"    Consensus Level: {consensus:.3f}")
+        if consensus != "N/A":
+            print(f"    Consensus Level: {consensus:.3f}")
+        else:
+            print(f"    Consensus Level: {consensus}")
 
     return results
 
@@ -195,12 +199,15 @@ def run_huggingface_evaluation():
     print("\n📊 HuggingFace Dataset Results:")
     for model_name, model_results in results["model_results"].items():
         panel_score = model_results["scores"]["panel_judge"]["mean"]
-        consensus = model_results["scores"]["panel_judge"]["metadata"][
-            "consensus_level"
-        ]
+        panel_judge_scores = model_results["scores"]["panel_judge"]
+        consensus = panel_judge_scores.get("metadata", {}).get("consensus_level", "N/A")
+
         print(f"  {model_name}:")
         print(f"    Panel Score: {panel_score:.3f}")
-        print(f"    Consensus Level: {consensus:.3f}")
+        if consensus != "N/A":
+            print(f"    Consensus Level: {consensus:.3f}")
+        else:
+            print(f"    Consensus Level: {consensus}")
 
     return results
 
@@ -218,7 +225,7 @@ def run_reasoning_evaluation():
     reasoning_panel = create_reasoning_panel()
 
     # Set up dataset
-    dataset = CustomDataset(path="./test_data/qa_dataset.jsonl")
+    dataset = CustomDataset(data_source="./test_data/qa_dataset.jsonl")
 
     # Run evaluation
     evaluator = Evaluator(
@@ -234,12 +241,14 @@ def run_reasoning_evaluation():
     print("\n📊 Reasoning Evaluation Results:")
     for model_name, model_results in results["model_results"].items():
         reasoning_score = model_results["scores"]["panel_judge"]["mean"]
-        consensus = model_results["scores"]["panel_judge"]["metadata"][
-            "consensus_level"
-        ]
+        panel_judge_scores = model_results["scores"]["panel_judge"]
+        consensus = panel_judge_scores.get("metadata", {}).get("consensus_level", "N/A")
         print(f"  {model_name}:")
         print(f"    Reasoning Score: {reasoning_score:.3f}")
-        print(f"    Consensus Level: {consensus:.3f}")
+        if consensus != "N/A":
+            print(f"    Consensus Level: {consensus:.3f}")
+        else:
+            print(f"    Consensus Level: {consensus}")
 
     return results
 
@@ -255,7 +264,7 @@ def run_comprehensive_evaluation():
     reasoning_panel = create_reasoning_panel()
 
     # Set up dataset
-    dataset = CustomDataset(path="./test_data/qa_dataset.jsonl")
+    dataset = CustomDataset(data_source="./test_data/qa_dataset.jsonl")
 
     # Run evaluation with multiple scorers
     evaluator = Evaluator(
@@ -275,19 +284,29 @@ def run_comprehensive_evaluation():
             "mean"
         ]  # Second scorer
 
-        general_consensus = model_results["scores"]["panel_judge"]["metadata"][
-            "consensus_level"
-        ]
-        reasoning_consensus = model_results["scores"]["panel_judge_1"]["metadata"][
-            "consensus_level"
-        ]
+        general_scores = model_results["scores"]["panel_judge"]
+        reasoning_scores = model_results["scores"]["panel_judge_1"]
+
+        general_consensus = general_scores.get("metadata", {}).get(
+            "consensus_level", "N/A"
+        )
+        reasoning_consensus = reasoning_scores.get("metadata", {}).get(
+            "consensus_level", "N/A"
+        )
 
         print(f"  {model_name}:")
+        general_consensus_str = (
+            f"{general_consensus:.3f}" if general_consensus != "N/A" else "N/A"
+        )
+        reasoning_consensus_str = (
+            f"{reasoning_consensus:.3f}" if reasoning_consensus != "N/A" else "N/A"
+        )
+
         print(
-            f"    General Panel Score: {general_score:.3f} (consensus: {general_consensus:.3f})"
+            f"    General Panel Score: {general_score:.3f} (consensus: {general_consensus_str})"
         )
         print(
-            f"    Reasoning Panel Score: {reasoning_score:.3f} (consensus: {reasoning_consensus:.3f})"
+            f"    Reasoning Panel Score: {reasoning_score:.3f} (consensus: {reasoning_consensus_str})"
         )
         print(f"    Average Score: {(general_score + reasoning_score) / 2:.3f}")
 
