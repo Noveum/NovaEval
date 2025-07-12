@@ -1,6 +1,9 @@
 # Use Python 3.11 slim image as base
 FROM python:3.11-slim
 
+# Build argument for development dependencies
+ARG INSTALL_DEV=false
+
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -22,11 +25,13 @@ COPY pyproject.toml requirements.txt requirements-dev.txt ./
 
 # Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirements.txt
+    pip install -r requirements.txt && \
+    if [ "$INSTALL_DEV" = "true" ]; then pip install -r requirements-dev.txt; fi
 
 # Copy source code
 COPY src/ ./src/
 COPY examples/ ./examples/
+COPY tests/ ./tests/
 COPY README.md LICENSE MANIFEST.in ./
 
 # Install the package in development mode

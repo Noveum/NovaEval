@@ -98,11 +98,7 @@ class MockEvaluator(BaseEvaluator):
             for scorer_name, scores in model_results["scores"].items():
                 if scores:
                     model_results["statistics"][scorer_name] = {
-                        "mean": sum(
-                            s if isinstance(s, (int, float)) else s.get("score", 0)
-                            for s in scores
-                        )
-                        / len(scores),
+                        "mean": self._calculate_mean_score(scores),
                         "count": len(scores),
                     }
 
@@ -131,6 +127,20 @@ class MockEvaluator(BaseEvaluator):
         """Save evaluation results."""
         # Mock implementation - just store in memory
         self.results = results
+
+    def _calculate_mean_score(self, scores):
+        """Calculate mean score with proper type handling."""
+        numeric_scores = []
+        for score in scores:
+            if isinstance(score, (int, float)):
+                numeric_scores.append(score)
+            elif isinstance(score, dict) and "score" in score:
+                numeric_scores.append(score["score"])
+            else:
+                # Log warning about unexpected score format and skip
+                continue
+
+        return sum(numeric_scores) / len(numeric_scores) if numeric_scores else 0.0
 
 
 class TestEvaluationWorkflow:
@@ -255,7 +265,7 @@ class TestEvaluationWorkflow:
                 loaded_results = json.load(f)
                 assert loaded_results["summary"]["total_samples"] == 5
         finally:
-            Path(temp_path).unlink()
+            Path(temp_path).unlink(missing_ok=True)
 
     def test_empty_dataset_handling(self):
         """Test handling of empty datasets."""
