@@ -144,7 +144,7 @@ What actually happened.
 **Environment**
 - OS: [e.g., macOS 12.0]
 - Python: [e.g., 3.11.5]
-- NovaEval: [e.g., 0.2.0]
+- NovaEval: [e.g., 0.2.2]
 
 **Additional Context**
 Any other relevant information.

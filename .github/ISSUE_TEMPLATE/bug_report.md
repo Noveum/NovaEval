@@ -32,7 +32,7 @@ Paste the full error message and stack trace here
 **Environment (please complete the following information):**
 - OS: [e.g. Ubuntu 20.04, macOS 12.0, Windows 11]
 - Python version: [e.g. 3.11.0]
-- NovaEval version: [e.g. 0.1.0]
+- NovaEval version: [e.g. 0.2.2]
 - Dependencies: [e.g. openai==1.0.0, anthropic==0.8.0]
 
 **Additional context**

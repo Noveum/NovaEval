@@ -54,7 +54,7 @@ class NoveumIntegration:
                 {
                     "Authorization": f"Bearer {api_key}",
                     "Content-Type": "application/json",
-                    "User-Agent": "NovaEval/0.1.0",
+                    "User-Agent": "NovaEval/0.2.2",
                 }
             )
 
