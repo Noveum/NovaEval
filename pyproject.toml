@@ -279,7 +279,7 @@ directory = "htmlcov"
 # Commitizen configuration
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.2.2"
+version = "0.3.0"
 version_scheme = "pep440"
 version_provider = "pep621"
 update_changelog_on_bump = true
@@ -290,9 +290,9 @@ changelog_file = "CHANGELOG.md"
 changelog_format = "CHANGELOG.md"
 changelog_merge_prerelease = true
 version_files = [
-    "src/novaeval/__init__.py:__version__ = \"$version\"",
-    "Dockerfile:version=\"$version\"",
-    "src/novaeval/integrations/noveum.py:NovaEval/$version"
+    "src/novaeval/__init__.py",
+    "Dockerfile",
+    "src/novaeval/integrations/noveum.py"
 ]
 style = [
     ["qmark", "fg:#ff9d00 bold"],
