@@ -41,6 +41,8 @@ nav_links:
     url: /api-reference/
   - title: Examples
     url: /examples/
+  - title: Local Development
+    url: /local-development/
   - title: Contributing
     url: /contributing/
 

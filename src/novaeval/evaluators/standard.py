@@ -254,7 +254,7 @@ class Evaluator(BaseEvaluator):
             if scores:
                 # Handle different score types
                 numeric_scores = []
-                detailed_scores = {}
+                detailed_scores: dict[str, list[float]] = {}
 
                 for score in scores:
                     if isinstance(score, (int, float)):

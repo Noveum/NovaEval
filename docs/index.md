@@ -154,12 +154,27 @@ Explore more from the [Noveum AI](https://noveum.ai) ecosystem:
 
 <style>
 .hero-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
   color: white;
   padding: 2rem;
   border-radius: 10px;
   margin: 2rem 0;
   text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.hero-section a {
+  color: #f8f9fa;
+  font-weight: bold;
+  text-decoration: none;
+  border-bottom: 2px solid #f8f9fa;
+  transition: all 0.3s ease;
+}
+
+.hero-section a:hover {
+  color: #ffffff;
+  border-bottom-color: #ffffff;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
 .doc-grid {
