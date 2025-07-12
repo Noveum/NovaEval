@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -11,19 +11,19 @@ repos:
       - id: debug-statements
 
   - repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 25.1.0
     hooks:
       - id: black
         language_version: python3
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.13.2
+    rev: 6.0.1
     hooks:
       - id: isort
         args: ["--profile", "black"]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.8.5
+    rev: v0.12.3
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -38,7 +38,7 @@ repos:
   #       args: [--ignore-missing-imports]
 
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.8.0
+    rev: 1.8.6
     hooks:
       - id: bandit
         args: ["-r", "src/", "-f", "screen", "--exit-zero"]
@@ -46,12 +46,10 @@ repos:
         pass_filenames: false
 
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v3.20.0
+    rev: v4.8.3
     hooks:
       - id: commitizen
         stages: [commit-msg]
-      - id: commitizen-branch
-        stages: [pre-push]
 
   - repo: local
     hooks:
