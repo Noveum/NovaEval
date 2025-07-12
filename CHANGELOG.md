@@ -132,6 +132,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 🚀 **Performance**: Performance improvements
 - ⚠️ **Breaking**: Breaking changes
 
+## v0.3.1 (2025-07-13)
+
+### Fix
+
+- update all version files to 0.3.0 and fix commitizen version_files configuration
+
 ## v0.3.0 (2025-07-13)
 
 ### Feat
