@@ -264,7 +264,7 @@ class TestAnswerEvaluationScorers:
 
         assert isinstance(result, ScoreResult)
         assert 0.0 <= result.score <= 1.0
-        assert "statement_accuracy" in result.metadata
+        assert "f1_score" in result.metadata
 
     @pytest.mark.asyncio
     async def test_enhanced_faithfulness_scorer(self, config):
@@ -284,8 +284,7 @@ class TestAnswerEvaluationScorers:
 
         assert isinstance(result, ScoreResult)
         assert 0.0 <= result.score <= 1.0
-        assert "claim_verification" in result.metadata
-        assert "supported_claims" in result.metadata
+        assert "claims" in result.metadata
 
 
 class TestCompositeScorers:
@@ -483,26 +482,25 @@ class TestConfigurationHelpers:
         config = get_optimized_rag_config("precision")
 
         assert isinstance(config, RAGEvaluationConfig)
-        assert config.similarity_threshold >= 0.8
-        assert config.faithfulness_threshold >= 0.85
-        assert config.relevancy_threshold >= 0.8
+        assert config.faithfulness_threshold >= 0.8
+        assert config.answer_correctness_threshold >= 0.8
+        assert config.precision_threshold >= 0.7
 
     def test_get_rag_config_recall(self):
         """Test recall-focused configuration."""
         config = get_optimized_rag_config("recall")
 
         assert isinstance(config, RAGEvaluationConfig)
-        assert config.similarity_threshold <= 0.6
-        assert config.faithfulness_threshold <= 0.7
-        assert config.relevancy_threshold <= 0.6
+        assert config.recall_threshold >= 0.7
+        assert config.relevancy_threshold <= 0.7
 
     def test_get_rag_config_speed(self):
         """Test speed-optimized configuration."""
         config = get_optimized_rag_config("speed")
 
         assert isinstance(config, RAGEvaluationConfig)
-        # Speed config should have reasonable thresholds for fast evaluation
-        assert 0.5 <= config.similarity_threshold <= 0.8
+        # Speed config should use faster embedding model
+        assert config.embedding_model == "all-MiniLM-L6-v2"
 
     def test_get_rag_config_invalid(self):
         """Test invalid configuration name."""

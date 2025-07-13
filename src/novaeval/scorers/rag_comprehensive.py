@@ -2661,7 +2661,11 @@ def get_optimized_rag_config(focus: str = "balanced") -> RAGEvaluationConfig:
                 "faithfulness": 0.2,
             },
         )
-    else:  # balanced
+    else:  # balanced or invalid
+        if focus not in ["balanced"]:
+            raise ValueError(
+                f"Invalid focus '{focus}'. Must be one of: precision, recall, speed, balanced"
+            )
         return RAGEvaluationConfig()
 
 
