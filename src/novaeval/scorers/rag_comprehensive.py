@@ -14,7 +14,7 @@ Metrics included:
 import asyncio
 import json
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -35,7 +35,7 @@ class RAGEvaluationConfig:
         precision_threshold: float = 0.7,
         recall_threshold: float = 0.7,
         answer_correctness_threshold: float = 0.8,
-        ragas_weights: Optional[Dict[str, float]] = None,
+        ragas_weights: Optional[dict[str, float]] = None,
     ):
         self.embedding_model = embedding_model
         self.similarity_threshold = similarity_threshold
@@ -82,7 +82,7 @@ class ContextPrecisionScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate context precision."""
@@ -224,7 +224,7 @@ class ContextPrecisionScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    def _split_context(self, context: str) -> List[str]:
+    def _split_context(self, context: str) -> list[str]:
         """Split context into chunks for evaluation."""
         # Try multiple splitting strategies
         chunks = []
@@ -269,7 +269,7 @@ class ContextPrecisionScorer(BaseScorer):
 
         return filtered_chunks if filtered_chunks else [context]
 
-    def _parse_json_response(self, response: str) -> Optional[Dict[str, Any]]:
+    def _parse_json_response(self, response: str) -> Optional[dict[str, Any]]:
         """Parse JSON response from LLM."""
         try:
             # Try to find JSON in the response
@@ -323,7 +323,7 @@ class ContextRelevancyScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate context relevancy."""
@@ -436,7 +436,7 @@ class ContextRelevancyScorer(BaseScorer):
             )
 
     async def _fallback_relevancy_analysis(
-        self, input_text: str, context_chunks: List[str]
+        self, input_text: str, context_chunks: list[str]
     ) -> tuple[float, float, str]:
         """Fallback analysis when JSON parsing fails."""
         relevant_chunks = 0
@@ -454,7 +454,7 @@ class ContextRelevancyScorer(BaseScorer):
                 response = await self.model.generate(simple_prompt)
                 if "YES" in response.upper():
                     relevant_chunks += 1
-            except:
+            except Exception:
                 # If evaluation fails, assume neutral relevance
                 relevant_chunks += 0.5
 
@@ -465,7 +465,7 @@ class ContextRelevancyScorer(BaseScorer):
 
         return relevancy_score, relevant_percentage, reasoning
 
-    def _split_context(self, context: str) -> List[str]:
+    def _split_context(self, context: str) -> list[str]:
         """Split context into chunks for evaluation."""
         # Similar to ContextPrecisionScorer but optimized for relevancy analysis
         chunks = []
@@ -494,7 +494,7 @@ class ContextRelevancyScorer(BaseScorer):
 
         return [chunk for chunk in chunks if len(chunk) >= 20]
 
-    def _parse_json_response(self, response: str) -> Optional[Dict[str, Any]]:
+    def _parse_json_response(self, response: str) -> Optional[dict[str, Any]]:
         """Parse JSON response from LLM."""
         try:
             json_match = re.search(r"\{.*\}", response, re.DOTALL)
@@ -529,7 +529,7 @@ class ContextRecallScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate context recall."""
@@ -544,10 +544,7 @@ class ContextRecallScorer(BaseScorer):
 
         try:
             # Handle both string and list context formats
-            if isinstance(context, str):
-                full_context = context
-            else:
-                full_context = "\n\n".join(context)
+            full_context = context if isinstance(context, str) else "\n\n".join(context)
 
             # Extract key information from the expected output
             key_info_prompt = f"""
@@ -710,7 +707,7 @@ class ContextRecallScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    async def _extract_key_info_fallback(self, expected_output: str) -> List[str]:
+    async def _extract_key_info_fallback(self, expected_output: str) -> list[str]:
         """Fallback method to extract key information."""
         simple_prompt = f"""
         Extract the main facts and key points from this text:
@@ -736,7 +733,7 @@ class ContextRecallScorer(BaseScorer):
                     key_info.append(line)
 
             return key_info[:10]  # Limit to top 10 items
-        except:
+        except Exception:
             return []
 
     def _parse_presence_fallback(self, response: str) -> tuple[str, float]:
@@ -759,7 +756,7 @@ class ContextRecallScorer(BaseScorer):
         else:
             return "PARTIALLY_PRESENT", 0.5  # Default to partial
 
-    def _parse_json_response(self, response: str) -> Optional[Dict[str, Any]]:
+    def _parse_json_response(self, response: str) -> Optional[dict[str, Any]]:
         """Parse JSON response from LLM."""
         try:
             json_match = re.search(r"\{.*\}", response, re.DOTALL)
@@ -795,7 +792,7 @@ class ContextEntityRecallScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate context entity recall."""
@@ -810,10 +807,7 @@ class ContextEntityRecallScorer(BaseScorer):
 
         try:
             # Handle both string and list context formats
-            if isinstance(context, str):
-                full_context = context
-            else:
-                full_context = "\n\n".join(context)
+            full_context = context if isinstance(context, str) else "\n\n".join(context)
 
             # Extract entities from expected output
             entity_extraction_prompt = f"""
@@ -1002,7 +996,7 @@ class ContextEntityRecallScorer(BaseScorer):
 
     async def _extract_entities_fallback(
         self, text: str
-    ) -> tuple[List[str], Dict[str, str]]:
+    ) -> tuple[list[str], dict[str, str]]:
         """Fallback entity extraction using simple patterns."""
         entities = []
         entity_types = {}
@@ -1031,7 +1025,7 @@ class ContextEntityRecallScorer(BaseScorer):
 
         return entities, entity_types
 
-    def _parse_json_response(self, response: str) -> Optional[Dict[str, Any]]:
+    def _parse_json_response(self, response: str) -> Optional[dict[str, Any]]:
         """Parse JSON response from LLM."""
         try:
             json_match = re.search(r"\{.*\}", response, re.DOTALL)
@@ -1074,7 +1068,7 @@ class AnswerRelevancyScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate answer relevancy using multiple approaches."""
@@ -1239,7 +1233,7 @@ class AnswerRelevancyScorer(BaseScorer):
         except Exception:
             return 0.5
 
-    def _parse_json_response(self, response: str) -> Optional[Dict[str, Any]]:
+    def _parse_json_response(self, response: str) -> Optional[dict[str, Any]]:
         """Parse JSON response from LLM."""
         try:
             json_match = re.search(r"\{.*\}", response, re.DOTALL)
@@ -1249,7 +1243,7 @@ class AnswerRelevancyScorer(BaseScorer):
             pass
         return None
 
-    def _parse_questions_fallback(self, response: str) -> List[str]:
+    def _parse_questions_fallback(self, response: str) -> list[str]:
         """Fallback parsing for questions."""
         questions = []
         lines = response.strip().split("\n")
@@ -1301,7 +1295,7 @@ class AnswerSimilarityScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate answer similarity using multiple metrics."""
@@ -1469,7 +1463,7 @@ class AnswerSimilarityScorer(BaseScorer):
         except Exception:
             return 0.5
 
-    def _parse_json_response(self, response: str) -> Optional[Dict[str, Any]]:
+    def _parse_json_response(self, response: str) -> Optional[dict[str, Any]]:
         """Parse JSON response from LLM."""
         try:
             json_match = re.search(r"\{.*\}", response, re.DOTALL)
@@ -1510,7 +1504,7 @@ class AnswerCorrectnessScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate answer correctness."""
@@ -1630,7 +1624,7 @@ class AnswerCorrectnessScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    async def _extract_statements(self, text: str, source: str) -> List[str]:
+    async def _extract_statements(self, text: str, source: str) -> list[str]:
         """Extract factual statements from text."""
         extraction_prompt = f"""
         Extract all factual statements from the following {source} answer.
@@ -1661,8 +1655,8 @@ class AnswerCorrectnessScorer(BaseScorer):
             return []
 
     async def _classify_statement(
-        self, statement: str, expected_statements: List[str], expected_full: str
-    ) -> Dict[str, Any]:
+        self, statement: str, expected_statements: list[str], expected_full: str
+    ) -> dict[str, Any]:
         """Classify a statement as true positive or false positive."""
         classification_prompt = f"""
         Statement to classify: {statement}
@@ -1722,7 +1716,7 @@ class AnswerCorrectnessScorer(BaseScorer):
             }
 
     async def _calculate_false_negatives(
-        self, expected_statements: List[str], generated_text: str
+        self, expected_statements: list[str], generated_text: str
     ) -> int:
         """Calculate false negatives (missing important information)."""
         false_negatives = 0
@@ -1747,7 +1741,7 @@ class AnswerCorrectnessScorer(BaseScorer):
 
         return false_negatives
 
-    def _parse_json_response(self, response: str) -> Optional[Dict[str, Any]]:
+    def _parse_json_response(self, response: str) -> Optional[dict[str, Any]]:
         """Parse JSON response from LLM."""
         try:
             json_match = re.search(r"\{.*\}", response, re.DOTALL)
@@ -1780,7 +1774,7 @@ class EnhancedFaithfulnessScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate faithfulness to context with enhanced methodology."""
@@ -1795,10 +1789,7 @@ class EnhancedFaithfulnessScorer(BaseScorer):
 
         try:
             # Handle both string and list context formats
-            if isinstance(context, str):
-                full_context = context
-            else:
-                full_context = "\n\n".join(context)
+            full_context = context if isinstance(context, str) else "\n\n".join(context)
 
             # Extract claims with categorization
             claims_data = await self._extract_categorized_claims(output_text)
@@ -1892,7 +1883,7 @@ class EnhancedFaithfulnessScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    async def _extract_categorized_claims(self, text: str) -> Dict[str, Any]:
+    async def _extract_categorized_claims(self, text: str) -> dict[str, Any]:
         """Extract and categorize claims from text."""
         extraction_prompt = f"""
         Extract all factual claims from the following text and categorize them.
@@ -1947,7 +1938,7 @@ class EnhancedFaithfulnessScorer(BaseScorer):
         except Exception:
             return {"all_claims": [], "categories": {}}
 
-    async def _verify_claim_enhanced(self, claim: str, context: str) -> Dict[str, Any]:
+    async def _verify_claim_enhanced(self, claim: str, context: str) -> dict[str, Any]:
         """Enhanced claim verification with detailed analysis."""
         verification_prompt = f"""
         Context: {context}
@@ -2008,8 +1999,8 @@ class EnhancedFaithfulnessScorer(BaseScorer):
             }
 
     def _calculate_category_stats(
-        self, verification_results: List[Dict[str, Any]]
-    ) -> Dict[str, int]:
+        self, verification_results: list[dict[str, Any]]
+    ) -> dict[str, int]:
         """Calculate statistics by verification status."""
         stats = {"supported": 0, "partial": 0, "not_supported": 0}
 
@@ -2024,7 +2015,7 @@ class EnhancedFaithfulnessScorer(BaseScorer):
 
         return stats
 
-    def _parse_json_response(self, response: str) -> Optional[Dict[str, Any]]:
+    def _parse_json_response(self, response: str) -> Optional[dict[str, Any]]:
         """Parse JSON response from LLM."""
         try:
             json_match = re.search(r"\{.*\}", response, re.DOTALL)
@@ -2073,7 +2064,7 @@ class EnhancedRAGASScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Comprehensive RAGAS evaluation."""
@@ -2141,7 +2132,7 @@ class EnhancedRAGASScorer(BaseScorer):
             component_details = {}
             failed_components = []
 
-            for i, (metric_name, result) in enumerate(
+            for _i, (metric_name, result) in enumerate(
                 zip([task[0] for task in evaluation_tasks], results)
             ):
                 if isinstance(result, Exception):
@@ -2279,7 +2270,7 @@ class RAGTriadScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate using RAG Triad methodology."""
@@ -2445,7 +2436,7 @@ class RAGEvaluationSuite:
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate using a single metric."""
@@ -2472,9 +2463,9 @@ class RAGEvaluationSuite:
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
-    ) -> Dict[str, ScoreResult]:
+    ) -> dict[str, ScoreResult]:
         """Evaluate only the retrieval pipeline components."""
 
         retrieval_metrics = [
@@ -2497,9 +2488,9 @@ class RAGEvaluationSuite:
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
-    ) -> Dict[str, ScoreResult]:
+    ) -> dict[str, ScoreResult]:
         """Evaluate only the generation pipeline components."""
 
         generation_metrics = [
@@ -2522,10 +2513,10 @@ class RAGEvaluationSuite:
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         include_individual: bool = True,
         **kwargs: Any,
-    ) -> Dict[str, ScoreResult]:
+    ) -> dict[str, ScoreResult]:
         """Run comprehensive evaluation with all metrics."""
 
         results = {}
@@ -2559,11 +2550,11 @@ class RAGEvaluationSuite:
 
         return results
 
-    def get_available_metrics(self) -> List[str]:
+    def get_available_metrics(self) -> list[str]:
         """Get list of all available metrics."""
         return list(self.scorers.keys())
 
-    def get_metric_info(self) -> Dict[str, str]:
+    def get_metric_info(self) -> dict[str, str]:
         """Get information about each available metric."""
         return {
             "context_precision": "Evaluates whether the reranker ranks more relevant nodes higher than irrelevant ones",

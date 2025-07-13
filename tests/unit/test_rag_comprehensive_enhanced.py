@@ -8,7 +8,7 @@ including edge cases, error handling, and integration scenarios.
 import asyncio
 import os
 import sys
-from typing import List
+from typing import Optional
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -38,7 +38,9 @@ from novaeval.scorers.rag_comprehensive import (
 class MockLLMModel:
     """Mock LLM model for testing."""
 
-    def __init__(self, response: str = None, responses: List[str] = None):
+    def __init__(
+        self, response: Optional[str] = None, responses: Optional[list[str]] = None
+    ):
         self.response = response or '{"score": 0.8, "reasoning": "Test reasoning"}'
         self.responses = responses or [self.response]
         self.call_count = 0
@@ -149,7 +151,7 @@ class TestContextEvaluationScorers:
 
         assert isinstance(result, ScoreResult)
         assert 0.0 <= result.score <= 1.0
-        assert "relevance_analysis" in result.metadata
+        assert "irrelevant_percentage" in result.metadata
 
     @pytest.mark.asyncio
     async def test_context_recall_scorer(self, config):
@@ -171,7 +173,7 @@ class TestContextEvaluationScorers:
 
         assert isinstance(result, ScoreResult)
         assert 0.0 <= result.score <= 1.0
-        assert "key_information_count" in result.metadata
+        assert "key_information" in result.metadata
 
     @pytest.mark.asyncio
     async def test_context_entity_recall_scorer(self, config):
@@ -190,7 +192,7 @@ class TestContextEvaluationScorers:
 
         assert isinstance(result, ScoreResult)
         assert 0.0 <= result.score <= 1.0
-        assert "entity_coverage" in result.metadata
+        assert "all_entities" in result.metadata
         assert "total_entities" in result.metadata
 
 
@@ -218,7 +220,7 @@ class TestAnswerEvaluationScorers:
 
         assert isinstance(result, ScoreResult)
         assert 0.0 <= result.score <= 1.0
-        assert "relevance_analysis" in result.metadata
+        assert "approach" in result.metadata
 
     @pytest.mark.asyncio
     async def test_answer_similarity_scorer(self, config):
@@ -388,7 +390,7 @@ class TestRAGEvaluationSuite:
         assert len(results) >= 3  # Should have context metrics
 
         # Check that all results are ScoreResult objects
-        for metric_name, result in results.items():
+        for _metric_name, result in results.items():
             assert isinstance(result, ScoreResult)
             assert 0.0 <= result.score <= 1.0
 
@@ -404,7 +406,7 @@ class TestRAGEvaluationSuite:
         assert isinstance(results, dict)
         assert len(results) >= 3  # Should have answer metrics
 
-        for metric_name, result in results.items():
+        for _metric_name, result in results.items():
             assert isinstance(result, ScoreResult)
             assert 0.0 <= result.score <= 1.0
 

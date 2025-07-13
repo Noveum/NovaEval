@@ -539,7 +539,7 @@ class TestRAGEvaluationRobustness:
         results = await suite.evaluate_comprehensive("", "", "", "")
 
         # Should handle empty inputs gracefully
-        for metric_name, result in results.items():
+        for _metric_name, result in results.items():
             assert isinstance(result, ScoreResult)
             assert 0.0 <= result.score <= 1.0
 
@@ -561,7 +561,7 @@ class TestRAGEvaluationRobustness:
         )
 
         # Should handle long inputs without errors
-        for metric_name, result in results.items():
+        for _metric_name, result in results.items():
             assert isinstance(result, ScoreResult)
             assert 0.0 <= result.score <= 1.0
 
@@ -583,7 +583,7 @@ class TestRAGEvaluationRobustness:
         )
 
         # Should handle special characters gracefully
-        for metric_name, result in results.items():
+        for _metric_name, result in results.items():
             assert isinstance(result, ScoreResult)
             assert 0.0 <= result.score <= 1.0
 

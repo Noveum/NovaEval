@@ -1,10 +1,9 @@
 """
 Base scorer class for NovaEval.
 
-This module defines the abstract base class for all scoring mechanisms.
+This module defines the base class for all scoring mechanisms.
 """
 
-from abc import ABC, abstractmethod
 from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
@@ -25,14 +24,19 @@ class ScoreResult(BaseModel):
     )
 
 
-class BaseScorer(ABC):
+class BaseScorer:
     """
-    Abstract base class for all scorers.
+    Base class for all scorers.
 
     This class defines the interface that all scorers must implement.
     """
 
-    def __init__(self, name: str, description: Optional[str] = None, **kwargs: Any):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        **kwargs: Any,
+    ):
         """
         Initialize the scorer.
 
@@ -41,8 +45,8 @@ class BaseScorer(ABC):
             description: Description of what the scorer measures
             **kwargs: Additional scorer-specific parameters
         """
-        self.name = name
-        self.description = description or f"{name} scorer"
+        self.name = name or self.__class__.__name__
+        self.description = description or f"{self.name} scorer"
         self.kwargs = kwargs
 
         # Statistics tracking
@@ -50,7 +54,6 @@ class BaseScorer(ABC):
         self.score_sum = 0.0
         self.scores_history: list[Union[float, dict[str, float]]] = []
 
-    @abstractmethod
     def score(
         self,
         prediction: str,
@@ -68,7 +71,8 @@ class BaseScorer(ABC):
         Returns:
             Score value (float) or dictionary of scores
         """
-        pass
+        # Default implementation for compatibility
+        return 0.0
 
     def score_batch(
         self,

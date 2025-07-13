@@ -866,7 +866,7 @@ class TestIntegrationScenarios:
         assert len(results) == 10  # 8 individual + 2 composite
 
         # Check that all results are valid
-        for metric_name, result in results.items():
+        for _metric_name, result in results.items():
             assert isinstance(result, ScoreResult)
             assert 0.0 <= result.score <= 1.0
             assert isinstance(result.passed, bool)

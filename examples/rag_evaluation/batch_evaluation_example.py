@@ -11,7 +11,7 @@ import json
 import os
 import sys
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 # Add src to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../src"))
@@ -78,7 +78,7 @@ async def batch_evaluation_example():
 
     print("📊 Dataset Overview:")
     print(f"Total Examples: {len(evaluation_dataset)}")
-    print(f"Domains: {', '.join(set(item['domain'] for item in evaluation_dataset))}")
+    print(f"Domains: {', '.join({item['domain'] for item in evaluation_dataset})}")
     print()
 
     # Sequential evaluation (for comparison)
@@ -400,7 +400,7 @@ async def performance_comparison():
     print("-" * 80)
 
 
-async def export_results_example(batch_results: List[Dict[str, Any]]):
+async def export_results_example(batch_results: list[dict[str, Any]]):
     """Demonstrate exporting batch evaluation results."""
 
     print("\n💾 Results Export Example")

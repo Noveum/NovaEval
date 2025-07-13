@@ -8,7 +8,7 @@ for safety, bias detection, hallucination detection, and conversational evaluati
 import asyncio
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
 from novaeval.models.base import BaseModel as LLMModel
 from novaeval.scorers.base import BaseScorer, ScoreResult
@@ -24,11 +24,11 @@ class AdvancedRAGConfig:
 
     # Bias detection settings
     bias_threshold: float = 0.3
-    bias_categories: List[str] = None
+    bias_categories: list[str] = None
 
     # Toxicity detection settings
     toxicity_threshold: float = 0.2
-    toxicity_severity_levels: List[str] = None
+    toxicity_severity_levels: list[str] = None
 
     # Conversational settings
     conversation_coherence_threshold: float = 0.7
@@ -79,7 +79,7 @@ class HallucinationDetectionScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Detect hallucinations in generated content."""
@@ -288,7 +288,7 @@ class BiasDetectionScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Detect various forms of bias in generated content."""
@@ -435,7 +435,7 @@ class ToxicityDetectionScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Detect toxicity and harmful content in generated text."""
@@ -593,8 +593,8 @@ class ConversationCoherenceScorer(BaseScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
-        conversation_history: Optional[List[Dict[str, str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
+        conversation_history: Optional[list[dict[str, str]]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         """Evaluate conversational coherence and consistency."""
@@ -797,11 +797,11 @@ class ComprehensiveRAGEvaluationSuite:
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[Union[str, List[str]]] = None,
+        context: Optional[Union[str, list[str]]] = None,
         include_safety_metrics: bool = True,
         include_conversational_metrics: bool = False,
         **kwargs: Any,
-    ) -> Dict[str, ScoreResult]:
+    ) -> dict[str, ScoreResult]:
         """Run comprehensive evaluation including advanced safety metrics."""
 
         results = {}
@@ -820,7 +820,7 @@ class ComprehensiveRAGEvaluationSuite:
         )
 
         # Process core results
-        for i, (metric_name, result) in enumerate(
+        for _i, (metric_name, result) in enumerate(
             zip([task[0] for task in core_tasks], core_results)
         ):
             if isinstance(result, Exception):
@@ -860,7 +860,7 @@ class ComprehensiveRAGEvaluationSuite:
                 *[task[1] for task in safety_tasks], return_exceptions=True
             )
 
-            for i, (metric_name, result) in enumerate(
+            for _i, (metric_name, result) in enumerate(
                 zip([task[0] for task in safety_tasks], safety_results)
             ):
                 if isinstance(result, Exception):
@@ -882,15 +882,15 @@ class ComprehensiveRAGEvaluationSuite:
 
         return results
 
-    def get_all_available_metrics(self) -> List[str]:
+    def get_all_available_metrics(self) -> list[str]:
         """Get list of all available metrics including advanced ones."""
         return list(self.all_scorers.keys())
 
-    def get_safety_metrics(self) -> List[str]:
+    def get_safety_metrics(self) -> list[str]:
         """Get list of safety-focused metrics."""
         return ["hallucination_detection", "bias_detection", "toxicity_detection"]
 
-    def get_conversational_metrics(self) -> List[str]:
+    def get_conversational_metrics(self) -> list[str]:
         """Get list of conversational evaluation metrics."""
         return ["conversation_coherence"]
 

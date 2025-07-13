@@ -212,7 +212,7 @@ async def configuration_example():
     print("-" * 60)
 
     for config_name, config in configs.items():
-        suite = RAGEvaluationSuite(model, config)
+        RAGEvaluationSuite(model, config)
 
         # Run a quick evaluation with just answer relevancy
         scorer = create_rag_scorer("answer_relevancy", model, config)

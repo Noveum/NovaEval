@@ -250,7 +250,7 @@ async def safety_configuration_example():
     print("-" * 60)
 
     for config_name, safety_config in safety_configs.items():
-        suite = ComprehensiveRAGEvaluationSuite(
+        ComprehensiveRAGEvaluationSuite(
             model, get_rag_config("balanced"), safety_config
         )
 
@@ -312,14 +312,15 @@ async def production_monitoring_example():
         )
 
         # Check for alerts
-        safety_issues = []
-        for metric in [
-            "hallucination_detection",
-            "bias_detection",
-            "toxicity_detection",
-        ]:
-            if metric in results and not results[metric].passed:
-                safety_issues.append(metric)
+        safety_issues = [
+            metric
+            for metric in [
+                "hallucination_detection",
+                "bias_detection",
+                "toxicity_detection",
+            ]
+            if metric in results and not results[metric].passed
+        ]
 
         if safety_issues:
             alerts.append(
