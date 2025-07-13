@@ -190,6 +190,7 @@ class Evaluator(BaseEvaluator):
             "prediction": None,
             "scores": {},
             "metadata": {},
+            "error": None,
         }
 
         try:
@@ -212,7 +213,7 @@ class Evaluator(BaseEvaluator):
                     logger.warning(
                         f"Scorer {scorer.name} failed on sample {sample.get('id')}: {e}"
                     )
-                    sample_result["scores"][scorer.name] = None
+                    sample_result["error"] = str(e)
 
             # Add metadata
             sample_result["metadata"] = {
@@ -290,11 +291,21 @@ class Evaluator(BaseEvaluator):
 
                 if numeric_scores:
                     # Calculate basic statistics
+                    mean = sum(numeric_scores) / len(numeric_scores)
+                    if len(numeric_scores) > 1:
+                        variance = sum((x - mean) ** 2 for x in numeric_scores) / (
+                            len(numeric_scores) - 1
+                        )
+                        std = variance**0.5
+                    else:
+                        std = 0.0
+
                     result = {
-                        "mean": sum(numeric_scores) / len(numeric_scores),
+                        "mean": mean,
                         "count": len(numeric_scores),
                         "min": min(numeric_scores),
                         "max": max(numeric_scores),
+                        "std": std,
                     }
 
                     # Add detailed scores if available (for dict-based scorers)
@@ -322,14 +333,41 @@ class Evaluator(BaseEvaluator):
             "total_models": len(model_results),
             "total_samples": 0,
             "total_errors": 0,
+            "total_scorers": len(self.scorers) if model_results else 0,
             "best_model": {},
         }
 
         # Calculate totals
+        sample_ids = set()
         for _model_name, results in model_results.items():
             if isinstance(results, dict):
-                summary["total_samples"] += len(results.get("samples", []))
+                # Count unique samples across all models
+                for sample in results.get("samples", []):
+                    sample_ids.add(sample.get("sample_id", sample.get("id")))
                 summary["total_errors"] += len(results.get("errors", []))
+
+        summary["total_samples"] = len(sample_ids)
+
+        # Calculate overall scores across all models
+        overall_scores: dict[str, list[float]] = {}
+        for _model_name, results in model_results.items():
+            if isinstance(results, dict):
+                for scorer_name, score_info in results.get("scores", {}).items():
+                    if isinstance(score_info, dict) and "mean" in score_info:
+                        if scorer_name not in overall_scores:
+                            overall_scores[scorer_name] = []
+                        overall_scores[scorer_name].append(score_info["mean"])
+
+        # Calculate overall statistics
+        for scorer_name, scores in overall_scores.items():
+            if scores:
+                mean_score = sum(scores) / len(scores)
+                summary[f"overall_{scorer_name}"] = {
+                    "mean": mean_score,
+                    "count": len(scores),
+                    "min": min(scores),
+                    "max": max(scores),
+                }
 
         # Find best model for each scorer
         for model_name, results in model_results.items():
@@ -378,13 +416,13 @@ class Evaluator(BaseEvaluator):
         # Flatten sample results for CSV
         rows = []
         for model_name, model_results in results["model_results"].items():
-            for sample in model_results["samples"]:
+            for sample in model_results.get("samples", []):
                 row = {
                     "model": model_name,
-                    "sample_id": sample["sample_id"],
-                    "input": sample["input"],
-                    "expected": sample["expected"],
-                    "prediction": sample["prediction"],
+                    "sample_id": sample.get("sample_id", "unknown"),
+                    "input": sample.get("input", ""),
+                    "expected": sample.get("expected", ""),
+                    "prediction": sample.get("prediction", ""),
                 }
                 # Add scores as columns
                 for scorer_name, score in sample.get("scores", {}).items():

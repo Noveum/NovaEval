@@ -6,7 +6,7 @@ This module provides the main CLI entry point for running evaluations.
 
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
 from rich.console import Console
@@ -104,8 +104,8 @@ def run(config_file: str, output_dir: Optional[str], dry_run: bool) -> None:
 )
 def quick(
     dataset: str,
-    model: tuple,
-    scorer: tuple,
+    model: tuple[str, ...],
+    scorer: tuple[str, ...],
     num_samples: Optional[int],
     output_dir: str,
 ) -> None:
@@ -113,25 +113,24 @@ def quick(
     Quick evaluation with minimal configuration.
     """
     try:
-        # Create configuration
-        {
-            "dataset": {"type": dataset, "num_samples": num_samples},
-            "models": [{"type": m} for m in model],
-            "scorers": [{"type": s} for s in scorer],
-            "output": {"directory": output_dir},
-        }
-
         console.print("[blue]Starting quick evaluation...[/blue]")
         console.print(f"Dataset: {dataset}")
         console.print(f"Models: {', '.join(model)}")
         console.print(f"Scorers: {', '.join(scorer)}")
 
-        # This would create and run the evaluator
-        # For now, it's a placeholder
+        if num_samples:
+            console.print(f"Samples: {num_samples}")
+
+        console.print(f"Output directory: {output_dir}")
+
+        # TODO: Implement actual evaluation logic
+        # This will create configuration from the parameters and run evaluation
+        # using the existing evaluator infrastructure
         console.print("[yellow]Quick evaluation not yet implemented[/yellow]")
+        console.print("[blue]This feature will be available in a future release[/blue]")
 
     except Exception as e:
-        console.print(f"[red]Error:[/red] {e}")
+        console.print(f"[red]Error during quick evaluation: {e}[/red]")
         sys.exit(1)
 
 
@@ -252,7 +251,7 @@ def _display_config_summary(config: Config) -> None:
     console.print(table)
 
 
-def _display_results_summary(results: dict) -> None:
+def _display_results_summary(results: dict[str, Any]) -> None:
     """Display results summary."""
     table = Table(title="Evaluation Results")
     table.add_column("Model", style="cyan")

@@ -29,14 +29,13 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
 
-  # TODO: Re-enable mypy once type annotations are improved
-  # - repo: https://github.com/pre-commit/mirrors-mypy
-  #   rev: v1.13.0
-  #   hooks:
-  #     - id: mypy
-  #       additional_dependencies: [types-PyYAML, types-requests]
-  #       exclude: ^(tests/|examples/)
-  #       args: [--ignore-missing-imports]
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-PyYAML, types-requests, types-click]
+        files: ^src/novaeval/
+        args: [--ignore-missing-imports]
 
   - repo: https://github.com/PyCQA/bandit
     rev: 1.8.6
