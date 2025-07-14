@@ -29,22 +29,23 @@ author:
 github_username: Noveum
 twitter_username: noveumAI
 
-# Navigation
-nav_links:
-  - title: Home
-    url: /
-  - title: Getting Started
-    url: /getting-started/
-  - title: User Guide
-    url: /user-guide/
-  - title: API Reference
-    url: /api-reference/
-  - title: Examples
-    url: /examples/
-  - title: Local Development
-    url: /local-development/
-  - title: Contributing
-    url: /contributing/
+# Navigation configuration for minima theme
+header_pages:
+  - index.md
+  - getting-started.md
+  - user-guide.md
+  - api-reference.md
+  - cli-reference.md
+  - examples.md
+  - contributing.md
+  - LOCAL_DEVELOPMENT.md
+
+# Minima theme settings
+minima:
+  social_links:
+    github: Noveum
+    twitter: noveumAI
+  show_excerpts: true
 
 # Footer links
 footer_links:

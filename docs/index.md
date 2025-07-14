@@ -13,10 +13,17 @@ nav_order: 1
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Welcome to **NovaEval** - a comprehensive, extensible AI model evaluation framework designed for production use. NovaEval provides a unified interface for evaluating language models across various datasets, metrics, and deployment scenarios.
-
-<div class="hero-section">
-  <p><strong>Built by <a href="https://noveum.ai" target="_blank">Noveum AI</a></strong> - Pioneering the future of AI evaluation</p>
+<div class="hero-banner">
+  <div class="hero-content">
+    <div class="hero-text">
+      <h2>Comprehensive AI Model Evaluation Framework</h2>
+      <p>A unified interface for evaluating language models across various datasets, metrics, and deployment scenarios.</p>
+    </div>
+    <div class="hero-brand">
+      <img src="/NovaEval/assets/images/noveum-logo.png" alt="Noveum AI" class="noveum-logo">
+      <p class="brand-text">Built by <strong>Noveum AI</strong></p>
+    </div>
+  </div>
 </div>
 
 ## ✨ What is NovaEval?
@@ -151,66 +158,3 @@ Explore more from the [Noveum AI](https://noveum.ai) ecosystem:
   <p><strong>Ready to get started?</strong> <a href="/getting-started/">Install NovaEval</a> and run your first evaluation in minutes.</p>
   <p>Built with ❤️ by the <a href="https://noveum.ai" target="_blank">Noveum.ai</a> team</p>
 </div>
-
-<style>
-.hero-section {
-  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-  color: white;
-  padding: 2rem;
-  border-radius: 10px;
-  margin: 2rem 0;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.hero-section a {
-  color: #f8f9fa;
-  font-weight: bold;
-  text-decoration: none;
-  border-bottom: 2px solid #f8f9fa;
-  transition: all 0.3s ease;
-}
-
-.hero-section a:hover {
-  color: #ffffff;
-  border-bottom-color: #ffffff;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
-}
-
-.doc-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-
-.doc-card {
-  border: 1px solid #e1e4e8;
-  border-radius: 8px;
-  padding: 1.5rem;
-  background: #f8f9fa;
-}
-
-.doc-card h3 {
-  margin-top: 0;
-  color: #2c3e50;
-}
-
-.doc-card h3 a {
-  text-decoration: none;
-  color: inherit;
-}
-
-.doc-card h3 a:hover {
-  color: #3498db;
-}
-
-.footer-cta {
-  background: #f8f9fa;
-  padding: 2rem;
-  border-radius: 8px;
-  text-align: center;
-  border-left: 4px solid #3498db;
-  margin-top: 3rem;
-}
-</style>
