@@ -91,7 +91,7 @@ class HuggingFaceDataset(BaseDataset):
 
         # Shuffle and limit samples
         random.shuffle(samples)
-        if self.num_samples:
+        if self.num_samples is not None:
             samples = samples[: self.num_samples]
 
         return samples

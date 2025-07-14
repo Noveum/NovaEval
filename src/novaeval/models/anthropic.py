@@ -169,10 +169,8 @@ class AnthropicModel(BaseModel):
                     **kwargs,
                 )
                 results.append(result)
-            except Exception as e:
-                self._handle_error(
-                    e, f"Failed in batch generation for prompt: {prompt[:100]}..."
-                )
+            except Exception:
+                # Error already handled by generate method
                 results.append("")  # Add empty string for failed generations
 
         return results

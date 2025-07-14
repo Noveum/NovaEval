@@ -9,6 +9,37 @@
 
 A comprehensive, extensible AI model evaluation framework designed for production use. NovaEval provides a unified interface for evaluating language models across various datasets, metrics, and deployment scenarios.
 
+## 🚧 Development Status
+
+> **⚠️ ACTIVE DEVELOPMENT - NOT PRODUCTION READY**
+>
+> NovaEval is currently in active development and **not recommended for production use**. We are actively working on improving stability, adding features, and expanding test coverage. APIs may change without notice.
+>
+> **We're looking for contributors!** See the [Contributing](#-contributing) section below for ways to help.
+
+## 🤝 We Need Your Help!
+
+NovaEval is an open-source project that thrives on community contributions. Whether you're a seasoned developer or just getting started, there are many ways to contribute:
+
+### 🎯 High-Priority Contribution Areas
+
+We're actively looking for contributors in these key areas:
+
+- **🧪 Unit Tests**: Help us improve our test coverage (currently 23% overall, 90%+ for core modules)
+- **📚 Examples**: Create real-world evaluation examples and use cases
+- **📝 Guides & Notebooks**: Write evaluation guides and interactive Jupyter notebooks
+- **📖 Documentation**: Improve API documentation and user guides
+- **🔍 RAG Metrics**: Add more metrics specifically for Retrieval-Augmented Generation evaluation
+- **🤖 Agent Evaluation**: Build frameworks for evaluating AI agents and multi-turn conversations
+
+### 🚀 Getting Started as a Contributor
+
+1. **Start Small**: Pick up issues labeled `good first issue` or `help wanted`
+2. **Join Discussions**: Share your ideas in [GitHub Discussions](https://github.com/Noveum/NovaEval/discussions)
+3. **Review Code**: Help review pull requests and provide feedback
+4. **Report Issues**: Found a bug? Report it in [GitHub Issues](https://github.com/Noveum/NovaEval/issues)
+5. **Spread the Word**: Star the repository and share with your network
+
 ## 🚀 Features
 
 - **Multi-Model Support**: Evaluate models from OpenAI, Anthropic, AWS Bedrock, and custom providers
@@ -317,7 +348,18 @@ class MyCustomModel(BaseModel):
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! NovaEval is actively seeking contributors to help build a robust AI evaluation framework. Please see our [Contributing Guide](CONTRIBUTING.md) for detailed guidelines.
+
+### 🎯 Priority Contribution Areas
+
+As mentioned in the [We Need Your Help](#-we-need-your-help) section, we're particularly looking for help with:
+
+1. **Unit Tests** - Expand test coverage beyond the current 23%
+2. **Examples** - Real-world evaluation scenarios and use cases
+3. **Guides & Notebooks** - Interactive evaluation tutorials
+4. **Documentation** - API docs, user guides, and tutorials
+5. **RAG Metrics** - Specialized metrics for retrieval-augmented generation
+6. **Agent Evaluation** - Frameworks for multi-turn and agent-based evaluations
 
 ### Development Setup
 
@@ -339,9 +381,34 @@ pre-commit install
 # Run tests
 pytest
 
-# Run with coverage (23% overall, 90%+ for core modules)
+# Run with coverage
 pytest --cov=src/novaeval --cov-report=html
 ```
+
+### 🏗️ Contribution Workflow
+
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Make** your changes following our coding standards
+4. **Add** tests for your changes
+5. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+6. **Push** to the branch (`git push origin feature/amazing-feature`)
+7. **Open** a Pull Request
+
+### 📋 Contribution Guidelines
+
+- **Code Quality**: Follow PEP 8 and use the provided pre-commit hooks
+- **Testing**: Add unit tests for new features and bug fixes
+- **Documentation**: Update documentation for API changes
+- **Commit Messages**: Use conventional commit format
+- **Issues**: Reference relevant issues in your PR description
+
+### 🎉 Recognition
+
+Contributors will be:
+- Listed in our contributors page
+- Mentioned in release notes for significant contributions
+- Invited to join our contributor Discord community
 
 ## 📄 License
 
