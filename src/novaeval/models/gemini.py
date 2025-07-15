@@ -41,14 +41,14 @@ class GeminiModel(BaseModel):
         **kwargs: Any,
     ):
         """
-        Initialize the Gemini model.
-
-        Args:
-            model_name: Gemini model name
-            api_key: Gemini API key
-            max_retries: Max retries on failure
-            timeout: Request timeout
-            **kwargs: Extra params
+        Initialize a GeminiModel instance with the specified model name, API key, retry limit, and timeout.
+        
+        Parameters:
+            model_name (str): The Gemini model variant to use (e.g., "gemini-2.5-flash").
+            api_key (Optional[str]): API key for authenticating with the Gemini service. If not provided, the environment variable 'GOOGLE_API_KEY' is used.
+            max_retries (int): Maximum number of retry attempts for failed requests.
+            timeout (float): Timeout in seconds for API requests.
+            **kwargs: Additional keyword arguments passed to the base model initializer.
         """
         super().__init__(
             name=f"gemini_{model_name}",
@@ -70,17 +70,17 @@ class GeminiModel(BaseModel):
         **kwargs: Any,
     ) -> str:
         """
-        Generate text using Gemini's API.
-
-        Args:
-            prompt: Input prompt
-            max_tokens: Max output tokens
-            temperature: Sampling temperature
-            stop: Not supported in Gemini currently
-            **kwargs: Additional generation params
-
+        Generates a text completion for a given prompt using the Gemini API.
+        
+        Parameters:
+            prompt (str): The input prompt to generate text from.
+            max_tokens (Optional[int]): Maximum number of tokens in the generated output.
+            temperature (Optional[float]): Sampling temperature for generation randomness.
+            stop (Optional[Union[str, list[str]]]): Stop sequences (not supported by Gemini).
+            **kwargs: Additional generation parameters.
+        
         Returns:
-            Generated text
+            str: The generated text completion.
         """
         try:
             start_time = time.time()
@@ -123,12 +123,15 @@ class GeminiModel(BaseModel):
         **kwargs: Any,
     ) -> list[str]:
         """
-        Generate responses for multiple prompts (sequentially).
-
-        Gemini doesn't support batch generation natively.
-
+        Generates responses for a list of prompts sequentially.
+        
+        Each prompt is processed individually using the `generate` method. If an error occurs for a prompt, an empty string is returned for that prompt.
+        
+        Parameters:
+            prompts (list[str]): List of input prompts to generate responses for.
+        
         Returns:
-            List of responses.
+            list[str]: List of generated responses corresponding to each prompt.
         """
         results = []
         for prompt in prompts:
@@ -147,14 +150,21 @@ class GeminiModel(BaseModel):
         return results
 
     def get_provider(self) -> str:
+        """
+        Return the name of the model provider.
+        """
         return "gemini"
 
     def estimate_cost(self, prompt: str, response: str = "") -> float:
         """
-        Estimate Gemini API cost.
-
+        Estimate the API usage cost in USD for a given prompt and response based on model-specific token pricing.
+        
+        Parameters:
+            prompt (str): The input text sent to the model.
+            response (str, optional): The generated output text. Defaults to an empty string.
+        
         Returns:
-            Estimated cost in USD
+            float: The estimated cost in USD for processing the prompt and response.
         """
         pricing = self.PRICING.get(self.model_name)
         if not pricing:
@@ -170,18 +180,22 @@ class GeminiModel(BaseModel):
 
     def count_tokens(self, text: str) -> int:
         """
-        Estimate token count using a rough heuristic.
-
-        Gemini doesn't expose tokenizers.
+        Estimate the number of tokens in the given text using a heuristic based on word count.
+        
+        Parameters:
+            text (str): The input text to estimate token count for.
+        
+        Returns:
+            int: Estimated token count, calculated as the number of words multiplied by 1.3.
         """
         return int(len(text.split()) * 1.3)
 
     def validate_connection(self) -> bool:
         """
-        Ping the Gemini API to check if it's alive.
-
+        Checks connectivity to the Gemini API by sending a minimal prompt.
+        
         Returns:
-            True if success
+            bool: True if a valid response is received from the API, otherwise False.
         """
         try:
             response = self.client.models.generate_content(
@@ -196,10 +210,10 @@ class GeminiModel(BaseModel):
 
     def get_info(self) -> dict[str, Any]:
         """
-        Get metadata about the model.
-
+        Return a dictionary containing metadata about the Gemini model, including retry settings, timeout, batch support, and pricing information.
+        
         Returns:
-            Info dict
+            dict: Model metadata with keys for max retries, timeout, batch support, and pricing.
         """
         info = super().get_info()
         info.update(
