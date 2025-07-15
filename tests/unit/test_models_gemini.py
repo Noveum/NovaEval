@@ -80,12 +80,16 @@ class TestGeminiModel:
     def test_generate_with_params(self):
         """Test text generation with additional parameters."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
-            with patch("novaeval.models.gemini.types.GenerateContentConfig") as mock_config:
+            with patch(
+                "novaeval.models.gemini.types.GenerateContentConfig"
+            ) as mock_config:
                 mock_response = Mock()
                 mock_response.text = "Generated response"
 
                 mock_client_instance = Mock()
-                mock_client_instance.models.generate_content.return_value = mock_response
+                mock_client_instance.models.generate_content.return_value = (
+                    mock_response
+                )
                 mock_client.return_value = mock_client_instance
 
                 model = GeminiModel()
@@ -122,7 +126,9 @@ class TestGeminiModel:
         """Test error handling during text generation."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
             mock_client_instance = Mock()
-            mock_client_instance.models.generate_content.side_effect = Exception("API Error")
+            mock_client_instance.models.generate_content.side_effect = Exception(
+                "API Error"
+            )
             mock_client.return_value = mock_client_instance
 
             model = GeminiModel()
@@ -158,7 +164,9 @@ class TestGeminiModel:
         """Test batch generation with errors."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
             mock_client_instance = Mock()
-            mock_client_instance.models.generate_content.side_effect = Exception("API Error")
+            mock_client_instance.models.generate_content.side_effect = Exception(
+                "API Error"
+            )
             mock_client.return_value = mock_client_instance
 
             model = GeminiModel()
@@ -321,7 +329,7 @@ class TestGeminiModel:
             "gemini-2.0-flash-lite",
             "gemini-1.5-flash",
             "gemini-1.5-flash-8b",
-            "gemini-1.5-pro"
+            "gemini-1.5-pro",
         ]
 
         with patch("novaeval.models.gemini.genai.Client"):
@@ -340,7 +348,9 @@ class TestGeminiModel:
                 mock_response.text = "Generated response"
 
                 mock_client_instance = Mock()
-                mock_client_instance.models.generate_content.return_value = mock_response
+                mock_client_instance.models.generate_content.return_value = (
+                    mock_response
+                )
                 mock_client.return_value = mock_client_instance
 
                 model = GeminiModel()
