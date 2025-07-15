@@ -9,4 +9,4 @@ from novaeval.models.base import BaseModel
 from novaeval.models.gemini import GeminiModel
 from novaeval.models.openai import OpenAIModel
 
-__all__ = ["AnthropicModel", "BaseModel", "OpenAIModel", "GeminiModel"]
+__all__ = ["AnthropicModel", "BaseModel", "GeminiModel", "OpenAIModel"]
