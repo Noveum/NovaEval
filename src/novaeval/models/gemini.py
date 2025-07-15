@@ -5,12 +5,10 @@ This module provides an interface to Gemini's language models using the Google G
 """
 
 import os
-import time
 from typing import Any, Optional, Union
 
 from google import genai
 from google.genai import types
-
 
 from novaeval.models.base import BaseModel
 
@@ -83,7 +81,6 @@ class GeminiModel(BaseModel):
             Generated text
         """
         try:
-            start_time = time.time()
 
             response = self.client.models.generate_content(
                 model=self.model_name,
@@ -93,7 +90,6 @@ class GeminiModel(BaseModel):
                 ),
             )
 
-            end_time = time.time()
             output = response.text or ""
 
             tokens_used = self.count_tokens(prompt + output)

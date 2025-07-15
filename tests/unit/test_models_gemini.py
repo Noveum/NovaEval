@@ -79,31 +79,29 @@ class TestGeminiModel:
 
     def test_generate_with_params(self):
         """Test text generation with additional parameters."""
-        with patch("novaeval.models.gemini.genai.Client") as mock_client:
-            with patch(
-                "novaeval.models.gemini.types.GenerateContentConfig"
-            ) as mock_config:
-                mock_response = Mock()
-                mock_response.text = "Generated response"
+        with (
+            patch("novaeval.models.gemini.genai.Client") as mock_client,
+            patch("novaeval.models.gemini.types.GenerateContentConfig") as mock_config,
+        ):
+            mock_response = Mock()
+            mock_response.text = "Generated response"
 
-                mock_client_instance = Mock()
-                mock_client_instance.models.generate_content.return_value = (
-                    mock_response
-                )
-                mock_client.return_value = mock_client_instance
+            mock_client_instance = Mock()
+            mock_client_instance.models.generate_content.return_value = mock_response
+            mock_client.return_value = mock_client_instance
 
-                model = GeminiModel()
-                model.estimate_cost = Mock(return_value=0.005)
+            model = GeminiModel()
+            model.estimate_cost = Mock(return_value=0.005)
 
-                response = model.generate(
-                    "Test prompt", max_tokens=100, temperature=0.5, custom_param="value"
-                )
+            response = model.generate(
+                "Test prompt", max_tokens=100, temperature=0.5, custom_param="value"
+            )
 
-                assert response == "Generated response"
+            assert response == "Generated response"
 
-                mock_config.assert_called_once_with(
-                    temperature=0.5, max_output_tokens=100, custom_param="value"
-                )
+            mock_config.assert_called_once_with(
+                temperature=0.5, max_output_tokens=100, custom_param="value"
+            )
 
     def test_generate_empty_response(self):
         """Test generation with empty response."""
@@ -315,7 +313,7 @@ class TestGeminiModel:
         assert "gemini-1.5-flash-8b" in GeminiModel.PRICING
 
         # Check that pricing is a tuple of (input_price, output_price)
-        for model_name, pricing in GeminiModel.PRICING.items():
+        for _model_name, pricing in GeminiModel.PRICING.items():
             assert len(pricing) == 2
             assert isinstance(pricing[0], (int, float))
             assert isinstance(pricing[1], (int, float))
@@ -340,27 +338,27 @@ class TestGeminiModel:
 
     def test_time_tracking(self):
         """Test that time tracking works during generation."""
-        with patch("novaeval.models.gemini.genai.Client") as mock_client:
-            with patch("novaeval.models.gemini.time.time") as mock_time:
-                mock_time.side_effect = [100.0, 101.0]  # start_time, end_time
+        with (
+            patch("novaeval.models.gemini.genai.Client") as mock_client,
+            patch("novaeval.models.gemini.time.time") as mock_time,
+        ):
+            mock_time.side_effect = [100.0, 101.0]  # start_time, end_time
 
-                mock_response = Mock()
-                mock_response.text = "Generated response"
+            mock_response = Mock()
+            mock_response.text = "Generated response"
 
-                mock_client_instance = Mock()
-                mock_client_instance.models.generate_content.return_value = (
-                    mock_response
-                )
-                mock_client.return_value = mock_client_instance
+            mock_client_instance = Mock()
+            mock_client_instance.models.generate_content.return_value = mock_response
+            mock_client.return_value = mock_client_instance
 
-                model = GeminiModel()
-                model.estimate_cost = Mock(return_value=0.01)
+            model = GeminiModel()
+            model.estimate_cost = Mock(return_value=0.01)
 
-                response = model.generate("Test prompt")
+            response = model.generate("Test prompt")
 
-                assert response == "Generated response"
-                # Verify time.time() was called twice (start and end)
-                assert mock_time.call_count == 2
+            assert response == "Generated response"
+            # Verify time.time() was called twice (start and end)
+            assert mock_time.call_count == 2
 
     def test_generate_with_stop_parameter(self):
         """Test generate method with stop parameter (should be ignored)."""
