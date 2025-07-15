@@ -89,11 +89,8 @@ class GeminiModel(BaseModel):
                 model=self.model_name,
                 contents=prompt,
                 config=types.GenerateContentConfig(
-                       temperature=temperature,
-                          max_output_tokens=max_tokens,
-                          **kwargs
-                        ),          
-               
+                    temperature=temperature, max_output_tokens=max_tokens, **kwargs
+                ),
             )
 
             end_time = time.time()
@@ -112,7 +109,9 @@ class GeminiModel(BaseModel):
             return output
 
         except Exception as e:
-            self._handle_error(e, f"Failed to generate text for prompt: {prompt[:100]}...")
+            self._handle_error(
+                e, f"Failed to generate text for prompt: {prompt[:100]}..."
+            )
             raise
 
     def generate_batch(
@@ -165,7 +164,9 @@ class GeminiModel(BaseModel):
         input_tokens = self.count_tokens(prompt)
         output_tokens = self.count_tokens(response)
 
-        return (input_tokens / 1000) * input_price + (output_tokens / 1000) * output_price
+        return (input_tokens / 1000) * input_price + (
+            output_tokens / 1000
+        ) * output_price
 
     def count_tokens(self, text: str) -> int:
         """
@@ -186,10 +187,8 @@ class GeminiModel(BaseModel):
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents="Ping!",
-                config=types.GenerateContentConfig(
-                            max_output_tokens=1
-                            )
-                    )
+                config=types.GenerateContentConfig(max_output_tokens=1),
+            )
             return bool(response.text)
         except Exception as e:
             self._handle_error(e, "Connection test failed")

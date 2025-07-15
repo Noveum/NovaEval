@@ -137,7 +137,9 @@ class TestGeminiModel:
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
             mock_response = Mock()
             mock_response.text = "pong"
-            mock_client.return_value.models.generate_content.return_value = mock_response
+            mock_client.return_value.models.generate_content.return_value = (
+                mock_response
+            )
 
             model = GeminiModel()
             assert model.validate_connection() is True
@@ -145,7 +147,9 @@ class TestGeminiModel:
     def test_validate_connection_failure(self):
         """Test failed connection validation."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
-            mock_client.return_value.models.generate_content.side_effect = Exception("fail")
+            mock_client.return_value.models.generate_content.side_effect = Exception(
+                "fail"
+            )
 
             model = GeminiModel()
             result = model.validate_connection()
