@@ -14,7 +14,7 @@ from novaeval.models.gemini import GeminiModel
 class TestGeminiModel:
     """Test cases for GeminiModel class."""
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_init_default(self):
         """Test initialization with default parameters."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
@@ -44,7 +44,7 @@ class TestGeminiModel:
 
             mock_client.assert_called_once_with(api_key="test_key")
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "env_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "env_key"})
     def test_init_with_env_vars(self):
         """Test initialization using environment variables."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
@@ -52,7 +52,7 @@ class TestGeminiModel:
 
             mock_client.assert_called_once_with(api_key="env_key")
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_generate_success(self):
         """Test successful text generation."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
@@ -80,7 +80,7 @@ class TestGeminiModel:
             assert call_args[1]["model"] == "gemini-2.5-flash"
             assert call_args[1]["contents"] == "Test prompt"
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_generate_with_params(self):
         """Test text generation with additional parameters."""
         with (
@@ -107,7 +107,7 @@ class TestGeminiModel:
                 temperature=0.5, max_output_tokens=100, custom_param="value"
             )
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_generate_empty_response(self):
         """Test generation with empty response."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
@@ -125,7 +125,7 @@ class TestGeminiModel:
 
             assert response == ""
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_generate_error_handling(self):
         """Test error handling during text generation."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
@@ -144,7 +144,7 @@ class TestGeminiModel:
             assert len(model.errors) == 1
             assert "Failed to generate text" in model.errors[0]
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_generate_batch(self):
         """Test batch text generation."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
@@ -165,7 +165,7 @@ class TestGeminiModel:
             assert all(response == "Generated response" for response in responses)
             assert mock_client_instance.models.generate_content.call_count == 3
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_generate_batch_with_error(self):
         """Test batch generation with errors."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
@@ -187,14 +187,14 @@ class TestGeminiModel:
             assert len(model.errors) >= 2  # At least one error per failed prompt
             assert all("API Error" in error for error in model.errors)
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_get_provider(self):
         """Test provider name."""
         with patch("novaeval.models.gemini.genai.Client"):
             model = GeminiModel()
             assert model.get_provider() == "gemini"
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_estimate_cost_known_model(self):
         """Test cost estimation for known model."""
         with patch("novaeval.models.gemini.genai.Client"):
@@ -215,7 +215,7 @@ class TestGeminiModel:
             # Use floating point comparison with reasonable tolerance
             assert abs(cost - expected_cost) < 1e-6
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_estimate_cost_unknown_model(self):
         """Test cost estimation for unknown model."""
         with patch("novaeval.models.gemini.genai.Client"):
@@ -234,7 +234,7 @@ class TestGeminiModel:
             # Restore original pricing
             model.PRICING = original_pricing
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_count_tokens(self):
         """Test token counting with actual implementation behavior."""
         with patch("novaeval.models.gemini.genai.Client"):
@@ -264,7 +264,7 @@ class TestGeminiModel:
                         actual_tokens == 4
                     ), f"For input '{input_text}', expected 4 tokens but got {actual_tokens}"
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_validate_connection_success(self):
         """Test successful connection validation."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
@@ -283,7 +283,7 @@ class TestGeminiModel:
             call_args = mock_client_instance.models.generate_content.call_args
             assert call_args[1]["contents"] == "Ping!"
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_validate_connection_failure(self):
         """Test connection validation failure."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
@@ -301,7 +301,7 @@ class TestGeminiModel:
             assert len(model.errors) == 1
             assert "Connection test failed" in model.errors[0]
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_validate_connection_empty_response(self):
         """Test connection validation with empty response."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
@@ -318,7 +318,7 @@ class TestGeminiModel:
 
             assert result is False
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_get_info(self):
         """Test model info retrieval."""
         with patch("novaeval.models.gemini.genai.Client"):
@@ -377,7 +377,7 @@ class TestGeminiModel:
                 assert model.model_name == model_name
                 assert model.name == f"gemini_{model_name}"
 
-    @patch.dict(os.environ, {"GOOGLE_API_KEY": "test_key"})
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
     def test_generate_with_stop_parameter(self):
         """Test generate method with stop parameter (should be ignored)."""
         with patch("novaeval.models.gemini.genai.Client") as mock_client:

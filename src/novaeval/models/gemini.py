@@ -113,11 +113,11 @@ class GeminiModel(BaseModel):
         """
 
         # Validate API key
-        effective_api_key = api_key or os.getenv("GOOGLE_API_KEY")
+        effective_api_key = api_key or os.getenv("GEMINI_API_KEY")
         if not effective_api_key:
             raise ValueError(
                 "API key is required. Provide it via the 'api_key' parameter "
-                "or set the 'GOOGLE_API_KEY' environment variable."
+                "or set the 'GEMINI_API_KEY' environment variable."
             )
 
         if not isinstance(effective_api_key, str) or not effective_api_key.strip():

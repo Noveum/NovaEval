@@ -179,3 +179,4 @@ results/
 Gemfile.lock
 _site/
 .DS_Store
+.kiro/
