@@ -10,6 +10,7 @@ import pytest
 from novaeval.models.gemini import GeminiModel
 
 
+@pytest.mark.unit
 class TestGeminiModel:
     """Test cases for GeminiModel class."""
 
@@ -216,16 +217,32 @@ class TestGeminiModel:
             assert cost == 0.0
 
     def test_count_tokens(self):
-        """Test token counting."""
+        """Test token counting with specific input strings and expected values."""
         with patch("novaeval.models.gemini.genai.Client"):
             model = GeminiModel()
 
-            # Test the heuristic estimation (word count * 1.3)
-            tokens = model.count_tokens("Hello world")
-            assert tokens == int(2 * 1.3)  # 2 words * 1.3 = 2
+            # Test cases with known inputs and expected outputs based on heuristic (word count * 1.3)
+            test_cases = [
+                ("Hello world", 2, int(2 * 1.3)),  # 2 words -> 2 tokens
+                ("This is a test", 4, int(4 * 1.3)),  # 4 words -> 5 tokens
+                ("The quick brown fox jumps", 5, int(5 * 1.3)),  # 5 words -> 6 tokens
+                ("Single", 1, int(1 * 1.3)),  # 1 word -> 1 token
+                ("", 0, int(0 * 1.3)),  # 0 words -> 0 tokens
+                (
+                    "One two three four five six seven eight nine ten",
+                    10,
+                    int(10 * 1.3),
+                ),  # 10 words -> 13 tokens
+            ]
 
-            tokens = model.count_tokens("This is a longer text")
-            assert tokens == int(5 * 1.3)  # 5 words * 1.3 = 6
+            for input_text, word_count, expected_tokens in test_cases:
+                actual_tokens = model.count_tokens(input_text)
+                assert (
+                    actual_tokens == expected_tokens
+                ), f"For input '{input_text}' with {word_count} words, expected {expected_tokens} tokens but got {actual_tokens}"
+                assert isinstance(
+                    actual_tokens, int
+                ), f"Token count should be an integer, got {type(actual_tokens)}"
 
     def test_validate_connection_success(self):
         """Test successful connection validation."""
