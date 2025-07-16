@@ -168,7 +168,29 @@ class GeminiModel(BaseModel):
                 ),
             )
 
-            output = response.text or ""
+            # Extract text from response, handling different response formats
+            output = ""
+            if response.text is not None:
+                output = response.text
+            elif response.candidates and len(response.candidates) > 0:
+                candidate = response.candidates[0]
+                if candidate.content and candidate.content.parts:
+                    # Extract text from content parts
+                    for part in candidate.content.parts:
+                        if hasattr(part, "text") and part.text:
+                            output += part.text
+
+                # If still no output and finish reason is MAX_TOKENS,
+                # the model couldn't generate due to token limit
+                if not output and candidate.finish_reason == "MAX_TOKENS":
+                    # Try with a higher token limit
+                    if max_tokens is None or max_tokens < 50:
+                        return self.generate(
+                            prompt, max_tokens=50, temperature=temperature, **kwargs
+                        )
+                    else:
+                        # If we already tried with higher tokens, return empty
+                        output = ""
 
             tokens_used = self.count_tokens(prompt + output)
             cost = self.estimate_cost(prompt, output)
