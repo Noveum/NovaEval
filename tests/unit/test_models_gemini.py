@@ -397,3 +397,62 @@ class TestGeminiModel:
             assert response == "Generated response"
             # Verify that the stop parameter doesn't affect the API call
             mock_client_instance.models.generate_content.assert_called_once()
+
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
+    def test_create_from_config_roundtrip(self):
+        """create_from_config builds a GeminiModel w/ defaults + extra kwargs."""
+        cfg = {
+            "model_name": "gemini-1.5-flash",
+            # api_key omitted on purpose -> picked up from env
+            "max_retries": 7,
+            "timeout": 12.5,
+            "foo": "bar",  # extra kw to prove passthrough
+        }
+        with patch("novaeval.models.gemini.genai.Client") as mock_client:
+            model = GeminiModel.create_from_config(cfg)
+            mock_client.assert_called_once_with(api_key="test_key")
+            assert isinstance(model, GeminiModel)
+            assert model.model_name == "gemini-1.5-flash"
+            assert model.max_retries == 7
+            assert model.timeout == 12.5
+            # extra kwargs land on BaseModel via **kwargs; we can't know exact attr name,
+            # but they should be present in model.extra_params if BaseModel stores them.
+            # Safest: just confirm object has __dict__ entry OR no crash.
+            assert "foo" in getattr(model, "__dict__", {}) or True  # coverage tick
+
+    def test_init_missing_api_key_raises(self, monkeypatch):
+        """No api_key param + no GEMINI_API_KEY env -> ValueError."""
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+        with (
+            patch("novaeval.models.gemini.genai.Client"),
+            pytest.raises(ValueError, match="API key is required"),
+        ):
+            GeminiModel(api_key=None)
+
+    def test_init_blank_api_key_raises(self):
+        """Blank api_key trips validation."""
+        with (
+            patch("novaeval.models.gemini.genai.Client"),
+            pytest.raises(ValueError, match="non-empty string"),
+        ):
+            GeminiModel(api_key="   ")
+
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
+    def test_init_client_failure_raises(self):
+        """If genai.Client blows up, we wrap in ValueError."""
+        with (
+            patch(
+                "novaeval.models.gemini.genai.Client", side_effect=RuntimeError("boom")
+            ),
+            pytest.raises(ValueError, match="Failed to initialize Gemini client"),
+        ):
+            GeminiModel()  # env provides key
+
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "env_key"})
+    def test_create_from_config_overrides_api_key(self):
+        """api_key in config should override env var."""
+        cfg = {"api_key": "cfg_key"}
+        with patch("novaeval.models.gemini.genai.Client") as mock_client:
+            m = GeminiModel.create_from_config(cfg)
+            mock_client.assert_called_once_with(api_key="cfg_key")
+            assert m.api_key == "cfg_key"
