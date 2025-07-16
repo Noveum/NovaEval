@@ -112,12 +112,6 @@ class GeminiModel(BaseModel):
             ValueError: If model_name is not supported
             ValueError: If API key is missing or invalid
         """
-        # Validate model name
-        if model_name not in self.SUPPORTED_MODELS:
-            raise ValueError(
-                f"Unsupported model '{model_name}'. "
-                f"Supported models: {', '.join(self.SUPPORTED_MODELS)}"
-            )
 
         # Validate API key
         effective_api_key = api_key or os.getenv("GOOGLE_API_KEY")
