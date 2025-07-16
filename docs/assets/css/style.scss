@@ -1,0 +1,434 @@
+---
+---
+
+@import "minima";
+
+/* Custom styles for NovaEval documentation */
+
+/* Improve navigation appearance */
+.site-nav {
+  .page-link {
+    color: #2a7ae4;
+    font-weight: 500;
+    margin-left: 20px;
+    transition: color 0.3s ease;
+
+    &:hover {
+      color: #1a5cb8;
+      text-decoration: none;
+    }
+  }
+}
+
+/* Improve header styling */
+.site-header {
+  border-bottom: 1px solid #e5e5e5;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+  .site-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2a7ae4;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+}
+
+/* Modern Hero Banner */
+.hero-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+  }
+}
+
+.hero-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    text-align: center;
+    gap: 2rem;
+  }
+}
+
+.hero-text {
+  flex: 1;
+  color: white;
+
+  h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    color: #ffffff;
+
+    @media (max-width: 768px) {
+      font-size: 2rem;
+    }
+  }
+
+  p {
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin: 0;
+    line-height: 1.5;
+
+    @media (max-width: 768px) {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    justify-content: center;
+  }
+}
+
+.github-button,
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+
+  &:hover {
+    text-decoration: none;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.github-button {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+
+  .github-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+}
+
+.primary-button {
+  background: #ffffff;
+  color: #667eea;
+  border-color: #ffffff;
+
+  &:hover {
+    background: #f8f9ff;
+    color: #5a6fd8;
+  }
+}
+
+.hero-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+
+  .noveum-logo {
+    width: 120px;
+    height: auto;
+    filter: brightness(0) invert(1);
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 768px) {
+      width: 100px;
+    }
+  }
+
+  .brand-text {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1rem;
+    margin: 0;
+    text-align: center;
+
+    strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+  }
+}
+
+/* Code blocks styling */
+.highlight {
+  border-radius: 6px;
+  overflow: hidden;
+
+  pre {
+    border-radius: 6px;
+  }
+}
+
+/* Table styling */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+
+  th, td {
+    border: 1px solid #e5e5e5;
+    padding: 0.75rem;
+    text-align: left;
+  }
+
+  th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+  }
+}
+
+/* Badge styling */
+.badge {
+  display: inline-block;
+  padding: 0.25em 0.6em;
+  font-size: 0.75em;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.25rem;
+  margin-right: 0.5rem;
+
+  &.badge-primary {
+    background-color: #007bff;
+  }
+
+  &.badge-success {
+    background-color: #28a745;
+  }
+
+  &.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
+  }
+
+  &.badge-danger {
+    background-color: #dc3545;
+  }
+}
+
+/* Responsive navigation */
+@media screen and (max-width: 600px) {
+  .site-nav {
+    .page-link {
+      display: block;
+      margin: 0.5rem 0;
+    }
+  }
+}
+
+/* Custom button styling */
+.btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 0.25rem;
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+
+  &.btn-primary {
+    color: #fff;
+    background-color: #2a7ae4;
+    border-color: #2a7ae4;
+
+    &:hover {
+      background-color: #1a5cb8;
+      border-color: #1a5cb8;
+      text-decoration: none;
+    }
+  }
+}
+
+/* Alert boxes */
+.alert {
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+
+  &.alert-info {
+    color: #0c5460;
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+  }
+
+  &.alert-warning {
+    color: #856404;
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+  }
+
+  &.alert-danger {
+    color: #721c24;
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+  }
+}
+
+/* Improve footer */
+.site-footer {
+  border-top: 1px solid #e5e5e5;
+  padding: 2rem 0;
+
+  .footer-heading {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Navigation order indicator */
+.nav-order {
+  display: inline-block;
+  background-color: #f8f9fa;
+  color: #6c757d;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+  margin-right: 0.5rem;
+}
+
+/* Improve content layout */
+.page-content {
+  padding: 2rem 0;
+}
+
+/* Enhanced navigation for mobile */
+@media screen and (max-width: 600px) {
+  .site-nav {
+    .trigger {
+      background-color: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 0.25rem;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .page-link {
+      display: block;
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      color: #2a7ae4;
+
+      &:hover {
+        background-color: #f8f9fa;
+        border-radius: 0.25rem;
+      }
+    }
+  }
+}
+
+/* Documentation grid layout */
+.doc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+.doc-card {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: #ffffff;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #2a7ae4;
+  }
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  p {
+    color: #6c757d;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+
+  .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+/* Footer CTA */
+.footer-cta {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  padding: 2rem;
+  border-radius: 8px;
+  text-align: center;
+  border-left: 4px solid #2a7ae4;
+  margin-top: 3rem;
+
+  h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: #6c757d;
+    margin-bottom: 0;
+  }
+}

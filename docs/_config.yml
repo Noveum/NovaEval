@@ -1,8 +1,13 @@
 # Jekyll configuration for NovaEval documentation
 title: NovaEval Documentation
-description: A comprehensive, open-source LLM evaluation framework for testing and benchmarking AI models
-url: https://noveum.github.io/NovaEval
-baseurl: /NovaEval
+description: >-
+  NovaEval is a comprehensive, open-source AI model evaluation framework that simplifies
+  the complex process of testing and benchmarking language models. Whether you're a
+  researcher comparing model performance, a developer ensuring quality in production,
+  or a data scientist benchmarking custom models, NovaEval provides the tools you need.
+tagline: Comprehensive AI Model Evaluation Framework
+url: https://novaeval.com
+baseurl: ""
 
 # Theme and plugins
 theme: minima
@@ -10,6 +15,7 @@ plugins:
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-seo-tag
+  - jekyll-redirect-from
 
 # Markdown settings
 markdown: kramdown
@@ -20,31 +26,43 @@ kramdown:
 
 # Site settings
 lang: en
+timezone: America/New_York
+
+# Author and company information
 author:
   name: Noveum AI
   email: team@noveum.ai
   url: https://noveum.ai
+  twitter: noveumAI
+  github: Noveum
 
 # Social links
 github_username: Noveum
 twitter_username: noveumAI
 
-# Navigation
-nav_links:
-  - title: Home
-    url: /
-  - title: Getting Started
-    url: /getting-started/
-  - title: User Guide
-    url: /user-guide/
-  - title: API Reference
-    url: /api-reference/
-  - title: Examples
-    url: /examples/
-  - title: Local Development
-    url: /local-development/
-  - title: Contributing
-    url: /contributing/
+# Keywords for SEO
+keywords: >-
+  AI evaluation, LLM testing, machine learning benchmarks, model evaluation framework,
+  OpenAI, Anthropic, Claude, GPT, AI models, language model testing, AI benchmarking,
+  ML evaluation, artificial intelligence, model comparison, AI performance testing
+
+# Navigation configuration for minima theme
+header_pages:
+  - index.md
+  - getting-started.md
+  - user-guide.md
+  - api-reference.md
+  - cli-reference.md
+  - examples.md
+  - contributing.md
+  - LOCAL_DEVELOPMENT.md
+
+# Minima theme settings
+minima:
+  social_links:
+    github: Noveum
+    twitter: noveumAI
+  show_excerpts: true
 
 # Footer links
 footer_links:
@@ -57,9 +75,47 @@ footer_links:
   - title: Issues
     url: https://github.com/Noveum/NovaEval/issues
 
-# SEO
-google_analytics: # Add your GA tracking ID
-logo: /assets/images/logo.png
+# SEO and Social Media
+google_analytics: G-MYX27CJJYK
+logo: https://blog.api.market/wp-content/uploads/2025/07/NovaEval_banner_SEO.png
+canonical_url: https://novaeval.com/
+
+# Twitter Card settings
+twitter:
+  username: noveumAI
+  card: summary_large_image
+
+# Open Graph settings
+og_image: https://blog.api.market/wp-content/uploads/2025/07/NovaEval_banner_SEO.png
+og_image_alt: "NovaEval - Comprehensive AI Model Evaluation Framework"
+
+# Additional SEO settings
+webmaster_verifications:
+  google: # Add Google Search Console verification code
+  bing: # Add Bing Webmaster verification code
+
+# Social media profiles
+social:
+  name: Noveum AI
+  links:
+    - https://x.com/noveumAI
+    - https://github.com/Noveum
+    - https://noveum.ai
+    - https://linkedin.com/company/noveum-ai
+
+# Site verification and additional meta
+verification:
+  google: # Add Google verification meta tag content
+  bing: # Add Bing verification meta tag content
+
+# Additional SEO meta tags that jekyll-seo-tag will use
+seo:
+  type: Organization
+  name: NovaEval
+  links:
+    - https://novaeval.com
+    - https://github.com/Noveum/NovaEval
+    - https://twitter.com/noveumAI
 
 # Build settings
 exclude:
@@ -82,13 +138,19 @@ defaults:
       type: "pages"
     values:
       layout: "default"
+      image: https://blog.api.market/wp-content/uploads/2025/07/NovaEval_banner_SEO.png
+      author: Noveum AI
   - scope:
       path: ""
       type: "posts"
     values:
       layout: "post"
+      image: https://blog.api.market/wp-content/uploads/2025/07/NovaEval_banner_SEO.png
+      author: Noveum AI
   - scope:
       path: ""
       type: "guides"
     values:
       layout: "guide"
+      image: https://blog.api.market/wp-content/uploads/2025/07/NovaEval_banner_SEO.png
+      author: Noveum AI

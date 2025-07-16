@@ -130,6 +130,28 @@ evaluator = Evaluator.from_config("evaluation_config.yaml")
 results = evaluator.run()
 ```
 
+### Command Line Interface
+
+NovaEval provides a comprehensive CLI for running evaluations:
+
+```bash
+# Run evaluation from configuration file
+novaeval run config.yaml
+
+# Quick evaluation with minimal setup
+novaeval quick -d mmlu -m gpt-4 -s accuracy
+
+# List available datasets, models, and scorers
+novaeval list-datasets
+novaeval list-models
+novaeval list-scorers
+
+# Generate sample configuration
+novaeval generate-config sample-config.yaml
+```
+
+📖 **[Complete CLI Reference](docs/cli-reference.md)** - Detailed documentation for all CLI commands and options
+
 ### Example Configuration
 
 ```yaml

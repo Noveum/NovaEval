@@ -1,8 +1,7 @@
 ---
-title: Local Development Guide
-description: Build and test NovaEval documentation locally using Jekyll
-permalink: /local-development/
-nav_order: 7
+layout: default
+title: Local Development
+nav_order: 8
 ---
 
 # Local GitHub Pages Development Guide
@@ -11,15 +10,16 @@ This guide helps you build and test the NovaEval documentation locally using Jek
 
 ## 🚀 Prerequisites
 
-### 1. Install Ruby
+1. Install Ruby
 
-**⚠️ Important**: Jekyll 3.10.0 (required for GitHub Pages compatibility) requires Ruby 3.2 or lower. Newer Ruby versions (≥3.3) will cause native-extension build errors with gems like psych and nokogiri.
+⚠️ **Important**: Jekyll 3.10.0 (required for GitHub Pages compatibility) requires Ruby 3.2 or lower. Newer Ruby versions (≥3.3) will cause native-extension build errors with gems like psych and nokogiri.
 
 **Recommended: Use a Ruby Version Manager**
 
 Using a Ruby version manager makes it easy to switch between Ruby versions:
 
 **Install rbenv (recommended):**
+
 ```bash
 # macOS
 brew install rbenv ruby-build

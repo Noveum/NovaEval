@@ -6,6 +6,12 @@ nav_order: 1
 
 # NovaEval Documentation
 
+[![GitHub Repo](https://img.shields.io/badge/GitHub-NovaEval-blue?logo=github)](https://github.com/Noveum/NovaEval)
+[![GitHub Stars](https://img.shields.io/github/stars/Noveum/NovaEval?style=social)](https://github.com/Noveum/NovaEval/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/Noveum/NovaEval?style=social)](https://github.com/Noveum/NovaEval/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/Noveum/NovaEval)](https://github.com/Noveum/NovaEval/issues)
+[![GitHub Watchers](https://img.shields.io/github/watchers/Noveum/NovaEval?style=social)](https://github.com/Noveum/NovaEval/watchers)
+
 [![CI](https://github.com/Noveum/NovaEval/actions/workflows/ci.yml/badge.svg)](https://github.com/Noveum/NovaEval/actions/workflows/ci.yml)
 [![Release](https://github.com/Noveum/NovaEval/actions/workflows/release.yml/badge.svg)](https://github.com/Noveum/NovaEval/actions/workflows/release.yml)
 [![codecov](https://codecov.io/gh/Noveum/NovaEval/branch/main/graph/badge.svg)](https://codecov.io/gh/Noveum/NovaEval)
@@ -13,10 +19,26 @@ nav_order: 1
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-Welcome to **NovaEval** - a comprehensive, extensible AI model evaluation framework designed for production use. NovaEval provides a unified interface for evaluating language models across various datasets, metrics, and deployment scenarios.
-
-<div class="hero-section">
-  <p><strong>Built by <a href="https://noveum.ai" target="_blank">Noveum AI</a></strong> - Pioneering the future of AI evaluation</p>
+<div class="hero-banner">
+  <div class="hero-content">
+    <div class="hero-text">
+      <h2>Comprehensive AI Model Evaluation Framework</h2>
+      <p>A unified interface for evaluating language models across various datasets, metrics, and deployment scenarios.</p>
+      <div class="hero-buttons">
+        <a href="https://github.com/Noveum/NovaEval" class="github-button" target="_blank" rel="noopener">
+          <svg class="github-icon" viewBox="0 0 16 16" width="16" height="16">
+            <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+          </svg>
+          View on GitHub
+        </a>
+        <a href="/getting-started/" class="primary-button">Get Started →</a>
+      </div>
+    </div>
+    <div class="hero-brand">
+      <img src="/assets/images/noveum-logo.png" alt="Noveum AI" class="noveum-logo">
+      <p class="brand-text">Built by <strong>Noveum AI</strong></p>
+    </div>
+  </div>
 </div>
 
 ## ✨ What is NovaEval?
@@ -151,66 +173,3 @@ Explore more from the [Noveum AI](https://noveum.ai) ecosystem:
   <p><strong>Ready to get started?</strong> <a href="/getting-started/">Install NovaEval</a> and run your first evaluation in minutes.</p>
   <p>Built with ❤️ by the <a href="https://noveum.ai" target="_blank">Noveum.ai</a> team</p>
 </div>
-
-<style>
-.hero-section {
-  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-  color: white;
-  padding: 2rem;
-  border-radius: 10px;
-  margin: 2rem 0;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.hero-section a {
-  color: #f8f9fa;
-  font-weight: bold;
-  text-decoration: none;
-  border-bottom: 2px solid #f8f9fa;
-  transition: all 0.3s ease;
-}
-
-.hero-section a:hover {
-  color: #ffffff;
-  border-bottom-color: #ffffff;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
-}
-
-.doc-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-
-.doc-card {
-  border: 1px solid #e1e4e8;
-  border-radius: 8px;
-  padding: 1.5rem;
-  background: #f8f9fa;
-}
-
-.doc-card h3 {
-  margin-top: 0;
-  color: #2c3e50;
-}
-
-.doc-card h3 a {
-  text-decoration: none;
-  color: inherit;
-}
-
-.doc-card h3 a:hover {
-  color: #3498db;
-}
-
-.footer-cta {
-  background: #f8f9fa;
-  padding: 2rem;
-  border-radius: 8px;
-  text-align: center;
-  border-left: 4px solid #3498db;
-  margin-top: 3rem;
-}
-</style>

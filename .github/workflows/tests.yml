@@ -29,7 +29,7 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        python -m pytest tests/ --cov=src/novaeval --cov-report=xml --cov-report=term-missing -v
+        python -m pytest tests/ --cov=src/novaeval --cov-report=xml --cov-report=term-missing -v --junitxml=junit.xml -o junit_family=legacy
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -39,6 +39,12 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: Noveum/NovaEval
+
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
 
   lint:
     runs-on: ubuntu-latest

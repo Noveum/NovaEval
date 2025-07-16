@@ -100,7 +100,7 @@ jobs:
 
     - name: Run unit tests
       run: |
-        pytest tests/unit/ -v --cov=src/novaeval --cov-report=xml --cov-report=term-missing
+        pytest tests/unit/ -v --cov=src/novaeval --cov-report=xml --cov-report=term-missing --junitxml=junit.xml -o junit_family=legacy
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -111,6 +111,12 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: Noveum/NovaEval
+
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
 
   security:
     runs-on: ubuntu-latest
@@ -160,7 +166,7 @@ jobs:
 
     - name: Run full test suite (unit + integration)
       run: |
-        pytest tests/ -v --cov=src/novaeval --cov-report=xml --cov-report=term-missing
+        pytest tests/ -v --cov=src/novaeval --cov-report=xml --cov-report=term-missing --junitxml=junit.xml -o junit_family=legacy
       env:
         INTEGRATION_TESTS: "true"
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -171,6 +177,12 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         slug: Noveum/NovaEval
+
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     runs-on: ubuntu-latest
@@ -227,4 +239,4 @@ jobs:
           -e OPENAI_API_KEY=test_key \
           -e ANTHROPIC_API_KEY=test_key \
           novaeval:test \
-          python -m pytest tests/ -v --tb=short
+          python -m pytest tests/ -v --tb=short --junitxml=junit.xml -o junit_family=legacy
