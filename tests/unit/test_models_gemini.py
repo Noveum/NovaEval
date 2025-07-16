@@ -113,6 +113,7 @@ class TestGeminiModel:
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
             mock_response = Mock()
             mock_response.text = None
+            mock_response.candidates = []  # Empty candidates list
 
             mock_client_instance = Mock()
             mock_client_instance.models.generate_content.return_value = mock_response
