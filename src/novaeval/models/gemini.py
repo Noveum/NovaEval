@@ -6,7 +6,6 @@ This module provides an interface to Gemini's language models using the Google G
 
 import os
 import re
-import time
 from typing import Any, Optional, Union
 
 from google import genai
@@ -161,7 +160,6 @@ class GeminiModel(BaseModel):
             Generated text
         """
         try:
-            time.time()
             response = self.client.models.generate_content(
                 model=self.model_name,
                 contents=prompt,
@@ -169,7 +167,6 @@ class GeminiModel(BaseModel):
                     temperature=temperature, max_output_tokens=max_tokens, **kwargs
                 ),
             )
-            time.time()
 
             output = response.text or ""
 
