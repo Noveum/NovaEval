@@ -2,6 +2,12 @@
 Gemini model implementation for NovaEval.
 
 This module provides an interface to Gemini's language models using the Google GenAI SDK.
+
+PRICING UNITS: USD **per 1,000,000 tokens** (M tokens), aligned with the
+published Gemini API paid-tier rates. Cache pricing is ignored here.
+
+Pricing last validated: 2025-07-17 (Asia/Kolkata).
+Sources: Google Gemini API Pricing docs; TechCrunch Gemini 2.5 Pro article.
 """
 
 import os
@@ -13,6 +19,62 @@ from google.genai import types
 
 from novaeval.models.base import BaseModel
 
+# ---------------------------------------------------------------------------
+# Pricing (BASE TIER ONLY, cache ignored)
+# ---------------------------------------------------------------------------
+# NOTE: Some Gemini models have *higher* rates when prompt tokens exceed a threshold
+# (e.g., 2.5 Pro >200k tokens; 1.5 family >128k). For simplicity, NovaEval defaults
+# to the *base-tier* rates below. You can enable tiered billing by flipping
+# `USE_TIERED_PRICING = True` and providing actual input token counts.
+#
+# USD per 1M tokens (input, output)
+PRICING = {
+    "gemini-2.5-pro": (1.25, 10.00),  # <=200k prompt tier.
+    "gemini-2.5-flash": (0.30, 2.50),  # flat.
+    "gemini-2.5-flash-lite": (0.10, 0.40),  # flat.
+    "gemini-2.0-flash": (0.10, 0.40),  # flat.
+    "gemini-2.0-flash-lite": (0.075, 0.30),  # flat.
+    "gemini-1.5-flash": (0.075, 0.30),  # <=128k tier.
+    "gemini-1.5-flash-8b": (0.0375, 0.15),  # <=128k tier.
+    "gemini-1.5-pro": (1.25, 5.00),  # <=128k tier.
+}
+
+SUPPORTED_MODELS = list(PRICING.keys())
+
+# Optional (not used unless enabled below): prompt-size tier cutoffs + high-tier rates.
+# cutoff is inclusive for low tier (i.e., <= cutoff => low-tier pricing).
+PRICING_TIERED = {
+    "gemini-2.5-pro": (200_000, (1.25, 10.00), (2.50, 15.00)),
+    "gemini-1.5-pro": (128_000, (1.25, 5.00), (2.50, 10.00)),
+    "gemini-1.5-flash": (128_000, (0.075, 0.30), (0.15, 0.60)),
+    "gemini-1.5-flash-8b": (128_000, (0.0375, 0.15), (0.075, 0.30)),
+}
+
+# Flip to True if you want NovaEval to auto-select the higher tier when prompt tokens exceed the cutoff.
+USE_TIERED_PRICING = False
+
+
+# ---------------------------------------------------------------------------
+# Lightweight token estimation
+# ---------------------------------------------------------------------------
+def rough_token_estimate(text: str) -> int:
+    """
+    Very rough character-based token estimate.
+
+    Gemini tokenization differs from GPT-style BPEs; for low-stakes *cost estimates*
+    we approximate 4 chars/token (English-ish mix).  Adjust if you see large drifts.
+
+    For tighter numbers, integrate:
+      - Google Gemini SDK token counting endpoints; OR
+      - a local tokenizer once Google publishes an official one.
+
+    Returns integer token estimate.
+    """
+    if not text:
+        return 0
+    # crude heuristic: avg 4 chars/token; clamp floor 1 token if non-empty
+    return max(1, len(text) // 4)
+
 
 class GeminiModel(BaseModel):
     """
@@ -20,43 +82,6 @@ class GeminiModel(BaseModel):
 
     Supports Gemini 2.5 Pro, 2.5 Flash, 2.0 Flash, 2.0 Flash Lite, 1.5 Flash, 1.5 Flash-8B, and 1.5 Pro.
     """
-
-    # Pricing per 1,000,000 tokens (input, output)
-    PRICING = {
-        "gemini-2.5-pro": (1.25, 10.00),
-        "gemini-2.5-flash": (
-            0.0003,
-            0.0025,
-        ),
-        "gemini-2.0-flash": (
-            0.0001,
-            0.0004,
-        ),
-        "gemini-2.0-flash-lite": (
-            0.000075,
-            0.0003,
-        ),
-        "gemini-1.5-flash": (
-            0.000075,
-            0.0003,
-        ),
-        "gemini-1.5-flash-8b": (
-            0.0000375,
-            0.00015,
-        ),
-        "gemini-1.5-pro": (1.25, 5.00),
-    }
-
-    # Supported model names
-    SUPPORTED_MODELS = [
-        "gemini-2.5-pro",
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        "gemini-2.0-flash-lite",
-        "gemini-1.5-flash",
-        "gemini-1.5-flash-8b",
-        "gemini-1.5-pro",
-    ]
 
     @classmethod
     def create_from_config(cls, config: dict[str, Any]) -> "GeminiModel":
@@ -245,24 +270,49 @@ class GeminiModel(BaseModel):
     def get_provider(self) -> str:
         return "gemini"
 
-    def estimate_cost(self, prompt: str, response: str = "") -> float:
+    def _get_rates(self, input_tokens: int) -> tuple[float, float]:
         """
-        Estimate Gemini API cost.
+        Return (input_rate, output_rate) in USD per 1M tokens.
 
-        Returns:
-            Estimated cost in USD
+        If USE_TIERED_PRICING is False, always return base-tier PRICING.
+        If True, and model has a tier cutoff, choose high-tier when input_tokens > cutoff.
         """
-        pricing = self.PRICING.get(self.model_name)
-        if not pricing:
+        if not USE_TIERED_PRICING:
+            return PRICING.get(self.model_name, (0.0, 0.0))
+
+        tier_info = PRICING_TIERED.get(self.model_name)
+        if not tier_info:
+            return PRICING.get(self.model_name, (0.0, 0.0))
+
+        cutoff, low_rates, high_rates = tier_info
+        return low_rates if input_tokens <= cutoff else high_rates
+
+    def estimate_cost(
+        self,
+        prompt: str,
+        response: str = "",
+        *,
+        input_tokens: Optional[int] = None,
+        output_tokens: Optional[int] = None,
+    ) -> float:
+        """
+        Estimate USD cost for a single prompt/response pair.
+
+        - If explicit token counts provided, they're used directly.
+        - Else we perform a rough estimate via `rough_token_estimate()`.
+        - Ignores context caching, min charges, taxes, etc.
+        """
+        if input_tokens is None:
+            input_tokens = rough_token_estimate(prompt)
+        if output_tokens is None:
+            output_tokens = rough_token_estimate(response)
+
+        in_rate, out_rate = self._get_rates(input_tokens)
+        if in_rate == 0.0 and out_rate == 0.0:
             return 0.0
 
-        input_price, output_price = pricing
-        input_tokens = self.count_tokens(prompt)
-        output_tokens = self.count_tokens(response)
-
-        return (input_tokens / 1000) * input_price + (
-            output_tokens / 1000
-        ) * output_price
+        M = 1_000_000  # billing unit
+        return (input_tokens / M) * in_rate + (output_tokens / M) * out_rate
 
     def count_tokens(self, text: str) -> int:
         """
@@ -337,8 +387,8 @@ class GeminiModel(BaseModel):
                 "max_retries": self.max_retries,
                 "timeout": self.timeout,
                 "supports_batch": False,
-                "pricing": self.PRICING.get(self.model_name, (0, 0)),
-                "supported_models": self.SUPPORTED_MODELS,
+                "pricing": PRICING.get(self.model_name, (0, 0)),
+                "supported_models": SUPPORTED_MODELS,
             }
         )
         return info

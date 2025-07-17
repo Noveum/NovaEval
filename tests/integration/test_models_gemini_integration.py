@@ -133,7 +133,7 @@ class TestGeminiModelIntegration:
             assert len(info["pricing"]) == 2
 
             # Verify the model is in the supported models list
-            assert variant in model.SUPPORTED_MODELS
+            assert variant in info["supported_models"]
 
     @requires_api_key
     @integration_test
@@ -247,7 +247,7 @@ class TestGeminiModelCostTracking:
         expected_cost = (
             estimated_input_tokens * input_price
             + estimated_output_tokens * output_price
-        ) / 1000
+        ) / 1_000_000
 
         # Allow for some estimation error (within 50%)
         assert (
