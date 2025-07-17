@@ -243,7 +243,7 @@ jobs:
 
   gemini-integration-test:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: github.event_name == 'push'  || github.event_name == 'pull_request'
     needs: [lint, type-check, unit-test, security, integration-test, build, docker]
     env:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
