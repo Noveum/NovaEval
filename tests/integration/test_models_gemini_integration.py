@@ -580,30 +580,3 @@ class TestGeminiModelTokenCounting:
             assert (
                 token_count <= text_length
             ), f"Token count seems too high for {description}: {token_count}"
-
-
-# Test execution configuration
-def pytest_configure(config):
-    """Configure pytest for integration tests."""
-    config.addinivalue_line("markers", "integration: mark test as integration test")
-    config.addinivalue_line("markers", "smoke: mark test as smoke test")
-    config.addinivalue_line("markers", "slow: mark test as slow test")
-    config.addinivalue_line("markers", "stress: mark test as stress test")
-    config.addinivalue_line(
-        "markers", "requires_api_key: mark test as requiring API key"
-    )
-    config.addinivalue_line("markers", "gemini: mark test as Gemini-specific")
-
-
-def pytest_collection_modifyitems(config, items):
-    """Modify test collection to handle API key requirements."""
-    for item in items:
-        # Add gemini marker to all tests in this module
-        if "test_models_gemini_integration" in item.nodeid:
-            item.add_marker(pytest.mark.gemini)
-
-        # Skip tests requiring API key if no API key is available
-        if "requires_api_key" in [
-            marker.name for marker in item.iter_markers()
-        ] and not os.environ.get("GEMINI_API_KEY"):
-            item.add_marker(pytest.mark.skip(reason="No Gemini API key available"))
