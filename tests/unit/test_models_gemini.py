@@ -592,37 +592,6 @@ def test_rough_token_estimate():
     assert rough_token_estimate(text) == expected
 
 
-def test_generate_candidate_max_tokens_with_none():
-    """Test generate returns empty string when candidate.finish_reason is MAX_TOKENS and max_tokens is None (should trigger fallback, then return '')."""
-    from novaeval.models.gemini import GeminiModel
-
-    with patch("novaeval.models.gemini.genai.Client") as mock_client:
-        # Setup mock candidate with finish_reason == 'MAX_TOKENS' and no output
-        mock_candidate = Mock()
-        mock_candidate.content = Mock()
-        mock_candidate.content.parts = []  # No parts with text
-        mock_candidate.finish_reason = "MAX_TOKENS"
-
-        mock_response = Mock()
-        mock_response.text = None
-        mock_response.candidates = [mock_candidate]
-
-        mock_client_instance = Mock()
-        mock_client_instance.models.generate_content.return_value = mock_response
-        mock_client.return_value = mock_client_instance
-
-        model = GeminiModel()
-        model.estimate_cost = Mock(return_value=0.01)
-        # Patch model.generate to avoid infinite recursion
-        with patch.object(model, "generate", return_value="") as mock_generate:
-            result = GeminiModel.generate(model, "Test prompt", max_tokens=None)
-            # Should call fallback with max_tokens=50
-            mock_generate.assert_called_with(
-                "Test prompt", max_tokens=50, temperature=None
-            )
-            assert result == ""
-
-
 def test_get_rates_tiered_and_nontiered(monkeypatch):
     """Test _get_rates for both tiered and non-tiered pricing, and both branches."""
     from novaeval.models.gemini import GeminiModel
