@@ -457,3 +457,103 @@ class TestGeminiModel:
             m = GeminiModel.create_from_config(cfg)
             mock_client.assert_called_once_with(api_key="cfg_key")
             assert m.api_key == "cfg_key"
+
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
+    def test_generate_max_tokens_fallback(self):
+        """Test generate fallback when finish_reason is MAX_TOKENS and output is empty."""
+        with patch("novaeval.models.gemini.genai.Client") as mock_client:
+            # Setup mock candidate with finish_reason == 'MAX_TOKENS' and no output
+            mock_candidate = Mock()
+            mock_candidate.content = Mock()
+            mock_candidate.content.parts = []  # No parts with text
+            mock_candidate.finish_reason = "MAX_TOKENS"
+
+            mock_response = Mock()
+            mock_response.text = None
+            mock_response.candidates = [mock_candidate]
+
+            mock_client_instance = Mock()
+            mock_client_instance.models.generate_content.return_value = mock_response
+            mock_client.return_value = mock_client_instance
+
+            model = GeminiModel()
+            model.estimate_cost = Mock(return_value=0.01)
+            # Patch model.generate to avoid infinite recursion
+            with patch.object(model, "generate", return_value="fallback output") as mock_generate:
+                # Call the real method, but fallback triggers patched generate
+                result = GeminiModel.generate(model, "Test prompt", max_tokens=10)
+                # Should call fallback with max_tokens=50
+                mock_generate.assert_called_with("Test prompt", max_tokens=50, temperature=None)
+                assert result == "fallback output"
+
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
+    def test_generate_candidate_no_output_no_fallback(self):
+        """Test generate returns empty string when candidate has no output and finish_reason is not MAX_TOKENS."""
+        with patch("novaeval.models.gemini.genai.Client") as mock_client:
+            # Setup mock candidate with finish_reason != 'MAX_TOKENS' and no output
+            mock_candidate = Mock()
+            mock_candidate.content = Mock()
+            mock_candidate.content.parts = []  # No parts with text
+            mock_candidate.finish_reason = "STOPPED"
+
+            mock_response = Mock()
+            mock_response.text = None
+            mock_response.candidates = [mock_candidate]
+
+            mock_client_instance = Mock()
+            mock_client_instance.models.generate_content.return_value = mock_response
+            mock_client.return_value = mock_client_instance
+
+            model = GeminiModel()
+            model.estimate_cost = Mock(return_value=0.01)
+            result = model.generate("Test prompt", max_tokens=10)
+            assert result == ""
+
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
+    def test_generate_candidate_max_tokens_no_further_fallback(self):
+        """Test generate returns empty string when candidate.finish_reason is MAX_TOKENS and max_tokens >= 50."""
+        with patch("novaeval.models.gemini.genai.Client") as mock_client:
+            # Setup mock candidate with finish_reason == 'MAX_TOKENS' and no output
+            mock_candidate = Mock()
+            mock_candidate.content = Mock()
+            mock_candidate.content.parts = []  # No parts with text
+            mock_candidate.finish_reason = "MAX_TOKENS"
+
+            mock_response = Mock()
+            mock_response.text = None
+            mock_response.candidates = [mock_candidate]
+
+            mock_client_instance = Mock()
+            mock_client_instance.models.generate_content.return_value = mock_response
+            mock_client.return_value = mock_client_instance
+
+            model = GeminiModel()
+            model.estimate_cost = Mock(return_value=0.01)
+            # max_tokens >= 50, so should not recurse, should return ''
+            result = model.generate("Test prompt", max_tokens=50)
+            assert result == ""
+
+    @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
+    def test_generate_candidate_content_parts_with_text(self):
+        """Test generate extracts text from candidate.content.parts."""
+        with patch("novaeval.models.gemini.genai.Client") as mock_client:
+            # Setup mock part with text
+            mock_part = Mock()
+            mock_part.text = "part text"
+            mock_candidate = Mock()
+            mock_candidate.content = Mock()
+            mock_candidate.content.parts = [mock_part]
+            mock_candidate.finish_reason = "STOPPED"
+
+            mock_response = Mock()
+            mock_response.text = None
+            mock_response.candidates = [mock_candidate]
+
+            mock_client_instance = Mock()
+            mock_client_instance.models.generate_content.return_value = mock_response
+            mock_client.return_value = mock_client_instance
+
+            model = GeminiModel()
+            model.estimate_cost = Mock(return_value=0.01)
+            result = model.generate("Test prompt", max_tokens=10)
+            assert result == "part text"
