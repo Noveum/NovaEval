@@ -243,8 +243,10 @@ jobs:
 
   gemini-integration-test:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && secrets.GEMINI_API_KEY != ''
+    if: github.event_name == 'push'
     needs: [lint, type-check, unit-test, security, integration-test, build, docker]
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
     steps:
     - uses: actions/checkout@v4
 
@@ -262,7 +264,6 @@ jobs:
         pip install -e .
 
     - name: Run Gemini Integration Tests
+      if: env.GEMINI_API_KEY != ''
       run: |
         pytest tests/integration/test_models_gemini_integration.py -v
-      env:
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
