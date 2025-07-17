@@ -479,11 +479,15 @@ class TestGeminiModel:
             model = GeminiModel()
             model.estimate_cost = Mock(return_value=0.01)
             # Patch model.generate to avoid infinite recursion
-            with patch.object(model, "generate", return_value="fallback output") as mock_generate:
+            with patch.object(
+                model, "generate", return_value="fallback output"
+            ) as mock_generate:
                 # Call the real method, but fallback triggers patched generate
                 result = GeminiModel.generate(model, "Test prompt", max_tokens=10)
                 # Should call fallback with max_tokens=50
-                mock_generate.assert_called_with("Test prompt", max_tokens=50, temperature=None)
+                mock_generate.assert_called_with(
+                    "Test prompt", max_tokens=50, temperature=None
+                )
                 assert result == "fallback output"
 
     @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
