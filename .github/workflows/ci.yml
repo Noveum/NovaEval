@@ -240,3 +240,29 @@ jobs:
           -e ANTHROPIC_API_KEY=test_key \
           novaeval:test \
           python -m pytest tests/ -v --tb=short --junitxml=junit.xml -o junit_family=legacy
+
+  gemini-integration-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [lint, type-check, unit-test, security, integration-test, build, docker]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r requirements-dev.txt
+        pip install -e .
+
+    - name: Run Gemini Integration Tests
+      run: |
+        pytest tests/integration/test_models_gemini_integration.py -v
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
