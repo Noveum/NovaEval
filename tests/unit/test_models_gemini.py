@@ -422,7 +422,7 @@ class TestGeminiModel:
             # extra kwargs land on BaseModel via **kwargs; we can't know exact attr name,
             # but they should be present in model.extra_params if BaseModel stores them.
             # Safest: just confirm object has __dict__ entry OR no crash.
-            assert "foo" in getattr(model, "__dict__", {}) or True  # coverage tick
+            assert "foo" in model.kwargs  # extra kwargs are stored on BaseModel.kwargs
 
     def test_init_missing_api_key_raises(self, monkeypatch):
         """No api_key param + no GEMINI_API_KEY env -> ValueError."""
