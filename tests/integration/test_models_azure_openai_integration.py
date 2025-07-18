@@ -323,7 +323,7 @@ class TestAzureOpenAICostTracking:
             assert 0.0 < azure_openai_model.total_cost < 1.0
             assert (
                 abs(azure_openai_model.total_cost - expected_cost) / expected_cost
-                <= 0.5
+                <= 0.2
             )
         except Exception as e:
             assert "not found" in str(e).lower() or "resource" in str(e).lower()
