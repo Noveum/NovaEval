@@ -134,6 +134,7 @@ class AzureOpenAIModel(BaseModel):
         self.api_version = api_version
         self.max_retries = max_retries
         self.timeout = timeout
+        self.client: Any  # type: ignore
         try:
             if _AZURE_OPENAI_AVAILABLE:
                 self.client = AzureOpenAI(
@@ -159,7 +160,7 @@ class AzureOpenAIModel(BaseModel):
         **kwargs: Any,
     ) -> str:
         try:
-            params = {
+            params: dict[str, Any] = {
                 "model": self.model_name,
                 "input": prompt,
             }
@@ -172,7 +173,7 @@ class AzureOpenAIModel(BaseModel):
             params.update(kwargs)
             # Use the correct client for responses
             if hasattr(self.client, "responses"):
-                response = self.client.responses.create(**params)
+                response = self.client.responses.create(**params)  # type: ignore
             else:
                 raise RuntimeError(
                     "The OpenAI client does not support the 'responses' endpoint. Please upgrade your SDK."
