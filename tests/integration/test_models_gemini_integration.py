@@ -84,8 +84,15 @@ class TestGeminiModelIntegration:
     def test_authentication_failure_scenarios(self):
         """Test authentication failure with invalid API keys."""
         # Test with invalid API key - the error will occur when making an API call
-        GeminiModel(model_name="gemini-2.5-flash", api_key="invalid_api_key_12345")
-
+        model = GeminiModel(model_name="gemini-2.5-flash", api_key="invalid_api_key_12345")
+        
+        # Verify that API calls fail with authentication error
+        with pytest.raises(Exception) as exc_info:
+            model.validate_connection()
+        
+        # Check that the error is related to authentication
+        error_msg = str(exc_info.value).lower()
+        assert any(keyword in error_msg for keyword in ["auth", "api", "key", "invalid", "unauthorized"])
         # Test with None API key and no environment variable
         original_env = os.environ.get("GEMINI_API_KEY")
         if "GEMINI_API_KEY" in os.environ:
