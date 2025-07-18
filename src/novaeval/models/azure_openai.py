@@ -13,10 +13,8 @@ import re
 from typing import Any, Optional, Union
 
 from openai import OpenAI
-
 try:
     from openai import AzureOpenAI
-
     _AZURE_OPENAI_AVAILABLE = True
 except ImportError:
     _AZURE_OPENAI_AVAILABLE = False
@@ -56,14 +54,12 @@ USE_TIERED_PRICING = True
 
 SUPPORTED_MODELS = list(MODEL_PRICING_PER_1M.keys())
 
-
 def _canonical_model_name(model_name: str) -> str:
     """
     Extract canonical model name (e.g., 'gpt-4' from 'gpt-4-8k' or 'gpt-4-32k').
     """
     # Remove context window suffixes like -8k, -32k, -4k, -16k
     return re.sub(r"-(8k|32k|4k|16k)$", "", model_name)
-
 
 class AzureOpenAIModel(BaseModel):
     """
@@ -82,15 +78,7 @@ class AzureOpenAIModel(BaseModel):
         kwargs = {
             k: v
             for k, v in config.items()
-            if k
-            not in [
-                "model_name",
-                "api_key",
-                "base_url",
-                "max_retries",
-                "timeout",
-                "api_version",
-            ]
+            if k not in ["model_name", "api_key", "base_url", "max_retries", "timeout", "api_version"]
         }
         return cls(
             model_name=model_name,
@@ -174,9 +162,7 @@ class AzureOpenAIModel(BaseModel):
             if hasattr(self.client, "responses"):
                 response = self.client.responses.create(**params)
             else:
-                raise RuntimeError(
-                    "The OpenAI client does not support the 'responses' endpoint. Please upgrade your SDK."
-                )
+                raise RuntimeError("The OpenAI client does not support the 'responses' endpoint. Please upgrade your SDK.")
             output_text = ""
             if response.output and len(response.output) > 0:
                 for part in response.output[0].content:
@@ -184,16 +170,9 @@ class AzureOpenAIModel(BaseModel):
                         output_text += part["text"]
             usage = getattr(response, "usage", None)
             input_tokens = usage.input_tokens if usage else self.count_tokens(prompt)
-            output_tokens = (
-                usage.output_tokens if usage else self.count_tokens(output_text)
-            )
+            output_tokens = usage.output_tokens if usage else self.count_tokens(output_text)
             tokens_used = input_tokens + output_tokens
-            cost = self.estimate_cost(
-                prompt,
-                output_text,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-            )
+            cost = self.estimate_cost(prompt, output_text, input_tokens=input_tokens, output_tokens=output_tokens)
             self._track_request(
                 prompt=prompt,
                 response=output_text,
@@ -202,9 +181,7 @@ class AzureOpenAIModel(BaseModel):
             )
             return output_text
         except Exception as e:
-            self._handle_error(
-                e, f"Failed to generate text for prompt: {prompt[:100]}..."
-            )
+            self._handle_error(e, f"Failed to generate text for prompt: {prompt[:100]}...")
             raise
 
     def generate_batch(
@@ -282,9 +259,7 @@ class AzureOpenAIModel(BaseModel):
                 self._handle_error(e, "Connection test failed")
                 return False
         else:
-            raise RuntimeError(
-                "The OpenAI client does not support the 'responses' endpoint. Please upgrade your SDK."
-            )
+            raise RuntimeError("The OpenAI client does not support the 'responses' endpoint. Please upgrade your SDK.")
 
     def get_info(self) -> dict[str, Any]:
         info = super().get_info()
@@ -299,4 +274,4 @@ class AzureOpenAIModel(BaseModel):
                 "supported_models": SUPPORTED_MODELS,
             }
         )
-        return info
+        return info 

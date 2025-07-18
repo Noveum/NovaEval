@@ -7,8 +7,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from novaeval.models.azure_openai import MODEL_PRICING_PER_1M, AzureOpenAIModel
-
 
 @pytest.mark.unit
 class TestAzureOpenAIModel:
@@ -23,6 +21,7 @@ class TestAzureOpenAIModel:
     )
     def test_init_default(self):
         """Test initialization with default parameters."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             model = AzureOpenAIModel()
             assert model.name == "azure_openai_gpt-4-8k"
@@ -34,6 +33,7 @@ class TestAzureOpenAIModel:
 
     def test_init_with_params(self):
         """Test initialization with custom parameters."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             model = AzureOpenAIModel(
                 model_name="gpt-3.5-turbo-0613",
@@ -62,6 +62,7 @@ class TestAzureOpenAIModel:
     )
     def test_init_with_env_vars(self):
         """Test initialization using environment variables."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             AzureOpenAIModel()
             mock_client.assert_called_once_with(
@@ -72,6 +73,7 @@ class TestAzureOpenAIModel:
 
     def test_init_missing_api_key_raises(self, monkeypatch):
         """No api_key param + no AZURE_OPENAI_API_KEY env -> ValueError."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         monkeypatch.delenv("AZURE_OPENAI_API_KEY", raising=False)
         monkeypatch.setenv("AZURE_OPENAI_BASE_URL", "https://test.azure.com")
         with (
@@ -82,6 +84,7 @@ class TestAzureOpenAIModel:
 
     def test_init_missing_base_url_raises(self, monkeypatch):
         """No base_url param + no AZURE_OPENAI_BASE_URL env -> ValueError."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         monkeypatch.setenv("AZURE_OPENAI_API_KEY", "test_key")
         monkeypatch.delenv("AZURE_OPENAI_BASE_URL", raising=False)
         with (
@@ -92,6 +95,7 @@ class TestAzureOpenAIModel:
 
     def test_init_blank_api_key_raises(self):
         """Blank api_key trips validation."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with (
             patch("novaeval.models.azure_openai.AzureOpenAI"),
             pytest.raises(ValueError, match="API key is required"),
@@ -100,6 +104,7 @@ class TestAzureOpenAIModel:
 
     def test_init_client_failure_raises(self):
         """If AzureOpenAI blows up, we wrap in ValueError."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with (
             patch(
                 "novaeval.models.azure_openai.AzureOpenAI",
@@ -118,6 +123,7 @@ class TestAzureOpenAIModel:
     )
     def test_generate_success(self):
         """Test successful text generation."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_part = {"type": "output_text", "text": "Generated response"}
             mock_output_obj = Mock()
@@ -147,6 +153,7 @@ class TestAzureOpenAIModel:
     )
     def test_generate_with_params(self):
         """Test text generation with additional parameters."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_part = {"type": "output_text", "text": "Generated response"}
             mock_output_obj = Mock()
@@ -185,6 +192,7 @@ class TestAzureOpenAIModel:
     )
     def test_generate_empty_response(self):
         """Test generation with empty response."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_output_obj = Mock()
             mock_output_obj.content = []
@@ -208,6 +216,7 @@ class TestAzureOpenAIModel:
     )
     def test_generate_error_handling(self):
         """Test error handling during text generation."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_client_instance = Mock()
             mock_client_instance.responses.create.side_effect = Exception("API Error")
@@ -227,6 +236,7 @@ class TestAzureOpenAIModel:
     )
     def test_generate_batch(self):
         """Test batch text generation."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_part = {"type": "output_text", "text": "Generated response"}
             mock_output_obj = Mock()
@@ -254,6 +264,7 @@ class TestAzureOpenAIModel:
     )
     def test_generate_batch_with_error(self):
         """Test batch generation with errors."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_client_instance = Mock()
             mock_client_instance.responses.create.side_effect = Exception("API Error")
@@ -273,6 +284,7 @@ class TestAzureOpenAIModel:
     )
     def test_get_provider(self):
         """Test provider name."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI"):
             model = AzureOpenAIModel()
             assert model.get_provider() == "azure_openai"
@@ -286,6 +298,7 @@ class TestAzureOpenAIModel:
     )
     def test_estimate_cost_known_model(self):
         """Test cost estimation for known model."""
+        from novaeval.models.azure_openai import AzureOpenAIModel, MODEL_PRICING_PER_1M
         with patch("novaeval.models.azure_openai.AzureOpenAI"):
             model = AzureOpenAIModel(model_name="gpt-4")
             model.count_tokens = Mock(return_value=1000)
@@ -307,6 +320,7 @@ class TestAzureOpenAIModel:
     )
     def test_estimate_cost_unknown_model(self):
         """Test cost estimation for unknown model."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI"):
             model = AzureOpenAIModel(model_name="unknown-model")
             cost = model.estimate_cost("Test prompt", "Test response")
@@ -321,6 +335,7 @@ class TestAzureOpenAIModel:
     )
     def test_count_tokens(self):
         """Test token counting with actual implementation behavior."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI"):
             model = AzureOpenAIModel()
             test_cases = [
@@ -345,6 +360,7 @@ class TestAzureOpenAIModel:
     )
     def test_openai_fallback_in_init(self):
         """Test the else branch in __init__ for OpenAI fallback."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with (
             patch("novaeval.models.azure_openai._AZURE_OPENAI_AVAILABLE", False),
             patch("novaeval.models.azure_openai.OpenAI") as mock_openai,
@@ -364,6 +380,7 @@ class TestAzureOpenAIModel:
     )
     def test_generate_raises_runtimeerror_on_missing_responses(self):
         """Test the else branch in generate for missing 'responses' attribute."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_client_instance = Mock()
             delattr(mock_client_instance, "responses")
@@ -385,6 +402,7 @@ class TestAzureOpenAIModel:
     )
     def test_validate_connection_else_branch(self):
         """Test the else branch in validate_connection for missing 'responses' attribute."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_client_instance = Mock()
             delattr(mock_client_instance, "responses")
@@ -406,6 +424,7 @@ class TestAzureOpenAIModel:
     )
     def test_validate_connection_error_branch(self):
         """Test the error branch in validate_connection (simulate exception)."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_client_instance = Mock()
             mock_client_instance.responses.create.side_effect = Exception("fail")
@@ -426,6 +445,7 @@ class TestAzureOpenAIModel:
     )
     def test_estimate_cost_zero_rates(self):
         """Test the 0.0 cost branch in estimate_cost."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI"):
             model = AzureOpenAIModel(model_name="unknown-model")
             cost = model.estimate_cost(
@@ -442,6 +462,7 @@ class TestAzureOpenAIModel:
     )
     def test_validate_connection_success(self):
         """Test successful connection validation."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_response = Mock()
             mock_response.output = [[{"type": "output_text", "text": "Pong"}]]
@@ -463,6 +484,7 @@ class TestAzureOpenAIModel:
     )
     def test_validate_connection_failure(self):
         """Test connection validation failure."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_client_instance = Mock()
             mock_client_instance.responses.create.side_effect = Exception(
@@ -484,6 +506,7 @@ class TestAzureOpenAIModel:
     )
     def test_validate_connection_empty_response(self):
         """Test connection validation with empty response."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client:
             mock_response = Mock()
             mock_response.output = []
@@ -503,6 +526,7 @@ class TestAzureOpenAIModel:
     )
     def test_get_info(self):
         """Test model info retrieval."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI"):
             model = AzureOpenAIModel(model_name="gpt-4")
             info = model.get_info()
@@ -517,6 +541,7 @@ class TestAzureOpenAIModel:
 
     def test_get_info_unknown_model(self):
         """Test model info retrieval for unknown model."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI"):
             model = AzureOpenAIModel(
                 model_name="unknown-model",
@@ -528,6 +553,7 @@ class TestAzureOpenAIModel:
 
     def test_pricing_constants(self):
         """Test that pricing constants are defined correctly."""
+        from novaeval.models.azure_openai import MODEL_PRICING_PER_1M
         assert "gpt-4" in MODEL_PRICING_PER_1M
         assert "gpt-4-turbo" in MODEL_PRICING_PER_1M
         assert "gpt-3.5-turbo-0301" in MODEL_PRICING_PER_1M
@@ -551,6 +577,7 @@ class TestAzureOpenAIModel:
     )
     def test_create_from_config_roundtrip(self):
         """create_from_config builds an AzureOpenAIModel w/ defaults + extra kwargs."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         cfg = {
             "model_name": "gpt-4-turbo",
             # api_key omitted on purpose -> picked up from env
@@ -572,17 +599,24 @@ class TestAzureOpenAIModel:
             assert model.api_version == "2024-01-01"
             assert "foo" in model.kwargs
 
-    def test_importerror_branch_sets_azure_openai_unavailable(self):
-        """Test fallback to OpenAI when _AZURE_OPENAI_AVAILABLE is False."""
-        with (
-            patch("novaeval.models.azure_openai._AZURE_OPENAI_AVAILABLE", False),
-            patch("novaeval.models.azure_openai.OpenAI") as mock_openai,
-        ):
-            model = AzureOpenAIModel(
-                api_key="test_key", base_url="https://test.azure.com"
-            )
-            mock_openai.assert_called_once()
-            assert hasattr(model, "client")
+    def test_importerror_on_openai_import_sets_flag_and_fallback(self):
+        """Simulate ImportError for openai.AzureOpenAI and ensure fallback to OpenAI is used."""
+        import importlib
+        import sys
+        import builtins
+        real_import = builtins.__import__
+        def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+            if name == "openai" and "AzureOpenAI" in fromlist:
+                raise ImportError("No AzureOpenAI!")
+            return real_import(name, globals, locals, fromlist, level)
+        with patch("builtins.__import__", side_effect=fake_import):
+            import novaeval.models.azure_openai as mod
+            importlib.reload(mod)
+            assert getattr(mod, "_AZURE_OPENAI_AVAILABLE") is False
+            with patch.object(mod, "OpenAI") as mock_openai:
+                model = getattr(mod, "AzureOpenAIModel")(api_key="test_key", base_url="https://test.azure.com")
+                mock_openai.assert_called_once()
+                assert hasattr(model, "client")
 
     @patch.dict(
         os.environ,
@@ -593,6 +627,7 @@ class TestAzureOpenAIModel:
     )
     def test_get_rates_high_tier_branch(self):
         """Test _get_rates returns high_rates when tokens > cutoff for tiered model."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI"):
             model = AzureOpenAIModel(model_name="gpt-4")
             # gpt-4 cutoff is 8000, so use 9000
@@ -608,6 +643,7 @@ class TestAzureOpenAIModel:
     )
     def test_get_rates_non_tiered_model(self):
         """Test _get_rates returns MODEL_PRICING_PER_1M for non-tiered model."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI"):
             model = AzureOpenAIModel(model_name="gpt-4-turbo")
             rates = model._get_rates(10, 10)
@@ -622,6 +658,7 @@ class TestAzureOpenAIModel:
     )
     def test_estimate_cost_zero_rates_branch(self):
         """Test estimate_cost returns 0.0 when _get_rates returns (0.0, 0.0)."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI"):
             model = AzureOpenAIModel(model_name="nonexistent-model")
             cost = model.estimate_cost(
@@ -638,8 +675,51 @@ class TestAzureOpenAIModel:
     )
     def test_get_rates_high_tier_else_branch(self):
         """Test _get_rates returns high_rates (else branch) when tokens > cutoff for tiered model."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
         with patch("novaeval.models.azure_openai.AzureOpenAI"):
             model = AzureOpenAIModel(model_name="gpt-4")
             # gpt-4 cutoff is 8000, so use 9000 to trigger else branch
             rates = model._get_rates(8000, 1000)
             assert rates == (60.0, 120.0)
+
+    @patch.dict(
+        os.environ,
+        {
+            "AZURE_OPENAI_API_KEY": "test_key",
+            "AZURE_OPENAI_BASE_URL": "https://test.azure.com",
+        },
+    )
+    def test_generate_empty_response_output(self):
+        """Test generate() when response.output is empty (line 181 coverage)."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
+        model = AzureOpenAIModel()
+        model.estimate_cost = Mock(return_value=0.001)
+        mock_response = Mock()
+        mock_response.output = []
+        mock_response.usage = Mock(input_tokens=5, output_tokens=0)
+        model.client.responses = Mock()
+        model.client.responses.create = Mock(return_value=mock_response)
+        response = model.generate("Test prompt")
+        assert response == ""
+
+    @patch.dict(
+        os.environ,
+        {
+            "AZURE_OPENAI_API_KEY": "test_key",
+            "AZURE_OPENAI_BASE_URL": "https://test.azure.com",
+        },
+    )
+    def test_generate_empty_content(self):
+        """Test generate() when response.output[0].content is empty (line 183 coverage)."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
+        model = AzureOpenAIModel()
+        model.estimate_cost = Mock(return_value=0.001)
+        mock_output_obj = Mock()
+        mock_output_obj.content = []
+        mock_response = Mock()
+        mock_response.output = [mock_output_obj]
+        mock_response.usage = Mock(input_tokens=5, output_tokens=0)
+        model.client.responses = Mock()
+        model.client.responses.create = Mock(return_value=mock_response)
+        response = model.generate("Test prompt")
+        assert response == ""
