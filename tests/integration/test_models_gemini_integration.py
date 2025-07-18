@@ -23,6 +23,7 @@ requires_api_key = pytest.mark.requires_api_key
 gemini_test = pytest.mark.gemini
 
 
+@pytest.mark.integration
 class TestGeminiModelIntegration:
     """Core API functionality integration tests."""
 
@@ -209,6 +210,7 @@ class TestGeminiModelIntegration:
         assert gemini_model.total_cost > 0.0
 
 
+@pytest.mark.integration
 class TestGeminiModelCostTracking:
     """Cost tracking and token counting integration tests."""
 
@@ -269,6 +271,7 @@ class TestGeminiModelCostTracking:
         ), f"Cost estimation error too large: actual {gemini_model.total_cost}, expected {expected_cost}"
 
 
+@pytest.mark.integration
 class TestGeminiModelEvaluationIntegration:
     """Framework integration tests for evaluation workflows."""
 
@@ -353,6 +356,7 @@ class TestGeminiModelEvaluationIntegration:
             )
 
 
+@pytest.mark.integration
 class TestGeminiConnectionValidation:
     """Connection validation and model info tests."""
 
@@ -382,6 +386,7 @@ class TestGeminiConnectionValidation:
                 assert isinstance(info[field], (int, float))
 
 
+@pytest.mark.integration
 class TestGeminiModelTokenCounting:
     """Comprehensive token counting tests."""
 
