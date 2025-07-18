@@ -84,15 +84,22 @@ class TestGeminiModelIntegration:
     def test_authentication_failure_scenarios(self):
         """Test authentication failure with invalid API keys."""
         # Test with invalid API key - the error will occur when making an API call
-        model = GeminiModel(model_name="gemini-2.5-flash", api_key="invalid_api_key_12345")
-        
-        # Verify that API calls fail with authentication error
-        with pytest.raises(Exception) as exc_info:
-            model.validate_connection()
-        
-        # Check that the error is related to authentication
-        error_msg = str(exc_info.value).lower()
-        assert any(keyword in error_msg for keyword in ["auth", "api", "key", "invalid", "unauthorized"])
+        model = GeminiModel(
+            model_name="gemini-2.5-flash", api_key="invalid_api_key_12345"
+        )
+
+        # Verify that API calls fail with authentication error (returns False, does not raise)
+        result = model.validate_connection()
+        assert (
+            result is False
+        ), "validate_connection should return False for invalid API key"
+        # Check that the error log contains authentication-related keywords
+        error_log = " ".join(model.errors).lower()
+        assert any(
+            keyword in error_log
+            for keyword in ["auth", "api", "key", "invalid", "unauthorized"]
+        ), f"Error log does not contain expected keywords: {error_log}"
+
         # Test with None API key and no environment variable
         original_env = os.environ.get("GEMINI_API_KEY")
         if "GEMINI_API_KEY" in os.environ:
@@ -558,9 +565,17 @@ class TestGeminiModelTokenCounting:
     @integration_test
     def test_token_counting_performance(self):
         """Test token counting performance with large texts."""
-        model = GeminiModel(
-            model_name="gemini-2.5-flash", api_key="dummy_key_for_performance_test"
-        )
+        # Skip this test if a valid Gemini API key is not provided
+        api_key = os.getenv("GEMINI_API_KEY", "dummy_key_for_performance_test")
+        # Add a simple check: skip if the key is the default dummy or looks obviously invalid
+        if (
+            api_key.startswith("dummy")
+            or api_key == ""
+            or api_key == "your_real_gemini_api_key"
+        ):
+            pytest.skip("Skipping performance test: valid Gemini API key not provided.")
+
+        model = GeminiModel(model_name="gemini-2.5-flash", api_key=api_key)
 
         # Test with various text sizes
         test_cases = [
