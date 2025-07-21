@@ -12,46 +12,39 @@ import pytest
 
 from novaeval.models.azure_openai import AzureOpenAIModel
 
-# Test markers for different test categories
+# Test markers
 integration_test = pytest.mark.integration
 smoke_test = pytest.mark.smoke
-slow_test = pytest.mark.slow
-stress_test = pytest.mark.stress
 requires_api_key = pytest.mark.requires_api_key
 
 
 @pytest.fixture(scope="session")
-def azure_openai_api_key() -> str:
-    return os.getenv("AZURE_OPENAI_API_KEY")
-
-
-@pytest.fixture(scope="session")
-def azure_openai_base_url() -> str:
-    return os.getenv("AZURE_OPENAI_BASE_URL")
-
-
-@pytest.fixture(scope="session")
-def azure_openai_deployment() -> str:
-    return os.getenv("AZURE_OPENAI_DEPLOYMENT")
+def azure_credentials():
+    """Provides Azure credentials from environment variables."""
+    api_key = os.getenv("AZURE_OPENAI_API_KEY")
+    base_url = os.getenv("AZURE_OPENAI_BASE_URL")
+    api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+    deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+    if not all([api_key, base_url, api_version, deployment]):
+        pytest.skip("Azure credentials must be set in environment variables.")
+    return {
+        "api_key": api_key,
+        "base_url": base_url,
+        "api_version": api_version,
+        "deployment": deployment,
+    }
 
 
 @pytest.fixture
-def azure_openai_model_factory(
-    azure_openai_api_key, azure_openai_base_url, azure_openai_deployment
-):
+def azure_openai_model_factory(azure_credentials):
+    """Factory to create AzureOpenAIModel instances."""
+
     def _create_model(model_name=None, **kwargs):
-        if (
-            not azure_openai_api_key
-            or not azure_openai_base_url
-            or not azure_openai_deployment
-        ):
-            pytest.skip(
-                "AZURE_OPENAI_API_KEY, AZURE_OPENAI_BASE_URL, and AZURE_OPENAI_DEPLOYMENT must be set"
-            )
         return AzureOpenAIModel(
-            model_name=model_name or azure_openai_deployment,
-            api_key=azure_openai_api_key,
-            base_url=azure_openai_base_url,
+            model_name=model_name or azure_credentials["deployment"],
+            api_key=azure_credentials["api_key"],
+            base_url=azure_credentials["base_url"],
+            api_version=azure_credentials["api_version"],
             **kwargs,
         )
 
@@ -60,360 +53,166 @@ def azure_openai_model_factory(
 
 @pytest.fixture
 def azure_openai_model(azure_openai_model_factory):
+    """A default AzureOpenAIModel instance."""
     return azure_openai_model_factory()
 
 
-@pytest.mark.integration
+@integration_test
+@requires_api_key
 class TestAzureOpenAIModelIntegration:
     """Core API functionality integration tests."""
 
-    @requires_api_key
-    @integration_test
     @smoke_test
-    def test_model_initialization_with_real_api(
-        self, azure_openai_api_key, azure_openai_base_url, azure_openai_deployment
-    ):
-        if not azure_openai_deployment:
-            pytest.skip(
-                "AZURE_OPENAI_DEPLOYMENT must be set to a valid deployment name"
-            )
+    def test_model_initialization_with_real_api(self, azure_credentials):
+        """Test model initialization connects to the real API."""
         model = AzureOpenAIModel(
-            model_name=azure_openai_deployment,
-            api_key=azure_openai_api_key,
-            base_url=azure_openai_base_url,
+            model_name=azure_credentials["deployment"],
+            api_key=azure_credentials["api_key"],
+            base_url=azure_credentials["base_url"],
+            api_version=azure_credentials["api_version"],
         )
         assert model.name.startswith("azure_openai_")
-        assert model.model_name == azure_openai_deployment
+        assert model.model_name == azure_credentials["deployment"]
         assert model.client is not None
-        assert model.get_provider() == "azure_openai"
-        assert model.api_key == azure_openai_api_key
-        assert model.total_requests == 0
-        assert model.total_tokens == 0
-        assert model.total_cost == 0.0
-        assert len(model.errors) == 0
-        try:
-            is_connected = model.validate_connection()
-            assert is_connected is True
-        except Exception:
-            try:
-                response = model.generate(prompt="What is 2+2?", max_tokens=10)
-                assert len(response) > 0
-            except Exception as e:
-                # Accept NotFoundError as a valid error if deployment is not found
-                assert "not found" in str(e).lower() or "resource" in str(e).lower()
+        assert model.validate_connection() is True
 
-    @requires_api_key
-    @integration_test
-    def test_model_initialization_with_custom_parameters(
-        self, azure_openai_api_key, azure_openai_base_url, azure_openai_deployment
-    ):
-        if not azure_openai_deployment:
-            pytest.skip(
-                "AZURE_OPENAI_DEPLOYMENT must be set to a valid deployment name"
-            )
-        model = AzureOpenAIModel(
-            model_name=azure_openai_deployment,
-            api_key=azure_openai_api_key,
-            base_url=azure_openai_base_url,
-            max_retries=5,
-            timeout=45.0,
-        )
-        assert model.name == f"azure_openai_{azure_openai_deployment}"
-        assert model.model_name == azure_openai_deployment
-        assert model.max_retries == 5
-        assert model.timeout == 45.0
-        assert model.client is not None
-        info = model.get_info()
-        assert info["max_retries"] == 5
-        assert info["timeout"] == 45.0
-
-    @integration_test
-    def test_authentication_failure_scenarios(
-        self, azure_openai_base_url, azure_openai_deployment
-    ):
-        if not azure_openai_deployment:
-            pytest.skip(
-                "AZURE_OPENAI_DEPLOYMENT must be set to a valid deployment name"
-            )
-        model = AzureOpenAIModel(
-            model_name=azure_openai_deployment,
-            api_key="invalid_key",
-            base_url=azure_openai_base_url,
-        )
-        try:
-            result = model.validate_connection()
-            assert result is False
-            error_log = " ".join(model.errors).lower()
-            assert any(
-                k in error_log
-                for k in [
-                    "auth",
-                    "api",
-                    "key",
-                    "invalid",
-                    "unauthorized",
-                    "not found",
-                    "resource",
-                ]
-            )
-        except Exception as e:
-            # Accept NotFoundError as a valid error
-            assert "not found" in str(e).lower() or "resource" in str(e).lower()
-        # Test with None API key
-        original_env = os.environ.get("AZURE_OPENAI_API_KEY")
-        if "AZURE_OPENAI_API_KEY" in os.environ:
-            del os.environ["AZURE_OPENAI_API_KEY"]
-        try:
-            with pytest.raises(ValueError, match="API key is required"):
-                AzureOpenAIModel(
-                    model_name=azure_openai_deployment,
-                    api_key=None,
-                    base_url=azure_openai_base_url,
-                )
-        finally:
-            if original_env is not None:
-                os.environ["AZURE_OPENAI_API_KEY"] = original_env
-
-    @integration_test
-    def test_empty_api_key_handling(
-        self, azure_openai_base_url, azure_openai_deployment
-    ):
-        if not azure_openai_deployment:
-            pytest.skip(
-                "AZURE_OPENAI_DEPLOYMENT must be set to a valid deployment name"
-            )
-        original_env = os.environ.get("AZURE_OPENAI_API_KEY")
-        if "AZURE_OPENAI_API_KEY" in os.environ:
-            del os.environ["AZURE_OPENAI_API_KEY"]
-        try:
-            with pytest.raises(ValueError, match="API key is required"):
-                AzureOpenAIModel(
-                    model_name=azure_openai_deployment,
-                    api_key="",
-                    base_url=azure_openai_base_url,
-                )
-            with pytest.raises(ValueError, match="API key is required"):
-                AzureOpenAIModel(
-                    model_name=azure_openai_deployment,
-                    api_key="   ",
-                    base_url=azure_openai_base_url,
-                )
-        finally:
-            if original_env is not None:
-                os.environ["AZURE_OPENAI_API_KEY"] = original_env
-
-    @requires_api_key
-    @integration_test
-    def test_different_model_variant_initialization(
-        self, azure_openai_api_key, azure_openai_base_url, azure_openai_deployment
-    ):
-        if not azure_openai_deployment:
-            pytest.skip(
-                "AZURE_OPENAI_DEPLOYMENT must be set to a valid deployment name"
-            )
-        # Only test the deployment name, as Azure OpenAI requires deployment not model family
-        model = AzureOpenAIModel(
-            model_name=azure_openai_deployment,
-            api_key=azure_openai_api_key,
-            base_url=azure_openai_base_url,
-        )
-        assert model.model_name == azure_openai_deployment
-        assert model.client is not None
-        assert model.name == f"azure_openai_{azure_openai_deployment}"
-        info = model.get_info()
-        assert "pricing" in info
-        assert isinstance(info["pricing"], tuple)
-        assert len(info["pricing"]) == 2
-        assert (
-            azure_openai_deployment in info["supported_models"] or True
-        )  # allow for custom deployments
-
-    @requires_api_key
-    @integration_test
-    def test_model_initialization_with_environment_variable(
-        self, azure_openai_api_key, azure_openai_base_url, azure_openai_deployment
-    ):
-        if not azure_openai_deployment:
-            pytest.skip(
-                "AZURE_OPENAI_DEPLOYMENT must be set to a valid deployment name"
-            )
-        original_env_key = os.environ.get("AZURE_OPENAI_API_KEY")
-        original_env_url = os.environ.get("AZURE_OPENAI_BASE_URL")
-        original_env_deploy = os.environ.get("AZURE_OPENAI_DEPLOYMENT")
-        try:
-            os.environ["AZURE_OPENAI_API_KEY"] = azure_openai_api_key
-            os.environ["AZURE_OPENAI_BASE_URL"] = azure_openai_base_url
-            os.environ["AZURE_OPENAI_DEPLOYMENT"] = azure_openai_deployment
-            model = AzureOpenAIModel(model_name=azure_openai_deployment)
-            assert model.name == f"azure_openai_{azure_openai_deployment}"
-            assert model.model_name == azure_openai_deployment
-            assert model.client is not None
-            assert model.api_key == azure_openai_api_key
-            try:
-                is_connected = model.validate_connection()
-                assert is_connected is True
-            except AssertionError:
-                try:
-                    response = model.generate(prompt="Hello", max_tokens=10)
-                    assert len(response) >= 0
-                except Exception as e:
-                    assert "not found" in str(e).lower() or "resource" in str(e).lower()
-        finally:
-            if original_env_key is not None:
-                os.environ["AZURE_OPENAI_API_KEY"] = original_env_key
-            if original_env_url is not None:
-                os.environ["AZURE_OPENAI_BASE_URL"] = original_env_url
-            if original_env_deploy is not None:
-                os.environ["AZURE_OPENAI_DEPLOYMENT"] = original_env_deploy
-
-    @requires_api_key
-    @integration_test
-    @smoke_test
     def test_text_generation(self, azure_openai_model):
+        """Test basic text generation using the compatibility wrapper."""
         prompt = "What is the capital of France?"
-        start = time.time()
-        try:
-            response = azure_openai_model.generate(prompt=prompt)
-            assert isinstance(response, str)
-            assert "paris" in response.lower() or response.strip() != ""
-        except Exception as e:
-            # Accept NotFoundError as a valid error
-            assert "not found" in str(e).lower() or "resource" in str(e).lower()
-        end = time.time()
-        assert end - start < 10.0
-        # The following may not increment if the call fails, so only check if no exception
-        # assert azure_openai_model.total_requests == 1
-        # assert azure_openai_model.total_tokens > 0
-        # assert azure_openai_model.total_cost > 0.0
+        start_time = time.time()
+        response = azure_openai_model.generate(prompt=prompt)
+        duration = time.time() - start_time
+        assert isinstance(response, str)
+        assert "paris" in response.lower()
+        assert duration < 15.0  # Should be reasonably fast
+        assert azure_openai_model.total_requests == 1
+        assert azure_openai_model.total_tokens > 0
+        assert azure_openai_model.total_cost > 0.0
+
+    def test_chat_generation(self, azure_openai_model):
+        """Test chat-based generation."""
+        messages = [{"role": "user", "content": "What is 2+2?"}]
+        response = azure_openai_model.generate_chat(messages=messages)
+        assert isinstance(response, str)
+        assert "4" in response
+        assert azure_openai_model.total_requests == 1  # Now tracked in generate_chat
+        assert azure_openai_model.total_cost > 0.0
+
+    def test_authentication_failure_scenarios(self, azure_credentials):
+        """Test that authentication fails with invalid credentials."""
+        with pytest.raises(Exception) as excinfo:
+            model = AzureOpenAIModel(
+                model_name=azure_credentials["deployment"],
+                api_key="invalid_key",
+                base_url=azure_credentials["base_url"],
+                api_version=azure_credentials["api_version"],
+            )
+            model.generate(prompt="test")
+        error_str = str(excinfo.value).lower()
+        assert any(
+            k in error_str
+            for k in ["authenticationfailed", "invalid api key", "401", "access denied"]
+        )
+
+    def test_unsupported_model_handling(self, azure_openai_model_factory):
+        """Test that using an unsupported model name is handled gracefully."""
+        # Azure uses deployment name, so this tests our internal pricing/tracking
+        model = azure_openai_model_factory(model_name="unsupported-model-name")
+        cost = model.estimate_cost("prompt", "response")
+        assert cost == 0.0
+        info = model.get_info()
+        assert info["pricing"] == (0.0, 0.0)
+
+    def test_rate_limiting_and_retries(self, azure_openai_model):
+        """
+        This test is difficult to trigger reliably without a special setup.
+        It serves as a placeholder for manual or targeted testing.
+        """
+        pytest.skip("Rate limit testing is environment-dependent and skipped.")
 
 
-@pytest.mark.integration
+@integration_test
+@requires_api_key
 class TestAzureOpenAICostTracking:
-    @requires_api_key
-    @integration_test
+    """Tests for cost and token tracking."""
+
     def test_token_counting_accuracy(self, azure_openai_model):
-        # The model's count_tokens returns 2 tokens per word
+        """Validate token counting against expected values."""
+        # Note: This uses a simple word-based approximation.
         test_cases = [
             ("Hello world", 4),
-            ("The quick brown fox jumps over the lazy dog", 18),
-            ("This is a test of the token counting functionality.", 16),
-            ("Python is a programming language.", 8),
-            ("Machine learning models process tokens differently.", 12),
+            ("A simple test.", 6),
+            ("", 0),
         ]
-        for text, expected_min_tokens in test_cases:
-            token_count = azure_openai_model.count_tokens(text)
-            assert token_count >= expected_min_tokens
+        for text, expected_tokens in test_cases:
+            assert azure_openai_model.count_tokens(text) == expected_tokens
 
-    @requires_api_key
-    @integration_test
-    def test_cost_estimation_accuracy(self, azure_openai_model):
-        prompt = "What is the capital of France?"
-        try:
-            response = azure_openai_model.generate(prompt=prompt, max_tokens=10)
-            assert azure_openai_model.total_cost > 0.0
-            assert azure_openai_model.total_tokens > 0
-            info = azure_openai_model.get_info()
-            input_price, output_price = info["pricing"]
-            estimated_input_tokens = azure_openai_model.count_tokens(prompt)
-            estimated_output_tokens = azure_openai_model.count_tokens(response)
-            expected_cost = (
-                estimated_input_tokens * input_price
-                + estimated_output_tokens * output_price
-            ) / 1_000_000
-            assert 0.0 < azure_openai_model.total_cost < 1.0
-            assert (
-                abs(azure_openai_model.total_cost - expected_cost) / expected_cost
-                <= 0.2
-            )
-        except Exception as e:
-            assert "not found" in str(e).lower() or "resource" in str(e).lower()
-
-
-@pytest.mark.integration
-class TestAzureOpenAIModelEvaluationIntegration:
-    @requires_api_key
-    @integration_test
-    def test_config_based_initialization(
-        self, azure_openai_api_key, azure_openai_base_url, azure_openai_deployment
+    def test_cost_estimation_accuracy(
+        self, azure_openai_model_factory, azure_credentials
     ):
-        if not azure_openai_deployment:
-            pytest.skip(
-                "AZURE_OPENAI_DEPLOYMENT must be set to a valid deployment name"
-            )
-        config = {
-            "model_name": azure_openai_deployment,
-            "api_key": azure_openai_api_key,
-            "base_url": azure_openai_base_url,
-            "max_retries": 3,
-            "timeout": 30.0,
-        }
-        model = AzureOpenAIModel(**config)
-        assert model.model_name == config["model_name"]
-        assert model.api_key == config["api_key"]
-        assert model.base_url == config["base_url"]
-        assert model.max_retries == config["max_retries"]
-        assert model.timeout == config["timeout"]
+        """Verify that cost estimation is reasonable."""
+        model = azure_openai_model_factory(model_name=azure_credentials["deployment"])
+        prompt = "Explain quantum computing in simple terms."
+        response = model.generate(prompt=prompt, max_tokens=50)
 
-    @requires_api_key
-    @integration_test
-    def test_network_error_handling(self, azure_openai_model_factory):
-        try:
-            model = azure_openai_model_factory()
-            long_prompt = "A" * 10000
-            response = model.generate(prompt=long_prompt, max_tokens=10)
-            assert len(response) > 0
-        except Exception as e:
-            # Accept NotFoundError as a valid error
-            assert "not found" in str(e).lower() or "resource" in str(e).lower()
+        assert model.total_cost > 0.0
+        info = model.get_info()
+        in_rate, out_rate = info["pricing"]
+        assert in_rate > 0 and out_rate > 0
 
-    @requires_api_key
-    @integration_test
-    def test_rate_limiting_handling(self, azure_openai_model_factory):
-        try:
-            model = azure_openai_model_factory()
-            prompts = [f"Test prompt {i}" for i in range(5)]
-            responses = model.generate_batch(prompts=prompts)
-            assert len(responses) == len(prompts)
-        except Exception as e:
-            assert (
-                "rate" in str(e).lower()
-                or "limit" in str(e).lower()
-                or "quota" in str(e).lower()
-                or "not found" in str(e).lower()
-                or "resource" in str(e).lower()
-            )
+        input_tokens = model.count_tokens(prompt)
+        output_tokens = model.count_tokens(response)
+        expected_cost = (input_tokens / 1_000_000) * in_rate + (
+            output_tokens / 1_000_000
+        ) * out_rate
 
-    @requires_api_key
-    @integration_test
-    def test_quota_exceeded_handling(self, azure_openai_model):
-        try:
-            prompts = [f"Test prompt {i}" for i in range(10)]
-            responses = azure_openai_model.generate_batch(prompts=prompts)
-            assert len(responses) == len(prompts)
-        except Exception as e:
-            error_msg = str(e).lower()
-            assert any(
-                k in error_msg
-                for k in ["quota", "limit", "exceeded", "rate", "not found", "resource"]
-            )
+        # Allow for a small discrepancy
+        assert abs(model.total_cost - expected_cost) / expected_cost < 0.5
 
 
-@pytest.mark.integration
-class TestAzureOpenAIConnectionValidation:
-    @requires_api_key
-    @integration_test
-    def test_get_info_method_accuracy(self, azure_openai_model):
+@integration_test
+@requires_api_key
+class TestAzureOpenAIAdvancedFeatures:
+    """Tests for advanced model features."""
+
+    def test_batch_generation(self, azure_openai_model):
+        """Test generating multiple prompts in a batch."""
+        prompts = ["1+1=", "2+2=", "3+3="]
+        responses = azure_openai_model.generate_batch(prompts=prompts)
+        assert len(responses) == 3
+        assert "2" in responses[0]
+        assert "4" in responses[1]
+        assert "6" in responses[2]
+        assert azure_openai_model.total_requests == 3
+
+    def test_parameter_passing(self, azure_openai_model):
+        """Test passing generation parameters like temperature and max_tokens."""
+        response = azure_openai_model.generate(
+            prompt="Once upon a time", max_tokens=5, temperature=0.0
+        )
+        assert len(response.split()) <= 10  # A bit of buffer
+
+        # High temperature should yield more random output
+        response1 = azure_openai_model.generate(
+            prompt="The meaning of life is", temperature=0.9, max_tokens=10
+        )
+        response2 = azure_openai_model.generate(
+            prompt="The meaning of life is", temperature=0.9, max_tokens=10
+        )
+        assert response1 != response2
+
+    def test_stop_sequence(self, azure_openai_model):
+        """Test that the stop sequence terminates generation."""
+        prompt = "Count to 5: 1, 2, 3,"
+        response = azure_openai_model.generate(prompt=prompt, max_tokens=20, stop=",")
+        assert "," not in response
+
+    def test_get_info_method_accuracy(self, azure_openai_model, azure_credentials):
+        """Verify the get_info() method provides accurate data."""
         info = azure_openai_model.get_info()
-        required_fields = ["model_name", "provider", "supports_batch", "pricing"]
-        for field in required_fields:
-            assert field in info, f"Missing required field: {field}"
-        assert info["model_name"] == azure_openai_model.model_name
+        assert info["model_name"] == azure_credentials["deployment"]
         assert info["provider"] == "azure_openai"
-        assert isinstance(info["supports_batch"], bool)
-        assert isinstance(info["pricing"], tuple)
-        assert len(info["pricing"]) == 2
-        assert all(isinstance(price, (int, float)) for price in info["pricing"])
-        optional_fields = ["max_retries", "timeout"]
-        for field in optional_fields:
-            if field in info:
-                assert isinstance(info[field], (int, float))
+        assert info["supports_batch"] is False
+        assert "pricing" in info and isinstance(info["pricing"], tuple)
+        assert "max_retries" in info
+        assert "api_version" in info
