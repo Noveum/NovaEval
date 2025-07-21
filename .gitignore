@@ -181,4 +181,5 @@ _site/
 .DS_Store
 .kiro/
 junit.xml
-.vscode
+.vscode/
+
