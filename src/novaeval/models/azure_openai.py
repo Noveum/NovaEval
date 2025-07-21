@@ -190,7 +190,7 @@ class AzureOpenAIModel(BaseModel):
         Generate a chat completion using the Azure OpenAI chat endpoint.
         """
         try:
-            params = {
+            params: dict[str, Any] = {
                 "model": self.model_name,  # deployment name
                 "messages": messages,
             }
