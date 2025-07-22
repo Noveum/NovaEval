@@ -4,6 +4,7 @@ from pydantic import ValidationError
 from novaeval.agents import AgentData, ToolCall, ToolResult, ToolSchema
 
 
+@pytest.mark.unit
 def test_tool_schema_minimal():
     schema = ToolSchema(name="calculator", description="Adds two numbers")
     assert schema.name == "calculator"
@@ -11,6 +12,7 @@ def test_tool_schema_minimal():
     assert schema.return_schema is None
 
 
+@pytest.mark.unit
 def test_tool_call_valid():
     call = ToolCall(
         tool_name="calculator", parameters={"x": 1, "y": 2}, call_id="abc123"
@@ -19,12 +21,14 @@ def test_tool_call_valid():
     assert call.parameters["x"] == 1
 
 
+@pytest.mark.unit
 def test_tool_result_successful():
     result = ToolResult(call_id="abc123", result=3, success=True)
     assert result.success is True
     assert result.error_message is None
 
 
+@pytest.mark.unit
 def test_agent_data_complete():
     agent = AgentData(
         agent_name="EvalBot",
@@ -48,6 +52,7 @@ def test_agent_data_complete():
     assert agent.retrieval_context == "Math context"
 
 
+@pytest.mark.unit
 def test_agent_data_missing_required_fields():
     with pytest.raises(ValidationError):
         AgentData(
