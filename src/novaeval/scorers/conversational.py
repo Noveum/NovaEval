@@ -20,7 +20,7 @@ from typing import Any, Optional, TypeVar
 from pydantic import BaseModel, Field
 
 from novaeval.models.base import BaseModel as LLMModel
-from novaeval.scorers.base import BaseScorer
+from novaeval.scorers.base import BaseScorer, ScoreResult
 
 T = TypeVar("T")
 
@@ -117,17 +117,113 @@ class KnowledgeRetentionScorer(BaseScorer):
         self.model = model
         self.window_size = window_size
 
+    async def evaluate(
+        self,
+        input_text: str,
+        output_text: str,
+        expected_output: Optional[str] = None,
+        context: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> ScoreResult:
+        """
+        Evaluate knowledge retention in conversation.
+
+        Args:
+            input_text: The input/context for the conversation
+            output_text: The model's response to evaluate
+            expected_output: Expected response (optional)
+            context: Additional context including conversation history
+
+        Returns:
+            ScoreResult with score, pass/fail status, and reasoning
+        """
+        # Input validation with proper type checking
+        if not isinstance(output_text, str):
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Invalid input: output_text must be a string",
+                metadata={
+                    "error": "type_error",
+                    "input_type": type(output_text).__name__,
+                },
+            )
+
+        if expected_output is not None and not isinstance(expected_output, str):
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Invalid input: expected_output must be a string or None",
+                metadata={
+                    "error": "type_error",
+                    "expected_type": type(expected_output).__name__,
+                },
+            )
+
+        # Additional validation for empty strings (safe now that we've checked types)
+        if not output_text or not output_text.strip():
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Empty or whitespace-only output text",
+                metadata={"error": "empty_output"},
+            )
+
+        if expected_output is not None and (
+            not expected_output or not expected_output.strip()
+        ):
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Empty or whitespace-only expected output",
+                metadata={"error": "empty_expected"},
+            )
+
+        try:
+            score = await self._evaluate_knowledge_retention_async(
+                output_text, expected_output or "", context
+            )
+            self._track_score(score)
+
+            passed = score >= 0.7  # Default threshold
+            reasoning = self._generate_reasoning(score, output_text, context)
+
+            return ScoreResult(
+                score=score,
+                passed=passed,
+                reasoning=reasoning,
+                metadata={
+                    "scorer": "knowledge_retention",
+                    "model": (
+                        self.model.name if hasattr(self.model, "name") else "unknown"
+                    ),
+                    "window_size": self.window_size,
+                },
+            )
+        except Exception as e:
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning=f"Evaluation failed: {e!s}",
+                metadata={"error": "evaluation_error", "exception": str(e)},
+            )
+
     def score(
         self,
         prediction: str,
         ground_truth: str,
         context: Optional[dict[str, Any]] = None,
     ) -> float:
-        """Score knowledge retention in conversation."""
-        if not self.validate_inputs(prediction, ground_truth, context):
+        """
+        Legacy synchronous score method for backward compatibility.
+
+        Note: This method is deprecated. Use evaluate() for new code.
+        """
+        # Input validation with proper type checking
+        if not isinstance(prediction, str) or not isinstance(ground_truth, str):
             return 0.0
 
-        # Additional validation for empty strings
+        # Safe to call strip() now
         if (
             not prediction
             or not prediction.strip()
@@ -137,13 +233,32 @@ class KnowledgeRetentionScorer(BaseScorer):
             return 0.0
 
         try:
-            score = self._evaluate_knowledge_retention_sync(
-                prediction, ground_truth, context
+            result = _run_async_in_sync_context(
+                self.evaluate(
+                    input_text="",  # Not used in knowledge retention
+                    output_text=prediction,
+                    expected_output=ground_truth,
+                    context=context,
+                )
             )
-            self._track_score(score)
-            return score
+            return result.score
         except Exception:
             return 0.0
+
+    def _generate_reasoning(
+        self, score: float, output_text: str, context: Optional[dict[str, Any]]
+    ) -> str:
+        """Generate reasoning for the knowledge retention score."""
+        if score >= 0.9:
+            return f"Excellent knowledge retention (score: {score:.2f}). The response demonstrates strong recall of previously shared information."
+        elif score >= 0.7:
+            return f"Good knowledge retention (score: {score:.2f}). The response shows adequate recall with minor gaps."
+        elif score >= 0.5:
+            return f"Moderate knowledge retention (score: {score:.2f}). The response shows some retention but with noticeable gaps."
+        elif score >= 0.3:
+            return f"Poor knowledge retention (score: {score:.2f}). The response asks for information that was previously provided."
+        else:
+            return f"Very poor knowledge retention (score: {score:.2f}). The response shows significant failure to retain previously shared information."
 
     def _evaluate_knowledge_retention_sync(
         self, prediction: str, ground_truth: str, context: Optional[dict[str, Any]]
@@ -332,17 +447,92 @@ class ConversationRelevancyScorer(BaseScorer):
         self.model = model
         self.window_size = window_size
 
+    async def evaluate(
+        self,
+        input_text: str,
+        output_text: str,
+        expected_output: Optional[str] = None,
+        context: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> ScoreResult:
+        """
+        Evaluate conversation relevancy.
+
+        Args:
+            input_text: The input/context for the conversation
+            output_text: The model's response to evaluate
+            expected_output: Expected response (optional)
+            context: Additional context including conversation history
+
+        Returns:
+            ScoreResult with score, pass/fail status, and reasoning
+        """
+        # Input validation with proper type checking
+        if not isinstance(output_text, str):
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Invalid input: output_text must be a string",
+                metadata={
+                    "error": "type_error",
+                    "input_type": type(output_text).__name__,
+                },
+            )
+
+        # Additional validation for empty strings (safe now that we've checked types)
+        if not output_text or not output_text.strip():
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Empty or whitespace-only output text",
+                metadata={"error": "empty_output"},
+            )
+
+        try:
+            score = await self._evaluate_relevancy_async(
+                output_text, expected_output or "", context
+            )
+            self._track_score(score)
+
+            passed = score >= 0.7  # Default threshold
+            reasoning = self._generate_relevancy_reasoning(score, output_text, context)
+
+            return ScoreResult(
+                score=score,
+                passed=passed,
+                reasoning=reasoning,
+                metadata={
+                    "scorer": "conversation_relevancy",
+                    "model": (
+                        self.model.name if hasattr(self.model, "name") else "unknown"
+                    ),
+                    "window_size": self.window_size,
+                },
+            )
+        except Exception as e:
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning=f"Evaluation failed: {e!s}",
+                metadata={"error": "evaluation_error", "exception": str(e)},
+            )
+
     def score(
         self,
         prediction: str,
         ground_truth: str,
         context: Optional[dict[str, Any]] = None,
     ) -> float:
-        """Score conversation relevancy."""
-        if not self.validate_inputs(prediction, ground_truth, context):
+        """
+        Legacy synchronous score method for backward compatibility.
+
+        Note: This method is deprecated. Use evaluate() for new code.
+        """
+        # Input validation with proper type checking
+        if not isinstance(prediction, str) or not isinstance(ground_truth, str):
             return 0.0
 
-        # Additional validation for empty strings
+        # Safe to call strip() now
         if (
             not prediction
             or not prediction.strip()
@@ -352,11 +542,32 @@ class ConversationRelevancyScorer(BaseScorer):
             return 0.0
 
         try:
-            score = self._evaluate_relevancy_sync(prediction, ground_truth, context)
-            self._track_score(score)
-            return score
+            result = _run_async_in_sync_context(
+                self.evaluate(
+                    input_text="",
+                    output_text=prediction,
+                    expected_output=ground_truth,
+                    context=context,
+                )
+            )
+            return result.score
         except Exception:
             return 0.0
+
+    def _generate_relevancy_reasoning(
+        self, score: float, output_text: str, context: Optional[dict[str, Any]]
+    ) -> str:
+        """Generate reasoning for the conversation relevancy score."""
+        if score >= 0.9:
+            return f"Excellent relevancy (score: {score:.2f}). The response is highly relevant to the conversation context."
+        elif score >= 0.7:
+            return f"Good relevancy (score: {score:.2f}). The response is mostly relevant with minor deviations."
+        elif score >= 0.5:
+            return f"Moderate relevancy (score: {score:.2f}). The response has some relevance but could be more focused."
+        elif score >= 0.3:
+            return f"Poor relevancy (score: {score:.2f}). The response is loosely relevant to the conversation."
+        else:
+            return f"Very poor relevancy (score: {score:.2f}). The response is off-topic or ignores the conversation context."
 
     def _evaluate_relevancy_sync(
         self, prediction: str, ground_truth: str, context: Optional[dict[str, Any]]
@@ -469,17 +680,93 @@ class ConversationCompletenessScorer(BaseScorer):
         super().__init__(name="Conversation Completeness")
         self.model = model
 
+    async def evaluate(
+        self,
+        input_text: str,
+        output_text: str,
+        expected_output: Optional[str] = None,
+        context: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> ScoreResult:
+        """
+        Evaluate conversation completeness.
+
+        Args:
+            input_text: The input/context for the conversation
+            output_text: The model's response to evaluate
+            expected_output: Expected response (optional)
+            context: Additional context including conversation history
+
+        Returns:
+            ScoreResult with score, pass/fail status, and reasoning
+        """
+        # Input validation with proper type checking
+        if not isinstance(output_text, str):
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Invalid input: output_text must be a string",
+                metadata={
+                    "error": "type_error",
+                    "input_type": type(output_text).__name__,
+                },
+            )
+
+        # Additional validation for empty strings (safe now that we've checked types)
+        if not output_text or not output_text.strip():
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Empty or whitespace-only output text",
+                metadata={"error": "empty_output"},
+            )
+
+        try:
+            score = await self._evaluate_completeness_async(
+                output_text, expected_output or "", context
+            )
+            self._track_score(score)
+
+            passed = score >= 0.7  # Default threshold
+            reasoning = self._generate_completeness_reasoning(
+                score, output_text, context
+            )
+
+            return ScoreResult(
+                score=score,
+                passed=passed,
+                reasoning=reasoning,
+                metadata={
+                    "scorer": "conversation_completeness",
+                    "model": (
+                        self.model.name if hasattr(self.model, "name") else "unknown"
+                    ),
+                },
+            )
+        except Exception as e:
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning=f"Evaluation failed: {e!s}",
+                metadata={"error": "evaluation_error", "exception": str(e)},
+            )
+
     def score(
         self,
         prediction: str,
         ground_truth: str,
         context: Optional[dict[str, Any]] = None,
     ) -> float:
-        """Score conversation completeness."""
-        if not self.validate_inputs(prediction, ground_truth, context):
+        """
+        Legacy synchronous score method for backward compatibility.
+
+        Note: This method is deprecated. Use evaluate() for new code.
+        """
+        # Input validation with proper type checking
+        if not isinstance(prediction, str) or not isinstance(ground_truth, str):
             return 0.0
 
-        # Additional validation for empty strings
+        # Safe to call strip() now
         if (
             not prediction
             or not prediction.strip()
@@ -489,11 +776,32 @@ class ConversationCompletenessScorer(BaseScorer):
             return 0.0
 
         try:
-            score = self._evaluate_completeness_sync(prediction, ground_truth, context)
-            self._track_score(score)
-            return score
+            result = _run_async_in_sync_context(
+                self.evaluate(
+                    input_text="",
+                    output_text=prediction,
+                    expected_output=ground_truth,
+                    context=context,
+                )
+            )
+            return result.score
         except Exception:
             return 0.0
+
+    def _generate_completeness_reasoning(
+        self, score: float, output_text: str, context: Optional[dict[str, Any]]
+    ) -> str:
+        """Generate reasoning for the conversation completeness score."""
+        if score >= 0.9:
+            return f"Excellent completeness (score: {score:.2f}). All user intentions and requests have been thoroughly addressed."
+        elif score >= 0.7:
+            return f"Good completeness (score: {score:.2f}). Most user intentions have been addressed with minor gaps."
+        elif score >= 0.5:
+            return f"Moderate completeness (score: {score:.2f}). Some user intentions addressed but significant gaps remain."
+        elif score >= 0.3:
+            return f"Poor completeness (score: {score:.2f}). User intentions minimally addressed or partially ignored."
+        else:
+            return f"Very poor completeness (score: {score:.2f}). User intentions largely unaddressed or ignored."
 
     def _evaluate_completeness_sync(
         self, prediction: str, ground_truth: str, context: Optional[dict[str, Any]]
@@ -663,17 +971,90 @@ class RoleAdherenceScorer(BaseScorer):
         self.model = model
         self.expected_role = expected_role
 
+    async def evaluate(
+        self,
+        input_text: str,
+        output_text: str,
+        expected_output: Optional[str] = None,
+        context: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> ScoreResult:
+        """
+        Evaluate role adherence.
+
+        Args:
+            input_text: The input/context for the conversation
+            output_text: The model's response to evaluate
+            expected_output: Expected response (optional)
+            context: Additional context including conversation history
+
+        Returns:
+            ScoreResult with score, pass/fail status, and reasoning
+        """
+        # Input validation with proper type checking
+        if not isinstance(output_text, str):
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Invalid input: output_text must be a string",
+                metadata={
+                    "error": "type_error",
+                    "input_type": type(output_text).__name__,
+                },
+            )
+
+        # Additional validation for empty strings (safe now that we've checked types)
+        if not output_text or not output_text.strip():
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Empty or whitespace-only output text",
+                metadata={"error": "empty_output"},
+            )
+
+        try:
+            score = await self._evaluate_role_adherence_async(output_text, context)
+            self._track_score(score)
+
+            passed = score >= 0.7  # Default threshold
+            reasoning = self._generate_role_reasoning(score, output_text, context)
+
+            return ScoreResult(
+                score=score,
+                passed=passed,
+                reasoning=reasoning,
+                metadata={
+                    "scorer": "role_adherence",
+                    "model": (
+                        self.model.name if hasattr(self.model, "name") else "unknown"
+                    ),
+                    "expected_role": self.expected_role,
+                },
+            )
+        except Exception as e:
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning=f"Evaluation failed: {e!s}",
+                metadata={"error": "evaluation_error", "exception": str(e)},
+            )
+
     def score(
         self,
         prediction: str,
         ground_truth: str,
         context: Optional[dict[str, Any]] = None,
     ) -> float:
-        """Score role adherence."""
-        if not self.validate_inputs(prediction, ground_truth, context):
+        """
+        Legacy synchronous score method for backward compatibility.
+
+        Note: This method is deprecated. Use evaluate() for new code.
+        """
+        # Input validation with proper type checking
+        if not isinstance(prediction, str) or not isinstance(ground_truth, str):
             return 0.0
 
-        # Additional validation for empty strings
+        # Safe to call strip() now
         if (
             not prediction
             or not prediction.strip()
@@ -683,13 +1064,33 @@ class RoleAdherenceScorer(BaseScorer):
             return 0.0
 
         try:
-            score = self._evaluate_role_adherence_sync(
-                prediction, ground_truth, context
+            result = _run_async_in_sync_context(
+                self.evaluate(
+                    input_text="",
+                    output_text=prediction,
+                    expected_output=ground_truth,
+                    context=context,
+                )
             )
-            self._track_score(score)
-            return score
+            return result.score
         except Exception:
             return 0.0
+
+    def _generate_role_reasoning(
+        self, score: float, output_text: str, context: Optional[dict[str, Any]]
+    ) -> str:
+        """Generate reasoning for the role adherence score."""
+        role_name = self.expected_role or "assigned role"
+        if score >= 0.9:
+            return f"Excellent role adherence (score: {score:.2f}). The response perfectly maintains the {role_name} throughout."
+        elif score >= 0.7:
+            return f"Good role adherence (score: {score:.2f}). The response mostly maintains the {role_name} with minor deviations."
+        elif score >= 0.5:
+            return f"Moderate role adherence (score: {score:.2f}). The response somewhat maintains the {role_name} but has noticeable inconsistencies."
+        elif score >= 0.3:
+            return f"Poor role adherence (score: {score:.2f}). The response poorly maintains the {role_name} with significant role breaks."
+        else:
+            return f"Very poor role adherence (score: {score:.2f}). The response completely abandons the {role_name}."
 
     def _evaluate_role_adherence_sync(
         self, prediction: str, ground_truth: str, context: Optional[dict[str, Any]]
@@ -791,6 +1192,113 @@ class ConversationalMetricsScorer(BaseScorer):
         if include_role_adherence:
             self.role_scorer = RoleAdherenceScorer(model, expected_role)
 
+    async def evaluate(
+        self,
+        input_text: str,
+        output_text: str,
+        expected_output: Optional[str] = None,
+        context: Optional[dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> ScoreResult:
+        """
+        Evaluate using multiple conversational metrics.
+
+        Args:
+            input_text: The input/context for the conversation
+            output_text: The model's response to evaluate
+            expected_output: Expected response (optional)
+            context: Additional context including conversation history
+
+        Returns:
+            ScoreResult with combined scores and detailed reasoning
+        """
+        # Input validation with proper type checking
+        if not isinstance(output_text, str):
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Invalid input: output_text must be a string",
+                metadata={
+                    "error": "type_error",
+                    "input_type": type(output_text).__name__,
+                },
+            )
+
+        # Additional validation for empty strings (safe now that we've checked types)
+        if not output_text or not output_text.strip():
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning="Empty or whitespace-only output text",
+                metadata={"error": "empty_output"},
+            )
+
+        scores = {}
+        results = {}
+
+        try:
+            # Evaluate each enabled metric
+            if self.include_knowledge_retention:
+                result = await self.knowledge_scorer.evaluate(
+                    input_text, output_text, expected_output, context
+                )
+                scores["knowledge_retention"] = result.score
+                results["knowledge_retention"] = result
+
+            if self.include_relevancy:
+                result = await self.relevancy_scorer.evaluate(
+                    input_text, output_text, expected_output, context
+                )
+                scores["relevancy"] = result.score
+                results["relevancy"] = result
+
+            if self.include_completeness:
+                result = await self.completeness_scorer.evaluate(
+                    input_text, output_text, expected_output, context
+                )
+                scores["completeness"] = result.score
+                results["completeness"] = result
+
+            if self.include_role_adherence:
+                result = await self.role_scorer.evaluate(
+                    input_text, output_text, expected_output, context
+                )
+                scores["role_adherence"] = result.score
+                results["role_adherence"] = result
+
+            # Calculate overall score as average
+            overall_score = sum(scores.values()) / len(scores) if scores else 0.0
+            passed = overall_score >= 0.7  # Default threshold
+
+            # Generate combined reasoning
+            reasoning = self._generate_combined_reasoning(scores, results)
+
+            self._track_score(overall_score)
+
+            return ScoreResult(
+                score=overall_score,
+                passed=passed,
+                reasoning=reasoning,
+                metadata={
+                    "scorer": "conversational_metrics",
+                    "individual_scores": scores,
+                    "enabled_metrics": {
+                        "knowledge_retention": self.include_knowledge_retention,
+                        "relevancy": self.include_relevancy,
+                        "completeness": self.include_completeness,
+                        "role_adherence": self.include_role_adherence,
+                    },
+                },
+            )
+
+        except Exception as e:
+            return ScoreResult(
+                score=0.0,
+                passed=False,
+                reasoning=f"Evaluation failed: {e!s}",
+                metadata={"error": "evaluation_error", "exception": str(e)},
+            )
+
     def score(
         self,
         prediction: str,
@@ -798,15 +1306,18 @@ class ConversationalMetricsScorer(BaseScorer):
         context: Optional[dict[str, Any]] = None,
     ) -> dict[str, float]:
         """
-        Score using multiple conversational metrics.
+        Legacy synchronous score method for backward compatibility.
+
+        Note: This method is deprecated. Use evaluate() for new code.
 
         Returns:
             Dictionary with individual metric scores and overall score
         """
-        if not self.validate_inputs(prediction, ground_truth, context):
+        # Input validation with proper type checking
+        if not isinstance(prediction, str) or not isinstance(ground_truth, str):
             return {"overall": 0.0}
 
-        # Additional validation for empty strings
+        # Safe to call strip() now
         if (
             not prediction
             or not prediction.strip()
@@ -815,38 +1326,54 @@ class ConversationalMetricsScorer(BaseScorer):
         ):
             return {"overall": 0.0}
 
-        scores = {}
-
         try:
-            # Evaluate each enabled metric
-            if self.include_knowledge_retention:
-                scores["knowledge_retention"] = self.knowledge_scorer.score(
-                    prediction, ground_truth, context
+            result = _run_async_in_sync_context(
+                self.evaluate(
+                    input_text="",
+                    output_text=prediction,
+                    expected_output=ground_truth,
+                    context=context,
                 )
-
-            if self.include_relevancy:
-                scores["relevancy"] = self.relevancy_scorer.score(
-                    prediction, ground_truth, context
-                )
-
-            if self.include_completeness:
-                scores["completeness"] = self.completeness_scorer.score(
-                    prediction, ground_truth, context
-                )
-
-            if self.include_role_adherence:
-                scores["role_adherence"] = self.role_scorer.score(
-                    prediction, ground_truth, context
-                )
-
-            # Calculate overall score as average
-            if scores:
-                scores["overall"] = sum(scores.values()) / len(scores)
-            else:
-                scores["overall"] = 0.0
-
-            self._track_score(scores["overall"])
-            return scores
-
+            )
+            # Extract individual scores from metadata
+            individual_scores = result.metadata.get("individual_scores", {})
+            individual_scores["overall"] = result.score
+            return individual_scores
         except Exception:
             return {"overall": 0.0}
+
+    def _generate_combined_reasoning(
+        self, scores: dict[str, float], results: dict[str, ScoreResult]
+    ) -> str:
+        """Generate combined reasoning from all metric results."""
+        overall_score = sum(scores.values()) / len(scores) if scores else 0.0
+
+        reasoning_parts = [
+            f"Combined conversational metrics score: {overall_score:.2f}"
+        ]
+        reasoning_parts.append("\nIndividual metric breakdown:")
+
+        for metric, score in scores.items():
+            metric_name = metric.replace("_", " ").title()
+            reasoning_parts.append(f"- {metric_name}: {score:.2f}")
+
+        # Add any specific insights from individual results
+        if scores:
+            if overall_score >= 0.9:
+                reasoning_parts.append(
+                    "\nExcellent overall conversational performance across all metrics."
+                )
+            elif overall_score >= 0.7:
+                reasoning_parts.append(
+                    "\nGood overall conversational performance with room for minor improvements."
+                )
+            elif overall_score >= 0.5:
+                reasoning_parts.append(
+                    "\nModerate conversational performance with several areas needing improvement."
+                )
+            else:
+                reasoning_parts.append(
+                    "\nPoor conversational performance requiring significant improvements."
+                )
+
+        return "\n".join(reasoning_parts)
