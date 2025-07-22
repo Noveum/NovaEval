@@ -36,39 +36,45 @@ def _run_async_in_sync_context(coro: Coroutine[Any, Any, T]) -> T:
     try:
         # Check if we're already in a running event loop
         asyncio.get_running_loop()
-
-        # We're in a running loop, we need to run in a separate thread
-        result: Optional[T] = None
-        exception: Optional[Exception] = None
-
-        def run_in_thread() -> None:
-            nonlocal result, exception
-            try:
-                # Create a new event loop for this thread
-                new_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(new_loop)
-                try:
-                    result = new_loop.run_until_complete(coro)
-                finally:
-                    new_loop.close()
-            except Exception as e:
-                exception = e
-
-        thread = threading.Thread(target=run_in_thread)
-        thread.start()
-        thread.join()
-
-        if exception:
-            raise exception
-
-        if result is None:
-            raise RuntimeError("Async operation returned None unexpectedly")
-
-        return result
-
     except RuntimeError:
         # No running event loop, we can use asyncio.run
         return asyncio.run(coro)
+
+    # We're in a running loop, we need to run in a separate thread
+    # Use a sentinel object to track completion status
+    _SENTINEL = object()
+    result: Any = _SENTINEL
+    exception: Optional[BaseException] = None
+
+    def run_in_thread() -> None:
+        nonlocal result, exception
+        try:
+            # Create a new event loop for this thread
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+            try:
+                result = new_loop.run_until_complete(coro)
+            finally:
+                new_loop.close()
+        except (
+            BaseException
+        ) as e:  # Catch ALL exceptions, including SystemExit, KeyboardInterrupt
+            exception = e
+
+    thread = threading.Thread(target=run_in_thread)
+    thread.start()
+    thread.join()
+
+    if exception:
+        raise exception
+
+    # Ensure thread completed successfully and we have a valid result
+    if result is _SENTINEL:
+        raise RuntimeError(
+            "Thread completed without setting result or raising exception"
+        )
+
+    return result  # type: ignore[return-value]  # We've verified result is not sentinel
 
 
 class ConversationTurn(BaseModel):
@@ -113,7 +119,10 @@ class KnowledgeRetentionScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, window_size: int = 10):
-        super().__init__(name="Knowledge Retention")
+        super().__init__(
+            name="Knowledge Retention",
+            description="Evaluates knowledge retention in conversations by tracking information recall and consistency across dialogue turns",
+        )
         self.model = model
         self.window_size = window_size
 
@@ -302,10 +311,15 @@ class KnowledgeRetentionScorer(BaseScorer):
     async def _extract_conversation_knowledge(
         self, conversation: Conversation
     ) -> list[KnowledgeItem]:
-        """Extract knowledge items from conversation history."""
+        """Extract knowledge items from recent conversation history within the sliding window."""
         knowledge_items = []
 
-        for i, turn in enumerate(conversation.turns):
+        # Apply sliding window to limit the conversation turns processed
+        current_turn_index = len(conversation.turns) - 1
+        window_start = max(0, current_turn_index - self.window_size)
+        relevant_turns = conversation.turns[window_start:]
+
+        for i, turn in enumerate(relevant_turns, start=window_start):
             if turn.speaker == "user":  # Only extract knowledge from user messages
                 knowledge_prompt = f"""Extract factual information and personal details from this user message:
 
@@ -443,7 +457,10 @@ class ConversationRelevancyScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, window_size: int = 5):
-        super().__init__(name="Conversation Relevancy")
+        super().__init__(
+            name="Conversation Relevancy",
+            description="Measures how relevant and contextually appropriate responses are within the conversation flow",
+        )
         self.model = model
         self.window_size = window_size
 
@@ -677,7 +694,10 @@ class ConversationCompletenessScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel):
-        super().__init__(name="Conversation Completeness")
+        super().__init__(
+            name="Conversation Completeness",
+            description="Assesses whether responses provide comprehensive coverage of topics and address all aspects of user queries",
+        )
         self.model = model
 
     async def evaluate(
@@ -967,7 +987,10 @@ class RoleAdherenceScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, expected_role: Optional[str] = None):
-        super().__init__(name="Role Adherence")
+        super().__init__(
+            name="Role Adherence",
+            description="Evaluates how well responses maintain consistency with assigned persona, role, or character throughout conversations",
+        )
         self.model = model
         self.expected_role = expected_role
 
@@ -1175,7 +1198,10 @@ class ConversationalMetricsScorer(BaseScorer):
         window_size: int = 5,
         expected_role: Optional[str] = None,
     ):
-        super().__init__(name="Conversational Metrics")
+        super().__init__(
+            name="Conversational Metrics",
+            description="Comprehensive conversational evaluation combining multiple metrics: knowledge retention, relevancy, completeness, and role adherence",
+        )
         self.model = model
         self.include_knowledge_retention = include_knowledge_retention
         self.include_relevancy = include_relevancy
@@ -1184,7 +1210,7 @@ class ConversationalMetricsScorer(BaseScorer):
 
         # Initialize individual scorers
         if include_knowledge_retention:
-            self.knowledge_scorer = KnowledgeRetentionScorer(model)
+            self.knowledge_scorer = KnowledgeRetentionScorer(model, window_size)
         if include_relevancy:
             self.relevancy_scorer = ConversationRelevancyScorer(model, window_size)
         if include_completeness:
