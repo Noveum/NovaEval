@@ -32,6 +32,6 @@ class AgentData(BaseModel):
     tools_available: list[ToolSchema]
     tool_calls: list[ToolCall]
     parameters_passed: dict[str, Any]  # JSON-like dict
-    tool_call_results: Optional[list[ToolResult]]
+    tool_call_results: Optional[list[ToolResult]] = None
     retrieval_context: str
     metadata: Optional[str]
