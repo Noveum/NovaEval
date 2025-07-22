@@ -10,6 +10,13 @@ from typing import Any, Optional, Union
 
 from openai import OpenAI
 
+try:
+    import tiktoken
+
+    TIKTOKEN_AVAILABLE = True
+except ImportError:
+    TIKTOKEN_AVAILABLE = False
+
 from novaeval.models.base import BaseModel
 
 
@@ -219,9 +226,7 @@ class OpenAIModel(BaseModel):
         Returns:
             Number of tokens
         """
-        try:
-            import tiktoken
-
+        if TIKTOKEN_AVAILABLE:
             # Get encoding for the model
             if "gpt-4" in self.model_name:
                 encoding = tiktoken.encoding_for_model("gpt-4")
@@ -231,8 +236,7 @@ class OpenAIModel(BaseModel):
                 encoding = tiktoken.get_encoding("cl100k_base")
 
             return len(encoding.encode(text))
-
-        except ImportError:
+        else:
             # Fallback to simple approximation if tiktoken not available
             return super().count_tokens(text)
 

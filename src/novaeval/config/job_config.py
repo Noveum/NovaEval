@@ -22,11 +22,25 @@ from novaeval.config.schema import (
     ModelProvider,
     ScorerType,
 )
-from novaeval.datasets.base import BaseDataset
+from novaeval.datasets import base as datasets_base
+from novaeval.datasets import custom as datasets_custom
+from novaeval.datasets import huggingface as datasets_huggingface
+from novaeval.datasets import mmlu as datasets_mmlu
 from novaeval.evaluators.standard import Evaluator
-from novaeval.models.base import BaseModel
-from novaeval.scorers.base import BaseScorer
+from novaeval.models import anthropic as models_anthropic
+from novaeval.models import base as models_base
+from novaeval.models import openai as models_openai
+from novaeval.scorers import accuracy as scorers_accuracy
+from novaeval.scorers import base as scorers_base
+from novaeval.scorers import conversational as scorers_conversational
+from novaeval.scorers import g_eval as scorers_g_eval
+from novaeval.scorers import rag as scorers_rag
 from novaeval.utils.logging import get_logger
+
+# Type aliases for backwards compatibility
+BaseDataset = datasets_base.BaseDataset
+BaseModel = models_base.BaseModel
+BaseScorer = scorers_base.BaseScorer
 
 logger = get_logger(__name__)
 
@@ -73,9 +87,7 @@ class ModelFactory:
         provider = model_config.provider
 
         if provider == ModelProvider.OPENAI:
-            from novaeval.models.openai import OpenAIModel
-
-            return OpenAIModel(
+            return models_openai.OpenAIModel(
                 model_name=model_config.model_name,
                 api_key=model_config.api_key or os.getenv("OPENAI_API_KEY"),
                 api_base=model_config.api_base,
@@ -87,9 +99,7 @@ class ModelFactory:
             )
 
         elif provider == ModelProvider.ANTHROPIC:
-            from novaeval.models.anthropic import AnthropicModel
-
-            return AnthropicModel(
+            return models_anthropic.AnthropicModel(
                 model_name=model_config.model_name,
                 api_key=model_config.api_key or os.getenv("ANTHROPIC_API_KEY"),
                 temperature=model_config.temperature,
@@ -101,9 +111,7 @@ class ModelFactory:
 
         elif provider == ModelProvider.NOVEUM:
             # Note: NoveumModel not implemented yet, falling back to OpenAI model
-            from novaeval.models.openai import OpenAIModel
-
-            return OpenAIModel(
+            return models_openai.OpenAIModel(
                 model_name=model_config.model_name,
                 api_key=model_config.api_key or os.getenv("NOVEUM_API_KEY"),
                 api_base=model_config.api_base or os.getenv("NOVEUM_API_BASE"),
@@ -128,9 +136,7 @@ class DatasetFactory:
         dataset_type = dataset_config.type
 
         if dataset_type == DatasetType.MMLU:
-            from novaeval.datasets.mmlu import MMLUDataset
-
-            return MMLUDataset(
+            return datasets_mmlu.MMLUDataset(
                 subset=dataset_config.subset,
                 split=dataset_config.split,
                 limit=dataset_config.limit,
@@ -139,9 +145,7 @@ class DatasetFactory:
             )
 
         elif dataset_type == DatasetType.HUGGINGFACE:
-            from novaeval.datasets.huggingface import HuggingFaceDataset
-
-            return HuggingFaceDataset(
+            return datasets_huggingface.HuggingFaceDataset(
                 dataset_name=dataset_config.name,
                 subset=dataset_config.subset,
                 split=dataset_config.split,
@@ -156,9 +160,7 @@ class DatasetFactory:
             DatasetType.CSV,
             DatasetType.JSONL,
         ]:
-            from novaeval.datasets.custom import CustomDataset
-
-            return CustomDataset(
+            return datasets_custom.CustomDataset(
                 data_source=dataset_config.path,
                 format=dataset_type.value,
                 limit=dataset_config.limit,
@@ -181,52 +183,40 @@ class ScorerFactory:
         scorer_type = scorer_config.type
 
         if scorer_type == ScorerType.ACCURACY:
-            from novaeval.scorers.accuracy import AccuracyScorer
-
-            return AccuracyScorer(
+            return scorers_accuracy.AccuracyScorer(
                 threshold=scorer_config.threshold, **scorer_config.parameters
             )
 
         elif scorer_type == ScorerType.G_EVAL:
-            from novaeval.scorers.g_eval import GEvalScorer
-
-            return GEvalScorer(  # type: ignore
+            return scorers_g_eval.GEvalScorer(  # type: ignore
                 model=model,
                 threshold=scorer_config.threshold,
                 **scorer_config.parameters,
             )
 
         elif scorer_type == ScorerType.RAG_ANSWER_RELEVANCY:
-            from novaeval.scorers.rag import AnswerRelevancyScorer
-
-            return AnswerRelevancyScorer(
+            return scorers_rag.AnswerRelevancyScorer(
                 model=model,
                 threshold=scorer_config.threshold,
                 **scorer_config.parameters,
             )
 
         elif scorer_type == ScorerType.RAG_FAITHFULNESS:
-            from novaeval.scorers.rag import FaithfulnessScorer
-
-            return FaithfulnessScorer(
+            return scorers_rag.FaithfulnessScorer(
                 model=model,
                 threshold=scorer_config.threshold,
                 **scorer_config.parameters,
             )
 
         elif scorer_type == ScorerType.RAGAS:
-            from novaeval.scorers.rag import RAGASScorer
-
-            return RAGASScorer(  # type: ignore
+            return scorers_rag.RAGASScorer(  # type: ignore
                 model=model,
                 threshold=scorer_config.threshold,
                 **scorer_config.parameters,
             )
 
         elif scorer_type == ScorerType.CONVERSATIONAL_METRICS:
-            from novaeval.scorers.conversational import ConversationalMetricsScorer
-
-            return ConversationalMetricsScorer(  # type: ignore
+            return scorers_conversational.ConversationalMetricsScorer(  # type: ignore
                 model=model,
                 threshold=scorer_config.threshold,
                 **scorer_config.parameters,

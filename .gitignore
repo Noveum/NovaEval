@@ -182,4 +182,8 @@ _site/
 .kiro/
 junit.xml
 .vscode/
+*.pyc
 
+__pycache__/
+examples/comparisons/deepeval/
+SCRATCH.md
