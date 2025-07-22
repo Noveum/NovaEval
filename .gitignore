@@ -182,4 +182,6 @@ _site/
 .kiro/
 junit.xml
 .vscode/
+*.pyc
 
+__pycache__/
