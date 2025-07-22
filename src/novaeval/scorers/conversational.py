@@ -13,12 +13,62 @@ Based on best practices from DeepEval and research in conversational AI evaluati
 
 import asyncio
 import re
-from typing import Any, Optional
+import threading
+from collections.abc import Coroutine
+from typing import Any, Optional, TypeVar
 
 from pydantic import BaseModel, Field
 
 from novaeval.models.base import BaseModel as LLMModel
 from novaeval.scorers.base import BaseScorer
+
+T = TypeVar("T")
+
+
+def _run_async_in_sync_context(coro: Coroutine[Any, Any, T]) -> T:
+    """
+    Helper function to run async code from sync context.
+
+    Handles both cases:
+    - When called from outside an event loop (uses asyncio.run)
+    - When called from within an existing event loop (uses loop.run_until_complete in thread)
+    """
+    try:
+        # Check if we're already in a running event loop
+        asyncio.get_running_loop()
+
+        # We're in a running loop, we need to run in a separate thread
+        result: Optional[T] = None
+        exception: Optional[Exception] = None
+
+        def run_in_thread() -> None:
+            nonlocal result, exception
+            try:
+                # Create a new event loop for this thread
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    result = new_loop.run_until_complete(coro)
+                finally:
+                    new_loop.close()
+            except Exception as e:
+                exception = e
+
+        thread = threading.Thread(target=run_in_thread)
+        thread.start()
+        thread.join()
+
+        if exception:
+            raise exception
+
+        if result is None:
+            raise RuntimeError("Async operation returned None unexpectedly")
+
+        return result
+
+    except RuntimeError:
+        # No running event loop, we can use asyncio.run
+        return asyncio.run(coro)
 
 
 class ConversationTurn(BaseModel):
@@ -100,7 +150,7 @@ class KnowledgeRetentionScorer(BaseScorer):
     ) -> float:
         """Synchronous wrapper for knowledge retention evaluation."""
         try:
-            return asyncio.run(
+            return _run_async_in_sync_context(
                 self._evaluate_knowledge_retention_async(
                     prediction, ground_truth, context
                 )
@@ -313,7 +363,7 @@ class ConversationRelevancyScorer(BaseScorer):
     ) -> float:
         """Synchronous wrapper for relevancy evaluation."""
         try:
-            return asyncio.run(
+            return _run_async_in_sync_context(
                 self._evaluate_relevancy_async(prediction, ground_truth, context)
             )
         except Exception:
@@ -450,7 +500,7 @@ class ConversationCompletenessScorer(BaseScorer):
     ) -> float:
         """Synchronous wrapper for completeness evaluation."""
         try:
-            return asyncio.run(
+            return _run_async_in_sync_context(
                 self._evaluate_completeness_async(prediction, ground_truth, context)
             )
         except Exception:
@@ -646,7 +696,9 @@ class RoleAdherenceScorer(BaseScorer):
     ) -> float:
         """Synchronous wrapper for role adherence evaluation."""
         try:
-            return asyncio.run(self._evaluate_role_adherence_async(prediction, context))
+            return _run_async_in_sync_context(
+                self._evaluate_role_adherence_async(prediction, context)
+            )
         except Exception:
             return 0.0
 
