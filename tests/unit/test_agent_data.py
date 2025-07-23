@@ -1,5 +1,4 @@
 import pytest
-from pydantic import ValidationError
 
 from novaeval.agents import AgentData, ToolCall, ToolResult, ToolSchema
 
@@ -44,21 +43,30 @@ def test_agent_data_complete():
         ],
         parameters_passed={"x": 1, "y": 2},
         tool_call_results=[ToolResult(call_id="call1", result=3, success=True)],
-        retrieval_context="Math context",
+        retrieval_query="What is 1+2?",
+        retrieved_context="Math context",
         metadata="metadata string",
     )
     assert agent.agent_name == "EvalBot"
     assert len(agent.tools_available) == 1
-    assert agent.retrieval_context == "Math context"
+    assert agent.retrieved_context == "Math context"
 
 
 @pytest.mark.unit
 def test_agent_data_missing_required_fields():
-    with pytest.raises(ValidationError):
-        AgentData(
-            agent_name="Bot",
-            agent_role="helper",
-            tools_available=[],
-            tool_calls=[],
-            parameters_passed={},
-        )
+    agent = AgentData(
+        agent_name="Bot",
+        agent_role="helper",
+        tools_available=[],
+        tool_calls=[],
+        parameters_passed={},
+    )
+    assert agent.agent_name == "Bot"
+    assert agent.agent_role == "helper"
+    assert agent.tools_available == []
+    assert agent.tool_calls == []
+    assert agent.parameters_passed == {}
+    assert agent.tool_call_results is None
+    assert agent.retrieval_query is None
+    assert agent.retrieved_context is None
+    assert agent.metadata is None

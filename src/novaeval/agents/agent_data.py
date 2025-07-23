@@ -24,14 +24,22 @@ class ToolResult(BaseModel):
 
 
 class AgentData(BaseModel):
-    agent_name: str
-    agent_role: str
+    agent_name: Optional[str] = None
+    agent_role: Optional[str] = None
     agent_task: Optional[str] = None
-    agent_response: str
-    trace: Optional[list[dict[str, Any]]] = None  # List of JSON-like dicts
-    tools_available: list[ToolSchema]
-    tool_calls: list[ToolCall]
-    parameters_passed: dict[str, Any]  # JSON-like dict
+
+    system_prompt: Optional[str] = None
+    agent_response: Optional[str] = None
+    trace: Optional[list[dict[str, Any]]] = (
+        None  # we might need a method to parse this, will do once the trace is formalized
+    )
+
+    tools_available: list[ToolSchema] = []
+    tool_calls: list[ToolCall] = []
+    parameters_passed: dict[str, Any] = {}  # JSON-like dict
     tool_call_results: Optional[list[ToolResult]] = None
-    retrieval_context: str
-    metadata: Optional[str]
+
+    retrieval_query: Optional[str] = None
+    retrieved_context: Optional[str] = None
+
+    metadata: Optional[str] = None
