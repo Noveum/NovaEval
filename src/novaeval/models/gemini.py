@@ -217,8 +217,13 @@ class GeminiModel(BaseModel):
                         # If we already tried with higher tokens, return empty
                         output = ""
 
-            tokens_used = self.count_tokens(prompt + output)
-            cost = self.estimate_cost(prompt, output)
+            # Calculate token counts using the more accurate method
+            input_tokens = self.count_tokens(prompt)
+            output_tokens = self.count_tokens(output)
+            tokens_used = input_tokens + output_tokens
+
+            # Use the accurate token counts for cost estimation
+            cost = self.estimate_cost(prompt, output, input_tokens=input_tokens, output_tokens=output_tokens)
 
             self._track_request(
                 prompt=prompt,
