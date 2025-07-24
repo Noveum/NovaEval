@@ -25,26 +25,26 @@ class AgentDataset:
                         if arg is type(None):
                             continue
                         arg_origin = getattr(arg, "__origin__", None)
-                        if arg_origin in (list, dict, list, dict):
-                            if arg_origin in (list, list):
+                        if arg_origin in (list, dict):
+                            if arg_origin is list:
                                 self._list_fields.add(field_name)
-                            elif arg_origin in (dict, dict):
+                            elif arg_origin is dict:
                                 self._dict_fields.add(field_name)
-                        elif arg in (list, dict, list, dict):
-                            if arg in (list, list):
+                        elif arg in (list, dict):
+                            if arg is list:
                                 self._list_fields.add(field_name)
-                            elif arg in (dict, dict):
+                            elif arg is dict:
                                 self._dict_fields.add(field_name)
                 # Handle direct types
-                elif origin in (list, dict, list, dict):
-                    if origin in (list, list):
+                elif origin in (list, dict):
+                    if origin is list:
                         self._list_fields.add(field_name)
-                    elif origin in (dict, dict):
+                    elif origin is dict:
                         self._dict_fields.add(field_name)
-                elif annotation in (list, dict, list, dict):
-                    if annotation in (list, list):
+                elif annotation in (list, dict):
+                    if annotation is list:
                         self._list_fields.add(field_name)
-                    elif annotation in (dict, dict):
+                    elif annotation is dict:
                         self._dict_fields.add(field_name)
 
     def _parse_field(self, field: str, value: Any) -> Any:
@@ -142,15 +142,29 @@ class AgentDataset:
             "retrieved_context": retrieved_context,
             "metadata": metadata,
         }
-        with open(file_path, encoding="utf-8") as f:
-            items = json.load(f)
-            for item in items:
-                data_kwargs = {}
-                for field in AgentData.model_fields:
-                    key = field_map[field] if field_map[field] is not None else field
-                    value = item.get(key, None)
-                    data_kwargs[field] = self._parse_field(field, value)
-                self.data.append(AgentData(**data_kwargs))
+        try:
+            with open(file_path, encoding="utf-8") as f:
+                try:
+                    items = json.load(f)
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"Invalid JSON in file '{file_path}': {e}")
+        except FileNotFoundError:
+            raise ValueError(f"File not found: '{file_path}'")
+        except PermissionError:
+            raise ValueError(f"Permission denied when reading file: '{file_path}'")
+        if not isinstance(items, list):
+            raise ValueError(
+                f"JSON file '{file_path}' must contain an array of objects at the top level."
+            )
+        for item in items:
+            if not isinstance(item, dict):
+                continue  # Skip non-dict items
+            data_kwargs = {}
+            for field in AgentData.model_fields:
+                key = field_map[field] if field_map[field] is not None else field
+                value = item.get(key, None)
+                data_kwargs[field] = self._parse_field(field, value)
+            self.data.append(AgentData(**data_kwargs))
 
     def export_to_csv(self, file_path: str) -> None:
         if not self.data:

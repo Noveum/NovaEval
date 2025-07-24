@@ -95,6 +95,7 @@ def assert_missing_fields_defaults(agent):
                 assert val is None or val == [] or val == {}
 
 
+@pytest.mark.unit
 def test_ingest_from_csv_and_export(tmp_path):
     data = minimal_agent_data_csv_row()
     csv_file = tmp_path / "test.csv"
@@ -127,6 +128,7 @@ def test_ingest_from_csv_and_export(tmp_path):
                 assert rows[0][k] == v
 
 
+@pytest.mark.unit
 def test_ingest_from_json_and_export(tmp_path):
     data = minimal_agent_data_dict()
     json_file = tmp_path / "test.json"
@@ -146,6 +148,7 @@ def test_ingest_from_json_and_export(tmp_path):
             assert items[0][k] == v
 
 
+@pytest.mark.unit
 def test_ingest_from_csv_with_field_map(tmp_path):
     data = minimal_agent_data_csv_row()
     csv_file = tmp_path / "test_map.csv"
@@ -162,6 +165,7 @@ def test_ingest_from_csv_with_field_map(tmp_path):
     assert_agentdata_equal(ds.data[0], expected)
 
 
+@pytest.mark.unit
 def test_ingest_from_json_with_field_map(tmp_path):
     data = minimal_agent_data_dict()
     custom_cols = {k: f"col_{k}" for k in data}
@@ -176,6 +180,7 @@ def test_ingest_from_json_with_field_map(tmp_path):
     assert_agentdata_equal(ds.data[0], expected)
 
 
+@pytest.mark.unit
 def test_export_to_csv_empty(tmp_path):
     ds = AgentDataset()
     export_file = tmp_path / "empty.csv"
@@ -183,6 +188,7 @@ def test_export_to_csv_empty(tmp_path):
     assert not export_file.exists() or export_file.read_text() == ""
 
 
+@pytest.mark.unit
 def test_export_to_json_empty(tmp_path):
     ds = AgentDataset()
     export_file = tmp_path / "empty.json"
@@ -192,6 +198,7 @@ def test_export_to_json_empty(tmp_path):
         assert data == []
 
 
+@pytest.mark.unit
 def test_get_data_and_get_datapoint():
     ds = AgentDataset()
     data = minimal_agent_data_dict()
@@ -262,6 +269,7 @@ def test_ingest_from_json_missing_fields(tmp_path):
     assert_missing_fields_defaults(ds.data[0])
 
 
+@pytest.mark.unit
 def test_parse_field_list_and_dict_edge_cases():
     ds = AgentDataset()
     # List fields: valid JSON string
@@ -284,30 +292,35 @@ def test_parse_field_list_and_dict_edge_cases():
     assert ds._parse_field("agent_name", "abc") == "abc"
 
 
+@pytest.mark.unit
 def test_parse_field_list_string_no_brackets():
     ds = AgentDataset()
     # Should return [] for list field if string does not start/end with brackets
     assert ds._parse_field("trace", "notalist") == []
 
 
+@pytest.mark.unit
 def test_parse_field_dict_string_no_braces():
     ds = AgentDataset()
     # Should return {} for dict field if string does not start/end with braces
     assert ds._parse_field("parameters_passed", "notadict") == {}
 
 
+@pytest.mark.unit
 def test_parse_field_list_field_non_list_non_str():
     ds = AgentDataset()
     # Should return [] for list field if value is not a list or str
     assert ds._parse_field("trace", 42) == []
 
 
+@pytest.mark.unit
 def test_parse_field_dict_field_non_dict_non_str():
     ds = AgentDataset()
     # Should return {} for dict field if value is not a dict or str
     assert ds._parse_field("parameters_passed", 42) == {}
 
 
+@pytest.mark.unit
 def test_ingest_from_csv_invalid_json(tmp_path):
     # List/dict fields with invalid JSON
     data = {
@@ -333,6 +346,7 @@ def test_ingest_from_csv_invalid_json(tmp_path):
     assert agent.tool_call_results == []
 
 
+@pytest.mark.unit
 def test_ingest_from_json_invalid_types(tmp_path):
     # List/dict fields with wrong types
     data = {
@@ -356,6 +370,7 @@ def test_ingest_from_json_invalid_types(tmp_path):
     assert agent.tool_call_results == []
 
 
+@pytest.mark.unit
 def test_export_to_csv_non_serializable(tmp_path):
     ds = AgentDataset()
     # Insert an agent with a non-serializable field (should not fail, just skip serialization)
@@ -369,11 +384,13 @@ def test_export_to_csv_non_serializable(tmp_path):
     assert export_file.exists()
 
 
+@pytest.mark.unit
 def test_get_datapoint_empty():
     ds = AgentDataset()
     assert list(ds.get_datapoint()) == []
 
 
+@pytest.mark.unit
 def test_agentdataset_field_type_detection():
     ds = AgentDataset()
     # These are the actual list/dict fields in AgentData
@@ -388,6 +405,7 @@ def test_agentdataset_field_type_detection():
     assert ds._dict_fields == expected_dict_fields
 
 
+@pytest.mark.unit
 def test_agentdataset_init_type_detection_edge_cases(monkeypatch):
     import typing
     from types import SimpleNamespace
@@ -422,6 +440,7 @@ def test_agentdataset_init_type_detection_edge_cases(monkeypatch):
     monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", orig_model_fields)
 
 
+@pytest.mark.unit
 def test_agentdataset_init_skips_fields_without_annotation(monkeypatch):
     # Should not raise or add to _list_fields/_dict_fields
     from types import SimpleNamespace
@@ -439,6 +458,7 @@ def test_agentdataset_init_skips_fields_without_annotation(monkeypatch):
     monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", orig_model_fields)
 
 
+@pytest.mark.unit
 def test_parse_field_returns_value_for_non_listdict_field():
     ds = AgentDataset()
     # Add a dummy field not in _list_fields or _dict_fields
@@ -448,6 +468,7 @@ def test_parse_field_returns_value_for_non_listdict_field():
     assert val == "abc"
 
 
+@pytest.mark.unit
 def test_export_to_csv_empty_file(tmp_path):
     ds = AgentDataset()
     file_path = tmp_path / "empty.csv"
@@ -456,6 +477,7 @@ def test_export_to_csv_empty_file(tmp_path):
     assert not file_path.exists() or file_path.read_text() == ""
 
 
+@pytest.mark.unit
 def test_parse_field_invalid_json_list():
     ds = AgentDataset()
     ds._list_fields.add("trace")
@@ -463,6 +485,7 @@ def test_parse_field_invalid_json_list():
     assert ds._parse_field("trace", "[notjson]") == []
 
 
+@pytest.mark.unit
 def test_parse_field_invalid_json_dict():
     ds = AgentDataset()
     ds._dict_fields.add("parameters_passed")
@@ -470,6 +493,7 @@ def test_parse_field_invalid_json_dict():
     assert ds._parse_field("parameters_passed", "{notjson}") == {}
 
 
+@pytest.mark.unit
 def test_parse_field_list_field_non_str_non_list():
     ds = AgentDataset()
     ds._list_fields.add("trace")
@@ -477,6 +501,7 @@ def test_parse_field_list_field_non_str_non_list():
     assert ds._parse_field("trace", 42) == []
 
 
+@pytest.mark.unit
 def test_parse_field_dict_field_non_str_non_dict():
     ds = AgentDataset()
     ds._dict_fields.add("parameters_passed")
@@ -484,6 +509,7 @@ def test_parse_field_dict_field_non_str_non_dict():
     assert ds._parse_field("parameters_passed", 42) == {}
 
 
+@pytest.mark.unit
 def test_agentdataset_init_direct_list_dict_types(monkeypatch):
     from types import SimpleNamespace
 
@@ -504,3 +530,69 @@ def test_agentdataset_init_direct_list_dict_types(monkeypatch):
     assert "typing_list_field" in ds._list_fields
     assert "typing_dict_field" in ds._dict_fields
     monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", orig_model_fields)
+
+
+@pytest.mark.unit
+def test_ingest_from_json_file_not_found():
+    ds = AgentDataset()
+    with pytest.raises(ValueError) as exc:
+        ds.ingest_from_json("/nonexistent/file/path.json")
+    assert "File not found" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_ingest_from_json_permission_denied(monkeypatch, tmp_path):
+    # Simulate PermissionError by monkeypatching open
+    json_file = tmp_path / "perm.json"
+    json_file.write_text("[]", encoding="utf-8")
+
+    def raise_permission(*args, **kwargs):
+        raise PermissionError
+
+    monkeypatch.setattr("builtins.open", raise_permission)
+    ds = AgentDataset()
+    with pytest.raises(ValueError) as exc:
+        ds.ingest_from_json(str(json_file))
+    assert "Permission denied" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_ingest_from_json_invalid_json(tmp_path):
+    json_file = tmp_path / "invalid.json"
+    json_file.write_text("{not valid json}", encoding="utf-8")
+    ds = AgentDataset()
+    with pytest.raises(ValueError) as exc:
+        ds.ingest_from_json(str(json_file))
+    assert "Invalid JSON" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_ingest_from_json_not_a_list(tmp_path):
+    json_file = tmp_path / "notalist.json"
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump({"foo": "bar"}, f)
+    ds = AgentDataset()
+    with pytest.raises(ValueError) as exc:
+        ds.ingest_from_json(str(json_file))
+    assert "must contain an array of objects" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_ingest_from_json_skips_non_dict_items(tmp_path):
+    # Only dicts should be ingested
+    items = [
+        {"agent_name": "A", "agent_role": "B"},
+        [1, 2, 3],
+        "string",
+        123,
+        {"agent_name": "C", "agent_role": "D"},
+    ]
+    json_file = tmp_path / "mixed.json"
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump(items, f)
+    ds = AgentDataset()
+    ds.ingest_from_json(str(json_file))
+    # Only the two dicts should be ingested
+    assert len(ds.data) == 2
+    assert ds.data[0].agent_name == "A"
+    assert ds.data[1].agent_name == "C"
