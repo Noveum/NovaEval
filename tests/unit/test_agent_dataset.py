@@ -376,30 +376,16 @@ def test_get_datapoint_empty():
 
 def test_agentdataset_field_type_detection():
     ds = AgentDataset()
-    # These should match the actual list/dict fields in AgentData
-    list_fields = set()
-    dict_fields = set()
-    for field_name, field_info in AgentData.model_fields.items():
-        if hasattr(field_info, "annotation"):
-            annotation = field_info.annotation
-            if (
-                hasattr(annotation, "__origin__")
-                and getattr(annotation.__origin__, "__name__", None) == "Union"
-            ):
-                if hasattr(annotation, "__args__") and len(annotation.__args__) > 0:
-                    actual_type = annotation.__args__[0]
-                    if hasattr(actual_type, "__origin__"):
-                        if actual_type.__origin__ is list:
-                            list_fields.add(field_name)
-                        elif actual_type.__origin__ is dict:
-                            dict_fields.add(field_name)
-            elif hasattr(annotation, "__origin__"):
-                if annotation.__origin__ is list:
-                    list_fields.add(field_name)
-                elif annotation.__origin__ is dict:
-                    dict_fields.add(field_name)
-    assert ds._list_fields == list_fields
-    assert ds._dict_fields == dict_fields
+    # These are the actual list/dict fields in AgentData
+    expected_list_fields = {
+        "trace",
+        "tools_available",
+        "tool_calls",
+        "tool_call_results",
+    }
+    expected_dict_fields = {"parameters_passed"}
+    assert ds._list_fields == expected_list_fields
+    assert ds._dict_fields == expected_dict_fields
 
 
 def test_agentdataset_init_type_detection_edge_cases(monkeypatch):
