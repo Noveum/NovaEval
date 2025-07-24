@@ -1,5 +1,6 @@
 import csv
 import json
+import typing
 from collections.abc import Iterator
 from typing import Any, Optional
 
@@ -9,26 +10,60 @@ from novaeval.agents.agent_data import AgentData
 class AgentDataset:
     def __init__(self) -> None:
         self.data: list[AgentData] = []
+        # Dynamically determine field types from AgentData model
+        self._list_fields = set()
+        self._dict_fields = set()
+        for field_name, field_info in AgentData.model_fields.items():
+            if hasattr(field_info, "annotation"):
+                annotation = field_info.annotation
+                # Unwrap typing.Optional, typing.Union, etc.
+                origin = getattr(annotation, "__origin__", None)
+                args = getattr(annotation, "__args__", ())
+                # If it's a Union (e.g., Optional), check all args except NoneType
+                if origin is typing.Union:
+                    for arg in args:
+                        if arg is type(None):
+                            continue
+                        arg_origin = getattr(arg, "__origin__", None)
+                        if arg_origin in (list, dict, list, dict):
+                            if arg_origin in (list, list):
+                                self._list_fields.add(field_name)
+                            elif arg_origin in (dict, dict):
+                                self._dict_fields.add(field_name)
+                        elif arg in (list, dict, list, dict):
+                            if arg in (list, list):
+                                self._list_fields.add(field_name)
+                            elif arg in (dict, dict):
+                                self._dict_fields.add(field_name)
+                # Handle direct types
+                elif origin in (list, dict, list, dict):
+                    if origin in (list, list):
+                        self._list_fields.add(field_name)
+                    elif origin in (dict, dict):
+                        self._dict_fields.add(field_name)
+                elif annotation in (list, dict, list, dict):
+                    if annotation in (list, list):
+                        self._list_fields.add(field_name)
+                    elif annotation in (dict, dict):
+                        self._dict_fields.add(field_name)
 
     def _parse_field(self, field: str, value: Any) -> Any:
-        list_fields = {"trace", "tools_available", "tool_calls", "tool_call_results"}
-        dict_fields = {"parameters_passed"}
-        if field in list_fields:
+        if field in self._list_fields:
             if isinstance(value, str):
                 value = value.strip()
                 if value.startswith("[") and value.endswith("]"):
                     try:
                         return json.loads(value)
-                    except Exception:
+                    except (json.JSONDecodeError, TypeError):
                         return []
             return value if isinstance(value, list) else []
-        if field in dict_fields:
+        if field in self._dict_fields:
             if isinstance(value, str):
                 value = value.strip()
                 if value.startswith("{") and value.endswith("}"):
                     try:
                         return json.loads(value)
-                    except Exception:
+                    except (json.JSONDecodeError, TypeError):
                         return {}
             return value if isinstance(value, dict) else {}
         return value

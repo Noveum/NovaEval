@@ -1,6 +1,8 @@
 import csv
 import json
 
+import pytest
+
 from novaeval.agents.agent_data import AgentData
 from novaeval.agents.agent_dataset import AgentDataset
 
@@ -73,6 +75,24 @@ def assert_agentdata_equal(actual, expected):
             assert actual_val.model_dump() == v
         else:
             assert actual_val == v
+
+
+def assert_missing_fields_defaults(agent):
+    for k in AgentData.model_fields:
+        if k not in [
+            "agent_name",
+            "agent_role",
+            "tools_available",
+            "tool_calls",
+            "parameters_passed",
+        ]:
+            val = getattr(agent, k)
+            if isinstance(val, list) and val and hasattr(val[0], "model_dump"):
+                assert [x.model_dump() for x in val] == []
+            elif hasattr(val, "model_dump"):
+                assert val.model_dump() == {}
+            else:
+                assert val is None or val == [] or val == {}
 
 
 def test_ingest_from_csv_and_export(tmp_path):
@@ -181,6 +201,7 @@ def test_get_data_and_get_datapoint():
     assert list(ds.get_datapoint()) == [agent]
 
 
+@pytest.mark.unit
 def test_ingest_from_csv_missing_fields(tmp_path):
     # Only some fields present, but use correct types for those present
     data = {
@@ -211,24 +232,10 @@ def test_ingest_from_csv_missing_fields(tmp_path):
     assert len(ds.data) == 1
     assert ds.data[0].agent_name == "A"
     assert ds.data[0].agent_role == "B"
-    # All other fields should be default or None
-    for k in AgentData.model_fields:
-        if k not in [
-            "agent_name",
-            "agent_role",
-            "tools_available",
-            "tool_calls",
-            "parameters_passed",
-        ]:
-            val = getattr(ds.data[0], k)
-            if isinstance(val, list) and val and hasattr(val[0], "model_dump"):
-                assert [x.model_dump() for x in val] == []
-            elif hasattr(val, "model_dump"):
-                assert val.model_dump() == {}
-            else:
-                assert val is None or val == [] or val == {}
+    assert_missing_fields_defaults(ds.data[0])
 
 
+@pytest.mark.unit
 def test_ingest_from_json_missing_fields(tmp_path):
     data = {
         "agent_name": "A",
@@ -252,21 +259,7 @@ def test_ingest_from_json_missing_fields(tmp_path):
     assert len(ds.data) == 1
     assert ds.data[0].agent_name == "A"
     assert ds.data[0].agent_role == "B"
-    for k in AgentData.model_fields:
-        if k not in [
-            "agent_name",
-            "agent_role",
-            "tools_available",
-            "tool_calls",
-            "parameters_passed",
-        ]:
-            val = getattr(ds.data[0], k)
-            if isinstance(val, list) and val and hasattr(val[0], "model_dump"):
-                assert [x.model_dump() for x in val] == []
-            elif hasattr(val, "model_dump"):
-                assert val.model_dump() == {}
-            else:
-                assert val is None or val == [] or val == {}
+    assert_missing_fields_defaults(ds.data[0])
 
 
 def test_parse_field_list_and_dict_edge_cases():
@@ -289,6 +282,30 @@ def test_parse_field_list_and_dict_edge_cases():
     assert ds._parse_field("parameters_passed", 123) == {}
     # Non-list/dict field
     assert ds._parse_field("agent_name", "abc") == "abc"
+
+
+def test_parse_field_list_string_no_brackets():
+    ds = AgentDataset()
+    # Should return [] for list field if string does not start/end with brackets
+    assert ds._parse_field("trace", "notalist") == []
+
+
+def test_parse_field_dict_string_no_braces():
+    ds = AgentDataset()
+    # Should return {} for dict field if string does not start/end with braces
+    assert ds._parse_field("parameters_passed", "notadict") == {}
+
+
+def test_parse_field_list_field_non_list_non_str():
+    ds = AgentDataset()
+    # Should return [] for list field if value is not a list or str
+    assert ds._parse_field("trace", 42) == []
+
+
+def test_parse_field_dict_field_non_dict_non_str():
+    ds = AgentDataset()
+    # Should return {} for dict field if value is not a dict or str
+    assert ds._parse_field("parameters_passed", 42) == {}
 
 
 def test_ingest_from_csv_invalid_json(tmp_path):
@@ -355,3 +372,149 @@ def test_export_to_csv_non_serializable(tmp_path):
 def test_get_datapoint_empty():
     ds = AgentDataset()
     assert list(ds.get_datapoint()) == []
+
+
+def test_agentdataset_field_type_detection():
+    ds = AgentDataset()
+    # These should match the actual list/dict fields in AgentData
+    list_fields = set()
+    dict_fields = set()
+    for field_name, field_info in AgentData.model_fields.items():
+        if hasattr(field_info, "annotation"):
+            annotation = field_info.annotation
+            if (
+                hasattr(annotation, "__origin__")
+                and getattr(annotation.__origin__, "__name__", None) == "Union"
+            ):
+                if hasattr(annotation, "__args__") and len(annotation.__args__) > 0:
+                    actual_type = annotation.__args__[0]
+                    if hasattr(actual_type, "__origin__"):
+                        if actual_type.__origin__ is list:
+                            list_fields.add(field_name)
+                        elif actual_type.__origin__ is dict:
+                            dict_fields.add(field_name)
+            elif hasattr(annotation, "__origin__"):
+                if annotation.__origin__ is list:
+                    list_fields.add(field_name)
+                elif annotation.__origin__ is dict:
+                    dict_fields.add(field_name)
+    assert ds._list_fields == list_fields
+    assert ds._dict_fields == dict_fields
+
+
+def test_agentdataset_init_type_detection_edge_cases(monkeypatch):
+    import typing
+    from types import SimpleNamespace
+
+    # Save original model_fields
+    import novaeval.agents.agent_data as agent_data_mod
+
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    # Create mock fields
+    class Dummy:
+        pass
+
+    # Not Optional, not list/dict
+    model_fields = {
+        "plain": SimpleNamespace(annotation=int),
+        # Optional but not list/dict
+        "opt_str": SimpleNamespace(annotation=typing.Optional[str]),
+        # Optional Union with first arg not list/dict
+        "opt_union": SimpleNamespace(annotation=typing.Optional[int]),
+        # Optional Union with first arg list (should be detected)
+        "opt_list": SimpleNamespace(annotation=typing.Optional[list]),
+        # Optional Union with first arg dict (should be detected)
+        "opt_dict": SimpleNamespace(annotation=typing.Optional[dict]),
+    }
+    monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", model_fields)
+    ds = AgentDataset()
+    # Only opt_list and opt_dict should be detected
+    assert ds._list_fields == {"opt_list"}
+    assert ds._dict_fields == {"opt_dict"}
+    # Restore
+    monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", orig_model_fields)
+
+
+def test_agentdataset_init_skips_fields_without_annotation(monkeypatch):
+    # Should not raise or add to _list_fields/_dict_fields
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    model_fields = {
+        "plain": SimpleNamespace(),  # No annotation attribute
+    }
+    monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", model_fields)
+    ds = AgentDataset()
+    assert ds._list_fields == set()
+    assert ds._dict_fields == set()
+    monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", orig_model_fields)
+
+
+def test_parse_field_returns_value_for_non_listdict_field():
+    ds = AgentDataset()
+    # Add a dummy field not in _list_fields or _dict_fields
+    val = ds._parse_field("not_special", 123)
+    assert val == 123
+    val = ds._parse_field("not_special", "abc")
+    assert val == "abc"
+
+
+def test_export_to_csv_empty_file(tmp_path):
+    ds = AgentDataset()
+    file_path = tmp_path / "empty.csv"
+    ds.export_to_csv(str(file_path))
+    # File should not exist or be empty
+    assert not file_path.exists() or file_path.read_text() == ""
+
+
+def test_parse_field_invalid_json_list():
+    ds = AgentDataset()
+    ds._list_fields.add("trace")
+    # Invalid JSON string for list
+    assert ds._parse_field("trace", "[notjson]") == []
+
+
+def test_parse_field_invalid_json_dict():
+    ds = AgentDataset()
+    ds._dict_fields.add("parameters_passed")
+    # Invalid JSON string for dict
+    assert ds._parse_field("parameters_passed", "{notjson}") == {}
+
+
+def test_parse_field_list_field_non_str_non_list():
+    ds = AgentDataset()
+    ds._list_fields.add("trace")
+    # Not a str or list
+    assert ds._parse_field("trace", 42) == []
+
+
+def test_parse_field_dict_field_non_str_non_dict():
+    ds = AgentDataset()
+    ds._dict_fields.add("parameters_passed")
+    # Not a str or dict
+    assert ds._parse_field("parameters_passed", 42) == {}
+
+
+def test_agentdataset_init_direct_list_dict_types(monkeypatch):
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    # Direct built-in list
+    model_fields = {
+        "list_field": SimpleNamespace(annotation=list),
+        "dict_field": SimpleNamespace(annotation=dict),
+        "typing_list_field": SimpleNamespace(annotation=list),
+        "typing_dict_field": SimpleNamespace(annotation=dict),
+    }
+    monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", model_fields)
+    ds = AgentDataset()
+    assert "list_field" in ds._list_fields
+    assert "dict_field" in ds._dict_fields
+    assert "typing_list_field" in ds._list_fields
+    assert "typing_dict_field" in ds._dict_fields
+    monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", orig_model_fields)
