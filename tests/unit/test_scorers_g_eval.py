@@ -1,5 +1,6 @@
 """Tests for G-Eval scorer."""
 
+import inspect
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
@@ -12,9 +13,9 @@ class TestBasicImport:
 
     def test_can_import_classes(self):
         """Test that we can import the classes."""
-        assert GEvalScorer is not None
-        assert GEvalCriteria is not None
-        assert CommonGEvalCriteria is not None
+        assert inspect.isclass(GEvalScorer)
+        assert inspect.isclass(GEvalCriteria)
+        assert inspect.isclass(CommonGEvalCriteria)
 
 
 class TestGEvalCriteriaModel:
