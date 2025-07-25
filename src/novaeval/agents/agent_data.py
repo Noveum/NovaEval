@@ -24,6 +24,13 @@ class ToolResult(BaseModel):
 
 
 class AgentData(BaseModel):
+    user_id: Optional[str] = None
+    task_id: Optional[str] = None
+    turn_id: Optional[str] = None
+
+    ground_truth: Optional[str] = None
+    expected_tool_call: Optional[ToolCall] = None
+
     agent_name: Optional[str] = None
     agent_role: Optional[str] = None
     agent_task: Optional[str] = None

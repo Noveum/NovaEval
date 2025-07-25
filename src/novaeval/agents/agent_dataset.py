@@ -4,7 +4,7 @@ import typing
 from collections.abc import Iterator
 from typing import Any, Optional
 
-from novaeval.agents.agent_data import AgentData
+from novaeval.agents.agent_data import AgentData, ToolCall
 
 
 class AgentDataset:
@@ -48,6 +48,19 @@ class AgentDataset:
                         self._dict_fields.add(field_name)
 
     def _parse_field(self, field: str, value: Any) -> Any:
+        if field not in AgentData.model_fields:
+            raise KeyError(f"Field '{field}' not found in AgentData.model_fields.")
+        # Get the annotation for the field
+        annotation = AgentData.model_fields[field].annotation
+        origin = getattr(annotation, "__origin__", None)
+        args = getattr(annotation, "__args__", ())
+        # Handle Optional[X]
+        if origin is typing.Union and type(None) in args:
+            non_none_args = [arg for arg in args if arg is not type(None)]
+            actual_type = non_none_args[0] if non_none_args else annotation
+        else:
+            actual_type = annotation
+        # Handle list fields
         if field in self._list_fields:
             if isinstance(value, str):
                 value = value.strip()
@@ -57,6 +70,7 @@ class AgentDataset:
                     except (json.JSONDecodeError, TypeError):
                         return []
             return value if isinstance(value, list) else []
+        # Handle dict fields
         if field in self._dict_fields:
             if isinstance(value, str):
                 value = value.strip()
@@ -66,11 +80,42 @@ class AgentDataset:
                     except (json.JSONDecodeError, TypeError):
                         return {}
             return value if isinstance(value, dict) else {}
+        # Handle ToolCall fields
+        if actual_type is ToolCall:
+            if value is None or value == "":
+                return None
+            if isinstance(value, ToolCall):
+                return value
+            if isinstance(value, str):
+                value = value.strip()
+                try:
+                    value_dict = json.loads(value)
+                except (json.JSONDecodeError, TypeError):
+                    return None
+            elif isinstance(value, dict):
+                value_dict = value
+            else:
+                return None
+            try:
+                return ToolCall(**value_dict)
+            except Exception:
+                return None
+        # Handle str fields (including turn_id)
+        if actual_type is str:
+            if value is None:
+                return None
+            return str(value)
+        # Default: return as is
         return value
 
     def ingest_from_csv(
         self,
         file_path: str,
+        user_id: Optional[str] = None,
+        task_id: Optional[str] = None,
+        turn_id: Optional[str] = None,
+        ground_truth: Optional[str] = None,
+        expected_tool_call: Optional[str] = None,
         agent_name: Optional[str] = None,
         agent_role: Optional[str] = None,
         agent_task: Optional[str] = None,
@@ -86,6 +131,11 @@ class AgentDataset:
         metadata: Optional[str] = None,
     ) -> None:
         field_map = {
+            "user_id": user_id,
+            "task_id": task_id,
+            "turn_id": turn_id,
+            "ground_truth": ground_truth,
+            "expected_tool_call": expected_tool_call,
             "agent_name": agent_name,
             "agent_role": agent_role,
             "agent_task": agent_task,
@@ -113,6 +163,11 @@ class AgentDataset:
     def ingest_from_json(
         self,
         file_path: str,
+        user_id: Optional[str] = None,
+        task_id: Optional[str] = None,
+        turn_id: Optional[str] = None,
+        ground_truth: Optional[str] = None,
+        expected_tool_call: Optional[str] = None,
         agent_name: Optional[str] = None,
         agent_role: Optional[str] = None,
         agent_task: Optional[str] = None,
@@ -128,6 +183,11 @@ class AgentDataset:
         metadata: Optional[str] = None,
     ) -> None:
         field_map = {
+            "user_id": user_id,
+            "task_id": task_id,
+            "turn_id": turn_id,
+            "ground_truth": ground_truth,
+            "expected_tool_call": expected_tool_call,
             "agent_name": agent_name,
             "agent_role": agent_role,
             "agent_task": agent_task,

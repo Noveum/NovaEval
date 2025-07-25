@@ -9,6 +9,15 @@ from novaeval.agents.agent_dataset import AgentDataset
 
 def minimal_agent_data_dict():
     return {
+        "user_id": "user42",
+        "task_id": "task99",
+        "turn_id": "turn7",
+        "ground_truth": "expected answer",
+        "expected_tool_call": {
+            "tool_name": "tool1",
+            "parameters": {},
+            "call_id": "abc",
+        },
         "agent_name": "TestAgent",
         "agent_role": "assistant",
         "agent_task": "answer",
@@ -52,6 +61,7 @@ def minimal_agent_data_csv_row():
                 "tool_calls",
                 "parameters_passed",
                 "tool_call_results",
+                "expected_tool_call",
             ]
         },
         "trace": json.dumps(d["trace"]),
@@ -59,13 +69,16 @@ def minimal_agent_data_csv_row():
         "tool_calls": json.dumps(d["tool_calls"]),
         "parameters_passed": json.dumps(d["parameters_passed"]),
         "tool_call_results": json.dumps(d["tool_call_results"]),
+        "expected_tool_call": json.dumps(d["expected_tool_call"]),
     }
 
 
 def assert_agentdata_equal(actual, expected):
     for k, v in expected.items():
         actual_val = getattr(actual, k)
-        if (
+        if k == "expected_tool_call" and actual_val is not None:
+            assert actual_val.model_dump() == v
+        elif (
             isinstance(actual_val, list)
             and actual_val
             and hasattr(actual_val[0], "model_dump")
@@ -462,10 +475,24 @@ def test_agentdataset_init_skips_fields_without_annotation(monkeypatch):
 def test_parse_field_returns_value_for_non_listdict_field():
     ds = AgentDataset()
     # Add a dummy field not in _list_fields or _dict_fields
-    val = ds._parse_field("not_special", 123)
-    assert val == 123
-    val = ds._parse_field("not_special", "abc")
-    assert val == "abc"
+    with pytest.raises(KeyError, match="not_special"):
+        ds._parse_field("not_special", 123)
+    with pytest.raises(KeyError, match="not_special"):
+        ds._parse_field("not_special", "abc")
+
+
+@pytest.mark.unit
+def test_parse_field_list_field_non_str_non_list():
+    ds = AgentDataset()
+    # Should return [] for list field if value is not a list or str
+    assert ds._parse_field("trace", 42) == []
+
+
+@pytest.mark.unit
+def test_parse_field_dict_field_non_str_non_dict():
+    ds = AgentDataset()
+    # Should return {} for dict field if value is not a dict or str
+    assert ds._parse_field("parameters_passed", 42) == {}
 
 
 @pytest.mark.unit
@@ -491,22 +518,6 @@ def test_parse_field_invalid_json_dict():
     ds._dict_fields.add("parameters_passed")
     # Invalid JSON string for dict
     assert ds._parse_field("parameters_passed", "{notjson}") == {}
-
-
-@pytest.mark.unit
-def test_parse_field_list_field_non_str_non_list():
-    ds = AgentDataset()
-    ds._list_fields.add("trace")
-    # Not a str or list
-    assert ds._parse_field("trace", 42) == []
-
-
-@pytest.mark.unit
-def test_parse_field_dict_field_non_str_non_dict():
-    ds = AgentDataset()
-    ds._dict_fields.add("parameters_passed")
-    # Not a str or dict
-    assert ds._parse_field("parameters_passed", 42) == {}
 
 
 @pytest.mark.unit
@@ -596,3 +607,250 @@ def test_ingest_from_json_skips_non_dict_items(tmp_path):
     assert len(ds.data) == 2
     assert ds.data[0].agent_name == "A"
     assert ds.data[1].agent_name == "C"
+
+
+@pytest.mark.unit
+def test_parse_field_raises_keyerror_for_unknown_field():
+    ds = AgentDataset()
+    with pytest.raises(KeyError, match="not_special"):
+        ds._parse_field("not_special", 123)
+
+
+@pytest.mark.unit
+def test_parse_field_expected_tool_call_dict_and_json():
+    ds = AgentDataset()
+    # As dict
+    val = ds._parse_field(
+        "expected_tool_call", {"tool_name": "t", "parameters": {}, "call_id": "c"}
+    )
+    assert val.tool_name == "t"
+    # As JSON string
+    val2 = ds._parse_field(
+        "expected_tool_call", '{"tool_name": "t2", "parameters": {}, "call_id": "c2"}'
+    )
+    assert val2.tool_name == "t2"
+
+
+@pytest.mark.unit
+def test_parse_field_turn_id_as_string():
+    ds = AgentDataset()
+    assert ds._parse_field("turn_id", "abc") == "abc"
+    assert ds._parse_field("turn_id", None) is None
+    assert ds._parse_field("turn_id", "") == ""
+
+
+@pytest.mark.unit
+def test_parse_field_list_and_dict_various_json():
+    ds = AgentDataset()
+    # List field
+    assert ds._parse_field("trace", "[]") == []
+    assert ds._parse_field("trace", "[invalid]") == []
+    assert ds._parse_field("trace", '[{"a":1}]') == [{"a": 1}]
+    # Dict field
+    assert ds._parse_field("parameters_passed", "{}") == {}
+    assert ds._parse_field("parameters_passed", "{invalid}") == {}
+    assert ds._parse_field("parameters_passed", '{"x":1}') == {"x": 1}
+
+
+@pytest.mark.unit
+def test_ingest_from_csv_with_extra_columns(tmp_path):
+    data = minimal_agent_data_csv_row()
+    data["extra_col"] = "extra_val"
+    csv_file = tmp_path / "extra.csv"
+    with open(csv_file, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=data.keys())
+        writer.writeheader()
+        writer.writerow(data)
+    ds = AgentDataset()
+    ds.ingest_from_csv(str(csv_file))
+    assert len(ds.data) == 1
+    expected = minimal_agent_data_dict()
+    assert_agentdata_equal(ds.data[0], expected)
+
+
+@pytest.mark.unit
+def test_ingest_from_json_with_extra_keys(tmp_path):
+    data = minimal_agent_data_dict()
+    data["extra_key"] = "extra_val"
+    json_file = tmp_path / "extra.json"
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump([data], f)
+    ds = AgentDataset()
+    ds.ingest_from_json(str(json_file))
+    assert len(ds.data) == 1
+    expected = minimal_agent_data_dict()
+    assert_agentdata_equal(ds.data[0], expected)
+
+
+@pytest.mark.unit
+def test_export_to_csv_and_json_with_new_fields(tmp_path):
+    ds = AgentDataset()
+    agent = AgentData(**minimal_agent_data_dict())
+    ds.data.append(agent)
+    # Export to CSV
+    export_file = tmp_path / "export_new.csv"
+    ds.export_to_csv(str(export_file))
+    with open(export_file, encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+        assert len(rows) == 1
+        for k, v in minimal_agent_data_csv_row().items():
+            if k in [
+                "trace",
+                "tools_available",
+                "tool_calls",
+                "parameters_passed",
+                "tool_call_results",
+                "expected_tool_call",
+            ]:
+                assert json.loads(rows[0][k]) == json.loads(v)
+            else:
+                assert rows[0][k] == v
+    # Export to JSON
+    export_file_json = tmp_path / "export_new.json"
+    ds.export_to_json(str(export_file_json))
+    with open(export_file_json, encoding="utf-8") as f:
+        items = json.load(f)
+        assert len(items) == 1
+        for k, v in minimal_agent_data_dict().items():
+            if k == "expected_tool_call":
+                assert items[0][k] == v
+            else:
+                assert items[0][k] == v
+
+
+# --- Additional tests for 100% coverage ---
+
+
+@pytest.mark.unit
+def test_parse_field_toolcall_exception(monkeypatch):
+    ds = AgentDataset()
+    # Patch ToolCall in agent_dataset and AgentData.model_fields annotation
+    import novaeval.agents.agent_data as agent_data_mod
+    import novaeval.agents.agent_dataset as agent_dataset_mod
+
+    orig_toolcall = agent_dataset_mod.ToolCall
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    class BadToolCall:
+        def __init__(self, **kwargs):
+            raise Exception("fail")
+
+    monkeypatch.setattr(agent_dataset_mod, "ToolCall", BadToolCall)
+    # Patch the annotation in model_fields to our BadToolCall
+    from types import SimpleNamespace
+
+    agent_data_mod.AgentData.model_fields["expected_tool_call"] = SimpleNamespace(
+        annotation=BadToolCall
+    )
+    # Should return None if ToolCall init fails
+    val = ds._parse_field(
+        "expected_tool_call", {"tool_name": "t", "parameters": {}, "call_id": "c"}
+    )
+    assert val is None
+    # Restore
+    monkeypatch.setattr(agent_dataset_mod, "ToolCall", orig_toolcall)
+    agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_parse_field_toolcall_non_str_non_dict():
+    ds = AgentDataset()
+    # Should return None if value is not str or dict for ToolCall
+    assert ds._parse_field("expected_tool_call", 123) is None
+    assert ds._parse_field("expected_tool_call", [1, 2, 3]) is None
+
+
+@pytest.mark.unit
+def test_parse_field_list_field_typeerror(monkeypatch):
+    ds = AgentDataset()
+    # Patch json.loads to raise TypeError
+    monkeypatch.setattr(
+        json, "loads", lambda v: (_ for _ in ()).throw(TypeError("fail"))
+    )
+    assert ds._parse_field("trace", "[1,2,3]") == []
+
+
+@pytest.mark.unit
+def test_parse_field_dict_field_typeerror(monkeypatch):
+    ds = AgentDataset()
+    # Patch json.loads to raise TypeError
+    monkeypatch.setattr(
+        json, "loads", lambda v: (_ for _ in ()).throw(TypeError("fail"))
+    )
+    assert ds._parse_field("parameters_passed", '{"x":1}') == {}
+
+
+@pytest.mark.unit
+def test_parse_field_default_return():
+    ds = AgentDataset()
+    # Patch AgentData.model_fields to add an int field
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    agent_data_mod.AgentData.model_fields["int_field"] = SimpleNamespace(annotation=int)
+    # Should return value as is for int field
+    assert ds._parse_field("int_field", 42) == 42
+    agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_agentdataset_init_all_type_detection_branches(monkeypatch):
+    import typing
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    # Custom types to simulate __origin__ and __args__
+    class FakeList:
+        __origin__ = list
+        __args__ = (int,)
+
+    class FakeDict:
+        __origin__ = dict
+        __args__ = (str, int)
+
+    class FakeUnion:
+        __origin__ = typing.Union
+        __args__ = (list, type(None))
+
+    class FakeUnion2:
+        __origin__ = typing.Union
+        __args__ = (FakeList, type(None))
+
+    class FakeUnion3:
+        __origin__ = typing.Union
+        __args__ = (dict, type(None))
+
+    class FakeUnion4:
+        __origin__ = typing.Union
+        __args__ = (FakeDict, type(None))
+
+    model_fields = {
+        "plain_list": SimpleNamespace(annotation=list),
+        "plain_dict": SimpleNamespace(annotation=dict),
+        "fake_list": SimpleNamespace(annotation=FakeList),
+        "fake_dict": SimpleNamespace(annotation=FakeDict),
+        "union_list": SimpleNamespace(annotation=FakeUnion),
+        "union_list2": SimpleNamespace(annotation=FakeUnion2),
+        "union_dict": SimpleNamespace(annotation=FakeUnion3),
+        "union_dict2": SimpleNamespace(annotation=FakeUnion4),
+    }
+    monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", model_fields)
+    ds = AgentDataset()
+    # All list fields
+    assert "plain_list" in ds._list_fields
+    assert "fake_list" in ds._list_fields
+    assert "union_list" in ds._list_fields
+    assert "union_list2" in ds._list_fields
+    # All dict fields
+    assert "plain_dict" in ds._dict_fields
+    assert "fake_dict" in ds._dict_fields
+    assert "union_dict" in ds._dict_fields
+    assert "union_dict2" in ds._dict_fields
+    # Restore
+    agent_data_mod.AgentData.model_fields = orig_model_fields
