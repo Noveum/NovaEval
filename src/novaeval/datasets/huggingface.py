@@ -63,7 +63,7 @@ class HuggingFaceDataset(BaseDataset):
         Returns:
             List of formatted samples
         """
-        random.seed(self.seed)
+        rng = random.Random(self.seed)
 
         # Load dataset from HuggingFace
         try:
@@ -90,7 +90,7 @@ class HuggingFaceDataset(BaseDataset):
             samples = [self.preprocessing_fn(sample) for sample in samples]
 
         # Shuffle and limit samples
-        random.shuffle(samples)
+        rng.shuffle(samples)
         if self.num_samples is not None:
             samples = samples[: self.num_samples]
 

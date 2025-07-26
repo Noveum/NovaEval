@@ -181,6 +181,62 @@ output:
   s3_bucket: "my-eval-results"
 ```
 
+## 🌐 HTTP API
+
+NovaEval provides a FastAPI-based HTTP API for programmatic access to evaluation capabilities. This enables easy integration with web applications, microservices, and CI/CD pipelines.
+
+### Quick API Start
+
+```bash
+# Install API dependencies
+pip install -e ".[api]"
+
+# Run the API server
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# Access interactive documentation
+open http://localhost:8000/docs
+```
+
+### Core API Endpoints
+
+- **Health Check**: `GET /health` - Service health status
+- **Component Discovery**: `GET /api/v1/components/` - List available models, datasets, scorers
+- **Model Operations**: `POST /api/v1/models/{model}/predict` - Generate predictions
+- **Dataset Operations**: `POST /api/v1/datasets/{dataset}/load` - Load and query datasets
+- **Scorer Operations**: `POST /api/v1/scorers/{scorer}/score` - Score predictions
+- **Evaluation Jobs**: `POST /api/v1/evaluations/submit` - Submit async evaluation jobs
+
+### Example API Usage
+
+```python
+import requests
+
+# Submit evaluation via API
+evaluation_config = {
+    "name": "api_evaluation",
+    "models": [{"provider": "openai", "identifier": "gpt-3.5-turbo"}],
+    "datasets": [{"name": "mmlu", "split": "test", "limit": 10}],
+    "scorers": [{"name": "accuracy"}]
+}
+
+response = requests.post(
+    "http://localhost:8000/api/v1/evaluations/submit",
+    json=evaluation_config
+)
+
+task_id = response.json()["task_id"]
+print(f"Evaluation started: {task_id}")
+```
+
+### Deployment Options
+
+- **Docker**: `docker run -p 8000:8000 novaeval-api:latest`
+- **Kubernetes**: Full manifests provided in `kubernetes/`
+- **Cloud Platforms**: Supports AWS, GCP, Azure with environment variable configuration
+
+📖 **[Complete API Documentation](app/README.md)** - Detailed API reference, examples, and deployment guide
+
 ## 🏗️ Architecture
 
 NovaEval is built with extensibility and modularity in mind:

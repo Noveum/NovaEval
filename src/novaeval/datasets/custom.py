@@ -63,7 +63,7 @@ class CustomDataset(BaseDataset):
         Returns:
             List of formatted samples
         """
-        random.seed(self.seed)
+        rng = random.Random(self.seed)
 
         # Load raw data based on source type
         if isinstance(self.data_source, list):
@@ -87,7 +87,7 @@ class CustomDataset(BaseDataset):
             samples = [self.preprocessing_fn(sample) for sample in samples]
 
         # Shuffle and limit samples
-        random.shuffle(samples)
+        rng.shuffle(samples)
         if self.num_samples:
             samples = samples[: self.num_samples]
 

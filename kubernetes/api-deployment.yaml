@@ -1,0 +1,187 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: novaeval-api
+  labels:
+    app: novaeval-api
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: novaeval-api
+  template:
+    metadata:
+      labels:
+        app: novaeval-api
+        version: v1
+    spec:
+      containers:
+      - name: novaeval-api
+        image: novaeval-api:working
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: novaeval-api-config
+              key: log-level
+        - name: HOST
+          value: "0.0.0.0"
+        - name: PORT
+          value: "8000"
+        - name: MAX_CONCURRENT_EVALUATIONS
+          valueFrom:
+            configMapKeyRef:
+              name: novaeval-api-config
+              key: max-concurrent-evaluations
+        - name: EVALUATION_TIMEOUT_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: novaeval-api-config
+              key: evaluation-timeout-seconds
+        - name: RESULT_CACHE_TTL_SECONDS
+          valueFrom:
+            configMapKeyRef:
+              name: novaeval-api-config
+              key: result-cache-ttl-seconds
+        # API Keys from Secret
+        - name: OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: novaeval-api-secrets
+              key: openai-api-key
+              optional: true
+        - name: ANTHROPIC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: novaeval-api-secrets
+              key: anthropic-api-key
+              optional: true
+        - name: AZURE_OPENAI_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: novaeval-api-secrets
+              key: azure-openai-api-key
+              optional: true
+        - name: AZURE_OPENAI_ENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: novaeval-api-secrets
+              key: azure-openai-endpoint
+              optional: true
+        - name: GOOGLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: novaeval-api-secrets
+              key: google-api-key
+              optional: true
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 12
+      restartPolicy: Always
+      serviceAccountName: novaeval-api-service-account
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: novaeval-api-service
+  labels:
+    app: novaeval-api
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: novaeval-api
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: novaeval-api-service-account
+  labels:
+    app: novaeval-api
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: novaeval-api-config
+  labels:
+    app: novaeval-api
+data:
+  log-level: "INFO"
+  max-concurrent-evaluations: "5"
+  evaluation-timeout-seconds: "3600"
+  result-cache-ttl-seconds: "7200"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: novaeval-api-secrets
+  labels:
+    app: novaeval-api
+type: Opaque
+data:
+  # Base64 encoded API keys - replace with actual values
+  # To encode: echo -n "your-api-key" | base64
+  openai-api-key: Y2hhbmdlLW1l  # placeholder: "change-me"
+  anthropic-api-key: Y2hhbmdlLW1l  # placeholder: "change-me"
+  azure-openai-api-key: Y2hhbmdlLW1l  # placeholder: "change-me"
+  azure-openai-endpoint: aHR0cHM6Ly9jaGFuZ2UtbWUub3BlbmFpLmF6dXJlLmNvbS8=  # placeholder: "https://change-me.openai.azure.com/"
+  google-api-key: Y2hhbmdlLW1l  # placeholder: "change-me"
+
+---
+# Optional: LoadBalancer for external access
+apiVersion: v1
+kind: Service
+metadata:
+  name: novaeval-api-external
+  labels:
+    app: novaeval-api
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: novaeval-api

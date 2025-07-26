@@ -718,9 +718,13 @@ if __name__ == "__main__":
 ```
 
 ```bash
+# Create .env file with API keys (more secure than exposing in command line)
+echo "OPENAI_API_KEY=$OPENAI_API_KEY" > .env
+echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" >> .env
+
 # Run containerized evaluation
 docker build -f Dockerfile.evaluation -t novaeval-runner .
-docker run -e OPENAI_API_KEY=$OPENAI_API_KEY -v $(pwd)/results:/app/results novaeval-runner
+docker run --env-file .env -v $(pwd)/results:/app/results novaeval-runner
 ```
 
 ## Advanced Configuration Examples
