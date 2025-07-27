@@ -11,6 +11,7 @@ import time
 from fastapi import APIRouter, HTTPException
 
 from app.core.discovery import get_registry
+from app.core.logging import get_logger
 from app.schemas.models import (
     BatchPredictRequest,
     BatchPredictResponse,
@@ -23,12 +24,6 @@ from novaeval.config.job_config import ModelFactory
 from novaeval.config.schema import ModelConfig, ModelProvider
 
 router = APIRouter()
-
-
-class ModelOperationError(Exception):
-    """Custom exception for model operation errors."""
-
-    pass
 
 
 async def get_model_config_by_name(model_name: str) -> ModelConfig:
@@ -48,34 +43,77 @@ async def get_model_config_by_name(model_name: str) -> ModelConfig:
     models = await registry.get_models()
 
     if model_name not in models:
+        logger = get_logger(__name__)
+        logger.warning(
+            f"Model '{model_name}' not found. Available: {list(models.keys())}"
+        )
         raise HTTPException(
             status_code=404,
-            detail=f"Model '{model_name}' not found. Available models: {list(models.keys())}",
+            detail=f"Model '{model_name}' not found",
         )
 
-    # Create basic model config with common defaults
-    # In a real implementation, this might come from a configuration store
-    provider_map = {
-        "openai": ModelProvider.OPENAI,
-        "anthropic": ModelProvider.ANTHROPIC,
-        "azure_openai": ModelProvider.AZURE_OPENAI,
-        "gemini": ModelProvider.GOOGLE_VERTEX,
-    }
-
-    if model_name not in provider_map:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Provider mapping not found for model '{model_name}'",
-        )
+    # Get provider from the model metadata dynamically
+    # This allows any registered model to work, not just hardcoded ones
+    model_metadata = models[model_name]
+    provider = _get_provider_from_metadata(model_name, model_metadata)
 
     return ModelConfig(
-        provider=provider_map[model_name],
+        provider=provider,
         model_name=model_name,
         temperature=0.0,
         max_tokens=1000,
         timeout=60,
         retry_attempts=3,
     )
+
+
+def _get_provider_from_metadata(model_name: str, metadata) -> ModelProvider:
+    """
+    Dynamically determine the provider from the model metadata.
+
+    Args:
+        model_name: Name of the model
+        metadata: ComponentMetadata object from the registry
+
+    Returns:
+        ModelProvider enum value
+    """
+    # First try to infer from the module path
+    module_path = metadata.module_path.lower()
+
+    if "openai" in module_path:
+        return ModelProvider.OPENAI
+    elif "anthropic" in module_path:
+        return ModelProvider.ANTHROPIC
+    elif "azure" in module_path:
+        return ModelProvider.AZURE_OPENAI
+    elif "gemini" in module_path or "google" in module_path:
+        return ModelProvider.GOOGLE_VERTEX
+
+    # Fallback to entry point name mapping for known models
+    name_to_provider = {
+        "openai": ModelProvider.OPENAI,
+        "anthropic": ModelProvider.ANTHROPIC,
+        "azure_openai": ModelProvider.AZURE_OPENAI,
+        "gemini": ModelProvider.GOOGLE_VERTEX,
+    }
+
+    if model_name in name_to_provider:
+        return name_to_provider[model_name]
+
+    # Final fallback: try to infer from model name patterns
+    model_name_lower = model_name.lower()
+    if "openai" in model_name_lower:
+        return ModelProvider.OPENAI
+    elif "anthropic" in model_name_lower or "claude" in model_name_lower:
+        return ModelProvider.ANTHROPIC
+    elif "azure" in model_name_lower:
+        return ModelProvider.AZURE_OPENAI
+    elif "gemini" in model_name_lower or "google" in model_name_lower:
+        return ModelProvider.GOOGLE_VERTEX
+    else:
+        # Default to OpenAI for backward compatibility
+        return ModelProvider.OPENAI
 
 
 @router.get("/{model_name}/info", response_model=ModelInfo)
@@ -141,8 +179,8 @@ async def predict(model_name: str, request: PredictRequest):
             None,
             lambda: model_instance.generate(
                 prompt=request.prompt,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
+                max_tokens=model_config.max_tokens,
+                temperature=model_config.temperature,
                 stop=request.stop,
                 **request.additional_params,
             ),
@@ -194,8 +232,8 @@ async def predict_batch(model_name: str, request: BatchPredictRequest):
             None,
             lambda: model_instance.generate_batch(
                 prompts=request.prompts,
-                max_tokens=request.max_tokens,
-                temperature=request.temperature,
+                max_tokens=model_config.max_tokens,
+                temperature=model_config.temperature,
                 stop=request.stop,
                 **request.additional_params,
             ),
@@ -243,6 +281,8 @@ async def instantiate_model(request: ModelInstantiateRequest):
             errors=info.get("errors", []),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error instantiating model: {e!s}")
 

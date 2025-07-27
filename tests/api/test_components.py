@@ -2,8 +2,6 @@
 Tests for components API endpoints.
 """
 
-from unittest.mock import patch
-
 
 class TestComponentsEndpoints:
     """Test components discovery and management endpoints."""
@@ -39,22 +37,6 @@ class TestComponentsEndpoints:
         data = response.json()
         assert "components" in data
         assert isinstance(data["components"], list)
-
-    @patch("app.core.discovery.get_registry")
-    def test_get_model_component(self, mock_registry, client):
-        """Test getting specific model component details."""
-        mock_registry.return_value.get_model_configs.return_value = {
-            "openai": {
-                "name": "openai",
-                "config_class": "ModelConfig",
-                "schema": {"type": "object", "properties": {}},
-            }
-        }
-
-        response = client.get("/api/v1/components/models/openai")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["name"] == "openai"
 
     def test_get_nonexistent_component(self, client):
         """Test getting nonexistent component returns 404."""

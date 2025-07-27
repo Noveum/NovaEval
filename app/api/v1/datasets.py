@@ -6,11 +6,14 @@ with efficient pagination and memory management.
 """
 
 import asyncio
+import os
 import random
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import APIRouter, HTTPException
 
 from app.core.discovery import get_registry
+from app.core.logging import get_logger
 from app.schemas.datasets import (
     DatasetInfo,
     DatasetInstantiateRequest,
@@ -25,13 +28,14 @@ from app.schemas.datasets import (
 from novaeval.config.job_config import DatasetFactory
 from novaeval.config.schema import DatasetConfig, DatasetType
 
+# Create a dedicated thread pool executor for dataset operations
+# This prevents thread exhaustion under high load and provides better resource control
+DATASET_EXECUTOR = ThreadPoolExecutor(
+    max_workers=int(os.getenv("DATASET_THREAD_POOL_SIZE", "10")),
+    thread_name_prefix="dataset-worker",
+)
+
 router = APIRouter()
-
-
-class DatasetOperationError(Exception):
-    """Custom exception for dataset operation errors."""
-
-    pass
 
 
 async def get_dataset_config_by_name(dataset_name: str) -> DatasetConfig:
@@ -51,9 +55,13 @@ async def get_dataset_config_by_name(dataset_name: str) -> DatasetConfig:
     datasets = await registry.get_datasets()
 
     if dataset_name not in datasets:
+        logger = get_logger(__name__)
+        logger.warning(
+            f"Dataset '{dataset_name}' not found. Available: {list(datasets.keys())}"
+        )
         raise HTTPException(
             status_code=404,
-            detail=f"Dataset '{dataset_name}' not found. Available datasets: {list(datasets.keys())}",
+            detail=f"Dataset '{dataset_name}' not found",
         )
 
     # Create basic dataset config with common defaults
@@ -62,17 +70,47 @@ async def get_dataset_config_by_name(dataset_name: str) -> DatasetConfig:
         "mmlu": DatasetType.MMLU,
         "huggingface": DatasetType.HUGGINGFACE,
         "custom": DatasetType.CUSTOM,
+        "json": DatasetType.JSON,
+        "csv": DatasetType.CSV,
+        "jsonl": DatasetType.JSONL,
     }
 
-    if dataset_name not in type_map:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Type mapping not found for dataset '{dataset_name}'",
-        )
+    # Determine dataset type - try exact match first, then pattern matching
+    dataset_type = type_map.get(dataset_name)
+
+    if dataset_type is None:
+        # Try pattern-based matching for more flexible type detection
+        name_lower = dataset_name.lower()
+        if "mmlu" in name_lower:
+            dataset_type = DatasetType.MMLU
+        elif "huggingface" in name_lower or "hf" in name_lower:
+            dataset_type = DatasetType.HUGGINGFACE
+        elif name_lower.endswith(".json"):
+            dataset_type = DatasetType.JSON
+        elif name_lower.endswith(".csv"):
+            dataset_type = DatasetType.CSV
+        elif name_lower.endswith(".jsonl"):
+            dataset_type = DatasetType.JSONL
+        else:
+            # Default to CUSTOM for unknown types
+            dataset_type = DatasetType.CUSTOM
+
+    # Set name field appropriately based on dataset type
+    # For HuggingFace datasets, the name should be the dataset identifier
+    # For file-based datasets, name can be the dataset_name
+    # For others, set to None to use defaults
+    dataset_name_field = None
+    if dataset_type in [
+        DatasetType.HUGGINGFACE,
+        DatasetType.JSON,
+        DatasetType.CSV,
+        DatasetType.JSONL,
+    ]:
+        dataset_name_field = dataset_name
 
     return DatasetConfig(
-        type=type_map[dataset_name],
-        name=dataset_name if dataset_name == "huggingface" else None,
+        type=dataset_type,
+        name=dataset_name_field,
         path=None,  # Would be set based on dataset type
         split="test",
         limit=None,
@@ -133,7 +171,7 @@ async def load_dataset(dataset_name: str, request: DatasetLoadRequest):
 
         # Load data in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, dataset_instance.load_data)
+        await loop.run_in_executor(DATASET_EXECUTOR, dataset_instance.load_data)
 
         info = dataset_instance.get_info()
 
@@ -171,19 +209,21 @@ async def query_dataset(
     """
     try:
         # Get dataset configuration and create instance
-        dataset_config = await get_dataset_config_by_name(dataset_name)
+        base_config = await get_dataset_config_by_name(dataset_name)
 
-        # Override config with request parameters
+        # Create a copy and override with request parameters
+        config_dict = base_config.model_dump()
         if request.shuffle is not None:
-            dataset_config.shuffle = request.shuffle
+            config_dict["shuffle"] = request.shuffle
         if request.seed is not None:
-            dataset_config.seed = request.seed
+            config_dict["seed"] = request.seed
 
+        dataset_config = DatasetConfig(**config_dict)
         dataset_instance = DatasetFactory.create_dataset(dataset_config)
 
         # Load data in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, dataset_instance.load_data)
+        await loop.run_in_executor(DATASET_EXECUTOR, dataset_instance.load_data)
 
         # Get total count
         total_samples = len(dataset_instance)
@@ -242,17 +282,19 @@ async def sample_dataset(dataset_name: str, request: DatasetSampleRequest):
     """
     try:
         # Get dataset configuration and create instance
-        dataset_config = await get_dataset_config_by_name(dataset_name)
+        base_config = await get_dataset_config_by_name(dataset_name)
 
-        # Set seed for reproducible sampling
+        # Create a copy and set seed for reproducible sampling
+        config_dict = base_config.model_dump()
         if request.seed is not None:
-            dataset_config.seed = request.seed
+            config_dict["seed"] = request.seed
 
+        dataset_config = DatasetConfig(**config_dict)
         dataset_instance = DatasetFactory.create_dataset(dataset_config)
 
         # Load data in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, dataset_instance.load_data)
+        await loop.run_in_executor(DATASET_EXECUTOR, dataset_instance.load_data)
 
         total_samples = len(dataset_instance)
 
@@ -328,18 +370,20 @@ async def instantiate_dataset(request: DatasetInstantiateRequest):
 
         # Load data to get accurate info
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, dataset_instance.load_data)
+        await loop.run_in_executor(DATASET_EXECUTOR, dataset_instance.load_data)
 
         info = dataset_instance.get_info()
 
         return DatasetInfo(
-            name=info.get("name", request.dataset_type),
+            name=info.get("name", request.config.name or request.dataset_type),
             dataset_type=info.get("type", request.config.type.value),
             split=info.get("split", request.config.split),
             num_samples=info.get("num_samples", len(dataset_instance)),
             seed=info.get("seed", request.config.seed or 42),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error instantiating dataset: {e!s}"

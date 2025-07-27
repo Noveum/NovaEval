@@ -25,17 +25,31 @@ COPY pyproject.toml requirements.txt requirements-dev.txt ./
 
 # Install Python dependencies
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirements.txt && \
-    if [ "$INSTALL_DEV" = "true" ]; then pip install -r requirements-dev.txt; fi
+    pip install -r requirements.txt
+
+# Install development dependencies if needed (includes FastAPI for API tests)
+RUN if [ "$INSTALL_DEV" = "true" ]; then \
+        echo "Installing development dependencies..." && \
+        pip install -r requirements-dev.txt; \
+    else \
+        echo "Skipping development dependencies"; \
+    fi
 
 # Copy source code
 COPY src/ ./src/
+COPY app/ ./app/
 COPY examples/ ./examples/
 COPY tests/ ./tests/
 COPY README.md LICENSE MANIFEST.in ./
 
 # Install the package in development mode
-RUN pip install -e .
+RUN if [ "$INSTALL_DEV" = "true" ]; then \
+        echo "Installing package with API dependencies..." && \
+        pip install -e .[api]; \
+    else \
+        echo "Installing package with base dependencies only..." && \
+        pip install -e .; \
+    fi
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash novaeval && \

@@ -345,13 +345,16 @@ class TaskManager:
 
             for task_id, result in self._results.items():
                 # Clean up if result was retrieved and TTL expired
+                task_info = self._tasks.get(task_id)
                 if (result.retrieved_at and result.retrieved_at < cutoff_time) or (
                     result.status
                     in [
                         TaskStatus.COMPLETED,
                         TaskStatus.FAILED,
                     ]
-                    and current_time - cutoff_time > timedelta(hours=24)
+                    and task_info
+                    and task_info.completed_at
+                    and (current_time - task_info.completed_at) > timedelta(hours=24)
                 ):
                     expired_task_ids.append(task_id)
 

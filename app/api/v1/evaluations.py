@@ -11,6 +11,7 @@ from typing import Any, Optional
 
 import yaml
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, Query, UploadFile
+from pydantic import ValidationError
 
 from app.core.task_manager import TaskStatus, get_task_manager
 from app.schemas.evaluations import (
@@ -24,12 +25,6 @@ from app.schemas.evaluations import (
 from novaeval.config.schema import EvaluationJobConfig
 
 router = APIRouter()
-
-
-class EvaluationError(Exception):
-    """Custom exception for evaluation operations."""
-
-    pass
 
 
 def parse_config_file(file_content: bytes, filename: str) -> dict[str, Any]:
@@ -93,8 +88,10 @@ def validate_and_create_config(config_dict: dict[str, Any]) -> EvaluationJobConf
     """
     try:
         return EvaluationJobConfig(**config_dict)
+    except ValidationError as e:
+        raise ValueError(f"Invalid configuration: {e}")
     except Exception as e:
-        raise ValueError(f"Invalid configuration: {e!s}")
+        raise ValueError(f"Unexpected error validating configuration: {e!s}")
 
 
 @router.post("/submit", response_model=EvaluationSubmissionResponse)
@@ -365,6 +362,8 @@ async def list_evaluations(
             tasks=task_responses, total=len(all_tasks), status_counts=status_counts
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error listing tasks: {e!s}")
 
@@ -437,6 +436,8 @@ async def get_task_manager_stats():
 
         return TaskManagerStatsResponse(**stats)
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving stats: {e!s}")
 
@@ -458,5 +459,7 @@ async def cleanup_expired_results():
             "cleaned_count": cleaned_count,
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during cleanup: {e!s}")

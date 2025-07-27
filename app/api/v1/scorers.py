@@ -11,6 +11,7 @@ import time
 from fastapi import APIRouter, HTTPException
 
 from app.core.discovery import get_registry
+from app.core.logging import get_logger
 from app.schemas.scorers import (
     BatchScoringRequest,
     BatchScoringResponse,
@@ -24,12 +25,6 @@ from novaeval.config.job_config import ModelFactory, ScorerFactory
 from novaeval.config.schema import ModelConfig, ModelProvider, ScorerConfig, ScorerType
 
 router = APIRouter()
-
-
-class ScorerOperationError(Exception):
-    """Custom exception for scorer operation errors."""
-
-    pass
 
 
 # Model-dependent scorer types that require a model instance
@@ -59,17 +54,68 @@ async def get_scorer_config_by_name(scorer_name: str) -> ScorerConfig:
     scorers = await registry.get_scorers()
 
     if scorer_name not in scorers:
+        logger = get_logger(__name__)
+        logger.warning(
+            f"Scorer '{scorer_name}' not found. Available: {list(scorers.keys())}"
+        )
         raise HTTPException(
             status_code=404,
-            detail=f"Scorer '{scorer_name}' not found. Available scorers: {list(scorers.keys())}",
+            detail=f"Scorer '{scorer_name}' not found",
         )
 
-    # Create basic scorer config with defaults
-    # Map scorer names to types
-    type_map = {
+    # Get scorer type from the scorer metadata dynamically
+    # This allows any registered scorer to work, not just hardcoded ones
+    scorer_metadata = scorers[scorer_name]
+    scorer_type = _get_scorer_type_from_metadata(scorer_name, scorer_metadata)
+
+    return ScorerConfig(type=scorer_type, name=scorer_name, threshold=0.7, weight=1.0)
+
+
+def _get_scorer_type_from_metadata(scorer_name: str, metadata) -> ScorerType:
+    """
+    Dynamically determine the scorer type from the scorer metadata.
+
+    Args:
+        scorer_name: Name of the scorer
+        metadata: ComponentMetadata object from the registry
+
+    Returns:
+        ScorerType enum value
+    """
+    # First try to infer from the module path and class name
+    module_path = metadata.module_path.lower()
+    class_name = metadata.class_name.lower()
+
+    # Infer type from module path
+    if "accuracy" in module_path:
+        return ScorerType.ACCURACY
+    elif "g_eval" in module_path or "geval" in class_name:
+        return ScorerType.G_EVAL
+    elif "conversational" in module_path:
+        return ScorerType.CONVERSATIONAL_METRICS
+    elif "rag" in module_path:
+        # For RAG scorers, look at the specific class name
+        if "answer" in class_name and "relevancy" in class_name:
+            return ScorerType.RAG_ANSWER_RELEVANCY
+        elif "faithfulness" in class_name:
+            return ScorerType.RAG_FAITHFULNESS
+        elif "precision" in class_name:
+            return ScorerType.RAG_CONTEXTUAL_PRECISION
+        elif "recall" in class_name:
+            return ScorerType.RAG_CONTEXTUAL_RECALL
+        elif "ragas" in class_name:
+            return ScorerType.RAGAS
+        else:
+            # Default RAG scorer type
+            return ScorerType.RAG_ANSWER_RELEVANCY
+    elif "panel" in module_path or "judge" in module_path:
+        return ScorerType.CUSTOM
+
+    # Fallback to entry point name mapping for known scorers
+    name_to_type = {
         "accuracy": ScorerType.ACCURACY,
-        "exact_match": ScorerType.ACCURACY,  # Both use AccuracyScorer
-        "f1": ScorerType.ACCURACY,  # Both use AccuracyScorer
+        "exact_match": ScorerType.ACCURACY,
+        "f1": ScorerType.ACCURACY,
         "g_eval": ScorerType.G_EVAL,
         "conversational": ScorerType.CONVERSATIONAL_METRICS,
         "answer_relevancy": ScorerType.RAG_ANSWER_RELEVANCY,
@@ -80,14 +126,36 @@ async def get_scorer_config_by_name(scorer_name: str) -> ScorerConfig:
         "panel_judge": ScorerType.CUSTOM,
     }
 
-    if scorer_name not in type_map:
-        raise HTTPException(
-            status_code=400, detail=f"Type mapping not found for scorer '{scorer_name}'"
-        )
+    if scorer_name in name_to_type:
+        return name_to_type[scorer_name]
 
-    return ScorerConfig(
-        type=type_map[scorer_name], name=scorer_name, threshold=0.7, weight=1.0
-    )
+    # Final fallback: try to infer from scorer name patterns
+    scorer_name_lower = scorer_name.lower()
+    if (
+        "accuracy" in scorer_name_lower
+        or "exact" in scorer_name_lower
+        or "f1" in scorer_name_lower
+    ):
+        return ScorerType.ACCURACY
+    elif "g_eval" in scorer_name_lower or "geval" in scorer_name_lower:
+        return ScorerType.G_EVAL
+    elif "conversational" in scorer_name_lower:
+        return ScorerType.CONVERSATIONAL_METRICS
+    elif "relevancy" in scorer_name_lower:
+        return ScorerType.RAG_ANSWER_RELEVANCY
+    elif "faithfulness" in scorer_name_lower:
+        return ScorerType.RAG_FAITHFULNESS
+    elif "precision" in scorer_name_lower:
+        return ScorerType.RAG_CONTEXTUAL_PRECISION
+    elif "recall" in scorer_name_lower:
+        return ScorerType.RAG_CONTEXTUAL_RECALL
+    elif "ragas" in scorer_name_lower:
+        return ScorerType.RAGAS
+    elif "panel" in scorer_name_lower or "judge" in scorer_name_lower:
+        return ScorerType.CUSTOM
+    else:
+        # Default to accuracy for unknown scorers
+        return ScorerType.ACCURACY
 
 
 async def create_default_model_for_scorer():
@@ -414,6 +482,8 @@ async def instantiate_scorer(request: ScorerInstantiateRequest):
             config=info.get("config", {}),
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Error instantiating scorer: {e!s}"
