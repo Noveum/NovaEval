@@ -481,6 +481,439 @@ class TestInputValidation:
             assert scorer.score("prediction", "   ", {}) == 0.0
 
 
+class TestAsyncHelperFunction:
+    """Test cases for the async helper function _run_async_in_sync_context."""
+
+    def test_run_async_in_sync_context_outside_loop(self):
+        """Test running async code when no event loop is running."""
+        import asyncio
+
+        async def simple_async_func():
+            await asyncio.sleep(0.01)
+            return "success"
+
+        from novaeval.scorers.conversational import _run_async_in_sync_context
+
+        result = _run_async_in_sync_context(simple_async_func())
+        assert result == "success"
+
+    def test_run_async_in_sync_context_with_exception(self):
+        """Test exception handling in async helper function."""
+        import asyncio
+
+        async def failing_async_func():
+            await asyncio.sleep(0.01)
+            raise ValueError("Test exception")
+
+        from novaeval.scorers.conversational import _run_async_in_sync_context
+
+        try:
+            _run_async_in_sync_context(failing_async_func())
+            raise AssertionError("Should have raised exception")
+        except ValueError as e:
+            assert str(e) == "Test exception"
+
+
+class TestKnowledgeRetentionScorerExtended:
+    """Extended test cases for KnowledgeRetentionScorer."""
+
+    def test_score_with_invalid_inputs(self):
+        """Test scoring with invalid input types."""
+        model = MockLLMModel()
+        scorer = KnowledgeRetentionScorer(model)
+
+        # Test with non-string inputs
+        assert scorer.score(123, "ground_truth", {}) == 0.0
+        assert scorer.score("prediction", 456, {}) == 0.0
+        assert scorer.score(None, "ground_truth", {}) == 0.0
+
+    def test_evaluate_with_invalid_types(self):
+        """Test evaluate method with invalid input types."""
+        model = MockLLMModel()
+        scorer = KnowledgeRetentionScorer(model)
+
+        async def run_test():
+            # Test with non-string output_text
+            result = await scorer.evaluate("input", 123, "expected")
+            assert result.score == 0.0
+            assert not result.passed
+            assert "Invalid input" in result.reasoning
+            assert result.metadata["error"] == "type_error"
+
+            # Test with non-string expected_output
+            result = await scorer.evaluate("input", "output", 456)
+            assert result.score == 0.0
+            assert not result.passed
+            assert "Invalid input" in result.reasoning
+
+            # Test with empty output_text
+            result = await scorer.evaluate("input", "", "expected")
+            assert result.score == 0.0
+            assert not result.passed
+            assert "Empty or whitespace-only output text" in result.reasoning
+
+            # Test with whitespace-only output
+            result = await scorer.evaluate("input", "   ", "expected")
+            assert result.score == 0.0
+            assert not result.passed
+
+            # Test with empty expected_output
+            result = await scorer.evaluate("input", "output", "")
+            assert result.score == 0.0
+            assert not result.passed
+            assert "Empty or whitespace-only expected output" in result.reasoning
+
+        from novaeval.scorers.conversational import _run_async_in_sync_context
+
+        _run_async_in_sync_context(run_test())
+
+    def test_parse_knowledge_items_edge_cases(self):
+        """Test parsing knowledge items with edge cases."""
+        model = MockLLMModel()
+        scorer = KnowledgeRetentionScorer(model)
+
+        # Test with empty response
+        items = scorer._parse_knowledge_items("", 0, "user")
+        assert len(items) == 0
+
+        # Test with malformed response
+        items = scorer._parse_knowledge_items("This is not a valid list", 0, "user")
+        assert len(items) == 0
+
+        # Test with partial matches
+        response = "1. First item with enough length\nSome random text\n2. Second item with enough length"
+        items = scorer._parse_knowledge_items(response, 0, "user")
+        assert len(items) == 2
+        assert items[0].content == "First item with enough length"
+        assert items[1].content == "Second item with enough length"
+
+    def test_parse_violations_edge_cases(self):
+        """Test parsing violations with edge cases."""
+        model = MockLLMModel()
+        scorer = KnowledgeRetentionScorer(model)
+
+        # Test with empty response
+        violations = scorer._parse_violations("")
+        assert len(violations) == 0
+
+        # Test with "NO" response
+        violations = scorer._parse_violations("NO")
+        assert len(violations) == 0
+
+        # Test with "NONE" response - implementation skips first line, so "NONE" as first line results in empty violations
+        violations = scorer._parse_violations("NONE")
+        assert (
+            len(violations) == 0
+        )  # Implementation skips first line, so just "NONE" results in no violations
+
+        # Test with YES followed by violations
+        response = "YES\n1. First violation\n2. Second violation"
+        violations = scorer._parse_violations(response)
+        assert len(violations) == 2
+
+    def test_simple_retention_score_edge_cases(self):
+        """Test simple retention score with edge cases."""
+        model = MockLLMModel()
+        scorer = KnowledgeRetentionScorer(model)
+
+        # Test with identical strings
+        score = scorer._simple_retention_score("same text", "same text")
+        assert score > 0.5
+
+        # Test with completely different strings - the actual implementation returns 0.7 base score
+        score = scorer._simple_retention_score(
+            "completely different", "totally unrelated"
+        )
+        assert score >= 0.5  # Base score is 0.7 in the implementation
+
+    def test_generate_reasoning_all_score_ranges(self):
+        """Test reasoning generation for all score ranges."""
+        model = MockLLMModel()
+        scorer = KnowledgeRetentionScorer(model)
+
+        # Test excellent score
+        reasoning = scorer._generate_reasoning(0.95, "output", None)
+        assert "Excellent knowledge retention" in reasoning
+
+        # Test good score
+        reasoning = scorer._generate_reasoning(0.8, "output", None)
+        assert "Good knowledge retention" in reasoning
+
+        # Test moderate score
+        reasoning = scorer._generate_reasoning(0.6, "output", None)
+        assert "Moderate knowledge retention" in reasoning
+
+        # Test poor score
+        reasoning = scorer._generate_reasoning(0.4, "output", None)
+        assert "Poor knowledge retention" in reasoning
+
+        # Test very poor score
+        reasoning = scorer._generate_reasoning(0.1, "output", None)
+        assert "Very poor knowledge retention" in reasoning
+
+
+class TestConversationRelevancyScorer_Extended:
+    """Extended test cases for ConversationRelevancyScorer."""
+
+    def test_parse_relevancy_score_edge_cases(self):
+        """Test parsing relevancy scores with edge cases."""
+        model = MockLLMModel()
+        scorer = ConversationRelevancyScorer(model)
+
+        # Test with valid scores - the implementation returns the raw score (1-5), not normalized
+        assert scorer._parse_relevancy_score("5") == 5.0
+        assert scorer._parse_relevancy_score("1") == 1.0
+        assert scorer._parse_relevancy_score("3") == 3.0
+
+        # Test with invalid formats - default is 3.0
+        assert scorer._parse_relevancy_score("invalid") == 3.0
+        assert scorer._parse_relevancy_score("") == 3.0
+        assert scorer._parse_relevancy_score("0") == 3.0  # Below range
+        assert scorer._parse_relevancy_score("6") == 3.0  # Above range
+
+    def test_build_context_summary(self):
+        """Test building context summary from conversation turns."""
+        model = MockLLMModel()
+        scorer = ConversationRelevancyScorer(model)
+
+        turns = [
+            ConversationTurn(speaker="user", message="Hello"),
+            ConversationTurn(speaker="assistant", message="Hi there!"),
+            ConversationTurn(speaker="user", message="How are you?"),
+        ]
+
+        summary = scorer._build_context_summary(turns)
+        assert "Hello" in summary
+        assert "Hi there!" in summary
+        assert "How are you?" in summary
+
+    def test_generate_relevancy_reasoning_all_ranges(self):
+        """Test relevancy reasoning generation for all score ranges."""
+        model = MockLLMModel()
+        scorer = ConversationRelevancyScorer(model)
+
+        # Test excellent relevancy
+        reasoning = scorer._generate_relevancy_reasoning(0.95, "output", None)
+        assert "Excellent relevancy" in reasoning
+
+        # Test good relevancy
+        reasoning = scorer._generate_relevancy_reasoning(0.8, "output", None)
+        assert "Good relevancy" in reasoning
+
+        # Test moderate relevancy
+        reasoning = scorer._generate_relevancy_reasoning(0.6, "output", None)
+        assert "Moderate relevancy" in reasoning
+
+        # Test poor relevancy
+        reasoning = scorer._generate_relevancy_reasoning(0.4, "output", None)
+        assert "Poor relevancy" in reasoning
+
+        # Test very poor relevancy
+        reasoning = scorer._generate_relevancy_reasoning(0.1, "output", None)
+        assert "Very poor relevancy" in reasoning
+
+
+class TestConversationCompletenessScorerExtended:
+    """Extended test cases for ConversationCompletenessScorer."""
+
+    def test_parse_intentions_edge_cases(self):
+        """Test parsing intentions with edge cases."""
+        model = MockLLMModel()
+        scorer = ConversationCompletenessScorer(model)
+
+        # Test with empty response
+        intentions = scorer._parse_intentions("")
+        assert len(intentions) == 0
+
+        # Test with no numbered items
+        intentions = scorer._parse_intentions("This is just text without numbers")
+        assert len(intentions) == 0
+
+        # Test with mixed content
+        response = "1. First intention\nSome text\n2. Second intention\nMore text"
+        intentions = scorer._parse_intentions(response)
+        assert len(intentions) == 2
+
+    def test_parse_fulfillment_score_edge_cases(self):
+        """Test parsing fulfillment scores with edge cases."""
+        model = MockLLMModel()
+        scorer = ConversationCompletenessScorer(model)
+
+        # Test valid scores - the implementation returns raw scores (1-5), not normalized
+        assert scorer._parse_fulfillment_score("5") == 5.0
+        assert scorer._parse_fulfillment_score("1") == 1.0
+        assert scorer._parse_fulfillment_score("3") == 3.0
+
+        # Test invalid formats - default is 3.0
+        assert scorer._parse_fulfillment_score("invalid") == 3.0
+        assert scorer._parse_fulfillment_score("") == 3.0
+
+    def test_generate_completeness_reasoning_all_ranges(self):
+        """Test completeness reasoning generation for all score ranges."""
+        model = MockLLMModel()
+        scorer = ConversationCompletenessScorer(model)
+
+        # Test excellent completeness
+        reasoning = scorer._generate_completeness_reasoning(0.95, "output", None)
+        assert "Excellent completeness" in reasoning
+
+        # Test good completeness
+        reasoning = scorer._generate_completeness_reasoning(0.8, "output", None)
+        assert "Good completeness" in reasoning
+
+        # Test moderate completeness
+        reasoning = scorer._generate_completeness_reasoning(0.6, "output", None)
+        assert "Moderate completeness" in reasoning
+
+        # Test poor completeness
+        reasoning = scorer._generate_completeness_reasoning(0.4, "output", None)
+        assert "Poor completeness" in reasoning
+
+        # Test very poor completeness
+        reasoning = scorer._generate_completeness_reasoning(0.1, "output", None)
+        assert "Very poor completeness" in reasoning
+
+
+class TestRoleAdherenceScorerExtended:
+    """Extended test cases for RoleAdherenceScorer."""
+
+    def test_init_with_expected_role(self):
+        """Test scorer initialization with expected role."""
+        model = MockLLMModel()
+        scorer = RoleAdherenceScorer(model, expected_role="helpful assistant")
+        assert scorer.expected_role == "helpful assistant"
+
+    def test_parse_role_score_edge_cases(self):
+        """Test parsing role scores with edge cases."""
+        model = MockLLMModel()
+        scorer = RoleAdherenceScorer(model)
+
+        # Test valid scores - the implementation returns raw scores (1-5), not normalized
+        assert scorer._parse_role_score("5") == 5.0
+        assert scorer._parse_role_score("1") == 1.0
+        assert scorer._parse_role_score("3") == 3.0
+
+        # Test invalid formats - default is 3.0
+        assert scorer._parse_role_score("invalid") == 3.0
+        assert scorer._parse_role_score("") == 3.0
+
+    def test_generate_role_reasoning_all_ranges(self):
+        """Test role reasoning generation for all score ranges."""
+        model = MockLLMModel()
+        scorer = RoleAdherenceScorer(model)
+
+        # Test excellent adherence
+        reasoning = scorer._generate_role_reasoning(0.95, "output", None)
+        assert "Excellent role adherence" in reasoning
+
+        # Test good adherence
+        reasoning = scorer._generate_role_reasoning(0.8, "output", None)
+        assert "Good role adherence" in reasoning
+
+        # Test moderate adherence
+        reasoning = scorer._generate_role_reasoning(0.6, "output", None)
+        assert "Moderate role adherence" in reasoning
+
+        # Test poor adherence
+        reasoning = scorer._generate_role_reasoning(0.4, "output", None)
+        assert "Poor role adherence" in reasoning
+
+        # Test very poor adherence
+        reasoning = scorer._generate_role_reasoning(0.1, "output", None)
+        assert "Very poor role adherence" in reasoning
+
+
+class TestConversationalModels:
+    """Test cases for conversational data models."""
+
+    def test_conversation_turn_creation(self):
+        """Test ConversationTurn model creation."""
+        turn = ConversationTurn(
+            speaker="user",
+            message="Hello",
+            timestamp="2023-01-01T00:00:00Z",
+            metadata={"source": "test"},
+        )
+        assert turn.speaker == "user"
+        assert turn.message == "Hello"
+        assert turn.timestamp == "2023-01-01T00:00:00Z"
+        assert turn.metadata["source"] == "test"
+
+    def test_conversation_creation(self):
+        """Test Conversation model creation."""
+        turns = [
+            ConversationTurn(speaker="user", message="Hello"),
+            ConversationTurn(speaker="assistant", message="Hi there!"),
+        ]
+        conversation = Conversation(
+            turns=turns,
+            context="Test context",
+            topic="Greeting",
+            metadata={"test": True},
+        )
+        assert len(conversation.turns) == 2
+        assert conversation.context == "Test context"
+        assert conversation.topic == "Greeting"
+        assert conversation.metadata["test"] is True
+
+    def test_knowledge_item_creation(self):
+        """Test KnowledgeItem model creation."""
+        from novaeval.scorers.conversational import KnowledgeItem
+
+        item = KnowledgeItem(
+            content="Python is a programming language",
+            turn_index=1,
+            speaker="user",
+            confidence=0.8,
+        )
+        assert item.content == "Python is a programming language"
+        assert item.turn_index == 1
+        assert item.speaker == "user"
+        assert item.confidence == 0.8
+
+
+class TestConversationalMetricsScorerExtended:
+    """Extended test cases for ConversationalMetricsScorer."""
+
+    def test_init_with_all_params(self):
+        """Test scorer initialization with all parameters."""
+        model = MockLLMModel()
+        scorer = ConversationalMetricsScorer(
+            model=model,
+            include_knowledge_retention=False,
+            include_relevancy=False,
+            include_completeness=False,
+            include_role_adherence=False,
+            expected_role="test role",
+        )
+
+        assert not hasattr(scorer, "knowledge_scorer")
+        assert not hasattr(scorer, "relevancy_scorer")
+        assert not hasattr(scorer, "completeness_scorer")
+        assert not hasattr(scorer, "role_scorer")
+
+    def test_generate_combined_reasoning(self):
+        """Test combined reasoning generation."""
+        model = MockLLMModel()
+        scorer = ConversationalMetricsScorer(model)
+
+        scores = {
+            "knowledge_retention": 0.8,
+            "relevancy": 0.9,
+            "completeness": 0.7,
+            "role_adherence": 0.85,
+            "overall": 0.8125,
+        }
+
+        # Check the actual method signature first
+        reasoning = scorer._generate_combined_reasoning(scores, "test output")
+        assert "Overall: 0.81" in reasoning  # Actual format from implementation
+        assert "Knowledge Retention: 0.80" in reasoning
+        assert "Relevancy: 0.90" in reasoning
+        assert "Completeness: 0.70" in reasoning
+        assert "Role Adherence: 0.85" in reasoning
+
+
 class TestConversationalScorerIntegration:
     """Integration tests for conversational scorers."""
 
