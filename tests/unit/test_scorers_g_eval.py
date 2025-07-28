@@ -27,7 +27,7 @@ class TestGEvalCriteriaModel:
             name="Test Criteria",
             description="Test description",
             steps=["Step 1", "Step 2"],
-            score_range=(1, 10)
+            score_range=(1, 10),
         )
 
         assert criteria.name == "Test Criteria"
@@ -38,9 +38,7 @@ class TestGEvalCriteriaModel:
     def test_create_criteria_with_defaults(self):
         """Test creating GEvalCriteria with default score range."""
         criteria = GEvalCriteria(
-            name="Default Test",
-            description="Test with defaults",
-            steps=["Step 1"]
+            name="Default Test", description="Test with defaults", steps=["Step 1"]
         )
 
         assert criteria.score_range == (1, 5)  # Default
@@ -97,9 +95,7 @@ class TestGEvalScorerBasics:
         mock_model = Mock()
 
         scorer = GEvalScorer(
-            model=mock_model,
-            criteria="Test evaluation criteria",
-            threshold=0.7
+            model=mock_model, criteria="Test evaluation criteria", threshold=0.7
         )
 
         # This exercises the __init__ method lines 37-66
@@ -117,7 +113,7 @@ class TestGEvalScorerBasics:
             name="Test",
             description="Test description",
             steps=["Step 1", "Step 2"],
-            score_range=(1, 5)
+            score_range=(1, 5),
         )
 
         scorer = GEvalScorer(
@@ -125,7 +121,7 @@ class TestGEvalScorerBasics:
             criteria=criteria,
             threshold=0.8,
             use_cot=False,
-            num_iterations=2
+            num_iterations=2,
         )
 
         assert scorer.criteria == criteria
@@ -145,7 +141,7 @@ class TestGEvalScorerMethods:
             name="Test Evaluation",
             description="Test evaluation criteria",
             steps=["Read input", "Analyze output", "Provide score"],
-            score_range=(1, 5)
+            score_range=(1, 5),
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria, use_cot=True)
@@ -170,7 +166,7 @@ class TestGEvalScorerMethods:
             name="Test Evaluation",
             description="Test evaluation criteria",
             steps=["Read input", "Analyze output", "Provide score"],
-            score_range=(1, 5)
+            score_range=(1, 5),
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria, use_cot=False)
@@ -191,7 +187,7 @@ class TestGEvalScorerMethods:
             name="Test Evaluation",
             description="Test evaluation criteria",
             steps=["Read input", "Analyze output", "Provide score"],
-            score_range=(1, 5)
+            score_range=(1, 5),
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria)
@@ -204,10 +200,7 @@ class TestGEvalScorerMethods:
         """Test _parse_response method - covers lines 127-170."""
         mock_model = Mock()
         criteria = GEvalCriteria(
-            name="Test",
-            description="Test",
-            steps=["Step 1"],
-            score_range=(1, 5)
+            name="Test", description="Test", steps=["Step 1"], score_range=(1, 5)
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria)
@@ -223,10 +216,7 @@ class TestGEvalScorerMethods:
         """Test _parse_response method with **Score:** format."""
         mock_model = Mock()
         criteria = GEvalCriteria(
-            name="Test",
-            description="Test",
-            steps=["Step 1"],
-            score_range=(1, 5)
+            name="Test", description="Test", steps=["Step 1"], score_range=(1, 5)
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria)
@@ -242,10 +232,7 @@ class TestGEvalScorerMethods:
         """Test _parse_response when no score found."""
         mock_model = Mock()
         criteria = GEvalCriteria(
-            name="Test",
-            description="Test",
-            steps=["Step 1"],
-            score_range=(1, 5)
+            name="Test", description="Test", steps=["Step 1"], score_range=(1, 5)
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria)
@@ -261,13 +248,12 @@ class TestGEvalScorerMethods:
     async def test_evaluate_single_success(self):
         """Test _evaluate_single method - covers lines 176-183."""
         mock_model = Mock()
-        mock_model.generate = AsyncMock(return_value="**Final Score:** 4\n**Reasoning:** Good")
+        mock_model.generate = AsyncMock(
+            return_value="**Final Score:** 4\n**Reasoning:** Good"
+        )
 
         criteria = GEvalCriteria(
-            name="Test",
-            description="Test",
-            steps=["Step 1"],
-            score_range=(1, 5)
+            name="Test", description="Test", steps=["Step 1"], score_range=(1, 5)
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria)
@@ -283,13 +269,12 @@ class TestGEvalScorerMethods:
     async def test_evaluate_single_with_context(self):
         """Test _evaluate_single method with context."""
         mock_model = Mock()
-        mock_model.generate = AsyncMock(return_value="**Final Score:** 4\n**Reasoning:** Good")
+        mock_model.generate = AsyncMock(
+            return_value="**Final Score:** 4\n**Reasoning:** Good"
+        )
 
         criteria = GEvalCriteria(
-            name="Test",
-            description="Test",
-            steps=["Step 1"],
-            score_range=(1, 5)
+            name="Test", description="Test", steps=["Step 1"], score_range=(1, 5)
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria)
@@ -308,10 +293,7 @@ class TestGEvalScorerMethods:
         mock_model.generate = AsyncMock(side_effect=Exception("Model error"))
 
         criteria = GEvalCriteria(
-            name="Test",
-            description="Test",
-            steps=["Step 1"],
-            score_range=(1, 5)
+            name="Test", description="Test", steps=["Step 1"], score_range=(1, 5)
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria)
@@ -326,20 +308,21 @@ class TestGEvalScorerMethods:
     async def test_evaluate_single_iteration(self):
         """Test main evaluate method with single iteration - covers lines 205-231."""
         mock_model = Mock()
-        mock_model.generate = AsyncMock(return_value="**Final Score:** 4\n**Reasoning:** Good response")
+        mock_model.generate = AsyncMock(
+            return_value="**Final Score:** 4\n**Reasoning:** Good response"
+        )
 
         criteria = GEvalCriteria(
             name="Test Evaluation",
             description="Test description",
             steps=["Step 1", "Step 2"],
-            score_range=(1, 5)
+            score_range=(1, 5),
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria, num_iterations=1)
 
         result = await scorer.evaluate(
-            input_text="What is 2+2?",
-            output_text="The answer is 4."
+            input_text="What is 2+2?", output_text="The answer is 4."
         )
 
         # Check ScoreResult structure
@@ -366,24 +349,25 @@ class TestGEvalScorerMethods:
     async def test_evaluate_multiple_iterations(self):
         """Test main evaluate method with multiple iterations."""
         mock_model = Mock()
-        mock_model.generate = AsyncMock(side_effect=[
-            "**Final Score:** 4\n**Reasoning:** Good response",
-            "**Final Score:** 5\n**Reasoning:** Excellent response",
-            "**Final Score:** 3\n**Reasoning:** Average response"
-        ])
+        mock_model.generate = AsyncMock(
+            side_effect=[
+                "**Final Score:** 4\n**Reasoning:** Good response",
+                "**Final Score:** 5\n**Reasoning:** Excellent response",
+                "**Final Score:** 3\n**Reasoning:** Average response",
+            ]
+        )
 
         criteria = GEvalCriteria(
             name="Multi Test",
             description="Multi iteration test",
             steps=["Step 1"],
-            score_range=(1, 5)
+            score_range=(1, 5),
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria, num_iterations=3)
 
         result = await scorer.evaluate(
-            input_text="Test question",
-            output_text="Test answer"
+            input_text="Test question", output_text="Test answer"
         )
 
         # Should average the scores: (0.75 + 1.0 + 0.5) / 3 = 0.75
@@ -411,13 +395,15 @@ class TestGEvalScorerMethods:
     async def test_evaluate_with_expected_output_and_context(self):
         """Test evaluate method with expected output and context parameters."""
         mock_model = Mock()
-        mock_model.generate = AsyncMock(return_value="**Final Score:** 3\n**Reasoning:** Average")
+        mock_model.generate = AsyncMock(
+            return_value="**Final Score:** 3\n**Reasoning:** Average"
+        )
 
         criteria = GEvalCriteria(
             name="Context Test",
             description="Test with context",
             steps=["Step 1"],
-            score_range=(1, 5)
+            score_range=(1, 5),
         )
 
         scorer = GEvalScorer(model=mock_model, criteria=criteria)
@@ -426,7 +412,7 @@ class TestGEvalScorerMethods:
             input_text="Question",
             output_text="Answer",
             expected_output="Expected answer",
-            context="Additional context"
+            context="Additional context",
         )
 
         assert isinstance(result.score, float)
@@ -439,13 +425,15 @@ class TestGEvalScorerMethods:
     async def test_evaluate_threshold_behavior(self):
         """Test different threshold values in evaluate method."""
         mock_model = Mock()
-        mock_model.generate = AsyncMock(return_value="**Final Score:** 4\n**Reasoning:** Good")
+        mock_model.generate = AsyncMock(
+            return_value="**Final Score:** 4\n**Reasoning:** Good"
+        )
 
         criteria = GEvalCriteria(
             name="Threshold Test",
             description="Test thresholds",
             steps=["Step 1"],
-            score_range=(1, 5)
+            score_range=(1, 5),
         )
 
         # Test high threshold (should fail)

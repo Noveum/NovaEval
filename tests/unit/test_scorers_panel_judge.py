@@ -21,7 +21,9 @@ class MockLLMModel(LLMModel):
     """Mock LLM model for testing."""
 
     def __init__(self, mock_responses=None, name="MockModel"):
-        super().__init__(name=name, model_name=name, api_key="mock_key", base_url="mock_url")
+        super().__init__(
+            name=name, model_name=name, api_key="mock_key", base_url="mock_url"
+        )
         self.mock_responses = mock_responses or {}
         self.call_count = 0
         self.temperature = 0.0
@@ -60,13 +62,15 @@ class MockLLMModel(LLMModel):
 
     def _get_default_response(self):
         """Get default mock response."""
-        return json.dumps({
-            "score": 4,
-            "reasoning": "Good response with minor issues",
-            "strengths": "Clear and relevant",
-            "weaknesses": "Could be more detailed",
-            "confidence": 4
-        })
+        return json.dumps(
+            {
+                "score": 4,
+                "reasoning": "Good response with minor issues",
+                "strengths": "Clear and relevant",
+                "weaknesses": "Could be more detailed",
+                "confidence": 4,
+            }
+        )
 
 
 class TestAggregationMethod:
@@ -227,8 +231,8 @@ class TestPanelOfJudgesScorer:
         )
 
         # Weights should be normalized (1.0 + 2.0 = 3.0, so 1/3 and 2/3)
-        assert abs(scorer.judges[0].weight - 1/3) < 1e-10
-        assert abs(scorer.judges[1].weight - 2/3) < 1e-10
+        assert abs(scorer.judges[0].weight - 1 / 3) < 1e-10
+        assert abs(scorer.judges[1].weight - 2 / 3) < 1e-10
 
     def test_build_evaluation_prompt_basic(self):
         """Test building evaluation prompt with basic inputs."""
@@ -340,7 +344,9 @@ class TestPanelOfJudgesScorer:
 
         scores = [0.6, 0.8]
         weights = [0.3, 0.7]
-        result = scorer._aggregate_scores(scores, weights, AggregationMethod.WEIGHTED_MEAN)
+        result = scorer._aggregate_scores(
+            scores, weights, AggregationMethod.WEIGHTED_MEAN
+        )
         expected = 0.6 * 0.3 + 0.8 * 0.7
         assert abs(result - expected) < 1e-10
 
@@ -354,7 +360,9 @@ class TestPanelOfJudgesScorer:
 
         scores = [0.6, 0.8]
         weights = [0.3]  # Mismatched
-        result = scorer._aggregate_scores(scores, weights, AggregationMethod.WEIGHTED_MEAN)
+        result = scorer._aggregate_scores(
+            scores, weights, AggregationMethod.WEIGHTED_MEAN
+        )
         assert abs(result - 0.7) < 1e-10  # Should fallback to mean
 
     def test_aggregate_scores_majority_vote_pass(self):
@@ -367,7 +375,9 @@ class TestPanelOfJudgesScorer:
 
         scores = [0.8, 0.9, 0.6]  # 2 above threshold (0.7), 1 below
         weights = [1.0, 1.0, 1.0]
-        result = scorer._aggregate_scores(scores, weights, AggregationMethod.MAJORITY_VOTE)
+        result = scorer._aggregate_scores(
+            scores, weights, AggregationMethod.MAJORITY_VOTE
+        )
         assert result == 1.0
 
     def test_aggregate_scores_majority_vote_fail(self):
@@ -380,7 +390,9 @@ class TestPanelOfJudgesScorer:
 
         scores = [0.6, 0.5, 0.8]  # 1 above threshold (0.7), 2 below
         weights = [1.0, 1.0, 1.0]
-        result = scorer._aggregate_scores(scores, weights, AggregationMethod.MAJORITY_VOTE)
+        result = scorer._aggregate_scores(
+            scores, weights, AggregationMethod.MAJORITY_VOTE
+        )
         assert result == 0.0
 
     def test_aggregate_scores_consensus_all_pass(self):
@@ -522,7 +534,9 @@ class TestPanelOfJudgesScorer:
             mock_generate.return_value = '{"score": 4}'
 
             prompt = "Evaluate this response"
-            with pytest.raises(Exception, match="Judge response missing required fields"):
+            with pytest.raises(
+                Exception, match="Judge response missing required fields"
+            ):
                 await scorer._evaluate_with_judge(judge, prompt)
 
     @pytest.mark.asyncio
@@ -545,20 +559,24 @@ class TestPanelOfJudgesScorer:
         """Test successful panel evaluation."""
         # Mock responses for judges
         mock_responses = [
-            json.dumps({
-                "score": 4,
-                "reasoning": "Good response",
-                "strengths": "Clear",
-                "weaknesses": "Could be more detailed",
-                "confidence": 4
-            }),
-            json.dumps({
-                "score": 5,
-                "reasoning": "Excellent response",
-                "strengths": "Comprehensive",
-                "weaknesses": "None",
-                "confidence": 5
-            })
+            json.dumps(
+                {
+                    "score": 4,
+                    "reasoning": "Good response",
+                    "strengths": "Clear",
+                    "weaknesses": "Could be more detailed",
+                    "confidence": 4,
+                }
+            ),
+            json.dumps(
+                {
+                    "score": 5,
+                    "reasoning": "Excellent response",
+                    "strengths": "Comprehensive",
+                    "weaknesses": "None",
+                    "confidence": 5,
+                }
+            ),
         ]
 
         model1 = MockLLMModel()
@@ -569,8 +587,10 @@ class TestPanelOfJudgesScorer:
         scorer = PanelOfJudgesScorer(judges=[judge1, judge2])
 
         # Mock the async generate methods
-        with patch.object(model1, "generate", new_callable=AsyncMock) as mock_generate1, \
-             patch.object(model2, "generate", new_callable=AsyncMock) as mock_generate2:
+        with (
+            patch.object(model1, "generate", new_callable=AsyncMock) as mock_generate1,
+            patch.object(model2, "generate", new_callable=AsyncMock) as mock_generate2,
+        ):
             mock_generate1.return_value = mock_responses[0]
             mock_generate2.return_value = mock_responses[1]
 
@@ -593,7 +613,12 @@ class TestPanelOfJudgesScorer:
         scorer = PanelOfJudgesScorer(judges=[judge])
 
         # Mock the judge to raise an exception
-        with patch.object(model, "generate", new_callable=AsyncMock, side_effect=Exception("Judge failed")):
+        with patch.object(
+            model,
+            "generate",
+            new_callable=AsyncMock,
+            side_effect=Exception("Judge failed"),
+        ):
             result = await scorer.evaluate(
                 input_text="What is AI?",
                 output_text="AI is artificial intelligence",
@@ -607,8 +632,24 @@ class TestPanelOfJudgesScorer:
     async def test_evaluate_consensus_requirement_fail(self):
         """Test evaluation with consensus requirement that fails."""
         mock_responses = [
-            json.dumps({"score": 2, "reasoning": "Poor", "strengths": "", "weaknesses": "Many", "confidence": 2}),
-            json.dumps({"score": 5, "reasoning": "Excellent", "strengths": "Great", "weaknesses": "", "confidence": 5})
+            json.dumps(
+                {
+                    "score": 2,
+                    "reasoning": "Poor",
+                    "strengths": "",
+                    "weaknesses": "Many",
+                    "confidence": 2,
+                }
+            ),
+            json.dumps(
+                {
+                    "score": 5,
+                    "reasoning": "Excellent",
+                    "strengths": "Great",
+                    "weaknesses": "",
+                    "confidence": 5,
+                }
+            ),
         ]
 
         model1 = MockLLMModel()
@@ -623,8 +664,10 @@ class TestPanelOfJudgesScorer:
         )
 
         # Mock the async generate methods
-        with patch.object(model1, "generate", new_callable=AsyncMock) as mock_generate1, \
-             patch.object(model2, "generate", new_callable=AsyncMock) as mock_generate2:
+        with (
+            patch.object(model1, "generate", new_callable=AsyncMock) as mock_generate1,
+            patch.object(model2, "generate", new_callable=AsyncMock) as mock_generate2,
+        ):
             mock_generate1.return_value = mock_responses[0]
             mock_generate2.return_value = mock_responses[1]
 
@@ -645,7 +688,11 @@ class TestPanelOfJudgesScorer:
         scorer = PanelOfJudgesScorer(judges=[judge])
 
         # Mock _build_evaluation_prompt to raise an exception
-        with patch.object(scorer, "_build_evaluation_prompt", side_effect=Exception("Prompt building failed")):
+        with patch.object(
+            scorer,
+            "_build_evaluation_prompt",
+            side_effect=Exception("Prompt building failed"),
+        ):
             result = await scorer.evaluate(
                 input_text="What is AI?",
                 output_text="AI is artificial intelligence",
@@ -694,7 +741,9 @@ class TestPanelOfJudgesScorer:
         judge = JudgeConfig(model=model)
         scorer = PanelOfJudgesScorer(judges=[judge])
 
-        with patch.object(scorer, "evaluate", side_effect=Exception("Evaluation failed")):
+        with patch.object(
+            scorer, "evaluate", side_effect=Exception("Evaluation failed")
+        ):
             result = scorer.score("AI response", "Expected response")
             assert result == 0.0
 
@@ -754,8 +803,8 @@ class TestSpecializedPanelScorer:
         assert scorer.aggregation_method == AggregationMethod.WEIGHTED_MEAN
         assert scorer.evaluation_criteria == "domain expertise"
         # Weights are normalized, so 2.0 and 1.0 become 2/3 and 1/3
-        assert abs(scorer.judges[0].weight - 2/3) < 1e-10
-        assert abs(scorer.judges[1].weight - 1/3) < 1e-10
+        assert abs(scorer.judges[0].weight - 2 / 3) < 1e-10
+        assert abs(scorer.judges[1].weight - 1 / 3) < 1e-10
         assert scorer.judges[0].specialty == "domain_expert"
         assert scorer.judges[1].specialty == "domain_expert"
         assert "Expert_1" in scorer.judges[0].name
@@ -770,20 +819,24 @@ class TestPanelJudgeIntegration:
         """Test a complete panel evaluation flow."""
         # Create diverse panel
         mock_responses = [
-            json.dumps({
-                "score": 4,
-                "reasoning": "Good technical accuracy",
-                "strengths": "Precise definitions",
-                "weaknesses": "Could use examples",
-                "confidence": 4
-            }),
-            json.dumps({
-                "score": 5,
-                "reasoning": "Excellent clarity and completeness",
-                "strengths": "Clear explanations",
-                "weaknesses": "None",
-                "confidence": 5
-            })
+            json.dumps(
+                {
+                    "score": 4,
+                    "reasoning": "Good technical accuracy",
+                    "strengths": "Precise definitions",
+                    "weaknesses": "Could use examples",
+                    "confidence": 4,
+                }
+            ),
+            json.dumps(
+                {
+                    "score": 5,
+                    "reasoning": "Excellent clarity and completeness",
+                    "strengths": "Clear explanations",
+                    "weaknesses": "None",
+                    "confidence": 5,
+                }
+            ),
         ]
 
         model1 = MockLLMModel()
@@ -795,8 +848,10 @@ class TestPanelJudgeIntegration:
         )
 
         # Mock the async generate methods
-        with patch.object(model1, "generate", new_callable=AsyncMock) as mock_generate1, \
-             patch.object(model2, "generate", new_callable=AsyncMock) as mock_generate2:
+        with (
+            patch.object(model1, "generate", new_callable=AsyncMock) as mock_generate1,
+            patch.object(model2, "generate", new_callable=AsyncMock) as mock_generate2,
+        ):
             mock_generate1.return_value = mock_responses[0]
             mock_generate2.return_value = mock_responses[1]
 
