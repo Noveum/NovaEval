@@ -17,6 +17,7 @@ from novaeval.scorers.panel_judge import (
 )
 
 
+@pytest.mark.unit
 class MockLLMModel(LLMModel):
     """Mock LLM model for testing."""
 
@@ -73,6 +74,7 @@ class MockLLMModel(LLMModel):
         )
 
 
+@pytest.mark.unit
 class TestAggregationMethod:
     """Test cases for AggregationMethod enum."""
 
@@ -87,6 +89,7 @@ class TestAggregationMethod:
         assert AggregationMethod.MAX == "max"
 
 
+@pytest.mark.unit
 class TestJudgeConfig:
     """Test cases for JudgeConfig class."""
 
@@ -137,6 +140,7 @@ class TestJudgeConfig:
             JudgeConfig(model=model, weight=-1.0)
 
 
+@pytest.mark.unit
 class TestPanelResult:
     """Test cases for PanelResult class."""
 
@@ -175,6 +179,7 @@ class TestPanelResult:
         assert result.metadata == metadata
 
 
+@pytest.mark.unit
 class TestPanelOfJudgesScorer:
     """Test cases for PanelOfJudgesScorer class."""
 
@@ -748,6 +753,7 @@ class TestPanelOfJudgesScorer:
             assert result == 0.0
 
 
+@pytest.mark.unit
 class TestSpecializedPanelScorer:
     """Test cases for SpecializedPanelScorer class."""
 
@@ -811,6 +817,7 @@ class TestSpecializedPanelScorer:
         assert "Expert_2" in scorer.judges[1].name
 
 
+@pytest.mark.unit
 class TestPanelJudgeIntegration:
     """Integration tests for panel judge scorers."""
 

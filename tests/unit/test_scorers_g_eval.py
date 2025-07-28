@@ -8,6 +8,7 @@ import pytest
 from novaeval.scorers.g_eval import CommonGEvalCriteria, GEvalCriteria, GEvalScorer
 
 
+@pytest.mark.unit
 class TestBasicImport:
     """Basic test to verify imports work."""
 
@@ -18,6 +19,7 @@ class TestBasicImport:
         assert inspect.isclass(CommonGEvalCriteria)
 
 
+@pytest.mark.unit
 class TestGEvalCriteriaModel:
     """Test the GEvalCriteria Pydantic model."""
 
@@ -44,8 +46,9 @@ class TestGEvalCriteriaModel:
         assert criteria.score_range == (1, 5)  # Default
 
 
+@pytest.mark.unit
 class TestCommonGEvalCriteria:
-    """Test CommonGEvalCriteria static methods - this will cover lines 253, 267, 281, 295."""
+    """Test CommonGEvalCriteria static methods."""
 
     def test_correctness(self):
         """Test correctness criteria."""
@@ -86,6 +89,7 @@ class TestCommonGEvalCriteria:
         assert "actionable information" in criteria.steps[0]
 
 
+@pytest.mark.unit
 class TestGEvalScorerBasics:
     """Test basic GEvalScorer functionality."""
 
@@ -130,6 +134,7 @@ class TestGEvalScorerBasics:
         assert scorer.num_iterations == 2
 
 
+@pytest.mark.unit
 class TestGEvalScorerMethods:
     """Test GEvalScorer methods that need to be covered."""
 
