@@ -817,7 +817,7 @@ class TestSpecializedPanelScorer:
         assert "Expert_2" in scorer.judges[1].name
 
 
-@pytest.mark.unit
+@pytest.mark.integration
 class TestPanelJudgeIntegration:
     """Integration tests for panel judge scorers."""
 
