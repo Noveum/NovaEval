@@ -50,3 +50,6 @@ class AgentData(BaseModel):
     retrieved_context: Optional[str] = None
 
     metadata: Optional[str] = None
+
+#TODO:
+#add Exit_status .

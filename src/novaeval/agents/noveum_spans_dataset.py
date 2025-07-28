@@ -1,0 +1,319 @@
+import os
+import pandas as pd
+from novaeval.agents.agent_dataset import AgentDataset
+import json
+from typing import Iterator
+from novaeval.agents.agent_data import AgentData
+
+def noveum_spans_preprocessing(json_dir: str = None, json_files: list = None, output_csv: str = "output.csv") -> None:
+    """
+    Preprocesses Noveum spans from JSON files, extracting spans data.
+    Args:
+        json_dir (str): Directory containing only JSON files.
+        json_files (list): List of JSON file paths.
+        output_csv (str): Path to save the output CSV.
+    Raises:
+        ValueError: If both or neither of json_dir and json_files are provided, or if non-JSON files are in the directory.
+    """
+    if (json_dir is not None and json_files is not None) or (json_dir is None and json_files is None):
+        raise ValueError("Provide either json_dir or json_files, but not both.")
+
+    if json_dir is not None:
+        if not os.path.isdir(json_dir):
+            raise ValueError(f"{json_dir} is not a valid directory.")
+        files = [os.path.join(json_dir, f) for f in os.listdir(json_dir)]
+        json_files = [f for f in files if f.endswith('.json')]
+        non_json = [f for f in files if not f.endswith('.json')]
+        if non_json:    
+            raise ValueError(f"Directory contains non-JSON files: {non_json}")
+        if not json_files:
+            raise ValueError("No JSON files found in the directory.")
+    else:
+        if not isinstance(json_files, list) or not json_files:
+            raise ValueError("json_files must be a non-empty list of file paths.")
+        for f in json_files:
+            if not f.endswith('.json'):
+                raise ValueError(f"File {f} is not a JSON file.")
+
+    # Process files
+    rows = []
+    
+    for json_file in json_files:
+        print(f"Processing {json_file}")
+        
+        try:
+            with open(json_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # Extract spans from the trace
+            spans = data.get('spans', [])
+            trace_id = data.get('trace_id')
+            
+            for span in spans:
+                # Extract basic span information
+                span_id = span.get('span_id')
+                parent_span_id = span.get('parent_span_id')
+                duration_ms = span.get('duration_ms')
+                status_message = span.get('status_message')
+                
+                # Extract attributes
+                attributes = span.get('attributes', {})
+                
+                # Extract agent_name from function.name
+                agent_name = attributes.get('function.name', '')
+                
+                # Extract agent_task from agent.input.*, tool.input.*, or llm.prompts (ignore agent.input.topic)
+                agent_task = ""
+                input_fields = []
+                for key, value in attributes.items():
+                    if (key.startswith('agent.input.') and key != 'agent.input.topic') or key.startswith('tool.input.'):
+                        input_fields.append((key, value))
+                
+                # For LLM calls, use llm.prompts as input if no other input fields found
+                if not input_fields and 'llm.prompts' in attributes:
+                    input_fields.append(('llm.prompts', attributes['llm.prompts']))
+                
+                # Raise exception if more than 1 input field
+                if len(input_fields) > 1:
+                    field_names = [field[0] for field in input_fields]
+                    raise ValueError(f"Expected only one input field (agent.input.* excluding topic, tool.input.*, or llm.prompts), but found: {field_names}")
+                
+                # Set agent_task from the single field
+                if input_fields:
+                    agent_task = str(input_fields[0][1])
+                
+                # Extract agent_response from agent.output.result, tool.output.result, or llm.completion
+                agent_response = (attributes.get('agent.output.result', '') or 
+                                attributes.get('tool.output.result', '') or 
+                                attributes.get('llm.completion', ''))
+                
+                # Extract agent_type for metadata (from agent.type, tool.type, or llm.provider)
+                agent_type = (attributes.get('agent.type', '') or 
+                            attributes.get('tool.type', '') or 
+                            attributes.get('llm.provider', ''))
+                
+                # Build metadata
+                metadata = {
+                    'trace_id': trace_id,
+                    'duration_ms': duration_ms,
+                    'parent_span_id': parent_span_id,
+                    'status_message': status_message,
+                    'agent_type': agent_type
+                }
+                
+                # Create row
+                row = {
+                    'turn_id': span_id,
+                    'agent_name': agent_name,
+                    'agent_task': agent_task,
+                    'agent_response': agent_response,
+                    'metadata': json.dumps(metadata),
+                    'trace_id': trace_id,
+                    'span_name': span.get('name', ''),
+                    'status': span.get('status', ''),
+                    'start_time': span.get('start_time', ''),
+                    'end_time': span.get('end_time', ''),
+                    'attributes': json.dumps(attributes)
+                }
+                rows.append(row)
+                
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON file {json_file}: {e}")
+            continue
+        except Exception as e:
+            print(f"Error processing file {json_file}: {e}")
+            continue
+    
+    # Convert to DataFrame and save
+    if rows:
+        df = pd.DataFrame(rows)
+        df.to_csv(output_csv, index=False, encoding='utf-8', quoting=1)
+        print(f"Processed {len(rows)} spans and saved to {output_csv}")
+    else:
+        print("No spans found to process.")
+
+def create_dataset(csv_path: str):
+    """
+    Creates an AgentDataset from the preprocessed CSV file.
+    
+    Args:
+        csv_path (str): Path to the preprocessed CSV file
+        
+    Returns:
+        AgentDataset: Dataset ready for evaluation
+    """
+    import pandas as pd
+    import csv
+    import sys
+    import tempfile
+    
+    # Handle large CSV fields
+    maxInt = sys.maxsize
+    while True:
+        try:
+            csv.field_size_limit(maxInt)
+            break
+        except OverflowError:
+            maxInt = int(maxInt/10)
+    
+    df = pd.read_csv(csv_path)
+    
+    # Build new DataFrame with only the mapped columns
+    rows = []
+    for _, row in df.iterrows():
+        turn_id = row.get('turn_id')
+        agent_response = row.get('agent_response', '')
+        
+        # Build tool_call_results - for spans, we might not have traditional tool calls
+        # but we can use the agent_response as a result
+        tool_call_results = [
+            {
+                'call_id': turn_id,
+                'result': agent_response,
+                'success': True,
+                'error_message': None
+            }
+        ]
+        
+        # Get existing metadata and ensure it's properly formatted
+        metadata_str = row.get('metadata', '{}')
+        try:
+            metadata = json.loads(metadata_str) if isinstance(metadata_str, str) else metadata_str
+        except (json.JSONDecodeError, TypeError):
+            metadata = {}
+        
+        # Add additional metadata from other columns
+        metadata.update({
+            'span_name': row.get('span_name', ''),
+            'status': row.get('status', ''),
+            'start_time': row.get('start_time', ''),
+            'end_time': row.get('end_time', ''),
+            'trace_id': row.get('trace_id', '')
+        })
+        
+        mapped = {
+            'turn_id': turn_id,
+            'agent_name': row.get('agent_name', ''),
+            'agent_task': row.get('agent_task', ''),
+            'agent_role': metadata.get('agent_type', ''),  # Use agent_type from metadata as role
+            'system_prompt': '',  # Noveum spans don't typically have system prompts
+            'agent_response': agent_response,
+            'tool_call_results': json.dumps(tool_call_results),
+            'metadata': json.dumps(metadata),
+        }
+        rows.append(mapped)
+    
+    # Write to a temp CSV for ingest_from_csv
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.csv') as tmp:
+        pd.DataFrame(rows).to_csv(tmp.name, index=False)
+        tmp.flush()
+        dataset = AgentDataset()
+        dataset.ingest_from_csv(
+            file_path=tmp.name,
+            turn_id='turn_id',
+            agent_name='agent_name',
+            agent_task='agent_task',
+            agent_role='agent_role',
+            system_prompt='system_prompt',
+            agent_response='agent_response',
+            tool_call_results='tool_call_results',
+            metadata='metadata',
+        )
+    
+    # Clean up temp file
+    os.unlink(tmp.name)
+    return dataset
+
+def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[AgentData]]:
+    """
+    Creates an iterator that yields chunks of AgentData objects from the preprocessed CSV.
+    Similar to create_dataset but streams data instead of loading it all at once.
+    
+    Args:
+        csv_path (str): Path to the preprocessed CSV file
+        chunk_size (int): Number of rows to process at a time
+        
+    Returns:
+        Iterator[list[AgentData]]: Iterator yielding lists of AgentData objects
+    """
+    import pandas as pd
+    import tempfile
+    import csv
+    import sys
+    
+    # Handle large CSV fields
+    maxInt = sys.maxsize
+    while True:
+        try:
+            csv.field_size_limit(maxInt)
+            break
+        except OverflowError:
+            maxInt = int(maxInt/10)
+    
+    # First preprocess the CSV like in create_dataset
+    df = pd.read_csv(csv_path)
+    rows = []
+    for _, row in df.iterrows():
+        turn_id = row.get('turn_id')
+        agent_response = row.get('agent_response', '')
+        
+        # Build tool_call_results
+        tool_call_results = [
+            {
+                'call_id': turn_id,
+                'result': agent_response,
+                'success': True,
+                'error_message': None
+            }
+        ]
+        
+        # Get existing metadata and ensure it's properly formatted
+        metadata_str = row.get('metadata', '{}')
+        try:
+            metadata = json.loads(metadata_str) if isinstance(metadata_str, str) else metadata_str
+        except (json.JSONDecodeError, TypeError):
+            metadata = {}
+        
+        # Add additional metadata from other columns
+        metadata.update({
+            'span_name': row.get('span_name', ''),
+            'status': row.get('status', ''),
+            'start_time': row.get('start_time', ''),
+            'end_time': row.get('end_time', ''),
+            'trace_id': row.get('trace_id', '')
+        })
+        
+        mapped = {
+            'turn_id': turn_id,
+            'agent_name': row.get('agent_name', ''),
+            'agent_task': row.get('agent_task', ''),
+            'agent_role': metadata.get('agent_type', ''),
+            'system_prompt': '',
+            'agent_response': agent_response,
+            'tool_call_results': json.dumps(tool_call_results),
+            'metadata': json.dumps(metadata),
+        }
+        rows.append(mapped)
+
+    # Write to a temp CSV
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False, suffix='.csv') as tmp:
+        pd.DataFrame(rows).to_csv(tmp.name, index=False)
+        tmp.flush()
+        
+        # Now use AgentDataset's stream_from_csv
+        dataset = AgentDataset()
+        yield from dataset.stream_from_csv(
+            file_path=tmp.name,
+            chunk_size=chunk_size,
+            turn_id='turn_id',
+            agent_name='agent_name',
+            agent_task='agent_task',
+            agent_role='agent_role',
+            system_prompt='system_prompt',
+            agent_response='agent_response',
+            tool_call_results='tool_call_results',
+            metadata='metadata',
+        )
+        
+        # Clean up temp file
+        os.unlink(tmp.name) 
