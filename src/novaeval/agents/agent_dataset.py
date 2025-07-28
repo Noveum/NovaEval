@@ -3,7 +3,7 @@ import json
 import typing
 from collections.abc import Iterator
 from typing import Any, Optional
-
+import pandas as pd
 from novaeval.agents.agent_data import AgentData, ToolCall
 
 
@@ -150,15 +150,26 @@ class AgentDataset:
             "retrieved_context": retrieved_context,
             "metadata": metadata,
         }
-        with open(file_path, encoding="utf-8") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                data_kwargs = {}
-                for field in AgentData.model_fields:
-                    col = field_map[field] if field_map[field] is not None else field
-                    value = row.get(col, None)
-                    data_kwargs[field] = self._parse_field(field, value)
-                self.data.append(AgentData(**data_kwargs))
+        
+        try:
+            import pandas as pd
+            # Process CSV in chunks to save memory
+            chunk_size = 1000  # Adjust based on memory constraints
+            
+            for chunk_df in pd.read_csv(file_path, encoding='utf-8', chunksize=chunk_size):
+                for _, row in chunk_df.iterrows():
+                    data_kwargs = {}
+                    for field in AgentData.model_fields:
+                        col = field_map[field] if field_map[field] is not None else field
+                        value = row.get(col, None)
+                        data_kwargs[field] = self._parse_field(field, value)
+                    self.data.append(AgentData(**data_kwargs))
+                    
+                # Clear chunk from memory
+                del chunk_df
+                
+        except Exception as e:
+            raise ValueError(f"Error reading CSV file '{file_path}': {str(e)}")
 
     def ingest_from_json(
         self,
@@ -248,8 +259,178 @@ class AgentDataset:
                 indent=2,
             )
 
+    def stream_from_csv(
+        self,
+        file_path: str,
+        chunk_size: int = 1000,
+        user_id: Optional[str] = None,
+        task_id: Optional[str] = None,
+        turn_id: Optional[str] = None,
+        ground_truth: Optional[str] = None,
+        expected_tool_call: Optional[str] = None,
+        agent_name: Optional[str] = None,
+        agent_role: Optional[str] = None,
+        agent_task: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        agent_response: Optional[str] = None,
+        trace: Optional[str] = None,
+        tools_available: Optional[str] = None,
+        tool_calls: Optional[str] = None,
+        parameters_passed: Optional[str] = None,
+        tool_call_results: Optional[str] = None,
+        retrieval_query: Optional[str] = None,
+        retrieved_context: Optional[str] = None,
+        metadata: Optional[str] = None,
+    ) -> Iterator[list[AgentData]]:
+        """
+        Stream data from CSV in chunks without loading entire file.
+        Returns an iterator of lists, where each list contains chunk_size AgentData objects.
+        
+        Args:
+            file_path: Path to the CSV file
+            chunk_size: Number of rows to process at a time
+            user_id, task_id, etc.: Column name mappings for AgentData fields
+            
+        Returns:
+            Iterator yielding lists of AgentData objects, each list of size <= chunk_size
+        """
+        field_map = {
+            "user_id": user_id,
+            "task_id": task_id,
+            "turn_id": turn_id,
+            "ground_truth": ground_truth,
+            "expected_tool_call": expected_tool_call,
+            "agent_name": agent_name,
+            "agent_role": agent_role,
+            "agent_task": agent_task,
+            "system_prompt": system_prompt,
+            "agent_response": agent_response,
+            "trace": trace,
+            "tools_available": tools_available,
+            "tool_calls": tool_calls,
+            "parameters_passed": parameters_passed,
+            "tool_call_results": tool_call_results,
+            "retrieval_query": retrieval_query,
+            "retrieved_context": retrieved_context,
+            "metadata": metadata,
+        }
+        
+        try:
+            # Process CSV in chunks
+            for chunk_df in pd.read_csv(file_path, encoding='utf-8', chunksize=chunk_size):
+                chunk_data = []
+                
+                for _, row in chunk_df.iterrows():
+                    data_kwargs = {}
+                    for field in AgentData.model_fields:
+                        col = field_map[field] if field_map[field] is not None else field
+                        value = row.get(col, None)
+                        data_kwargs[field] = self._parse_field(field, value)
+                    chunk_data.append(AgentData(**data_kwargs))
+                
+                yield chunk_data
+                
+                # Clear memory
+                del chunk_data
+                
+        except Exception as e:
+            raise ValueError(f"Error reading CSV file '{file_path}': {str(e)}")
+
+    def stream_from_json(
+        self,
+        file_path: str,
+        chunk_size: int = 1000,
+        user_id: Optional[str] = None,
+        task_id: Optional[str] = None,
+        turn_id: Optional[str] = None,
+        ground_truth: Optional[str] = None,
+        expected_tool_call: Optional[str] = None,
+        agent_name: Optional[str] = None,
+        agent_role: Optional[str] = None,
+        agent_task: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        agent_response: Optional[str] = None,
+        trace: Optional[str] = None,
+        tools_available: Optional[str] = None,
+        tool_calls: Optional[str] = None,
+        parameters_passed: Optional[str] = None,
+        tool_call_results: Optional[str] = None,
+        retrieval_query: Optional[str] = None,
+        retrieved_context: Optional[str] = None,
+        metadata: Optional[str] = None,
+    ) -> Iterator[list[AgentData]]:
+        """
+        Stream data from JSON in chunks without loading entire file.
+        Returns an iterator of lists, where each list contains chunk_size AgentData objects.
+        
+        Args:
+            file_path: Path to the JSON file
+            chunk_size: Number of items to process at a time
+            user_id, task_id, etc.: Field name mappings for AgentData fields
+            
+        Returns:
+            Iterator yielding lists of AgentData objects, each list of size <= chunk_size
+            
+        Note:
+            Expects JSON file to contain an array of objects at the root level
+        """
+        field_map = {
+            "user_id": user_id,
+            "task_id": task_id,
+            "turn_id": turn_id,
+            "ground_truth": ground_truth,
+            "expected_tool_call": expected_tool_call,
+            "agent_name": agent_name,
+            "agent_role": agent_role,
+            "agent_task": agent_task,
+            "system_prompt": system_prompt,
+            "agent_response": agent_response,
+            "trace": trace,
+            "tools_available": tools_available,
+            "tool_calls": tool_calls,
+            "parameters_passed": parameters_passed,
+            "tool_call_results": tool_call_results,
+            "retrieval_query": retrieval_query,
+            "retrieved_context": retrieved_context,
+            "metadata": metadata,
+        }
+        
+        try:
+            import ijson  # Import here to not require it unless method is used
+            
+            chunk_data = []
+            with open(file_path, 'rb') as file:
+                # Parse JSON array items one at a time
+                parser = ijson.items(file, 'item')
+                
+                for item in parser:
+                    if not isinstance(item, dict):
+                        continue
+                        
+                    data_kwargs = {}
+                    for field in AgentData.model_fields:
+                        key = field_map[field] if field_map[field] is not None else field
+                        value = item.get(key, None)
+                        data_kwargs[field] = self._parse_field(field, value)
+                    
+                    chunk_data.append(AgentData(**data_kwargs))
+                    
+                    # When chunk is full, yield it
+                    if len(chunk_data) >= chunk_size:
+                        yield chunk_data
+                        chunk_data = []
+                
+                # Yield remaining data if any
+                if chunk_data:
+                    yield chunk_data
+                    
+        except ImportError:
+            raise ImportError("ijson package is required for streaming JSON. Install with: pip install ijson")
+        except Exception as e:
+            raise ValueError(f"Error reading JSON file '{file_path}': {str(e)}")
+
     def get_data(self) -> list[AgentData]:
-        return self.data
+        return self.data.copy()
 
     def get_datapoint(self) -> Iterator[AgentData]:
         yield from self.data
