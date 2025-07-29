@@ -33,13 +33,13 @@ class AgentData(BaseModel):
 
     agent_name: Optional[str] = None
     agent_role: Optional[str] = None
-    agent_task: Optional[str] = None
+    agent_task: Optional[str] = None #has the current input.
 
     system_prompt: Optional[str] = None
     agent_response: Optional[str] = None
     trace: Optional[list[dict[str, Any]]] = (
         None  # we might need a method to parse this, will do once the trace is formalized
-    )
+    ) #will have all the past context. useful for evaluating the agent
 
     tools_available: list[ToolSchema] = []
     tool_calls: list[ToolCall] = []
@@ -53,3 +53,4 @@ class AgentData(BaseModel):
 
 #TODO:
 #add Exit_status .
+#TODO add a boolean, representing if the agent has exited.

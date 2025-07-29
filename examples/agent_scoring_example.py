@@ -5,7 +5,7 @@ This script demonstrates how to use the agent scoring functions to evaluate
 various aspects of agent behavior.
 """
 
-import asyncio
+import os
 from typing import Any
 
 from novaeval.agents.agent_data import AgentData, ToolCall, ToolResult, ToolSchema
@@ -13,14 +13,27 @@ from novaeval.agents.agent_scorers import AgentScorers
 from novaeval.models.openai import OpenAIModel
 
 
-async def main():
+def main():
     """Demonstrate agent scoring functionality."""
     
     # Initialize OpenAI model for scoring (you can use any LLM model)
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("Please set the OPENAI_API_KEY environment variable")
+    
     model = OpenAIModel(
         model_name="gpt-3.5-turbo",
-        api_key="your-api-key-here"  # Replace with actual API key
+        api_key=api_key
     )
+    
+    # Test basic LLM functionality
+    print("Testing basic LLM functionality...")
+    try:
+        test_response = model.generate("Please respond with just the number 42.")
+        print(f"   LLM Test Response: {test_response.strip()}\n")
+    except Exception as e:
+        print(f"   LLM Test Failed: {e}\n")
+        return
     
     # Create agent scorers instance
     scorers = AgentScorers(model)
@@ -72,36 +85,72 @@ async def main():
             )
         ],
         retrieved_context="Mathematical operations: Addition is the process of combining two or more numbers to get their sum.",
-        metadata="Sample evaluation data",
-        exit_status="success"
+        metadata="Sample evaluation data"
     )
     
     print("=== Agent Scoring Example ===\n")
     
     # Score individual aspects
     print("1. Tool Relevancy Scoring:")
-    tool_relevancy = await scorers.score_tool_relevancy(agent_data)
-    print(f"   Result: {tool_relevancy}\n")
+    try:
+        tool_relevancy = scorers.score_tool_relevancy(agent_data)
+        if isinstance(tool_relevancy, list):
+            for i, score_obj in enumerate(tool_relevancy, 1):
+                print(f"   Tool Call {i}: Score={score_obj.score}, Reasoning='{score_obj.reasoning}'")
+        else:
+            print(f"   Error: {tool_relevancy}")
+        print()
+    except Exception as e:
+        print(f"   Error: {e}\n")
     
     print("2. Tool Correctness Scoring:")
-    tool_correctness = await scorers.score_tool_correctness(agent_data)
-    print(f"   Result: {tool_correctness}\n")
+    tool_correctness = scorers.score_tool_correctness(agent_data)
+    if isinstance(tool_correctness, list):
+        for i, score_obj in enumerate(tool_correctness, 1):
+            print(f"   Tool Call {i}: Score={score_obj.score}, Reasoning='{score_obj.reasoning}'")
+    else:
+        print(f"   Error: {tool_correctness}")
+    print()
     
     print("3. Parameter Correctness Scoring:")
-    param_correctness = await scorers.score_parameter_correctness(agent_data)
-    print(f"   Result: {param_correctness}\n")
+    param_correctness = scorers.score_parameter_correctness(agent_data)
+    if isinstance(param_correctness, list):
+        for i, score_obj in enumerate(param_correctness, 1):
+            print(f"   Tool Call {i}: Score={score_obj.score}, Reasoning='{score_obj.reasoning}'")
+    else:
+        print(f"   Error: {param_correctness}")
+    print()
     
     print("4. Task Progression Scoring:")
-    task_progression = await scorers.score_task_progression(agent_data)
-    print(f"   Result: {task_progression}\n")
+    task_progression = scorers.score_task_progression(agent_data)
+    if hasattr(task_progression, 'score'):
+        print(f"   Score: {task_progression.score}")
+        print(f"   Reasoning: {task_progression.reasoning}")
+    else:
+        print(f"   Error: {task_progression}")
+    print()
     
     print("5. Context Relevancy Scoring:")
-    context_relevancy = await scorers.score_context_relevancy(agent_data)
-    print(f"   Result: {context_relevancy}\n")
+    context_relevancy = scorers.score_context_relevancy(agent_data)
+    if hasattr(context_relevancy, 'score'):
+        print(f"   Score: {context_relevancy.score}")
+        print(f"   Reasoning: {context_relevancy.reasoning}")
+    else:
+        print(f"   Error: {context_relevancy}")
+    print()
+    
+    print("6. Role Adherence Scoring:")
+    role_adherence = scorers.score_role_adherence(agent_data)
+    if hasattr(role_adherence, 'score'):
+        print(f"   Score: {role_adherence.score}")
+        print(f"   Reasoning: {role_adherence.reasoning}")
+    else:
+        print(f"   Error: {role_adherence}")
+    print()
     
     # Score all aspects at once
-    print("6. All Scores:")
-    all_scores = await scorers.score_all(agent_data)
+    print("7. All Scores:")
+    all_scores = scorers.score_all(agent_data)
     print(f"   Results: {all_scores}\n")
     
     # Example with missing fields
@@ -112,18 +161,22 @@ async def main():
     )
     
     print("Tool Relevancy with missing fields:")
-    missing_result = await scorers.score_tool_relevancy(incomplete_data)
+    missing_result = scorers.score_tool_relevancy(incomplete_data)
     print(f"   Result: {missing_result}\n")
 
 
-async def example_with_different_model():
+def example_with_different_model():
     """Example using a different model (Anthropic Claude)."""
     from novaeval.models.anthropic import AnthropicModel
     
     # Initialize Claude model
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("Please set the ANTHROPIC_API_KEY environment variable")
+    
     model = AnthropicModel(
         model_name="claude-3-sonnet-20240229",
-        api_key="your-anthropic-api-key-here"  # Replace with actual API key
+        api_key=api_key
     )
     
     scorers = AgentScorers(model)
@@ -135,16 +188,16 @@ async def example_with_different_model():
     )
     
     print("=== Using Claude Model ===")
-    context_score = await scorers.score_context_relevancy(agent_data)
+    context_score = scorers.score_context_relevancy(agent_data)
     print(f"Context Relevancy Score: {context_score}")
 
 
 if __name__ == "__main__":
     print("Agent Scoring Example")
-    print("Note: Make sure to set your API keys before running this example.\n")
+    print("Note: Using API keys from environment variables (OPENAI_API_KEY).\n")
     
     # Run the main example
-    asyncio.run(main())
+    main()
     
-    # Uncomment to run Claude example
-    # asyncio.run(example_with_different_model()) 
+    # Uncomment to run Claude example (requires ANTHROPIC_API_KEY)
+    # example_with_different_model() 
