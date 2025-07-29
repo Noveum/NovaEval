@@ -85,6 +85,7 @@ def main():
             )
         ],
         retrieved_context="Mathematical operations: Addition is the process of combining two or more numbers to get their sum.",
+        agent_exit=True,  # Agent has completed the task
         metadata="Sample evaluation data"
     )
     
@@ -148,8 +149,37 @@ def main():
         print(f"   Error: {role_adherence}")
     print()
     
+    # Add simple trace for goal achievement and conversation coherence scoring
+    agent_data.trace = [
+        {"type": "user_input", "content": "Calculate the sum of 20 and 22"},
+        {"type": "agent_response", "content": "I'll help you calculate 20 + 22. Let me use the calculator tool."},
+        {"type": "tool_call", "tool": "calculator", "parameters": {"operation": "add", "a": 20, "b": 22}},
+        {"type": "tool_result", "result": 42},
+        {"type": "agent_response", "content": "The sum of 20 and 22 is 42."}
+    ]
+    
+    print("7. Goal Achievement Scoring:")
+    goal_achievement = scorers.score_goal_achievement(agent_data)
+    if hasattr(goal_achievement, 'score'):
+        print(f"   Original Task: {goal_achievement.original_task}")
+        print(f"   Score: {goal_achievement.score}/10.0")
+        print(f"   Reasoning: {goal_achievement.reasoning}")
+    else:
+        print(f"   Error: {goal_achievement}")
+    print()
+    
+    print("8. Conversation Coherence Scoring:")
+    conversation_coherence = scorers.score_conversation_coherence(agent_data)
+    if hasattr(conversation_coherence, 'score'):
+        print(f"   Original Task: {conversation_coherence.original_task}")
+        print(f"   Score: {conversation_coherence.score}/10.0")
+        print(f"   Reasoning: {conversation_coherence.reasoning}")
+    else:
+        print(f"   Error: {conversation_coherence}")
+    print()
+    
     # Score all aspects at once
-    print("7. All Scores:")
+    print("9. All Scores:")
     all_scores = scorers.score_all(agent_data)
     print(f"   Results: {all_scores}\n")
     
@@ -157,12 +187,46 @@ def main():
     print("=== Example with Missing Fields ===\n")
     incomplete_data = AgentData(
         agent_name="IncompleteAgent",
+        agent_exit=False,  # Agent has not finished the task yet
         # Missing required fields for most scorers
     )
     
     print("Tool Relevancy with missing fields:")
     missing_result = scorers.score_tool_relevancy(incomplete_data)
     print(f"   Result: {missing_result}\n")
+    
+    # Example showing behavior when agent hasn't exited
+    print("=== Example with Agent Not Exited ===\n")
+    not_exited_data = AgentData(
+        agent_task="Calculate complex equation",
+        agent_role="Math assistant",
+        agent_response="I'm working on this problem...",
+        agent_exit=False,  # Agent is still working
+        trace=[
+            {"type": "user_input", "content": "Calculate a complex equation"},
+            {"type": "agent_response", "content": "I'm working on this problem..."}
+        ]
+    )
+    
+    print("Goal Achievement Scoring for non-exited agent:")
+    goal_result = scorers.score_goal_achievement(not_exited_data)
+    if hasattr(goal_result, 'score'):
+        print(f"   Original Task: {goal_result.original_task}")
+        print(f"   Score: {goal_result.score}")
+        print(f"   Reasoning: {goal_result.reasoning}")
+    else:
+        print(f"   Result: {goal_result}")
+    print()
+    
+    print("Conversation Coherence Scoring for non-exited agent:")
+    coherence_result = scorers.score_conversation_coherence(not_exited_data)
+    if hasattr(coherence_result, 'score'):
+        print(f"   Original Task: {coherence_result.original_task}")
+        print(f"   Score: {coherence_result.score}")
+        print(f"   Reasoning: {coherence_result.reasoning}")
+    else:
+        print(f"   Result: {coherence_result}")
+    print()
 
 
 def example_with_different_model():
@@ -184,7 +248,8 @@ def example_with_different_model():
     # Create minimal agent data for context scoring
     agent_data = AgentData(
         agent_task="Write a Python function to sort a list",
-        retrieved_context="Python's sorted() function returns a new sorted list from the items in an iterable."
+        retrieved_context="Python's sorted() function returns a new sorted list from the items in an iterable.",
+        agent_exit=True  # Agent has completed this simple task
     )
     
     print("=== Using Claude Model ===")

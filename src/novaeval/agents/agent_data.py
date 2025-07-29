@@ -49,8 +49,7 @@ class AgentData(BaseModel):
     retrieval_query: Optional[str] = None
     retrieved_context: Optional[str] = None
 
-    metadata: Optional[str] = None
+    exit_status: Optional[str] = None
+    agent_exit: bool = False
 
-#TODO:
-#add Exit_status .
-#TODO add a boolean, representing if the agent has exited.
+    metadata: Optional[str] = None

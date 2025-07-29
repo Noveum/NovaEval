@@ -49,12 +49,22 @@ def noveum_spans_preprocessing(json_dir: str = None, json_files: list = None, ou
             spans = data.get('spans', [])
             trace_id = data.get('trace_id')
             
+            # Sort spans by start_time to determine the last span
+            spans_with_times = []
             for span in spans:
+                start_time = span.get('start_time', '')
+                spans_with_times.append((span, start_time))
+            
+            # Sort by start_time (assuming ISO format or similar)
+            spans_with_times.sort(key=lambda x: x[1])
+            
+            for i, (span, _) in enumerate(spans_with_times):
                 # Extract basic span information
                 span_id = span.get('span_id')
                 parent_span_id = span.get('parent_span_id')
                 duration_ms = span.get('duration_ms')
                 status_message = span.get('status_message')
+                status = span.get('status', '')
                 
                 # Extract attributes
                 attributes = span.get('attributes', {})
@@ -92,13 +102,21 @@ def noveum_spans_preprocessing(json_dir: str = None, json_files: list = None, ou
                             attributes.get('tool.type', '') or 
                             attributes.get('llm.provider', ''))
                 
+                # Determine agent_exit - set True only for the last span in the trace
+                agent_exit = (i == len(spans_with_times) - 1)
+                
+                # Set exit_status to None/blank for Noveum dataset as requested
+                exit_status = None
+                
                 # Build metadata
                 metadata = {
                     'trace_id': trace_id,
                     'duration_ms': duration_ms,
                     'parent_span_id': parent_span_id,
                     'status_message': status_message,
-                    'agent_type': agent_type
+                    'agent_type': agent_type,
+                    'exit_status': exit_status,
+                    'agent_exit': agent_exit
                 }
                 
                 # Create row
@@ -110,10 +128,12 @@ def noveum_spans_preprocessing(json_dir: str = None, json_files: list = None, ou
                     'metadata': json.dumps(metadata),
                     'trace_id': trace_id,
                     'span_name': span.get('name', ''),
-                    'status': span.get('status', ''),
+                    'status': status,
                     'start_time': span.get('start_time', ''),
                     'end_time': span.get('end_time', ''),
-                    'attributes': json.dumps(attributes)
+                    'attributes': json.dumps(attributes),
+                    'exit_status': exit_status,
+                    'agent_exit': agent_exit
                 }
                 rows.append(row)
                 
@@ -163,6 +183,8 @@ def create_dataset(csv_path: str):
     for _, row in df.iterrows():
         turn_id = row.get('turn_id')
         agent_response = row.get('agent_response', '')
+        exit_status = row.get('exit_status')
+        agent_exit = row.get('agent_exit', False)
         
         # Build tool_call_results - for spans, we might not have traditional tool calls
         # but we can use the agent_response as a result
@@ -188,7 +210,9 @@ def create_dataset(csv_path: str):
             'status': row.get('status', ''),
             'start_time': row.get('start_time', ''),
             'end_time': row.get('end_time', ''),
-            'trace_id': row.get('trace_id', '')
+            'trace_id': row.get('trace_id', ''),
+            'exit_status': exit_status,
+            'agent_exit': agent_exit
         })
         
         mapped = {
@@ -200,6 +224,8 @@ def create_dataset(csv_path: str):
             'agent_response': agent_response,
             'tool_call_results': json.dumps(tool_call_results),
             'metadata': json.dumps(metadata),
+            'exit_status': exit_status,
+            'agent_exit': agent_exit,
         }
         rows.append(mapped)
     
@@ -218,6 +244,8 @@ def create_dataset(csv_path: str):
             agent_response='agent_response',
             tool_call_results='tool_call_results',
             metadata='metadata',
+            exit_status='exit_status',
+            agent_exit='agent_exit',
         )
     
     # Clean up temp file
@@ -256,6 +284,8 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
     for _, row in df.iterrows():
         turn_id = row.get('turn_id')
         agent_response = row.get('agent_response', '')
+        exit_status = row.get('exit_status')
+        agent_exit = row.get('agent_exit', False)
         
         # Build tool_call_results
         tool_call_results = [
@@ -280,7 +310,9 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
             'status': row.get('status', ''),
             'start_time': row.get('start_time', ''),
             'end_time': row.get('end_time', ''),
-            'trace_id': row.get('trace_id', '')
+            'trace_id': row.get('trace_id', ''),
+            'exit_status': exit_status,
+            'agent_exit': agent_exit
         })
         
         mapped = {
@@ -292,6 +324,8 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
             'agent_response': agent_response,
             'tool_call_results': json.dumps(tool_call_results),
             'metadata': json.dumps(metadata),
+            'exit_status': exit_status,
+            'agent_exit': agent_exit,
         }
         rows.append(mapped)
 
@@ -313,6 +347,8 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
             agent_response='agent_response',
             tool_call_results='tool_call_results',
             metadata='metadata',
+            exit_status='exit_status',
+            agent_exit='agent_exit',
         )
         
         # Clean up temp file

@@ -105,6 +105,29 @@ class AgentDataset:
             if value is None:
                 return None
             return str(value)
+        # Handle bool fields (including agent_exit)
+        if actual_type is bool:
+            if value is None:
+                # Return default value for boolean fields
+                field_info = AgentData.model_fields[field]
+                if hasattr(field_info, 'default') and field_info.default is not None:
+                    return field_info.default
+                return False  # Fallback default for bool
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, str):
+                value = value.strip().lower()
+                if value in ('true', '1', 'yes', 'on'):
+                    return True
+                elif value in ('false', '0', 'no', 'off'):
+                    return False
+                else:
+                    return False  # Default to False for unrecognized strings
+            # Convert numbers to bool (0 = False, anything else = True)
+            try:
+                return bool(value)
+            except (ValueError, TypeError):
+                return False
         # Default: return as is
         return value
 
@@ -128,6 +151,8 @@ class AgentDataset:
         tool_call_results: Optional[str] = None,
         retrieval_query: Optional[str] = None,
         retrieved_context: Optional[str] = None,
+        exit_status: Optional[str] = None,
+        agent_exit: Optional[str] = None,
         metadata: Optional[str] = None,
     ) -> None:
         field_map = {
@@ -148,6 +173,8 @@ class AgentDataset:
             "tool_call_results": tool_call_results,
             "retrieval_query": retrieval_query,
             "retrieved_context": retrieved_context,
+            "exit_status": exit_status,
+            "agent_exit": agent_exit,
             "metadata": metadata,
         }
         
@@ -191,6 +218,8 @@ class AgentDataset:
         tool_call_results: Optional[str] = None,
         retrieval_query: Optional[str] = None,
         retrieved_context: Optional[str] = None,
+        exit_status: Optional[str] = None,
+        agent_exit: Optional[str] = None,
         metadata: Optional[str] = None,
     ) -> None:
         field_map = {
@@ -211,6 +240,8 @@ class AgentDataset:
             "tool_call_results": tool_call_results,
             "retrieval_query": retrieval_query,
             "retrieved_context": retrieved_context,
+            "exit_status": exit_status,
+            "agent_exit": agent_exit,
             "metadata": metadata,
         }
         try:
@@ -280,6 +311,8 @@ class AgentDataset:
         tool_call_results: Optional[str] = None,
         retrieval_query: Optional[str] = None,
         retrieved_context: Optional[str] = None,
+        exit_status: Optional[str] = None,
+        agent_exit: Optional[str] = None,
         metadata: Optional[str] = None,
     ) -> Iterator[list[AgentData]]:
         """
@@ -312,6 +345,8 @@ class AgentDataset:
             "tool_call_results": tool_call_results,
             "retrieval_query": retrieval_query,
             "retrieved_context": retrieved_context,
+            "exit_status": exit_status,
+            "agent_exit": agent_exit,
             "metadata": metadata,
         }
         
@@ -357,6 +392,8 @@ class AgentDataset:
         tool_call_results: Optional[str] = None,
         retrieval_query: Optional[str] = None,
         retrieved_context: Optional[str] = None,
+        exit_status: Optional[str] = None,
+        agent_exit: Optional[str] = None,
         metadata: Optional[str] = None,
     ) -> Iterator[list[AgentData]]:
         """
@@ -392,6 +429,8 @@ class AgentDataset:
             "tool_call_results": tool_call_results,
             "retrieval_query": retrieval_query,
             "retrieved_context": retrieved_context,
+            "exit_status": exit_status,
+            "agent_exit": agent_exit,
             "metadata": metadata,
         }
         

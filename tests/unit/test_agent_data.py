@@ -52,6 +52,8 @@ def test_agent_data_complete():
         tool_call_results=[ToolResult(call_id="call1", result=3, success=True)],
         retrieval_query="What is 1+2?",
         retrieved_context="Math context",
+        exit_status="completed",
+        agent_exit=True,
         metadata="metadata string",
     )
     assert agent.user_id == "user42"
@@ -63,6 +65,8 @@ def test_agent_data_complete():
     assert agent.agent_name == "EvalBot"
     assert len(agent.tools_available) == 1
     assert agent.retrieved_context == "Math context"
+    assert agent.exit_status == "completed"
+    assert agent.agent_exit is True
 
 
 @pytest.mark.unit
@@ -87,6 +91,8 @@ def test_agent_data_missing_required_fields():
     assert agent.tool_call_results is None
     assert agent.retrieval_query is None
     assert agent.retrieved_context is None
+    assert agent.exit_status is None
+    assert agent.agent_exit is False
     assert agent.metadata is None
 
 
@@ -194,6 +200,8 @@ def test_agent_data_defaults():
     assert agent.tool_calls == []
     assert agent.parameters_passed == {}
     assert agent.tool_call_results is None
+    assert agent.exit_status is None
+    assert agent.agent_exit is False
     assert agent.metadata is None
 
 
@@ -303,3 +311,43 @@ def test_agent_data_retrieval_fields_edge_cases():
     agent = AgentData(retrieval_query="q", retrieved_context="ctx")
     assert agent.retrieval_query == "q"
     assert agent.retrieved_context == "ctx"
+
+
+@pytest.mark.unit
+def test_agent_data_exit_fields_defaults():
+    agent = AgentData()
+    assert agent.exit_status is None
+    assert agent.agent_exit is False
+
+
+@pytest.mark.unit
+def test_agent_data_exit_fields_valid_values():
+    agent = AgentData(exit_status="success", agent_exit=True)
+    assert agent.exit_status == "success"
+    assert agent.agent_exit is True
+    
+    agent = AgentData(exit_status="error", agent_exit=False)
+    assert agent.exit_status == "error"
+    assert agent.agent_exit is False
+
+
+@pytest.mark.unit
+def test_agent_data_exit_fields_invalid_types():
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        AgentData(exit_status=123)
+    with pytest.raises(ValidationError):
+        AgentData(agent_exit="not_boolean")
+    with pytest.raises(ValidationError):
+        AgentData(agent_exit=[1, 2, 3])  # List cannot be converted to boolean
+
+
+@pytest.mark.unit
+def test_agent_data_exit_fields_serialization():
+    agent = AgentData(exit_status="timeout", agent_exit=True)
+    data = agent.model_dump()
+    agent2 = AgentData.model_validate(data)
+    assert agent2.exit_status == "timeout"
+    assert agent2.agent_exit is True
+    assert agent2 == agent

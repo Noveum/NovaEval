@@ -123,6 +123,66 @@ def parse_score_with_reasoning(response: str) -> ScoreWithReasoning:
         )
 
 
+def parse_score_with_original_task(response: str) -> ScoreWithOriginalTask:
+    """
+    Parse LLM response to extract original task, score and reasoning with fallback handling.
+    
+    Args:
+        response: Raw LLM response string
+        
+    Returns:
+        ScoreWithOriginalTask object
+    """
+    import re
+    
+    try:
+        # Clean and parse JSON response
+        cleaned_response = response.strip()
+        
+        # Try to extract JSON from response if it's embedded in text
+        if "{" in cleaned_response and "}" in cleaned_response:
+            start_idx = cleaned_response.find("{")
+            end_idx = cleaned_response.rfind("}") + 1
+            json_str = cleaned_response[start_idx:end_idx]
+        else:
+            json_str = cleaned_response
+        
+        try:
+            parsed_response = json.loads(json_str)
+        except json.JSONDecodeError:
+            # Fallback: try to extract values from response text using regex
+            task_match = re.search(r'["\']?original_task["\']?\s*:\s*["\']([^"\']*)["\']', cleaned_response)
+            score_match = re.search(r'["\']?score["\']?\s*:\s*([0-9.]+)', cleaned_response)
+            reasoning_match = re.search(r'["\']?reasoning["\']?\s*:\s*["\']([^"\']*)["\']', cleaned_response)
+            
+            return ScoreWithOriginalTask(
+                original_task=task_match.group(1) if task_match else "Unknown task",
+                score=float(score_match.group(1)) if score_match else 1.0,
+                reasoning=reasoning_match.group(1) if reasoning_match else "Error parsing response"
+            )
+        
+        # Extract values from parsed JSON
+        if isinstance(parsed_response, dict):
+            return ScoreWithOriginalTask(
+                original_task=str(parsed_response.get("original_task", "Unknown task")),
+                score=float(parsed_response.get("score", 1.0)),
+                reasoning=str(parsed_response.get("reasoning", "No reasoning provided"))
+            )
+        else:
+            return ScoreWithOriginalTask(
+                original_task="Unknown task",
+                score=1.0,
+                reasoning=f"Unexpected response format: {str(parsed_response)}"
+            )
+        
+    except Exception as e:
+        return ScoreWithOriginalTask(
+            original_task="Unknown task",
+            score=1.0,
+            reasoning=f"Error parsing response: {str(e)}"
+        )
+
+
 class ScoreListResponse(BaseModel):
     """Pydantic model to constrain LLM output to a list of scores with reasoning."""
     
@@ -377,11 +437,12 @@ def task_progression_scorer(
     
     try:
         response = model.generate(prompt)
-        return parse_score_with_reasoning(response)
+        return parse_score_with_original_task(response)
         
     except Exception as e:
         # Return default low score if parsing fails
-        return ScoreWithReasoning(
+        return ScoreWithOriginalTask(
+            original_task=agent_data.agent_task or "Unknown task",
             score=1.0,
             reasoning=f"Failed to evaluate task progression: {str(e)}"
         )
@@ -499,14 +560,13 @@ def goal_achievement_scorer(
     Returns:
         ScoreWithOriginalTask object with goal achievement score (1-10), or error dict if fields missing
     """
-    # Check if agent has exited - will be implemented when boolean is added
-    # TODO: Uncomment when agent_exit boolean is added to AgentData
-    # if hasattr(agent_data, 'agent_exit') and not agent_data.agent_exit:
-    #     return ScoreWithOriginalTask(
-    #         original_task="N/A - Agent has not exited",
-    #         score=-1.0,
-    #         reasoning="The agent has not yet exited"
-    #     )
+    # Check if agent has exited
+    if not agent_data.agent_exit:
+        return ScoreWithOriginalTask(
+            original_task="N/A - Agent has not exited",
+            score=-1.0,
+            reasoning="The agent has not yet exited"
+        )
     
     required_fields = {
         "trace": agent_data.trace is not None and len(agent_data.trace) > 0
@@ -606,14 +666,13 @@ def conversation_coherence_scorer(
     Returns:
         ScoreWithOriginalTask object with coherence score (1-10), or error dict if fields missing
     """
-    # Check if agent has exited - will be implemented when boolean is added
-    # TODO: Uncomment when agent_exit boolean is added to AgentData
-    # if hasattr(agent_data, 'agent_exit') and not agent_data.agent_exit:
-    #     return ScoreWithOriginalTask(
-    #         original_task="N/A - Agent has not exited",
-    #         score=-1.0,
-    #         reasoning="The agent has not yet exited"
-    #     )
+    # Check if agent has exited
+    if not agent_data.agent_exit:
+        return ScoreWithOriginalTask(
+            original_task="N/A - Agent has not exited",
+            score=-1.0,
+            reasoning="The agent has not yet exited"
+        )
     
     required_fields = {
         "trace": agent_data.trace is not None and len(agent_data.trace) > 0
@@ -791,4 +850,37 @@ class AgentScorers:
         conversation_coherence_result = self.score_conversation_coherence(agent_data)
         results["conversation_coherence"] = conversation_coherence_result
         
-        return results 
+        return results
+    
+    # Convenience methods without 'score_' prefix for backward compatibility
+    def tool_relevancy(self, agent_data: AgentData) -> Union[list[ScoreWithReasoning], dict[str, Any]]:
+        """Score tool call relevancy."""
+        return self.score_tool_relevancy(agent_data)
+    
+    def tool_correctness(self, agent_data: AgentData) -> Union[list[ScoreWithReasoning], dict[str, Any]]:
+        """Score tool call correctness."""
+        return self.score_tool_correctness(agent_data)
+    
+    def parameter_correctness(self, agent_data: AgentData) -> Union[list[ScoreWithReasoning], dict[str, Any]]:
+        """Score parameter correctness."""
+        return self.score_parameter_correctness(agent_data)
+    
+    def task_progression(self, agent_data: AgentData) -> Union[ScoreWithOriginalTask, dict[str, Any]]:
+        """Score task progression."""
+        return self.score_task_progression(agent_data)
+    
+    def context_relevancy(self, agent_data: AgentData) -> Union[ScoreWithReasoning, dict[str, Any]]:
+        """Score response appropriateness given task and role."""
+        return self.score_context_relevancy(agent_data)
+    
+    def role_adherence(self, agent_data: AgentData) -> Union[ScoreWithReasoning, dict[str, Any]]:
+        """Score role adherence."""
+        return self.score_role_adherence(agent_data)
+    
+    def goal_achievement(self, agent_data: AgentData) -> Union[ScoreWithOriginalTask, dict[str, Any]]:
+        """Score goal achievement."""
+        return self.score_goal_achievement(agent_data)
+
+    def conversation_coherence(self, agent_data: AgentData) -> Union[ScoreWithOriginalTask, dict[str, Any]]:
+        """Score conversation coherence."""
+        return self.score_conversation_coherence(agent_data) 

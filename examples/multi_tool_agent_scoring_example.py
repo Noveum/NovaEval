@@ -105,6 +105,7 @@ def main():
             )
         ],
         retrieved_context="Mathematical operations: Addition combines numbers. Memory storage helps retain important results.",
+        agent_exit=True,  # Agent has completed the task
         metadata="Multi-tool evaluation example"
     )
     
@@ -184,6 +185,37 @@ def main():
         print(f"   Reasoning: {role_adherence.reasoning}\n")
     else:
         print(f"   Error: {role_adherence}\n")
+    
+    # Add trace for goal achievement and conversation coherence scoring
+    agent_data.trace = [
+        {"type": "user_input", "content": "Calculate 20 + 22 and store the result in memory"},
+        {"type": "agent_response", "content": "I'll calculate 20 + 22 and store the result for you."},
+        {"type": "tool_call", "tool": "calculator", "parameters": {"operation": "add", "a": 20, "b": 22}},
+        {"type": "tool_result", "result": 42},
+        {"type": "tool_call", "tool": "memory", "parameters": {"key": "calculation_result", "value": "42"}},
+        {"type": "tool_result", "result": {"success": True}},
+        {"type": "tool_call", "tool": "weather", "parameters": {"location": "New York"}},
+        {"type": "tool_result", "result": {"weather": "sunny", "temperature": 75}},
+        {"type": "agent_response", "content": "I've calculated 20 + 22 = 42 and stored it in memory. I also checked the weather for some reason."}
+    ]
+    
+    print("7. Goal Achievement Scoring:")
+    goal_achievement = scorers.score_goal_achievement(agent_data)
+    if hasattr(goal_achievement, 'score'):
+        print(f"   Original Task: {goal_achievement.original_task}")
+        print(f"   Goal Achievement: {goal_achievement.score}/10.0")
+        print(f"   Reasoning: {goal_achievement.reasoning}\n")
+    else:
+        print(f"   Error: {goal_achievement}\n")
+    
+    print("8. Conversation Coherence Scoring:")
+    conversation_coherence = scorers.score_conversation_coherence(agent_data)
+    if hasattr(conversation_coherence, 'score'):
+        print(f"   Original Task: {conversation_coherence.original_task}")
+        print(f"   Conversation Coherence: {conversation_coherence.score}/10.0")
+        print(f"   Reasoning: {conversation_coherence.reasoning}\n")
+    else:
+        print(f"   Error: {conversation_coherence}\n")
     
     # Summary
     print("=== Summary ===")

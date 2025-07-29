@@ -49,48 +49,66 @@ def swe_agent_trajectories_preprocessing(parquet_dir: str = None, parquet_files:
         for parquet_file in parquet_files:
             print(f"Processing {parquet_file}")
             
-            # First read the file to check columns
-            df = pd.read_parquet(parquet_file, columns=required_cols)
-            missing = [col for col in required_cols if col not in df.columns]
-            if missing:
-                raise ValueError(f"Missing required columns: {missing}")
-            
-            # Process in chunks
-            total_rows = len(df)
-            for start_idx in range(0, total_rows, chunk_size):
-                end_idx = min(start_idx + chunk_size, total_rows)
-                chunk_df = df.iloc[start_idx:end_idx]
+            try:
+                # First read the file to check columns
+                df = pd.read_parquet(parquet_file, columns=required_cols)  
+                missing = [col for col in required_cols if col not in df.columns]
+                if missing:
+                    raise ValueError(f"Missing required columns: {missing}")
                 
-                # Process each chunk
-                rows = []
-                for _, row in chunk_df.iterrows():
-                    traj = row['trajectory'].tolist()
-                    if not isinstance(traj, list):
-                        continue
+                # Process in chunks
+                total_rows = len(df)
+                for start_idx in range(0, total_rows, chunk_size):
+                    end_idx = min(start_idx + chunk_size, total_rows)
+                    chunk_df = df.iloc[start_idx:end_idx]
                     
-                    # Create base row once
-                    base = {col: row[col] for col in required_cols if col != 'trajectory'}
-                    
-                    # Process each step
-                    for step in traj:
-                        if not isinstance(step, dict):
+                    # Process each chunk
+                    rows = []
+                    for _, row in chunk_df.iterrows():
+                        traj = row['trajectory']
+                        # Handle both list and pandas Series
+                        if hasattr(traj, 'tolist'):
+                            traj = traj.tolist()
+                        if not isinstance(traj, list):
                             continue
-                        expanded = {**base, **step}
-                        rows.append(expanded)
-                
-                # Convert chunk to DataFrame and save
-                if rows:
-                    chunk_output_df = pd.DataFrame(rows)
-                    chunk_output_df.to_csv(f, index=False, header=not header_written, 
-                                         escapechar='\\', encoding='utf-8', quoting=1)
-                    header_written = True
-                
-                # Clear memory
-                del rows
-                del chunk_output_df
-                
-            # Clear memory after processing each file
-            del df
+                        
+                        # Create base row once
+                        base = {col: row[col] for col in required_cols if col != 'trajectory'}
+                        
+                        # Process each step
+                        for i, step in enumerate(traj):
+                            if not isinstance(step, dict):
+                                continue
+                            expanded = {**base, **step}
+                            
+                            # Set agent_exit=True for the last item in the trajectory
+                            expanded['agent_exit'] = (i == len(traj) - 1)
+                            
+                            rows.append(expanded)
+                    
+                    # Convert chunk to DataFrame and save
+                    if rows:
+                        chunk_output_df = pd.DataFrame(rows)
+                        chunk_output_df.to_csv(f, index=False, header=not header_written, 
+                                             escapechar='\\', encoding='utf-8', quoting=1)
+                        header_written = True
+                    
+                    # Clear memory
+                    del rows
+                    if 'chunk_output_df' in locals():
+                        del chunk_output_df
+                    
+                # Clear memory after processing each file
+                del df
+            except Exception as e:
+                print(f"Error processing file {parquet_file}: {e}")
+                continue
+        
+        # Ensure header is written even if no data was processed
+        if not header_written:
+            # Write just the header row
+            empty_df = pd.DataFrame(columns=['instance_id', 'model_name', 'target', 'exit_status', 'generated_patch', 'eval_logs', 'agent_exit'])
+            empty_df.to_csv(f, index=False, header=True, escapechar='\\', encoding='utf-8', quoting=1)
 
 def create_dataset(csv_path: str):
     import pandas as pd
@@ -114,6 +132,7 @@ def create_dataset(csv_path: str):
         instance_id = row.get('instance_id')
         generated_patch = row.get('generated_patch')
         exit_status = row.get('exit_status')
+        agent_exit = row.get('agent_exit', False)
         mask = row.get('mask')
         # Build tool_call_results as a list of dicts
         tool_call_results = [
@@ -125,7 +144,7 @@ def create_dataset(csv_path: str):
             }
         ]
         # Build metadata as JSON string
-        metadata = json.dumps({'exit_status': exit_status, 'mask': mask})
+        metadata = json.dumps({'exit_status': exit_status, 'mask': mask, 'agent_exit': agent_exit})
         mapped = {
             'turn_id': instance_id,
             'agent_name': row.get('model_name'),
@@ -135,6 +154,8 @@ def create_dataset(csv_path: str):
             'agent_response': row.get('text'),
             'tool_call_results': json.dumps(tool_call_results),
             'metadata': metadata,
+            'exit_status': exit_status,
+            'agent_exit': agent_exit,
         }
         rows.append(mapped)
     # Write to a temp CSV for ingest_from_csv
@@ -153,6 +174,8 @@ def create_dataset(csv_path: str):
             agent_response='agent_response',
             tool_call_results='tool_call_results',
             metadata='metadata',
+            exit_status='exit_status',
+            agent_exit='agent_exit',
         )
     return dataset
 
@@ -178,6 +201,7 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
         instance_id = row.get('instance_id')
         generated_patch = row.get('generated_patch')
         exit_status = row.get('exit_status')
+        agent_exit = row.get('agent_exit', False)
         mask = row.get('mask')
         # Build tool_call_results as a list of dicts
         tool_call_results = [
@@ -189,7 +213,7 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
             }
         ]
         # Build metadata as JSON string
-        metadata = json.dumps({'exit_status': exit_status, 'mask': mask})
+        metadata = json.dumps({'exit_status': exit_status, 'mask': mask, 'agent_exit': agent_exit})
         mapped = {
             'turn_id': instance_id,
             'agent_name': row.get('model_name'),
@@ -199,6 +223,8 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
             'agent_response': row.get('text'),
             'tool_call_results': json.dumps(tool_call_results),
             'metadata': metadata,
+            'exit_status': exit_status,
+            'agent_exit': agent_exit,
         }
         rows.append(mapped)
 
@@ -220,6 +246,8 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
             agent_response='agent_response',
             tool_call_results='tool_call_results',
             metadata='metadata',
+            exit_status='exit_status',
+            agent_exit='agent_exit',
         )
         
         # Clean up temp file
