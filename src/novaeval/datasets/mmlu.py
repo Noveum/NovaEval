@@ -119,7 +119,7 @@ class MMLUDataset(BaseDataset):
         Returns:
             List of formatted samples
         """
-        random.seed(self.seed)
+        rng = random.Random(self.seed)
         samples = []
 
         if self.subset:
@@ -136,7 +136,7 @@ class MMLUDataset(BaseDataset):
                     print(f"Warning: Could not load subject {subject}: {e}")
 
         # Shuffle and limit samples
-        random.shuffle(samples)
+        rng.shuffle(samples)
         if self.num_samples:
             samples = samples[: self.num_samples]
 

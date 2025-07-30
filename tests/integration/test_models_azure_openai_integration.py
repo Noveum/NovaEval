@@ -123,13 +123,6 @@ class TestAzureOpenAIModelIntegration:
         info = model.get_info()
         assert info["pricing"] == (0.0, 0.0)
 
-    def test_rate_limiting_and_retries(self, azure_openai_model):
-        """
-        This test is difficult to trigger reliably without a special setup.
-        It serves as a placeholder for manual or targeted testing.
-        """
-        pytest.skip("Rate limit testing is environment-dependent and skipped.")
-
 
 @integration_test
 @requires_api_key

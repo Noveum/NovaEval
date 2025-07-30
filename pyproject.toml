@@ -7,7 +7,7 @@ name = "novaeval"
 version = "0.4.0"
 description = "A comprehensive, open-source LLM evaluation framework for testing and benchmarking AI models"
 readme = "README.md"
-license = "Apache-2.0"
+license = {file = "LICENSE"}
 authors = [
     {name = "Noveum AI", email = "team@noveum.ai"},
 ]
@@ -92,6 +92,14 @@ aws = [
 gcp = [
     "google-cloud-aiplatform>=1.38.0",
 ]
+api = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.25.0",
+    "python-dotenv>=1.0.0",
+    "python-multipart>=0.0.6",
+    "pydantic-settings>=2.0.0",
+    "prometheus_client>=0.17.0",
+]
 all = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
@@ -137,16 +145,25 @@ custom = "novaeval.datasets.custom:CustomDataset"
 [project.entry-points."novaeval.models"]
 openai = "novaeval.models.openai:OpenAIModel"
 anthropic = "novaeval.models.anthropic:AnthropicModel"
-noveum = "novaeval.models.noveum:NoveumModel"
+azure_openai = "novaeval.models.azure_openai:AzureOpenAIModel"
+gemini = "novaeval.models.gemini:GeminiModel"
 
 [project.entry-points."novaeval.scorers"]
 accuracy = "novaeval.scorers.accuracy:AccuracyScorer"
+exact_match = "novaeval.scorers.accuracy:ExactMatchScorer"
+f1 = "novaeval.scorers.accuracy:F1Scorer"
 g_eval = "novaeval.scorers.g_eval:GEvalScorer"
-rag = "novaeval.scorers.rag:RAGScorer"
-conversational = "novaeval.scorers.conversational:ConversationalScorer"
+conversational = "novaeval.scorers.conversational:ConversationalMetricsScorer"
+panel_judge = "novaeval.scorers.panel_judge:PanelOfJudgesScorer"
+answer_relevancy = "novaeval.scorers.rag:AnswerRelevancyScorer"
+faithfulness = "novaeval.scorers.rag:FaithfulnessScorer"
+contextual_precision = "novaeval.scorers.rag:ContextualPrecisionScorer"
+contextual_recall = "novaeval.scorers.rag:ContextualRecallScorer"
+ragas = "novaeval.scorers.rag:RAGASScorer"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "."]
+include = ["novaeval*", "app*"]
 
 [tool.setuptools.package-data]
 novaeval = ["py.typed", "*.yaml", "*.json", "templates/*.j2"]
