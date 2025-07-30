@@ -3,7 +3,9 @@ import json
 import typing
 from collections.abc import Iterator
 from typing import Any, Optional
+
 import pandas as pd
+
 from novaeval.agents.agent_data import AgentData, ToolCall
 
 
@@ -110,16 +112,16 @@ class AgentDataset:
             if value is None:
                 # Return default value for boolean fields
                 field_info = AgentData.model_fields[field]
-                if hasattr(field_info, 'default') and field_info.default is not None:
+                if hasattr(field_info, "default") and field_info.default is not None:
                     return field_info.default
                 return False  # Fallback default for bool
             if isinstance(value, bool):
                 return value
             if isinstance(value, str):
                 value = value.strip().lower()
-                if value in ('true', '1', 'yes', 'on'):
+                if value in ("true", "1", "yes", "on"):
                     return True
-                elif value in ('false', '0', 'no', 'off'):
+                elif value in ("false", "0", "no", "off"):
                     return False
                 else:
                     return False  # Default to False for unrecognized strings
@@ -177,26 +179,31 @@ class AgentDataset:
             "agent_exit": agent_exit,
             "metadata": metadata,
         }
-        
+
         try:
             import pandas as pd
+
             # Process CSV in chunks to save memory
             chunk_size = 1000  # Adjust based on memory constraints
-            
-            for chunk_df in pd.read_csv(file_path, encoding='utf-8', chunksize=chunk_size):
+
+            for chunk_df in pd.read_csv(
+                file_path, encoding="utf-8", chunksize=chunk_size
+            ):
                 for _, row in chunk_df.iterrows():
                     data_kwargs = {}
                     for field in AgentData.model_fields:
-                        col = field_map[field] if field_map[field] is not None else field
+                        col = (
+                            field_map[field] if field_map[field] is not None else field
+                        )
                         value = row.get(col, None)
                         data_kwargs[field] = self._parse_field(field, value)
                     self.data.append(AgentData(**data_kwargs))
-                    
+
                 # Clear chunk from memory
                 del chunk_df
-                
+
         except Exception as e:
-            raise ValueError(f"Error reading CSV file '{file_path}': {str(e)}")
+            raise ValueError(f"Error reading CSV file '{file_path}': {e!s}")
 
     def ingest_from_json(
         self,
@@ -318,12 +325,12 @@ class AgentDataset:
         """
         Stream data from CSV in chunks without loading entire file.
         Returns an iterator of lists, where each list contains chunk_size AgentData objects.
-        
+
         Args:
             file_path: Path to the CSV file
             chunk_size: Number of rows to process at a time
             user_id, task_id, etc.: Column name mappings for AgentData fields
-            
+
         Returns:
             Iterator yielding lists of AgentData objects, each list of size <= chunk_size
         """
@@ -349,27 +356,31 @@ class AgentDataset:
             "agent_exit": agent_exit,
             "metadata": metadata,
         }
-        
+
         try:
             # Process CSV in chunks
-            for chunk_df in pd.read_csv(file_path, encoding='utf-8', chunksize=chunk_size):
+            for chunk_df in pd.read_csv(
+                file_path, encoding="utf-8", chunksize=chunk_size
+            ):
                 chunk_data = []
-                
+
                 for _, row in chunk_df.iterrows():
                     data_kwargs = {}
                     for field in AgentData.model_fields:
-                        col = field_map[field] if field_map[field] is not None else field
+                        col = (
+                            field_map[field] if field_map[field] is not None else field
+                        )
                         value = row.get(col, None)
                         data_kwargs[field] = self._parse_field(field, value)
                     chunk_data.append(AgentData(**data_kwargs))
-                
+
                 yield chunk_data
-                
+
                 # Clear memory
                 del chunk_data
-                
+
         except Exception as e:
-            raise ValueError(f"Error reading CSV file '{file_path}': {str(e)}")
+            raise ValueError(f"Error reading CSV file '{file_path}': {e!s}")
 
     def stream_from_json(
         self,
@@ -399,15 +410,15 @@ class AgentDataset:
         """
         Stream data from JSON in chunks without loading entire file.
         Returns an iterator of lists, where each list contains chunk_size AgentData objects.
-        
+
         Args:
             file_path: Path to the JSON file
             chunk_size: Number of items to process at a time
             user_id, task_id, etc.: Field name mappings for AgentData fields
-            
+
         Returns:
             Iterator yielding lists of AgentData objects, each list of size <= chunk_size
-            
+
         Note:
             Expects JSON file to contain an array of objects at the root level
         """
@@ -433,40 +444,44 @@ class AgentDataset:
             "agent_exit": agent_exit,
             "metadata": metadata,
         }
-        
+
         try:
             import ijson  # Import here to not require it unless method is used
-            
+
             chunk_data = []
-            with open(file_path, 'rb') as file:
+            with open(file_path, "rb") as file:
                 # Parse JSON array items one at a time
-                parser = ijson.items(file, 'item')
-                
+                parser = ijson.items(file, "item")
+
                 for item in parser:
                     if not isinstance(item, dict):
                         continue
-                        
+
                     data_kwargs = {}
                     for field in AgentData.model_fields:
-                        key = field_map[field] if field_map[field] is not None else field
+                        key = (
+                            field_map[field] if field_map[field] is not None else field
+                        )
                         value = item.get(key, None)
                         data_kwargs[field] = self._parse_field(field, value)
-                    
+
                     chunk_data.append(AgentData(**data_kwargs))
-                    
+
                     # When chunk is full, yield it
                     if len(chunk_data) >= chunk_size:
                         yield chunk_data
                         chunk_data = []
-                
+
                 # Yield remaining data if any
                 if chunk_data:
                     yield chunk_data
-                    
+
         except ImportError:
-            raise ImportError("ijson package is required for streaming JSON. Install with: pip install ijson")
+            raise ImportError(
+                "ijson package is required for streaming JSON. Install with: pip install ijson"
+            )
         except Exception as e:
-            raise ValueError(f"Error reading JSON file '{file_path}': {str(e)}")
+            raise ValueError(f"Error reading JSON file '{file_path}': {e!s}")
 
     def get_data(self) -> list[AgentData]:
         return self.data.copy()

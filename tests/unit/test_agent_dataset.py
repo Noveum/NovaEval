@@ -2,12 +2,12 @@ import csv
 import json
 import os
 import tempfile
-import pytest
 from unittest.mock import patch
 
+import pytest
+
 from novaeval.agents.agent_data import AgentData
-from novaeval.agents.agent_dataset import AgentDataset
-from novaeval.agents.agent_dataset import ToolCall
+from novaeval.agents.agent_dataset import AgentDataset, ToolCall
 
 
 def minimal_agent_data_dict():
@@ -112,7 +112,7 @@ def assert_missing_fields_defaults(agent):
                 assert val.model_dump() == {}
             else:
                 assert val is None or val == [] or val == {}
-    
+
     # Check agent_exit specifically has its default value
     assert agent.agent_exit is False
 
@@ -880,14 +880,14 @@ def test_new_exit_fields_csv_json_ingestion(tmp_path):
         "exit_status": "timeout",
         "agent_exit": True,
     }
-    
+
     # Test CSV ingestion
     csv_file = tmp_path / "exit_test.csv"
     with open(csv_file, "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=data_dict.keys())
         writer.writeheader()
         writer.writerow(data_dict)
-    
+
     ds = AgentDataset()
     ds.ingest_from_csv(str(csv_file))
     assert len(ds.data) == 1
@@ -895,12 +895,12 @@ def test_new_exit_fields_csv_json_ingestion(tmp_path):
     assert agent.agent_name == "TestAgent"
     assert agent.exit_status == "timeout"
     assert agent.agent_exit is True
-    
+
     # Test JSON ingestion
     json_file = tmp_path / "exit_test.json"
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump([data_dict], f)
-    
+
     ds2 = AgentDataset()
     ds2.ingest_from_json(str(json_file))
     assert len(ds2.data) == 1
@@ -908,7 +908,7 @@ def test_new_exit_fields_csv_json_ingestion(tmp_path):
     assert agent2.agent_name == "TestAgent"
     assert agent2.exit_status == "timeout"
     assert agent2.agent_exit is True
-    
+
     # Test export to CSV
     export_csv = tmp_path / "export_exit.csv"
     ds.export_to_csv(str(export_csv))
@@ -918,7 +918,7 @@ def test_new_exit_fields_csv_json_ingestion(tmp_path):
         assert len(rows) == 1
         assert rows[0]["exit_status"] == "timeout"
         assert rows[0]["agent_exit"] == "True"  # Boolean becomes string in CSV
-    
+
     # Test export to JSON
     export_json = tmp_path / "export_exit.json"
     ds.export_to_json(str(export_json))
@@ -937,19 +937,17 @@ def test_exit_fields_with_field_mapping(tmp_path):
         "custom_exit_status": "error",
         "custom_agent_exit": False,
     }
-    
+
     # Test CSV with field mapping
     csv_file = tmp_path / "mapped_exit.csv"
     with open(csv_file, "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=data.keys())
         writer.writeheader()
         writer.writerow(data)
-    
+
     ds = AgentDataset()
     ds.ingest_from_csv(
-        str(csv_file),
-        exit_status="custom_exit_status",
-        agent_exit="custom_agent_exit"
+        str(csv_file), exit_status="custom_exit_status", agent_exit="custom_agent_exit"
     )
     assert len(ds.data) == 1
     agent = ds.data[0]
@@ -959,33 +957,36 @@ def test_exit_fields_with_field_mapping(tmp_path):
 
 # Test coverage improvements for missing lines
 
+
 def test_stream_from_csv_basic():
     """Test basic stream_from_csv functionality."""
     csv_data = """user_id,task_id,turn_id,ground_truth,agent_name,agent_response
 user1,task1,turn1,truth1,agent1,response1
 user2,task2,turn2,truth2,agent2,response2
 user3,task3,turn3,truth3,agent3,response3"""
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as temp_file:
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".csv", delete=False
+    ) as temp_file:
         temp_file.write(csv_data)
         temp_file_path = temp_file.name
-    
+
     try:
         ds = AgentDataset()
         chunks = list(ds.stream_from_csv(temp_file_path, chunk_size=2))
-        
+
         assert len(chunks) == 2  # 3 items with chunk_size=2 gives 2 chunks
         assert len(chunks[0]) == 2
         assert len(chunks[1]) == 1
-        
+
         # Check first chunk data
         assert chunks[0][0].user_id == "user1"
         assert chunks[0][0].task_id == "task1"
         assert chunks[0][1].user_id == "user2"
-        
+
         # Check second chunk data
         assert chunks[1][0].user_id == "user3"
-        
+
     finally:
         os.unlink(temp_file_path)
 
@@ -995,28 +996,32 @@ def test_stream_from_csv_with_field_mapping():
     csv_data = """custom_user,custom_task,custom_turn,custom_agent,custom_response
 user1,task1,turn1,agent1,response1
 user2,task2,turn2,agent2,response2"""
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as temp_file:
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".csv", delete=False
+    ) as temp_file:
         temp_file.write(csv_data)
         temp_file_path = temp_file.name
-    
+
     try:
         ds = AgentDataset()
-        chunks = list(ds.stream_from_csv(
-            temp_file_path, 
-            chunk_size=10,
-            user_id="custom_user",
-            task_id="custom_task", 
-            turn_id="custom_turn",
-            agent_name="custom_agent",
-            agent_response="custom_response"
-        ))
-        
+        chunks = list(
+            ds.stream_from_csv(
+                temp_file_path,
+                chunk_size=10,
+                user_id="custom_user",
+                task_id="custom_task",
+                turn_id="custom_turn",
+                agent_name="custom_agent",
+                agent_response="custom_response",
+            )
+        )
+
         assert len(chunks) == 1
         assert len(chunks[0]) == 2
         assert chunks[0][0].user_id == "user1"
         assert chunks[0][0].agent_name == "agent1"
-        
+
     finally:
         os.unlink(temp_file_path)
 
@@ -1024,7 +1029,7 @@ user2,task2,turn2,agent2,response2"""
 def test_stream_from_csv_file_error():
     """Test stream_from_csv with file read error."""
     ds = AgentDataset()
-    
+
     with pytest.raises(ValueError, match="Error reading CSV file"):
         list(ds.stream_from_csv("/nonexistent/file.csv"))
 
@@ -1034,20 +1039,22 @@ def test_stream_from_csv_memory_management():
     csv_data = """user_id,task_id,turn_id,agent_name
 user1,task1,turn1,agent1
 user2,task2,turn2,agent2"""
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as temp_file:
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".csv", delete=False
+    ) as temp_file:
         temp_file.write(csv_data)
         temp_file_path = temp_file.name
-    
+
     try:
         ds = AgentDataset()
         chunks = list(ds.stream_from_csv(temp_file_path, chunk_size=1))
-        
+
         # Should have processed properly without memory issues
         assert len(chunks) == 2
         assert len(chunks[0]) == 1
         assert len(chunks[1]) == 1
-        
+
     finally:
         os.unlink(temp_file_path)
 
@@ -1057,26 +1064,28 @@ def test_stream_from_json_basic():
     json_data = [
         {"user_id": "user1", "task_id": "task1", "agent_name": "agent1"},
         {"user_id": "user2", "task_id": "task2", "agent_name": "agent2"},
-        {"user_id": "user3", "task_id": "task3", "agent_name": "agent3"}
+        {"user_id": "user3", "task_id": "task3", "agent_name": "agent3"},
     ]
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", delete=False
+    ) as temp_file:
         json.dump(json_data, temp_file)
         temp_file_path = temp_file.name
-    
+
     try:
         ds = AgentDataset()
         chunks = list(ds.stream_from_json(temp_file_path, chunk_size=2))
-        
+
         assert len(chunks) == 2  # 3 items with chunk_size=2 gives 2 chunks
         assert len(chunks[0]) == 2
         assert len(chunks[1]) == 1
-        
+
         # Check data
         assert chunks[0][0].user_id == "user1"
         assert chunks[0][1].user_id == "user2"
         assert chunks[1][0].user_id == "user3"
-        
+
     finally:
         os.unlink(temp_file_path)
 
@@ -1085,28 +1094,32 @@ def test_stream_from_json_with_field_mapping():
     """Test stream_from_json with custom field mapping."""
     json_data = [
         {"custom_user": "user1", "custom_task": "task1", "custom_agent": "agent1"},
-        {"custom_user": "user2", "custom_task": "task2", "custom_agent": "agent2"}
+        {"custom_user": "user2", "custom_task": "task2", "custom_agent": "agent2"},
     ]
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", delete=False
+    ) as temp_file:
         json.dump(json_data, temp_file)
         temp_file_path = temp_file.name
-    
+
     try:
         ds = AgentDataset()
-        chunks = list(ds.stream_from_json(
-            temp_file_path,
-            chunk_size=10,
-            user_id="custom_user",
-            task_id="custom_task",
-            agent_name="custom_agent"
-        ))
-        
+        chunks = list(
+            ds.stream_from_json(
+                temp_file_path,
+                chunk_size=10,
+                user_id="custom_user",
+                task_id="custom_task",
+                agent_name="custom_agent",
+            )
+        )
+
         assert len(chunks) == 1
         assert len(chunks[0]) == 2
         assert chunks[0][0].user_id == "user1"
         assert chunks[0][0].agent_name == "agent1"
-        
+
     finally:
         os.unlink(temp_file_path)
 
@@ -1117,25 +1130,27 @@ def test_stream_from_json_non_dict_items():
         {"user_id": "user1", "agent_name": "agent1"},
         "not a dict",  # Should be skipped
         {"user_id": "user2", "agent_name": "agent2"},
-        123,           # Should be skipped
-        {"user_id": "user3", "agent_name": "agent3"}
+        123,  # Should be skipped
+        {"user_id": "user3", "agent_name": "agent3"},
     ]
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", delete=False
+    ) as temp_file:
         json.dump(json_data, temp_file)
         temp_file_path = temp_file.name
-    
+
     try:
         ds = AgentDataset()
         chunks = list(ds.stream_from_json(temp_file_path, chunk_size=10))
-        
+
         # Should only have 3 items (the valid dicts)
         assert len(chunks) == 1
         assert len(chunks[0]) == 3
         assert chunks[0][0].user_id == "user1"
         assert chunks[0][1].user_id == "user2"
         assert chunks[0][2].user_id == "user3"
-        
+
     finally:
         os.unlink(temp_file_path)
 
@@ -1143,16 +1158,20 @@ def test_stream_from_json_non_dict_items():
 def test_stream_from_json_import_error():
     """Test stream_from_json when ijson is not available."""
     ds = AgentDataset()
-    
-    with patch('builtins.__import__', side_effect=ImportError("No module named 'ijson'")):
-        with pytest.raises(ImportError, match="ijson package is required"):
-            list(ds.stream_from_json("dummy.json"))
+
+    with (
+        patch(
+            "builtins.__import__", side_effect=ImportError("No module named 'ijson'")
+        ),
+        pytest.raises(ImportError, match="ijson package is required"),
+    ):
+        list(ds.stream_from_json("dummy.json"))
 
 
 def test_stream_from_json_file_error():
     """Test stream_from_json with file read error."""
     ds = AgentDataset()
-    
+
     with pytest.raises(ValueError, match="Error reading JSON file"):
         list(ds.stream_from_json("/nonexistent/file.json"))
 
@@ -1164,22 +1183,24 @@ def test_stream_from_json_remaining_data():
         {"user_id": "user2"},
         {"user_id": "user3"},
         {"user_id": "user4"},
-        {"user_id": "user5"}
+        {"user_id": "user5"},
     ]
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".json", delete=False
+    ) as temp_file:
         json.dump(json_data, temp_file)
         temp_file_path = temp_file.name
-    
+
     try:
         ds = AgentDataset()
         chunks = list(ds.stream_from_json(temp_file_path, chunk_size=3))
-        
+
         # Should have 2 chunks: [3 items, 2 items]
         assert len(chunks) == 2
         assert len(chunks[0]) == 3
         assert len(chunks[1]) == 2  # Remaining data
-        
+
     finally:
         os.unlink(temp_file_path)
 
@@ -1187,7 +1208,7 @@ def test_stream_from_json_remaining_data():
 def test_parse_field_bool_string_variations():
     """Test boolean field parsing with various string inputs."""
     ds = AgentDataset()
-    
+
     # Test true values
     assert ds._parse_field("agent_exit", "true") is True
     assert ds._parse_field("agent_exit", "True") is True
@@ -1197,7 +1218,7 @@ def test_parse_field_bool_string_variations():
     assert ds._parse_field("agent_exit", "YES") is True
     assert ds._parse_field("agent_exit", "on") is True
     assert ds._parse_field("agent_exit", "ON") is True
-    
+
     # Test false values
     assert ds._parse_field("agent_exit", "false") is False
     assert ds._parse_field("agent_exit", "False") is False
@@ -1207,7 +1228,7 @@ def test_parse_field_bool_string_variations():
     assert ds._parse_field("agent_exit", "NO") is False
     assert ds._parse_field("agent_exit", "off") is False
     assert ds._parse_field("agent_exit", "OFF") is False
-    
+
     # Test unrecognized strings default to False
     assert ds._parse_field("agent_exit", "maybe") is False
     assert ds._parse_field("agent_exit", "unknown") is False
@@ -1216,26 +1237,26 @@ def test_parse_field_bool_string_variations():
 def test_parse_field_bool_numeric_conversions():
     """Test boolean field parsing with numeric inputs."""
     ds = AgentDataset()
-    
+
     # Test numeric conversions
     assert ds._parse_field("agent_exit", 1) is True
     assert ds._parse_field("agent_exit", 0) is False
     assert ds._parse_field("agent_exit", 42) is True  # Non-zero is True
     assert ds._parse_field("agent_exit", -1) is True  # Non-zero is True
-    
+
     # Test invalid numeric conversions
     assert ds._parse_field("agent_exit", "not_a_number") is False
 
 
 def test_parse_field_bool_exception_handling():
-    """Test boolean field parsing exception handling.""" 
+    """Test boolean field parsing exception handling."""
     ds = AgentDataset()
-    
+
     # Test with objects that can't be converted to bool
     class UnconvertibleObj:
         def __bool__(self):
             raise ValueError("Cannot convert to bool")
-    
+
     obj = UnconvertibleObj()
     result = ds._parse_field("agent_exit", obj)
     assert result is False  # Should default to False on exception
@@ -1244,7 +1265,7 @@ def test_parse_field_bool_exception_handling():
 def test_parse_field_bool_none_with_default():
     """Test boolean field parsing with None value and field defaults."""
     ds = AgentDataset()
-    
+
     # agent_exit field should have a default value
     result = ds._parse_field("agent_exit", None)
     assert result is False  # Should use default
@@ -1253,11 +1274,11 @@ def test_parse_field_bool_none_with_default():
 def test_parse_field_expected_tool_call_invalid_json():
     """Test parsing expected_tool_call with invalid JSON string."""
     ds = AgentDataset()
-    
+
     # Test with invalid JSON
     result = ds._parse_field("expected_tool_call", "invalid json {")
     assert result is None
-    
+
     # Test with valid JSON but invalid ToolCall structure
     result = ds._parse_field("expected_tool_call", '{"invalid": "structure"}')
     assert result is None
@@ -1266,7 +1287,7 @@ def test_parse_field_expected_tool_call_invalid_json():
 def test_parse_field_expected_tool_call_exception():
     """Test parsing expected_tool_call with exception during ToolCall creation."""
     ds = AgentDataset()
-    
+
     # Test with JSON that causes ToolCall constructor to fail
     invalid_toolcall_json = '{"tool_name": null, "parameters": "not_a_dict"}'
     result = ds._parse_field("expected_tool_call", invalid_toolcall_json)
@@ -1278,11 +1299,11 @@ def test_get_data_method():
     ds = AgentDataset()
     ds.data = [
         AgentData(**minimal_agent_data_dict()),
-        AgentData(**minimal_agent_data_dict())
+        AgentData(**minimal_agent_data_dict()),
     ]
-    
+
     data_copy = ds.get_data()
-    
+
     # Should be a copy, not the same list
     assert data_copy is not ds.data
     assert len(data_copy) == len(ds.data)
@@ -1294,11 +1315,11 @@ def test_get_datapoint_iterator():
     ds = AgentDataset()
     ds.data = [
         AgentData(**minimal_agent_data_dict()),
-        AgentData(**minimal_agent_data_dict())
+        AgentData(**minimal_agent_data_dict()),
     ]
-    
+
     datapoints = list(ds.get_datapoint())
-    
+
     assert len(datapoints) == 2
     assert all(isinstance(dp, AgentData) for dp in datapoints)
     assert datapoints[0] == ds.data[0]
@@ -1312,36 +1333,39 @@ def test_ingest_from_csv_complex_field_parsing():
 user1,task1,turn1,"[{""step"": 1}]","[{""name"": ""tool1"", ""description"": ""desc"", ""args_schema"": {}, ""return_schema"": {}}]","[{""tool_name"": ""tool1"", ""parameters"": {}, ""call_id"": ""123""}]",1,"{""tool_name"": ""expected"", ""parameters"": {}, ""call_id"": ""123""}"
 user2,task2,turn2,"","[]","[]",false,
 user3,task3,turn3,invalid_json,invalid_json,invalid_json,maybe,invalid_json"""
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as temp_file:
+
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".csv", delete=False
+    ) as temp_file:
         temp_file.write(csv_data)
         temp_file_path = temp_file.name
-    
+
     try:
         ds = AgentDataset()
         ds.ingest_from_csv(temp_file_path)
-        
+
         assert len(ds.data) == 3
-        
+
         # First row should parse correctly
         assert ds.data[0].user_id == "user1"
         assert ds.data[0].agent_exit is True  # "1" should convert to True
         assert isinstance(ds.data[0].trace, list)
         assert isinstance(ds.data[0].tools_available, list)
         assert ds.data[0].expected_tool_call is not None
-        
+
         # Second row with empty/false values
         assert ds.data[1].agent_exit is False
         assert ds.data[1].trace == []
         assert ds.data[1].expected_tool_call is None
-        
+
         # Third row with invalid data should handle gracefully
         assert ds.data[2].agent_exit is False  # "maybe" should convert to False
         assert ds.data[2].trace is None or ds.data[2].trace == []
         assert ds.data[2].expected_tool_call is None
-        
+
     finally:
         os.unlink(temp_file_path)
+
 
 def test_parse_field_tool_call_instance():
     """Test parsing when value is already a ToolCall instance."""
@@ -1350,55 +1374,61 @@ def test_parse_field_tool_call_instance():
     result = ds._parse_field("expected_tool_call", existing_toolcall)
     assert result == existing_toolcall
 
+
 def test_parse_field_boolean_no_default():
     """Test boolean field parsing when field has no default value."""
     from types import SimpleNamespace
+
     import novaeval.agents.agent_data as agent_data_mod
-    
+
     # Save original and create field without default
     orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
-    agent_data_mod.AgentData.model_fields["test_bool"] = SimpleNamespace(annotation=bool)
-    
+    agent_data_mod.AgentData.model_fields["test_bool"] = SimpleNamespace(
+        annotation=bool
+    )
+
     try:
-        ds = AgentDataset() 
+        ds = AgentDataset()
         result = ds._parse_field("test_bool", None)
         assert result is False  # Should fallback to False
     finally:
         agent_data_mod.AgentData.model_fields = orig_model_fields
 
+
 def test_agent_dataset_init_various_type_patterns():
     """Test AgentDataset initialization with various type annotation patterns."""
-    from types import SimpleNamespace
     import typing
+    from types import SimpleNamespace
+
     import novaeval.agents.agent_data as agent_data_mod
-    
+
     orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
-    
+
     # Test different type patterns that hit different branches
     class MockListType:
         __origin__ = list
         __args__ = (str,)
-    
-    class MockDictType:  
+
+    class MockDictType:
         __origin__ = dict
         __args__ = (str, int)
-        
+
     class MockUnionWithListOrigin:
         __origin__ = typing.Union
         __args__ = (MockListType, type(None))
-        
+
     class MockUnionWithDictOrigin:
         __origin__ = typing.Union
         __args__ = (MockDictType, type(None))
-        
+
     class MockUnionWithDirectList:
         __origin__ = typing.Union
         __args__ = (list, type(None))
-        
+
     class MockUnionWithDirectDict:
         __origin__ = typing.Union
         __args__ = (dict, type(None))
-    
+
     model_fields = {
         "union_list_origin": SimpleNamespace(annotation=MockUnionWithListOrigin),
         "union_dict_origin": SimpleNamespace(annotation=MockUnionWithDictOrigin),
@@ -1407,9 +1437,9 @@ def test_agent_dataset_init_various_type_patterns():
         "direct_list": SimpleNamespace(annotation=list),
         "direct_dict": SimpleNamespace(annotation=dict),
     }
-    
+
     agent_data_mod.AgentData.model_fields = model_fields
-    
+
     try:
         ds = AgentDataset()
         # Verify the different patterns were detected correctly
@@ -1422,37 +1452,11 @@ def test_agent_dataset_init_various_type_patterns():
     finally:
         agent_data_mod.AgentData.model_fields = orig_model_fields
 
+
 def test_ingest_from_csv_pandas_exception():
     """Test ingest_from_csv with pandas-related exception."""
     ds = AgentDataset()
-    
+
     # Test with a nonexistent file to trigger exception handling
     with pytest.raises(ValueError, match="Error reading CSV file"):
         ds.ingest_from_csv("/nonexistent/file/path.csv")
-
-def test_stream_from_json_remaining_data():
-    """Test stream_from_json yields remaining data when chunk doesn't fill completely."""
-    # Create data that will result in remaining items after chunking
-    json_data = [
-        {"user_id": "user1"},
-        {"user_id": "user2"},
-        {"user_id": "user3"},
-        {"user_id": "user4"},
-        {"user_id": "user5"}  # This will be remaining data with chunk_size=3
-    ]
-    
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as temp_file:
-        json.dump(json_data, temp_file)
-        temp_file_path = temp_file.name
-    
-    try:
-        ds = AgentDataset()
-        chunks = list(ds.stream_from_json(temp_file_path, chunk_size=3))
-        
-        # Should have 2 chunks: [3 items, 2 items]
-        assert len(chunks) == 2
-        assert len(chunks[0]) == 3
-        assert len(chunks[1]) == 2  # This tests the remaining data path
-        
-    finally:
-        os.unlink(temp_file_path)

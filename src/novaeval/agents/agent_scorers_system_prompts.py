@@ -41,7 +41,7 @@ Format your response as a JSON object:
 Your response should be ONLY the JSON object, nothing else.
 """
 
-# Tool Correctness Scorer Prompt  
+# Tool Correctness Scorer Prompt
 TOOL_CORRECTNESS_PROMPT = """# Tool Correctness Evaluation
 
 ## Task
@@ -147,7 +147,7 @@ Provide a single progression score from 1-5 along with your reasoning.
 
 Format your response as a JSON object:
 {{
-  "score": 4.2,  
+  "score": 4.2,
   "reasoning": "The agent demonstrates good understanding of its role and has made significant progress toward completing the assigned task. The approach is logical and efficient, with only minor gaps in execution that prevent a perfect score."
 }}
 
@@ -191,7 +191,7 @@ Format your response as a JSON object:
 }}
 
 Your response should be ONLY the JSON object, nothing else.
-""" 
+"""
 
 # Role Adherence Scorer Prompt
 ROLE_ADHERENCE_PROMPT = """# Role Adherence Evaluation
@@ -233,4 +233,4 @@ Format your response as a JSON object:
 }}
 
 Your response should be ONLY the JSON object, nothing else.
-""" 
+"""

@@ -325,7 +325,7 @@ def test_agent_data_exit_fields_valid_values():
     agent = AgentData(exit_status="success", agent_exit=True)
     assert agent.exit_status == "success"
     assert agent.agent_exit is True
-    
+
     agent = AgentData(exit_status="error", agent_exit=False)
     assert agent.exit_status == "error"
     assert agent.agent_exit is False
