@@ -40,6 +40,29 @@ class AnswerRelevancyScorer(BaseScorer):
         self.model = model
         self.embedding_model = SentenceTransformer(embedding_model)
 
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
+
     async def evaluate(
         self,
         input_text: str,
@@ -159,6 +182,29 @@ class FaithfulnessScorer(BaseScorer):
         super().__init__(name="FaithfulnessScorer", **kwargs)
         self.threshold = threshold
         self.model = model
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
 
     async def evaluate(
         self,
@@ -320,6 +366,29 @@ class ContextualPrecisionScorer(BaseScorer):
         self.threshold = threshold
         self.model = model
 
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
+
     async def evaluate(
         self,
         input_text: str,
@@ -460,6 +529,29 @@ class ContextualRecallScorer(BaseScorer):
         super().__init__(name="ContextualRecallScorer", **kwargs)
         self.threshold = threshold
         self.model = model
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
 
     async def evaluate(
         self,
@@ -640,6 +732,31 @@ class RAGASScorer(BaseScorer):
             model, threshold=0.7
         )
         self.contextual_recall_scorer = ContextualRecallScorer(model, threshold=0.7)
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        expected_output = context.get("expected_output") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+                expected_output=expected_output,
+            )
+        )
+
+        return result.score
 
     async def evaluate(
         self,
