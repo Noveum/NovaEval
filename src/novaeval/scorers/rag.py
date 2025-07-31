@@ -35,7 +35,7 @@ class AnswerRelevancyScorer(BaseScorer):
         embedding_model: str = "all-MiniLM-L6-v2",
         **kwargs: Any,
     ) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name="AnswerRelevancyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
         self.embedding_model = SentenceTransformer(embedding_model)
@@ -124,29 +124,6 @@ class AnswerRelevancyScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    def score(
-        self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
-        """Synchronous wrapper for the async evaluate method."""
-        import asyncio
-
-        # Extract context from dict if available
-        context_text = context.get("context") if context else None
-
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
-                output_text=prediction,
-                context=context_text,
-            )
-        )
-
-        return result.score
-
     def _parse_questions(self, response: str) -> list[str]:
         """Parse generated questions from LLM response."""
         questions = []
@@ -179,7 +156,7 @@ class FaithfulnessScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, threshold: float = 0.8, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name="FaithfulnessScorer", **kwargs)
         self.threshold = threshold
         self.model = model
 
@@ -294,29 +271,6 @@ class FaithfulnessScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    def score(
-        self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
-        """Synchronous wrapper for the async evaluate method."""
-        import asyncio
-
-        # Extract context from dict if available
-        context_text = context.get("context") if context else None
-
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
-                output_text=prediction,
-                context=context_text,
-            )
-        )
-
-        return result.score
-
     def _parse_claims(self, response: str) -> list[str]:
         """Parse claims from LLM response."""
         claims = []
@@ -362,7 +316,7 @@ class ContextualPrecisionScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name="ContextualPrecisionScorer", **kwargs)
         self.threshold = threshold
         self.model = model
 
@@ -454,29 +408,6 @@ class ContextualPrecisionScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    def score(
-        self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
-        """Synchronous wrapper for the async evaluate method."""
-        import asyncio
-
-        # Extract context from dict if available
-        context_text = context.get("context") if context else None
-
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
-                output_text=prediction,
-                context=context_text,
-            )
-        )
-
-        return result.score
-
     def _split_context(self, context: str) -> list[str]:
         """Split context into chunks for evaluation."""
         # Simple splitting by double newlines or sentences
@@ -526,7 +457,7 @@ class ContextualRecallScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name="ContextualRecallScorer", **kwargs)
         self.threshold = threshold
         self.model = model
 
@@ -640,31 +571,6 @@ class ContextualRecallScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    def score(
-        self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
-        """Synchronous wrapper for the async evaluate method."""
-        import asyncio
-
-        # Extract context from dict if available
-        context_text = context.get("context") if context else None
-        expected_output = context.get("expected_output") if context else None
-
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
-                output_text=prediction,
-                context=context_text,
-                expected_output=expected_output,
-            )
-        )
-
-        return result.score
-
     def _parse_claims(self, response: str) -> list[str]:
         """Parse claims/information from LLM response."""
         claims = []
@@ -715,7 +621,7 @@ class RAGASScorer(BaseScorer):
         weights: Optional[dict[str, float]] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name="RAGASScorer", **kwargs)
         self.threshold = threshold
         self.model = model
 
