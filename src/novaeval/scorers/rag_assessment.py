@@ -1,64 +1,32 @@
 """
-Advanced Retrieval Assessment for NovaEval.
+RAG Assessment Engine for NovaEval.
 
-This module implements advanced metrics for evaluating retrieval-augmented generation (RAG) and retrieval systems, including:
-- Enhanced Contextual Precision (ranking-aware)
-- Enhanced Contextual Recall (comprehensive)
-- Contextual F1 Score
-- Retrieval Ranking Metrics (NDCG, MAP, MRR)
-- Semantic Similarity for context relevance
-- Retrieval Diversity (uniqueness of retrieved chunks)
-- Aggregate scorer for overall retrieval quality
-
-LLM USAGE MODES:
-----------------
-Simple way:
-    Pass a string, like "gpt-3.5-turbo". NovaEval will use its built-in code to talk to OpenAI.
-Advanced way:
-    If you use LangChain in your project, you might already have a model object, like my_llm = ChatOpenAI(model="gpt-3.5-turbo") or a local model. If LangChain is installed, you can pass this object directly and NovaEval will use it for generation.
-
-The scorers will auto-detect which mode is being used.
+This module provides a comprehensive evaluation engine for RAG systems,
+combining multiple evaluation metrics and scorers.
 """
 
-# LangChain detection
-try:
-    import langchain
-    from langchain_core.language_models.base import BaseLanguageModel
-    _HAS_LANGCHAIN = True
-except ImportError:
-    _HAS_LANGCHAIN = False
-    BaseLanguageModel = None
+from typing import Any, Dict, List, Optional, Tuple, Union
+from pydantic import BaseModel
 
-from typing import Any, Optional, Union, List, TYPE_CHECKING
 from novaeval.scorers.base import BaseScorer, ScoreResult
 from novaeval.scorers.rag import (
     AnswerRelevancyScorer,
     FaithfulnessScorer,
     ContextualPrecisionScorer,
     ContextualRecallScorer,
-    RAGASScorer
+    RAGASScorer,
 )
-from novaeval.scorers.g_eval import GEvalScorer, CommonGEvalCriteria
 from novaeval.scorers.basic_rag_scorers import (
     ContextualPrecisionScorerPP,
     ContextualRecallScorerPP,
-    ContextualF1Scorer,
     RetrievalRankingScorer,
     SemanticSimilarityScorer,
     RetrievalDiversityScorer,
-    AggregateRetrievalScorer
+    ContextualF1Scorer,
+    AggregateRetrievalScorer,
 )
+from novaeval.scorers.g_eval import GEvalScorer, CommonGEvalCriteria
 from novaeval.scorers.advanced_generation_scorers import (
-    BiasDetectionScorer,
-    FactualAccuracyScorer,
-    ClaimVerificationScorer,
-    InformationDensityScorer,
-    ClarityAndCoherenceScorer,
-    ConflictResolutionScorer,
-    ContextPrioritizationScorer,
-    CitationQualityScorer,
-    ToneConsistencyScorer,
-    TerminologyConsistencyScorer,
     ContextFaithfulnessScorerPP,
     ContextGroundednessScorer,
     ContextCompletenessScorer,
@@ -66,39 +34,119 @@ from novaeval.scorers.advanced_generation_scorers import (
     RAGAnswerQualityScorer,
     HallucinationDetectionScorer,
     SourceAttributionScorer,
+    FactualAccuracyScorer,
+    ClaimVerificationScorer,
     AnswerCompletenessScorer,
     QuestionAnswerAlignmentScorer,
+    InformationDensityScorer,
+    ClarityAndCoherenceScorer,
     CrossContextSynthesisScorer,
-    TechnicalAccuracyScorer
+    ConflictResolutionScorer,
+    ContextPrioritizationScorer,
+    CitationQualityScorer,
+    TechnicalAccuracyScorer,
+    BiasDetectionScorer,
+    ToneConsistencyScorer,
+    TerminologyConsistencyScorer,
 )
+from novaeval.utils.llm import call_llm
 
-import re
-import numpy as np
-from sklearn.metrics import ndcg_score, average_precision_score
-from sentence_transformers import SentenceTransformer
-from pydantic import BaseModel
 
-# Forward reference for type hints
-if TYPE_CHECKING:
-    from typing_extensions import TypedDict
+class ScorerConfig(BaseModel):
+    """Configuration for a single scorer."""
+    name: str
+    class_name: str
+    weight: float = 1.0
+    enabled: bool = True
+    params: Dict[str, Any] = {}
 
-# AgentData structure definition
+
+class RAGAssessmentConfig(BaseModel):
+    """Configuration for the RAG Assessment Engine."""
+    threshold: float = 0.7
+    scorers: List[ScorerConfig] = []
+    
+    @classmethod
+    def get_default_config(cls) -> "RAGAssessmentConfig":
+        """Get the default configuration with all scorers."""
+        return cls(
+            threshold=0.7,
+            scorers=[
+                # Basic RAG scorers
+                ScorerConfig(name="answer_relevancy", class_name="AnswerRelevancyScorer", weight=0.06),
+                ScorerConfig(name="faithfulness", class_name="FaithfulnessScorer", weight=0.06),
+                ScorerConfig(name="contextual_precision", class_name="ContextualPrecisionScorer", weight=0.06),
+                ScorerConfig(name="contextual_recall", class_name="ContextualRecallScorer", weight=0.06),
+                ScorerConfig(name="ragas", class_name="RAGASScorer", weight=0.0),  # Disabled by default
+                
+                # Advanced retrieval scorers
+                ScorerConfig(name="contextual_precision_pp", class_name="ContextualPrecisionScorerPP", weight=0.0),  # Disabled by default
+                ScorerConfig(name="contextual_recall_pp", class_name="ContextualRecallScorerPP", weight=0.0),  # Disabled by default
+                ScorerConfig(name="retrieval_ranking", class_name="RetrievalRankingScorer", weight=0.0),  # Disabled by default
+                ScorerConfig(name="semantic_similarity", class_name="SemanticSimilarityScorer", weight=0.05),
+                ScorerConfig(name="retrieval_diversity", class_name="RetrievalDiversityScorer", weight=0.04),
+                
+                # G-Eval scorers
+                ScorerConfig(name="helpfulness", class_name="GEvalScorer", weight=0.06, 
+                           params={"criteria": "helpfulness"}),
+                ScorerConfig(name="correctness", class_name="GEvalScorer", weight=0.06,
+                           params={"criteria": "correctness"}),
+                
+                # Context-Aware Generation Scorers
+                ScorerConfig(name="context_faithfulness_pp", class_name="ContextFaithfulnessScorerPP", weight=0.06),
+                ScorerConfig(name="context_groundedness", class_name="ContextGroundednessScorer", weight=0.0),  # Disabled by default
+                ScorerConfig(name="context_completeness", class_name="ContextCompletenessScorer", weight=0.0),  # Disabled by default
+                ScorerConfig(name="context_consistency", class_name="ContextConsistencyScorer", weight=0.0),  # Disabled by default
+                
+                # Answer Quality Enhancement Scorers
+                ScorerConfig(name="rag_answer_quality", class_name="RAGAnswerQualityScorer", weight=0.06),
+                
+                # Hallucination Detection Scorers
+                ScorerConfig(name="hallucination_detection", class_name="HallucinationDetectionScorer", weight=0.06),
+                ScorerConfig(name="source_attribution", class_name="SourceAttributionScorer", weight=0.0),  # Disabled by default
+                ScorerConfig(name="factual_accuracy", class_name="FactualAccuracyScorer", weight=0.06),
+                ScorerConfig(name="claim_verification", class_name="ClaimVerificationScorer", weight=0.0),  # Disabled by default
+                
+                # Answer Completeness and Relevance Scorers
+                ScorerConfig(name="answer_completeness", class_name="AnswerCompletenessScorer", weight=0.06),
+                ScorerConfig(name="question_answer_alignment", class_name="QuestionAnswerAlignmentScorer", weight=0.0),  # Disabled by default
+                ScorerConfig(name="information_density", class_name="InformationDensityScorer", weight=0.04),
+                ScorerConfig(name="clarity_coherence", class_name="ClarityAndCoherenceScorer", weight=0.05),
+                
+                # Multi-Context Integration Scorers
+                ScorerConfig(name="cross_context_synthesis", class_name="CrossContextSynthesisScorer", weight=0.06),
+                ScorerConfig(name="conflict_resolution", class_name="ConflictResolutionScorer", weight=0.0),  # Disabled by default
+                ScorerConfig(name="context_prioritization", class_name="ContextPrioritizationScorer", weight=0.0),  # Disabled by default
+                ScorerConfig(name="citation_quality", class_name="CitationQualityScorer", weight=0.0),  # Disabled by default
+                
+                # Domain-Specific Evaluation Scorers
+                ScorerConfig(name="technical_accuracy", class_name="TechnicalAccuracyScorer", weight=0.04),
+                ScorerConfig(name="bias_detection", class_name="BiasDetectionScorer", weight=0.06),
+                ScorerConfig(name="tone_consistency", class_name="ToneConsistencyScorer", weight=0.0),  # Disabled by default
+                ScorerConfig(name="terminology_consistency", class_name="TerminologyConsistencyScorer", weight=0.0),  # Disabled by default
+            ]
+        )
+
+
 class ToolSchema(BaseModel):
     """Schema for tool definitions."""
     name: str
     description: Optional[str] = None
     parameters: Optional[dict[str, Any]] = None
 
+
 class ToolCall(BaseModel):
     """Represents a tool call."""
     name: str
     arguments: Optional[dict[str, Any]] = None
+
 
 class ToolResult(BaseModel):
     """Represents the result of a tool call."""
     name: str
     result: Optional[str] = None
     error: Optional[str] = None
+
 
 class AgentData(BaseModel):
     """Data structure for agent evaluation data."""
@@ -112,7 +160,7 @@ class AgentData(BaseModel):
     agent_task: Optional[str] = None
     system_prompt: Optional[str] = None
     agent_response: Optional[str] = None
-    trace: Optional[list[dict[str, Any]]] = None
+    trace: Optional[list[dict[str, Any]]] = []
     tools_available: list[ToolSchema] = []
     tool_calls: list[ToolCall] = []
     parameters_passed: dict[str, Any] = {}
@@ -122,151 +170,347 @@ class AgentData(BaseModel):
     metadata: Optional[str] = None
 
 
-def _call_llm(model, prompt: str):
-    """
-    Helper to call the LLM, supporting both string (OpenAI) and LangChain LLM objects.
-    """
-    if _HAS_LANGCHAIN and BaseLanguageModel and isinstance(model, BaseLanguageModel):
-        # LangChain LLM: use .invoke or .generate
-        if hasattr(model, "invoke"):
-            return model.invoke(prompt)
-        elif hasattr(model, "generate"):
-            return model.generate([prompt]).generations[0][0].text
-        else:
-            raise ValueError("LangChain LLM does not support invoke or generate.")
-    elif isinstance(model, str):
-        # Built-in: string model name, use OpenAI API
-        raise NotImplementedError("String-based LLM calling not implemented. Please provide a LangChain LLM or implement OpenAI call here.")
-    else:
-        # Assume model has a .generate method (NovaEval style)
-        return model.generate(prompt)
-
-
 class RAGAssessmentEngine:
     """
-    Comprehensive RAG assessment engine that works with AgentData.
+    Comprehensive RAG assessment engine that combines multiple evaluation metrics.
     
-    This class provides methods to evaluate RAG systems using AgentData instances,
-    integrating both basic RAG metrics from rag.py and advanced retrieval metrics.
+    This engine evaluates RAG systems using a configurable set of scorers,
+    allowing for flexible evaluation strategies and easy A/B testing.
     """
-    
-    def __init__(self, model, threshold: float = 0.7, **kwargs):
+
+    def __init__(
+        self, 
+        model: Any, 
+        threshold: float = 0.7, 
+        config: Optional[RAGAssessmentConfig] = None,
+        **kwargs: Any
+    ) -> None:
         """
-        Initialize the RAG assessment engine.
+        Initialize the RAG Assessment Engine.
         
         Args:
-            model: LLM model (string, LangChain LLM, or NovaEval model)
-            threshold: Default threshold for pass/fail decisions
-            **kwargs: Additional configuration
+            model: The language model to use for evaluation
+            threshold: Default threshold for scorers
+            config: Configuration for scorers and weights. If None, uses default config
+            **kwargs: Additional arguments passed to scorers
         """
         self.model = model
         self.threshold = threshold
+        self.config = config or RAGAssessmentConfig.get_default_config()
+        self.kwargs = kwargs
         
-        # Initialize scorers from rag.py
-        self.answer_relevancy_scorer = AnswerRelevancyScorer(model=model, threshold=threshold)
-        self.faithfulness_scorer = FaithfulnessScorer(model=model, threshold=threshold)
-        self.contextual_precision_scorer = ContextualPrecisionScorer(model=model, threshold=threshold)
-        self.contextual_recall_scorer = ContextualRecallScorer(model=model, threshold=threshold)
-        self.ragas_scorer = RAGASScorer(model=model, threshold=threshold)
-        
-        # Initialize advanced scorers
-        self.contextual_precision_pp = ContextualPrecisionScorerPP(model=model, threshold=threshold)
-        self.contextual_recall_pp = ContextualRecallScorerPP(model=model, threshold=threshold)
-        self.retrieval_ranking_scorer = RetrievalRankingScorer(threshold=threshold)
-        self.semantic_similarity_scorer = SemanticSimilarityScorer(threshold=threshold)
-        self.retrieval_diversity_scorer = RetrievalDiversityScorer()
-        
-        # Add G-Eval scorers
-        self.helpfulness_scorer = GEvalScorer(model=model, criteria=CommonGEvalCriteria.helpfulness())
-        self.correctness_scorer = GEvalScorer(model=model, criteria=CommonGEvalCriteria.correctness())
-        
-        # Initialize F1 scorer
-        self.contextual_f1_scorer = ContextualF1Scorer(
-            precision_scorer=self.contextual_precision_pp,
-            recall_scorer=self.contextual_recall_pp,
-            threshold=threshold
-        )
-        
-        # Initialize Context-Aware Generation Scorers
-        self.context_faithfulness_pp = ContextFaithfulnessScorerPP(model=model, threshold=threshold)
-        self.context_groundedness_scorer = ContextGroundednessScorer(model=model, threshold=threshold)
-        self.context_completeness_scorer = ContextCompletenessScorer(model=model, threshold=threshold)
-        self.context_consistency_scorer = ContextConsistencyScorer(model=model, threshold=threshold)
-        
-        # Initialize Answer Quality Enhancement Scorers
-        self.rag_answer_quality_scorer = RAGAnswerQualityScorer(model=model, threshold=threshold)
-        
-        # Initialize Hallucination Detection Scorers
-        self.hallucination_detection_scorer = HallucinationDetectionScorer(model=model, threshold=threshold)
-        self.source_attribution_scorer = SourceAttributionScorer(model=model, threshold=threshold)
-        self.factual_accuracy_scorer = FactualAccuracyScorer(model=model, threshold=threshold)
-        self.claim_verification_scorer = ClaimVerificationScorer(model=model, threshold=threshold)
-        
-        # Initialize Answer Completeness and Relevance Scorers
-        self.answer_completeness_scorer = AnswerCompletenessScorer(model=model, threshold=threshold)
-        self.question_answer_alignment_scorer = QuestionAnswerAlignmentScorer(model=model, threshold=threshold)
-        self.information_density_scorer = InformationDensityScorer(model=model, threshold=threshold)
-        self.clarity_coherence_scorer = ClarityAndCoherenceScorer(model=model, threshold=threshold)
-        
-        # Initialize Multi-Context Integration Scorers
-        self.cross_context_synthesis_scorer = CrossContextSynthesisScorer(model=model, threshold=threshold)
-        self.conflict_resolution_scorer = ConflictResolutionScorer(model=model, threshold=threshold)
-        self.context_prioritization_scorer = ContextPrioritizationScorer(model=model, threshold=threshold)
-        self.citation_quality_scorer = CitationQualityScorer(model=model, threshold=threshold)
-        
-        # Initialize Domain-Specific Evaluation Scorers
-        self.technical_accuracy_scorer = TechnicalAccuracyScorer(model=model, threshold=threshold)
-        self.bias_detection_scorer = BiasDetectionScorer(model=model, threshold=threshold)
-        self.tone_consistency_scorer = ToneConsistencyScorer(model=model, threshold=threshold)
-        self.terminology_consistency_scorer = TerminologyConsistencyScorer(model=model, threshold=threshold)
+        # Initialize scorers based on configuration
+        self._initialize_scorers()
         
         # Initialize aggregate scorer
-        self.aggregate_scorer = AggregateRetrievalScorer(
-            scorers={
-                "answer_relevancy": self.answer_relevancy_scorer,
-                "faithfulness": self.faithfulness_scorer,
-                "contextual_precision": self.contextual_precision_scorer,
-                "contextual_recall": self.contextual_recall_scorer,
-                "semantic_similarity": self.semantic_similarity_scorer,
-                "retrieval_diversity": self.retrieval_diversity_scorer,
-                "helpfulness": self.helpfulness_scorer,
-                "correctness": self.correctness_scorer,
-                "context_faithfulness_pp": self.context_faithfulness_pp,
-                "rag_answer_quality": self.rag_answer_quality_scorer,
-                "hallucination_detection": self.hallucination_detection_scorer,
-                "factual_accuracy": self.factual_accuracy_scorer,
-                "answer_completeness": self.answer_completeness_scorer,
-                "information_density": self.information_density_scorer,
-                "clarity_coherence": self.clarity_coherence_scorer,
-                "cross_context_synthesis": self.cross_context_synthesis_scorer,
-                "technical_accuracy": self.technical_accuracy_scorer,
-                "bias_detection": self.bias_detection_scorer,
-            },
-            weights={
-                "answer_relevancy": 0.06,
-                "faithfulness": 0.06,
-                "contextual_precision": 0.06,
-                "contextual_recall": 0.06,
-                "semantic_similarity": 0.05,
-                "retrieval_diversity": 0.04,
-                "helpfulness": 0.06,
-                "correctness": 0.06,
-                "context_faithfulness_pp": 0.06,
-                "rag_answer_quality": 0.06,
-                "hallucination_detection": 0.06,
-                "factual_accuracy": 0.06,
-                "answer_completeness": 0.06,
-                "information_density": 0.04,
-                "clarity_coherence": 0.05,
-                "cross_context_synthesis": 0.06,
-                "technical_accuracy": 0.04,
-                "bias_detection": 0.06,
-            }
-        )
-    
+        self._initialize_aggregate_scorer()
+
+    def _get_scorer_class(self, class_name: str) -> type:
+        """Get the scorer class by name."""
+        scorer_classes = {
+            # Basic RAG scorers
+            "AnswerRelevancyScorer": AnswerRelevancyScorer,
+            "FaithfulnessScorer": FaithfulnessScorer,
+            "ContextualPrecisionScorer": ContextualPrecisionScorer,
+            "ContextualRecallScorer": ContextualRecallScorer,
+            "RAGASScorer": RAGASScorer,
+            
+            # Advanced retrieval scorers
+            "ContextualPrecisionScorerPP": ContextualPrecisionScorerPP,
+            "ContextualRecallScorerPP": ContextualRecallScorerPP,
+            "RetrievalRankingScorer": RetrievalRankingScorer,
+            "SemanticSimilarityScorer": SemanticSimilarityScorer,
+            "RetrievalDiversityScorer": RetrievalDiversityScorer,
+            "ContextualF1Scorer": ContextualF1Scorer,
+            
+            # G-Eval scorers
+            "GEvalScorer": GEvalScorer,
+            
+            # Advanced generation scorers
+            "ContextFaithfulnessScorerPP": ContextFaithfulnessScorerPP,
+            "ContextGroundednessScorer": ContextGroundednessScorer,
+            "ContextCompletenessScorer": ContextCompletenessScorer,
+            "ContextConsistencyScorer": ContextConsistencyScorer,
+            "RAGAnswerQualityScorer": RAGAnswerQualityScorer,
+            "HallucinationDetectionScorer": HallucinationDetectionScorer,
+            "SourceAttributionScorer": SourceAttributionScorer,
+            "FactualAccuracyScorer": FactualAccuracyScorer,
+            "ClaimVerificationScorer": ClaimVerificationScorer,
+            "AnswerCompletenessScorer": AnswerCompletenessScorer,
+            "QuestionAnswerAlignmentScorer": QuestionAnswerAlignmentScorer,
+            "InformationDensityScorer": InformationDensityScorer,
+            "ClarityAndCoherenceScorer": ClarityAndCoherenceScorer,
+            "CrossContextSynthesisScorer": CrossContextSynthesisScorer,
+            "ConflictResolutionScorer": ConflictResolutionScorer,
+            "ContextPrioritizationScorer": ContextPrioritizationScorer,
+            "CitationQualityScorer": CitationQualityScorer,
+            "TechnicalAccuracyScorer": TechnicalAccuracyScorer,
+            "BiasDetectionScorer": BiasDetectionScorer,
+            "ToneConsistencyScorer": ToneConsistencyScorer,
+            "TerminologyConsistencyScorer": TerminologyConsistencyScorer,
+        }
+        
+        if class_name not in scorer_classes:
+            raise ValueError(f"Unknown scorer class: {class_name}")
+        
+        return scorer_classes[class_name]
+
+    def _create_scorer(self, config: ScorerConfig) -> BaseScorer:
+        """Create a scorer instance from configuration."""
+        scorer_class = self._get_scorer_class(config.class_name)
+        
+        # Handle special cases
+        if config.class_name == "GEvalScorer":
+            criteria_name = config.params.get("criteria", "helpfulness")
+            if criteria_name == "helpfulness":
+                criteria = CommonGEvalCriteria.helpfulness()
+            elif criteria_name == "correctness":
+                criteria = CommonGEvalCriteria.correctness()
+            else:
+                raise ValueError(f"Unknown G-Eval criteria: {criteria_name}")
+            
+            return scorer_class(model=self.model, criteria=criteria, threshold=self.threshold, **self.kwargs)
+        
+        elif config.class_name == "ContextualF1Scorer":
+            # This requires special handling as it needs precision and recall scorers
+            precision_scorer = getattr(self, "contextual_precision_pp", None)
+            recall_scorer = getattr(self, "contextual_recall_pp", None)
+            
+            if precision_scorer is None or recall_scorer is None:
+                raise ValueError("ContextualF1Scorer requires contextual_precision_pp and contextual_recall_pp scorers")
+            
+            return scorer_class(
+                precision_scorer=precision_scorer,
+                recall_scorer=recall_scorer,
+                threshold=self.threshold,
+                **self.kwargs
+            )
+        
+        else:
+            # Standard scorer creation
+            return scorer_class(model=self.model, threshold=self.threshold, **self.kwargs)
+
+    def _initialize_scorers(self) -> None:
+        """Initialize all scorers based on configuration."""
+        for config in self.config.scorers:
+            if not config.enabled:
+                continue
+                
+            try:
+                scorer = self._create_scorer(config)
+                setattr(self, f"{config.name}_scorer", scorer)
+            except Exception as e:
+                print(f"Warning: Failed to initialize scorer {config.name}: {e}")
+
+    def _initialize_aggregate_scorer(self) -> None:
+        """Initialize the aggregate scorer with enabled scorers and their weights."""
+        enabled_scorers = {}
+        weights = {}
+        
+        for config in self.config.scorers:
+            if not config.enabled:
+                continue
+                
+            scorer_attr = f"{config.name}_scorer"
+            if hasattr(self, scorer_attr):
+                enabled_scorers[config.name] = getattr(self, scorer_attr)
+                weights[config.name] = config.weight
+        
+        if enabled_scorers:
+            self.aggregate_scorer = AggregateRetrievalScorer(
+                scorers=enabled_scorers,
+                weights=weights
+            )
+        else:
+            self.aggregate_scorer = None
+
+    def _prepare_context_dict(self, agent_data: AgentData) -> dict[str, Any]:
+        """Prepare context dictionary for scorers."""
+        return {
+            "context": agent_data.retrieved_context,
+            "retrieved_context": agent_data.retrieved_context.split("\n\n") if agent_data.retrieved_context else [],
+            "relevant_indices": []  # You can populate this based on your relevance criteria
+        }
+
+    async def _evaluate_single_scorer(self, scorer: BaseScorer, agent_data: AgentData, context_dict: dict[str, Any]) -> ScoreResult:
+        """
+        Evaluate a single scorer with unified error handling.
+        
+        Args:
+            scorer: The scorer to evaluate
+            agent_data: AgentData instance
+            context_dict: Prepared context dictionary
+            
+        Returns:
+            ScoreResult with evaluation result or error
+        """
+        try:
+            if hasattr(scorer, 'evaluate'):
+                # Async scorers
+                result = await scorer.evaluate(
+                    input_text=agent_data.ground_truth or "",
+                    output_text=agent_data.agent_response or "",
+                    context=agent_data.retrieved_context
+                )
+            else:
+                # Sync scorers
+                result = scorer.score(
+                    prediction=agent_data.agent_response or "",
+                    ground_truth=agent_data.ground_truth or "",
+                    context=context_dict
+                )
+            
+            return result
+            
+        except Exception as e:
+            return ScoreResult(
+                score=0.0, 
+                passed=False, 
+                reasoning=f"Error evaluating {scorer.__class__.__name__}: {str(e)}"
+            )
+
+    def _get_scorer_by_category(self) -> dict[str, list[tuple[str, BaseScorer]]]:
+        """
+        Group enabled scorers by logical categories.
+        
+        Returns:
+            Dictionary mapping category names to lists of (scorer_name, scorer) tuples
+        """
+        categories = {
+            "Basic RAG": [],
+            "Advanced Retrieval": [],
+            "G-Eval": [],
+            "Context-Aware Generation": [],
+            "Answer Quality": [],
+            "Hallucination Detection": [],
+            "Answer Completeness": [],
+            "Multi-Context Integration": [],
+            "Domain-Specific": [],
+            "Other": []
+        }
+        
+        # Define category mappings
+        category_mappings = {
+            # Basic RAG scorers
+            "answer_relevancy": "Basic RAG",
+            "faithfulness": "Basic RAG", 
+            "contextual_precision": "Basic RAG",
+            "contextual_recall": "Basic RAG",
+            "ragas": "Basic RAG",
+            
+            # Advanced retrieval scorers
+            "contextual_precision_pp": "Advanced Retrieval",
+            "contextual_recall_pp": "Advanced Retrieval",
+            "retrieval_ranking": "Advanced Retrieval",
+            "semantic_similarity": "Advanced Retrieval",
+            "retrieval_diversity": "Advanced Retrieval",
+            
+            # G-Eval scorers
+            "helpfulness": "G-Eval",
+            "correctness": "G-Eval",
+            
+            # Context-Aware Generation Scorers
+            "context_faithfulness_pp": "Context-Aware Generation",
+            "context_groundedness": "Context-Aware Generation",
+            "context_completeness": "Context-Aware Generation",
+            "context_consistency": "Context-Aware Generation",
+            
+            # Answer Quality Enhancement Scorers
+            "rag_answer_quality": "Answer Quality",
+            
+            # Hallucination Detection Scorers
+            "hallucination_detection": "Hallucination Detection",
+            "source_attribution": "Hallucination Detection",
+            "factual_accuracy": "Hallucination Detection",
+            "claim_verification": "Hallucination Detection",
+            
+            # Answer Completeness and Relevance Scorers
+            "answer_completeness": "Answer Completeness",
+            "question_answer_alignment": "Answer Completeness",
+            "information_density": "Answer Completeness",
+            "clarity_coherence": "Answer Completeness",
+            
+            # Multi-Context Integration Scorers
+            "cross_context_synthesis": "Multi-Context Integration",
+            "conflict_resolution": "Multi-Context Integration",
+            "context_prioritization": "Multi-Context Integration",
+            "citation_quality": "Multi-Context Integration",
+            
+            # Domain-Specific Evaluation Scorers
+            "technical_accuracy": "Domain-Specific",
+            "bias_detection": "Domain-Specific",
+            "tone_consistency": "Domain-Specific",
+            "terminology_consistency": "Domain-Specific",
+        }
+        
+        # Group enabled scorers by category
+        for config in self.config.scorers:
+            if not config.enabled:
+                continue
+                
+            scorer_attr = f"{config.name}_scorer"
+            if not hasattr(self, scorer_attr):
+                continue
+                
+            scorer = getattr(self, scorer_attr)
+            category = category_mappings.get(config.name, "Other")
+            categories[category].append((config.name, scorer))
+        
+        return categories
+
+    async def _evaluate_category(self, category_name: str, scorers: list[tuple[str, BaseScorer]], 
+                                agent_data: AgentData, context_dict: dict[str, Any]) -> dict[str, ScoreResult]:
+        """
+        Evaluate all scorers in a category.
+        
+        Args:
+            category_name: Name of the category
+            scorers: List of (scorer_name, scorer) tuples
+            agent_data: AgentData instance
+            context_dict: Prepared context dictionary
+            
+        Returns:
+            Dictionary mapping scorer names to ScoreResults
+        """
+        results = {}
+        
+        for scorer_name, scorer in scorers:
+            result = await self._evaluate_single_scorer(scorer, agent_data, context_dict)
+            results[scorer_name] = result
+        
+        return results
+
+    async def _evaluate_aggregate_scorer(self, agent_data: AgentData, context_dict: dict[str, Any]) -> ScoreResult:
+        """
+        Evaluate the aggregate scorer with error handling.
+        
+        Args:
+            agent_data: AgentData instance
+            context_dict: Prepared context dictionary
+            
+        Returns:
+            ScoreResult for aggregate evaluation
+        """
+        if not self.aggregate_scorer:
+            return ScoreResult(score=0.0, passed=False, reasoning="No aggregate scorer available")
+        
+        try:
+            result = self.aggregate_scorer.score(
+                prediction=agent_data.agent_response or "",
+                ground_truth=agent_data.ground_truth or "",
+                context=context_dict
+            )
+            return result
+        except Exception as e:
+            return ScoreResult(
+                score=0.0, 
+                passed=False, 
+                reasoning=f"Error evaluating aggregate scorer: {str(e)}"
+            )
+
     async def evaluate(self, agent_data: AgentData) -> dict[str, Any]:
         """
-        Evaluate a single AgentData instance using all available metrics.
+        Evaluate a single AgentData instance using all enabled metrics.
         
         Args:
             agent_data: AgentData instance to evaluate
@@ -278,347 +522,57 @@ class RAGAssessmentEngine:
             return {"error": "No retrieved context available for evaluation"}
         
         # Prepare context for scorers
-        context_dict = {
-            "context": agent_data.retrieved_context,
-            "retrieved_context": agent_data.retrieved_context.split("\n\n") if agent_data.retrieved_context else [],
-            "relevant_indices": []  # You can populate this based on your relevance criteria
-        }
+        context_dict = self._prepare_context_dict(agent_data)
         
+        # Group scorers by category
+        categorized_scorers = self._get_scorer_by_category()
+        
+        # Evaluate all categories
         results = {}
+        for category_name, scorers in categorized_scorers.items():
+            if scorers:  # Only evaluate categories that have enabled scorers
+                category_results = await self._evaluate_category(
+                    category_name, scorers, agent_data, context_dict
+                )
+                results.update(category_results)
         
-        # Basic RAG metrics (from rag.py)
-        try:
-            results["answer_relevancy"] = await self.answer_relevancy_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["answer_relevancy"] = ScoreResult(0.0, False, f"Error: {str(e)}")
-        
-        try:
-            results["faithfulness"] = await self.faithfulness_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["faithfulness"] = ScoreResult(0.0, False, f"Error: {str(e)}")
-        
-        try:
-            results["contextual_precision"] = await self.contextual_precision_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["contextual_precision"] = ScoreResult(0.0, False, f"Error: {str(e)}")
-        
-        try:
-            results["contextual_recall"] = await self.contextual_recall_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                expected_output=agent_data.ground_truth or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["contextual_recall"] = ScoreResult(0.0, False, f"Error: {str(e)}")
-        
-        # Advanced retrieval metrics
-        try:
-            results["contextual_precision_pp"] = await self.contextual_precision_pp.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["contextual_precision_pp"] = ScoreResult(0.0, False, f"Error: {str(e)}")
-        
-        try:
-            results["contextual_recall_pp"] = await self.contextual_recall_pp.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                expected_output=agent_data.ground_truth or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["contextual_recall_pp"] = ScoreResult(0.0, False, f"Error: {str(e)}")
-        
-        # Non-async scorers
-        try:
-            results["contextual_f1"] = self.contextual_f1_scorer.score(
-                prediction=agent_data.agent_response or "",
-                ground_truth=agent_data.ground_truth or "",
-                context=context_dict
-            )
-        except Exception as e:
-            results["contextual_f1"] = ScoreResult(0.0, False, f"Error: {str(e)}")
-        
-        try:
-            results["retrieval_ranking"] = self.retrieval_ranking_scorer.score(
-                prediction=agent_data.agent_response or "",
-                ground_truth=agent_data.ground_truth or "",
-                context=context_dict
-            )
-        except Exception as e:
-            results["retrieval_ranking"] = {"error": str(e)}
-        
-        try:
-            results["semantic_similarity"] = self.semantic_similarity_scorer.score(
-                prediction=agent_data.agent_response or "",
-                ground_truth=agent_data.ground_truth or "",
-                context=context_dict
-            )
-        except Exception as e:
-            results["semantic_similarity"] = {"error": str(e)}
-        
-        try:
-            results["retrieval_diversity"] = self.retrieval_diversity_scorer.score(
-                prediction=agent_data.agent_response or "",
-                ground_truth=agent_data.ground_truth or "",
-                context=context_dict
-            )
-        except Exception as e:
-            results["retrieval_diversity"] = {"error": str(e)}
-        
-        # Add G-Eval evaluations
-        try:
-            results["helpfulness"] = await self.helpfulness_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["helpfulness"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["correctness"] = await self.correctness_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["correctness"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        # Add Context-Aware Generation Scorers
-        try:
-            results["context_faithfulness_pp"] = await self.context_faithfulness_pp.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["context_faithfulness_pp"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["context_groundedness"] = await self.context_groundedness_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["context_groundedness"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["context_completeness"] = await self.context_completeness_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["context_completeness"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["context_consistency"] = await self.context_consistency_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["context_consistency"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        # Add Answer Quality Enhancement Scorers
-        try:
-            results["rag_answer_quality"] = await self.rag_answer_quality_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["rag_answer_quality"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        # Add Hallucination Detection Scorers
-        try:
-            results["hallucination_detection"] = await self.hallucination_detection_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["hallucination_detection"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["source_attribution"] = await self.source_attribution_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["source_attribution"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["factual_accuracy"] = await self.factual_accuracy_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["factual_accuracy"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["claim_verification"] = await self.claim_verification_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["claim_verification"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        # Add Answer Completeness and Relevance Scorers
-        try:
-            results["answer_completeness"] = await self.answer_completeness_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["answer_completeness"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["question_answer_alignment"] = await self.question_answer_alignment_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["question_answer_alignment"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["information_density"] = await self.information_density_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["information_density"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["clarity_coherence"] = await self.clarity_coherence_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["clarity_coherence"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        # Add Multi-Context Integration Scorers
-        try:
-            results["cross_context_synthesis"] = await self.cross_context_synthesis_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["cross_context_synthesis"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["conflict_resolution"] = await self.conflict_resolution_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["conflict_resolution"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["context_prioritization"] = await self.context_prioritization_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["context_prioritization"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["citation_quality"] = await self.citation_quality_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["citation_quality"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        # Add Domain-Specific Evaluation Scorers
-        try:
-            results["technical_accuracy"] = await self.technical_accuracy_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["technical_accuracy"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["bias_detection"] = await self.bias_detection_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["bias_detection"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["tone_consistency"] = await self.tone_consistency_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["tone_consistency"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        try:
-            results["terminology_consistency"] = await self.terminology_consistency_scorer.evaluate(
-                input_text=agent_data.ground_truth or "",
-                output_text=agent_data.agent_response or "",
-                context=agent_data.retrieved_context
-            )
-        except Exception as e:
-            results["terminology_consistency"] = ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}")
-        
-        # Aggregate score
-        try:
-            results["aggregate"] = self.aggregate_scorer.score(
-                prediction=agent_data.agent_response or "",
-                ground_truth=agent_data.ground_truth or "",
-                context=context_dict
-            )
-        except Exception as e:
-            results["aggregate"] = {"error": str(e)}
+        # Add aggregate score
+        aggregate_result = await self._evaluate_aggregate_scorer(agent_data, context_dict)
+        results["aggregate"] = aggregate_result
         
         return results
-    
+
     async def evaluate_batch(self, agent_data_list: List[AgentData]) -> List[dict[str, Any]]:
         """
-        Evaluate multiple AgentData instances.
+        Evaluate a batch of AgentData instances.
         
         Args:
             agent_data_list: List of AgentData instances to evaluate
             
         Returns:
-            List of evaluation results for each AgentData instance
+            List of evaluation results
         """
         results = []
         for agent_data in agent_data_list:
             result = await self.evaluate(agent_data)
             results.append(result)
         return results
+
+    def update_config(self, new_config: RAGAssessmentConfig) -> None:
+        """
+        Update the configuration and reinitialize scorers.
+        
+        Args:
+            new_config: New configuration to apply
+        """
+        self.config = new_config
+        self._initialize_scorers()
+        self._initialize_aggregate_scorer()
+
+    def get_enabled_scorers(self) -> List[str]:
+        """Get list of enabled scorer names."""
+        return [config.name for config in self.config.scorers if config.enabled]
+
+    def get_scorer_weights(self) -> Dict[str, float]:
+        """Get current scorer weights."""
+        return {config.name: config.weight for config in self.config.scorers if config.enabled}

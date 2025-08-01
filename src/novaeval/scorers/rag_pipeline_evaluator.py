@@ -12,7 +12,7 @@ This module provides a complete evaluation framework for RAG pipelines, includin
 import asyncio
 import time
 import traceback
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Union, Tuple
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 import psutil
@@ -135,7 +135,7 @@ class RAGEvaluationResult:
 class QueryProcessingEvaluator(BaseScorer):
     """Evaluates query understanding and processing quality."""
     
-    def __init__(self, llm: Union[str, Any], name: str = "query_processing"):
+    def __init__(self, llm: Union[str, Any], name: str = "query_processing") -> None:
         super().__init__(name=name)
         self.llm = llm
         
@@ -261,7 +261,7 @@ class QueryProcessingEvaluator(BaseScorer):
 class RetrievalStageEvaluator(BaseScorer):
     """Retrieval stage performance evaluation."""
     
-    def __init__(self, llm: Union[str, Any], name: str = "enhanced_retrieval_stage"):
+    def __init__(self, llm: Union[str, Any], name: str = "enhanced_retrieval_stage") -> None:
         super().__init__(name=name)
         self.llm = llm
         
@@ -349,7 +349,7 @@ class RetrievalStageEvaluator(BaseScorer):
 class RerankingEvaluator(BaseScorer):
     """Evaluates reranking stage effectiveness."""
     
-    def __init__(self, llm: Union[str, Any], name: str = "enhanced_generation_stage"):
+    def __init__(self, llm: Union[str, Any], name: str = "enhanced_generation_stage") -> None:
         super().__init__(name=name)
         self.llm = llm
         
@@ -453,7 +453,7 @@ class RerankingEvaluator(BaseScorer):
 class PipelineCoordinationScorer(BaseScorer):
     """Evaluates how well pipeline stages work together."""
     
-    def __init__(self, name: str = "pipeline_coordination"):
+    def __init__(self, name: str = "pipeline_coordination") -> None:
         super().__init__(name=name)
         
     def score(self, stage_metrics: Dict[str, StageMetrics], context: Optional[Dict[str, Any]] = None) -> ScoreResult:
@@ -521,7 +521,7 @@ class PipelineCoordinationScorer(BaseScorer):
 class LatencyAnalysisScorer(BaseScorer):
     """Analyzes latency across pipeline stages."""
     
-    def __init__(self, name: str = "latency_analysis"):
+    def __init__(self, name: str = "latency_analysis") -> None:
         super().__init__(name=name)
         
     def score(self, stage_metrics: Dict[str, StageMetrics], context: Optional[Dict[str, Any]] = None) -> ScoreResult:
@@ -578,7 +578,7 @@ class LatencyAnalysisScorer(BaseScorer):
 class ResourceUtilizationScorer(BaseScorer):
     """Analyzes resource utilization across pipeline stages."""
     
-    def __init__(self, name: str = "resource_utilization"):
+    def __init__(self, name: str = "resource_utilization") -> None:
         super().__init__(name=name)
         
     def score(self, stage_metrics: Dict[str, StageMetrics], context: Optional[Dict[str, Any]] = None) -> ScoreResult:
@@ -641,7 +641,7 @@ class ResourceUtilizationScorer(BaseScorer):
 class ErrorPropagationScorer(BaseScorer):
     """Analyzes error propagation across pipeline stages."""
     
-    def __init__(self, name: str = "error_propagation"):
+    def __init__(self, name: str = "error_propagation") -> None:
         super().__init__(name=name)
         
     def score(self, stage_metrics: Dict[str, StageMetrics], context: Optional[Dict[str, Any]] = None) -> ScoreResult:
@@ -716,7 +716,7 @@ class ErrorPropagationScorer(BaseScorer):
 class RAGPipelineEvaluator:
     """Main entry point for comprehensive RAG pipeline evaluation."""
     
-    def __init__(self, llm: Union[str, Any]):
+    def __init__(self, llm: Union[str, Any]) -> None:
         self.llm = llm
         
         # Enhanced stage-specific evaluators
@@ -965,6 +965,82 @@ class RAGPipelineEvaluator:
             )
             return error_result
     
+    def _get_scorer_factories(self) -> List[Tuple[str, callable]]:
+        """
+        Get list of (scorer_name, factory_function) tuples for comprehensive evaluation.
+        
+        Returns:
+            List of tuples containing scorer names and their factory functions
+        """
+        return [
+            # Basic RAG scorers
+            ("contextual_precision_pp", lambda: ContextualPrecisionScorerPP(self.llm)),
+            ("contextual_recall_pp", lambda: ContextualRecallScorerPP(self.llm)),
+            ("contextual_f1", lambda: ContextualF1Scorer(
+                ContextualPrecisionScorerPP(self.llm), 
+                ContextualRecallScorerPP(self.llm)
+            )),
+            ("retrieval_ranking", lambda: RetrievalRankingScorer()),
+            ("semantic_similarity", lambda: SemanticSimilarityScorer()),
+            ("retrieval_diversity", lambda: RetrievalDiversityScorer()),
+            
+            # Advanced generation scorers
+            ("bias_detection", lambda: BiasDetectionScorer(self.llm)),
+            ("factual_accuracy", lambda: FactualAccuracyScorer(self.llm)),
+            ("claim_verification", lambda: ClaimVerificationScorer(self.llm)),
+            ("information_density", lambda: InformationDensityScorer(self.llm)),
+            ("clarity_coherence", lambda: ClarityAndCoherenceScorer(self.llm)),
+            ("conflict_resolution", lambda: ConflictResolutionScorer(self.llm)),
+            ("context_prioritization", lambda: ContextPrioritizationScorer(self.llm)),
+            ("citation_quality", lambda: CitationQualityScorer(self.llm)),
+            ("tone_consistency", lambda: ToneConsistencyScorer(self.llm)),
+            ("terminology_consistency", lambda: TerminologyConsistencyScorer(self.llm)),
+            ("context_faithfulness_pp", lambda: ContextFaithfulnessScorerPP(self.llm)),
+            ("context_groundedness", lambda: ContextGroundednessScorer(self.llm)),
+            ("context_completeness", lambda: ContextCompletenessScorer(self.llm)),
+            ("context_consistency", lambda: ContextConsistencyScorer(self.llm)),
+            ("rag_answer_quality", lambda: RAGAnswerQualityScorer(self.llm)),
+            ("hallucination_detection", lambda: HallucinationDetectionScorer(self.llm)),
+            ("source_attribution", lambda: SourceAttributionScorer(self.llm)),
+            ("answer_completeness", lambda: AnswerCompletenessScorer(self.llm)),
+            ("question_answer_alignment", lambda: QuestionAnswerAlignmentScorer(self.llm)),
+            ("cross_context_synthesis", lambda: CrossContextSynthesisScorer(self.llm)),
+            ("technical_accuracy", lambda: TechnicalAccuracyScorer(self.llm)),
+        ]
+
+    def _evaluate_single_scorer(self, scorer_name: str, factory_func: callable, 
+                               generated_answer: str, ground_truth: str, 
+                               context_dict: Dict[str, Any]) -> ScoreResult:
+        """
+        Evaluate a single scorer with unified error handling.
+        
+        Args:
+            scorer_name: Name of the scorer
+            factory_func: Function that creates the scorer instance
+            generated_answer: The generated answer to evaluate
+            ground_truth: The ground truth answer
+            context_dict: Context dictionary for the scorer
+            
+        Returns:
+            ScoreResult with evaluation result or error
+        """
+        try:
+            scorer = factory_func()
+            result = scorer.score(generated_answer, ground_truth, context_dict)
+            
+            # Ensure we have a ScoreResult object
+            if isinstance(result, float):
+                return ScoreResult(
+                    score=result, 
+                    passed=result >= 0.6, 
+                    reasoning=f"{scorer_name} score: {result}"
+                )
+            else:
+                return result
+                
+        except Exception as e:
+            return ScoreResult(0.0, False, f"Error evaluating {scorer_name}: {str(e)}")
+
     def _run_comprehensive_evaluation(self, rag_sample: RAGSample, 
                                     retrieved_contexts: List[RAGContext],
                                     generated_answer: str) -> Dict[str, ScoreResult]:
@@ -973,217 +1049,16 @@ class RAGPipelineEvaluator:
         context_text = " ".join([ctx.content for ctx in retrieved_contexts])
         context_dict = {"context": context_text}
         
-        try:
-            # Basic RAG scorers - with error handling for each
-            try:
-                precision_result = ContextualPrecisionScorerPP(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-                # Ensure we have a ScoreResult object
-                if isinstance(precision_result, float):
-                    comprehensive_scores['contextual_precision_pp'] = ScoreResult(precision_result, precision_result >= 0.6, f"Precision score: {precision_result}")
-                else:
-                    comprehensive_scores['contextual_precision_pp'] = precision_result
-            except Exception as e:
-                comprehensive_scores['contextual_precision_pp'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                recall_result = ContextualRecallScorerPP(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-                # Ensure we have a ScoreResult object
-                if isinstance(recall_result, float):
-                    comprehensive_scores['contextual_recall_pp'] = ScoreResult(recall_result, recall_result >= 0.6, f"Recall score: {recall_result}")
-                else:
-                    comprehensive_scores['contextual_recall_pp'] = recall_result
-            except Exception as e:
-                comprehensive_scores['contextual_recall_pp'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['contextual_f1'] = ContextualF1Scorer(
-                    ContextualPrecisionScorerPP(self.llm), 
-                    ContextualRecallScorerPP(self.llm)
-                ).score(generated_answer, rag_sample.ground_truth, context_dict)
-            except Exception as e:
-                comprehensive_scores['contextual_f1'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['retrieval_ranking'] = RetrievalRankingScorer().score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['retrieval_ranking'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['semantic_similarity'] = SemanticSimilarityScorer().score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['semantic_similarity'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['retrieval_diversity'] = RetrievalDiversityScorer().score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['retrieval_diversity'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            # Advanced generation scorers - with error handling for each
-            try:
-                comprehensive_scores['bias_detection'] = BiasDetectionScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['bias_detection'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['factual_accuracy'] = FactualAccuracyScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['factual_accuracy'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['claim_verification'] = ClaimVerificationScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['claim_verification'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['information_density'] = InformationDensityScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['information_density'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['clarity_coherence'] = ClarityAndCoherenceScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['clarity_coherence'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['conflict_resolution'] = ConflictResolutionScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['conflict_resolution'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['context_prioritization'] = ContextPrioritizationScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['context_prioritization'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['citation_quality'] = CitationQualityScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['citation_quality'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['tone_consistency'] = ToneConsistencyScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['tone_consistency'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['terminology_consistency'] = TerminologyConsistencyScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['terminology_consistency'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['context_faithfulness_pp'] = ContextFaithfulnessScorerPP(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['context_faithfulness_pp'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['context_groundedness'] = ContextGroundednessScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['context_groundedness'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['context_completeness'] = ContextCompletenessScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['context_completeness'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['context_consistency'] = ContextConsistencyScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['context_consistency'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['rag_answer_quality'] = RAGAnswerQualityScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['rag_answer_quality'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['hallucination_detection'] = HallucinationDetectionScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['hallucination_detection'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['source_attribution'] = SourceAttributionScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['source_attribution'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['answer_completeness'] = AnswerCompletenessScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['answer_completeness'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['question_answer_alignment'] = QuestionAnswerAlignmentScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['question_answer_alignment'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['cross_context_synthesis'] = CrossContextSynthesisScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['cross_context_synthesis'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-            try:
-                comprehensive_scores['technical_accuracy'] = TechnicalAccuracyScorer(self.llm).score(
-                    generated_answer, rag_sample.ground_truth, context_dict
-                )
-            except Exception as e:
-                comprehensive_scores['technical_accuracy'] = ScoreResult(0.0, False, f"Error: {str(e)}")
-            
-        except Exception as e:
-            # If any scorer fails, continue with what we have
-            comprehensive_scores['comprehensive_evaluation_error'] = ScoreResult(
-                score=0.0,
-                passed=False,
-                reasoning=f"Comprehensive evaluation failed: {str(e)}",
-                metadata={"error": str(e)}
+        # Get scorer factories
+        scorer_factories = self._get_scorer_factories()
+        
+        # Evaluate all scorers with unified error handling
+        for scorer_name, factory_func in scorer_factories:
+            result = self._evaluate_single_scorer(
+                scorer_name, factory_func, generated_answer, 
+                rag_sample.ground_truth, context_dict
             )
+            comprehensive_scores[scorer_name] = result
         
         return comprehensive_scores
     

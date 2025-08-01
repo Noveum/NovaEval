@@ -14,25 +14,8 @@ from novaeval.scorers.rag import (
 )
 from novaeval.scorers.base import ScoreResult
 
-# Mock LLM for testing
-class MockLLM:
-    def __init__(self):
-        self.total_requests = 0
-    
-    async def generate(self, prompt: str) -> str:
-        self.total_requests += 1
-        if "generate questions" in prompt.lower():
-            return "1. What is the capital of France?\n2. Where is France located?\n3. What is Paris known for?"
-        elif "extract claims" in prompt.lower():
-            return "1. The capital is Paris\n2. France is a European country\n3. Paris is known for culture"
-        elif "extract key facts" in prompt.lower():
-            return "1. Paris is the capital of France\n2. France is in Europe\n3. Paris has the Eiffel Tower"
-        elif "rate relevance" in prompt.lower():
-            return "Rating: 4\nExplanation: This context is highly relevant."
-        elif "verify" in prompt.lower():
-            return "Verification: SUPPORTED\nExplanation: This claim is supported by the context."
-        else:
-            return "Mock response for testing."
+# Import shared test utilities
+from test_utils import MockLLM
 
 @pytest.mark.asyncio
 async def test_answer_relevancy_scorer():
@@ -148,11 +131,13 @@ async def test_ragas_scorer():
 
 @pytest.mark.asyncio
 async def test_error_handling():
-    """Test error handling with invalid inputs."""
+    """Test comprehensive error handling with various failure scenarios."""
+    from unittest.mock import AsyncMock, patch
+    
+    # Test with missing context
     mock_llm = MockLLM()
     scorer = AnswerRelevancyScorer(model=mock_llm, threshold=0.7)
     
-    # Test with missing context
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
         output_text="Paris is the capital of France.",
@@ -161,7 +146,139 @@ async def test_error_handling():
     
     # Should handle gracefully
     assert isinstance(result, ScoreResult)
-    print(f"Error handling test passed: {result.score}")
+    print(f"Missing context test passed: {result.score}")
+    
+    # Test LLM exception handling
+    class ExceptionMockLLM:
+        async def generate(self, prompt):
+            raise Exception("LLM API error: Rate limit exceeded")
+    
+    exception_mock_llm = ExceptionMockLLM()
+    scorer = AnswerRelevancyScorer(model=exception_mock_llm, threshold=0.7)
+    
+    result = await scorer.evaluate(
+        input_text="What is the capital of France?",
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France."
+    )
+    
+    # Should handle LLM exceptions gracefully
+    assert isinstance(result, ScoreResult)
+    assert result.score == 0.0
+    assert not result.passed
+    assert "LLM API error" in result.reasoning or "failed" in result.reasoning.lower()
+    print(f"LLM exception test passed: {result.score}")
+    
+    # Test malformed response handling
+    class MalformedMockLLM:
+        async def generate(self, prompt):
+            return "This is not a valid response format"
+    
+    malformed_mock_llm = MalformedMockLLM()
+    scorer = AnswerRelevancyScorer(model=malformed_mock_llm, threshold=0.7)
+    
+    result = await scorer.evaluate(
+        input_text="What is the capital of France?",
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France."
+    )
+    
+    # Should handle malformed responses gracefully
+    assert isinstance(result, ScoreResult)
+    assert result.score == 0.0
+    assert not result.passed
+    print(f"Malformed response test passed: {result.score}")
+    
+    # Test empty response handling
+    class EmptyMockLLM:
+        async def generate(self, prompt):
+            return ""
+    
+    empty_mock_llm = EmptyMockLLM()
+    scorer = AnswerRelevancyScorer(model=empty_mock_llm, threshold=0.7)
+    
+    result = await scorer.evaluate(
+        input_text="What is the capital of France?",
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France."
+    )
+    
+    # Should handle empty responses gracefully
+    assert isinstance(result, ScoreResult)
+    assert result.score == 0.0
+    assert not result.passed
+    print(f"Empty response test passed: {result.score}")
+    
+    # Test unexpected response format
+    class UnexpectedMockLLM:
+        async def generate(self, prompt):
+            return "Rating: invalid\nExplanation: This is not a number"
+    
+    unexpected_mock_llm = UnexpectedMockLLM()
+    scorer = AnswerRelevancyScorer(model=unexpected_mock_llm, threshold=0.7)
+    
+    result = await scorer.evaluate(
+        input_text="What is the capital of France?",
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France."
+    )
+    
+    # Should handle unexpected response formats gracefully
+    assert isinstance(result, ScoreResult)
+    assert result.score == 0.0
+    assert not result.passed
+    print(f"Unexpected format test passed: {result.score}")
+    
+    # Test network timeout simulation
+    class TimeoutMockLLM:
+        async def generate(self, prompt):
+            import asyncio
+            await asyncio.sleep(0.1)  # Simulate delay
+            raise TimeoutError("LLM request timed out")
+    
+    timeout_mock_llm = TimeoutMockLLM()
+    scorer = AnswerRelevancyScorer(model=timeout_mock_llm, threshold=0.7)
+    
+    result = await scorer.evaluate(
+        input_text="What is the capital of France?",
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France."
+    )
+    
+    # Should handle timeout errors gracefully
+    assert isinstance(result, ScoreResult)
+    assert result.score == 0.0
+    assert not result.passed
+    assert "timeout" in result.reasoning.lower() or "failed" in result.reasoning.lower()
+    print(f"Timeout error test passed: {result.score}")
+    
+    # Test with None inputs
+    result = await scorer.evaluate(
+        input_text=None,
+        output_text=None,
+        context=None
+    )
+    
+    # Should handle None inputs gracefully
+    assert isinstance(result, ScoreResult)
+    assert result.score == 0.0
+    assert not result.passed
+    print(f"None inputs test passed: {result.score}")
+    
+    # Test with empty string inputs
+    result = await scorer.evaluate(
+        input_text="",
+        output_text="",
+        context=""
+    )
+    
+    # Should handle empty string inputs gracefully
+    assert isinstance(result, ScoreResult)
+    assert result.score == 0.0
+    assert not result.passed
+    print(f"Empty string inputs test passed: {result.score}")
+    
+    print("All error handling tests passed successfully!")
 
 if __name__ == "__main__":
     # Run all tests

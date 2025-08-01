@@ -203,7 +203,7 @@ class GEvalScorer(BaseScorer):
             )
         )
 
-        return result.score
+        return result
 
     async def evaluate(
         self,

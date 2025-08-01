@@ -18,6 +18,7 @@ from sentence_transformers import SentenceTransformer
 
 from novaeval.models.base import BaseModel as LLMModel
 from novaeval.scorers.base import BaseScorer, ScoreResult
+from novaeval.utils.parsing import parse_claims
 
 
 class AnswerRelevancyScorer(BaseScorer):
@@ -319,38 +320,7 @@ class FaithfulnessScorer(BaseScorer):
 
     def _parse_claims(self, response: str) -> list[str]:
         """Parse claims from LLM response."""
-        claims = []
-        lines = response.strip().split("\n")
-
-        for line in lines:
-            line = line.strip()
-            if line and (
-                line[0].isdigit() or line.startswith("-") or line.startswith("*")
-            ):
-                # Remove numbering and bullet points
-                claim = line
-                for prefix in [
-                    "1.",
-                    "2.",
-                    "3.",
-                    "4.",
-                    "5.",
-                    "6.",
-                    "7.",
-                    "8.",
-                    "9.",
-                    "10.",
-                    "-",
-                    "*",
-                ]:
-                    if claim.startswith(prefix):
-                        claim = claim[len(prefix) :].strip()
-                        break
-
-                if claim:
-                    claims.append(claim)
-
-        return claims
+        return parse_claims(response)
 
 
 class ContextualPrecisionScorer(BaseScorer):
@@ -539,14 +509,16 @@ class ContextualRecallScorer(BaseScorer):
         """Synchronous wrapper for the async evaluate method."""
         import asyncio
 
-        # Extract context from dict if available
+        # Extract context and expected_output from dict if available
         context_text = context.get("context") if context else None
+        expected_output = context.get("expected_output") if context else None
 
         # Run async evaluation
         result = asyncio.run(
             self.evaluate(
                 input_text=ground_truth,  # Use ground_truth as input
                 output_text=prediction,
+                expected_output=expected_output,
                 context=context_text,
             )
         )
@@ -665,38 +637,7 @@ class ContextualRecallScorer(BaseScorer):
 
     def _parse_claims(self, response: str) -> list[str]:
         """Parse claims/information from LLM response."""
-        claims = []
-        lines = response.strip().split("\n")
-
-        for line in lines:
-            line = line.strip()
-            if line and (
-                line[0].isdigit() or line.startswith("-") or line.startswith("*")
-            ):
-                # Remove numbering and bullet points
-                claim = line
-                for prefix in [
-                    "1.",
-                    "2.",
-                    "3.",
-                    "4.",
-                    "5.",
-                    "6.",
-                    "7.",
-                    "8.",
-                    "9.",
-                    "10.",
-                    "-",
-                    "*",
-                ]:
-                    if claim.startswith(prefix):
-                        claim = claim[len(prefix) :].strip()
-                        break
-
-                if claim:
-                    claims.append(claim)
-
-        return claims
+        return parse_claims(response)
 
 
 class RAGASScorer(BaseScorer):

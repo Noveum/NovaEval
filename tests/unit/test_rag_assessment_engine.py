@@ -7,115 +7,24 @@ from unittest.mock import Mock, patch
 from novaeval.scorers.rag_assessment import RAGAssessmentEngine, AgentData
 from novaeval.scorers.base import ScoreResult
 
-class MockLLM:
-    def __init__(self):
-        self.responses = {
-            "Rate relevance 1-5:": "Rating: 4",
-            "Extract key facts from:": "1. Fact 1\n2. Fact 2\n3. Fact 3",
-            "Extract all factual claims from this answer": "1. Claim 1\n2. Claim 2",
-            "Can this claim be verified from the provided context": "Rating: 4",
-            "Evaluate how well this answer is grounded": "Rating: 4",
-            "Evaluate if the provided context is complete": "Rating: 4",
-            "Evaluate the overall quality of this RAG-generated answer": "Rating: 4",
-            "Detect any hallucinations": "Rating: 2",
-            "Evaluate the quality of source attribution": "Rating: 4",
-            "Verify the factual accuracy": "Rating: 4",
-            "Extract all specific claims from this answer": "1. Specific claim 1\n2. Specific claim 2",
-            "Can this specific claim be verified": "Rating: 4",
-            "Evaluate the completeness of this answer": "Rating: 4",
-            "Evaluate how well this answer directly addresses": "Rating: 4",
-            "Evaluate the information density of this answer": "Rating: 4",
-            "Evaluate the clarity and coherence of this answer": "Rating: 4",
-            "Evaluate how well this answer synthesizes information": "Rating: 4",
-            "Evaluate how well this answer handles potential conflicts": "Rating: 4",
-            "Evaluate how well this answer prioritizes": "Rating: 4",
-            "Evaluate the quality of citations": "Rating: 4",
-            "Evaluate the technical accuracy": "Rating: 4",
-            "Detect any bias in this answer": "Rating: 2",
-            "Evaluate the appropriateness and consistency of tone": "Rating: 4",
-            "Evaluate the consistency of terminology": "Rating: 4",
-            "Evaluate if this answer is consistent with this specific context chunk": "Rating: 4",
-            "Evaluate the faithfulness": "Rating: 4",
-            "Evaluate the answer relevancy": "Rating: 4",
-            "Evaluate the contextual precision": "Rating: 4",
-            "Evaluate the contextual recall": "Rating: 4",
-            "Evaluate the helpfulness": "Rating: 4",
-            "Evaluate the correctness": "Rating: 4",
-        }
-    
-    def __call__(self, prompt):
-        for key, response in self.responses.items():
-            if key in prompt:
-                return response
-        return "Rating: 3"  # Default response
-
-@pytest.fixture
-def mock_llm():
-    return MockLLM()
-
-@pytest.fixture
-def sample_agent_data():
-    return AgentData(
-        ground_truth="What is machine learning?",
-        agent_response="Machine learning is a subset of artificial intelligence that enables computers to learn from data.",
-        retrieved_context="Machine learning is a subset of artificial intelligence. It involves training algorithms on data to make predictions or decisions."
-    )
-
-@pytest.fixture
-def sample_agent_data_list():
-    return [
-        AgentData(
-            ground_truth="What is machine learning?",
-            agent_response="Machine learning is a subset of artificial intelligence that enables computers to learn from data.",
-            retrieved_context="Machine learning is a subset of artificial intelligence. It involves training algorithms on data to make predictions or decisions."
-        ),
-        AgentData(
-            ground_truth="What is deep learning?",
-            agent_response="Deep learning is a subset of machine learning that uses neural networks with multiple layers.",
-            retrieved_context="Deep learning is a subset of machine learning. It uses artificial neural networks with multiple layers to process data."
-        )
-    ]
+# Import shared test utilities
+from test_utils import mock_llm, sample_agent_data, sample_agent_data_list
 
 def test_rag_assessment_engine_initialization(mock_llm):
     engine = RAGAssessmentEngine(mock_llm, threshold=0.7)
     assert engine.model == mock_llm
     assert engine.threshold == 0.7
     
-    # Check that all scorers are initialized
-    assert hasattr(engine, 'answer_relevancy_scorer')
-    assert hasattr(engine, 'faithfulness_scorer')
-    assert hasattr(engine, 'contextual_precision_scorer')
-    assert hasattr(engine, 'contextual_recall_scorer')
-    assert hasattr(engine, 'ragas_scorer')
-    assert hasattr(engine, 'contextual_precision_pp')
-    assert hasattr(engine, 'contextual_recall_pp')
-    assert hasattr(engine, 'retrieval_ranking_scorer')
-    assert hasattr(engine, 'semantic_similarity_scorer')
-    assert hasattr(engine, 'retrieval_diversity_scorer')
-    assert hasattr(engine, 'helpfulness_scorer')
-    assert hasattr(engine, 'correctness_scorer')
-    assert hasattr(engine, 'context_faithfulness_pp')
-    assert hasattr(engine, 'context_groundedness_scorer')
-    assert hasattr(engine, 'context_completeness_scorer')
-    assert hasattr(engine, 'context_consistency_scorer')
-    assert hasattr(engine, 'rag_answer_quality_scorer')
-    assert hasattr(engine, 'hallucination_detection_scorer')
-    assert hasattr(engine, 'source_attribution_scorer')
-    assert hasattr(engine, 'factual_accuracy_scorer')
-    assert hasattr(engine, 'claim_verification_scorer')
-    assert hasattr(engine, 'answer_completeness_scorer')
-    assert hasattr(engine, 'question_answer_alignment_scorer')
-    assert hasattr(engine, 'information_density_scorer')
-    assert hasattr(engine, 'clarity_coherence_scorer')
-    assert hasattr(engine, 'cross_context_synthesis_scorer')
-    assert hasattr(engine, 'conflict_resolution_scorer')
-    assert hasattr(engine, 'context_prioritization_scorer')
-    assert hasattr(engine, 'citation_quality_scorer')
-    assert hasattr(engine, 'technical_accuracy_scorer')
-    assert hasattr(engine, 'bias_detection_scorer')
-    assert hasattr(engine, 'tone_consistency_scorer')
-    assert hasattr(engine, 'terminology_consistency_scorer')
+    # Check that enabled scorers are initialized
+    enabled_scorers = engine.get_enabled_scorers()
+    assert len(enabled_scorers) > 0, "At least some scorers should be enabled"
+    
+    # Check that aggregate scorer is initialized
     assert hasattr(engine, 'aggregate_scorer')
+    
+    # Check that configuration is properly set
+    assert engine.config is not None
+    assert len(engine.config.scorers) > 0
 
 @pytest.mark.asyncio
 async def test_evaluate_single(mock_llm, sample_agent_data):
@@ -124,22 +33,15 @@ async def test_evaluate_single(mock_llm, sample_agent_data):
     
     assert isinstance(result, dict)
     
-    # Check that all expected metrics are present
-    expected_metrics = [
-        "answer_relevancy", "faithfulness", "contextual_precision", "contextual_recall",
-        "contextual_precision_pp", "contextual_recall_pp", "contextual_f1", "retrieval_ranking",
-        "semantic_similarity", "retrieval_diversity", "helpfulness", "correctness",
-        "context_faithfulness_pp", "context_groundedness", "context_completeness", "context_consistency",
-        "rag_answer_quality", "hallucination_detection", "source_attribution", "factual_accuracy",
-        "claim_verification", "answer_completeness", "question_answer_alignment", "information_density",
-        "clarity_coherence", "cross_context_synthesis", "conflict_resolution", "context_prioritization",
-        "citation_quality", "technical_accuracy", "bias_detection", "tone_consistency",
-        "terminology_consistency", "aggregate"
-    ]
+    # Check that enabled metrics are present
+    enabled_scorers = engine.get_enabled_scorers()
+    for scorer_name in enabled_scorers:
+        assert scorer_name in result, f"Enabled scorer {scorer_name} not found in results"
+        assert isinstance(result[scorer_name], ScoreResult), f"Metric {scorer_name} should be ScoreResult"
     
-    for metric in expected_metrics:
-        assert metric in result, f"Metric {metric} not found in results"
-        assert isinstance(result[metric], ScoreResult), f"Metric {metric} should be ScoreResult"
+    # Check that aggregate score is present
+    assert "aggregate" in result
+    assert isinstance(result["aggregate"], ScoreResult)
 
 @pytest.mark.asyncio
 async def test_evaluate_batch(mock_llm, sample_agent_data_list):

@@ -241,31 +241,23 @@ class PanelOfJudgesScorer(BaseScorer):
         Returns:
             Score value between 0 and 1
         """
-        # Create event loop if none exists
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        import asyncio
+        
+        # Extract input text from context if available, otherwise use ground_truth
+        input_text = context.get("input", ground_truth) if context else ground_truth
+        context_str = context.get("context") if context else None
 
-        # Run the async evaluation
-        try:
-            # Extract input text from context if available, otherwise use ground_truth
-            input_text = context.get("input", ground_truth) if context else ground_truth
-            context_str = context.get("context") if context else None
-
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=input_text,
-                    output_text=prediction,
-                    expected_output=ground_truth,
-                    context=context_str,
-                )
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=input_text,
+                output_text=prediction,
+                expected_output=ground_truth,
+                context=context_str,
             )
-            return result.score
-        except Exception as e:
-            print(f"Warning: Panel scoring failed: {e}")
-            return 0.0
+        )
+        
+        return result.score
 
     def _build_evaluation_prompt(
         self,

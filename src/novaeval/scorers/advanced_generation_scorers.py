@@ -1,7 +1,7 @@
 """
 Advanced Generation Evaluation Scorers for RAG.
 
-This module implements sophisticated generation evaluation scorers specifically designed for RAG scenarios, 
+This module implements sophisticated generation evaluation scorers specifically designed for RAG scenarios,
 focusing on context-conditioned generation quality.
 
 Key Features:
@@ -12,43 +12,12 @@ Key Features:
 - Domain-Specific Evaluation
 """
 
-# LangChain detection
-try:
-    import langchain
-    from langchain_core.language_models.base import BaseLanguageModel
-    _HAS_LANGCHAIN = True
-except ImportError:
-    _HAS_LANGCHAIN = False
-    BaseLanguageModel = None
-
-from typing import Any, Optional, Union, List, TYPE_CHECKING
-from novaeval.scorers.base import BaseScorer, ScoreResult
 import re
-import numpy as np
+from typing import Any, Optional
 
-# Forward reference for type hints
-if TYPE_CHECKING:
-    from typing_extensions import TypedDict
-
-
-def _call_llm(model, prompt: str):
-    """
-    Helper to call the LLM, supporting both string (OpenAI) and LangChain LLM objects.
-    """
-    if _HAS_LANGCHAIN and BaseLanguageModel and isinstance(model, BaseLanguageModel):
-        # LangChain LLM: use .invoke or .generate
-        if hasattr(model, "invoke"):
-            return model.invoke(prompt)
-        elif hasattr(model, "generate"):
-            return model.generate([prompt]).generations[0][0].text
-        else:
-            raise ValueError("LangChain LLM does not support invoke or generate.")
-    elif isinstance(model, str):
-        # Built-in: string model name, use OpenAI API
-        raise NotImplementedError("String-based LLM calling not implemented. Please provide a LangChain LLM or implement OpenAI call here.")
-    else:
-        # Assume model has a .generate method (NovaEval style)
-        return model.generate(prompt)
+from novaeval.scorers.base import BaseScorer, ScoreResult
+from novaeval.utils.llm import call_llm
+from novaeval.utils.parsing import parse_claims
 
 
 # CONTEXT-AWARE GENERATION SCORERS
@@ -60,11 +29,11 @@ class BiasDetectionScorer(BaseScorer):
         super().__init__(name="BiasDetectionScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Question: {input_text}
         Answer: {output_text}
@@ -86,32 +55,31 @@ class BiasDetectionScorer(BaseScorer):
         5: Major bias
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             bias_score = self._parse_bias_score(response)
             # Invert the score (lower bias = higher quality)
             quality_score = (6 - bias_score) / 5.0
             passed = quality_score >= self.threshold
-            
+
             reasoning = f"Bias level: {bias_score}/5, Quality: {quality_score:.3f}"
-            
+
             return ScoreResult(
                 score=quality_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"bias_score": bias_score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_bias_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -119,23 +87,23 @@ class BiasDetectionScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 1.0  # Default to no bias
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 # HALLUCINATION DETECTION SCORERS
 class FactualAccuracyScorer(BaseScorer):
@@ -146,11 +114,11 @@ class FactualAccuracyScorer(BaseScorer):
         super().__init__(name="FactualAccuracyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text or not context:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer or context provided", metadata={})
-        
+
         prompt = f"""
         Context: {context}
         Answer: {output_text}
@@ -170,31 +138,30 @@ class FactualAccuracyScorer(BaseScorer):
         5: Completely accurate
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_factual_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Factual accuracy: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_factual_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -202,23 +169,23 @@ class FactualAccuracyScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class ClaimVerificationScorer(BaseScorer):
     """
@@ -228,11 +195,11 @@ class ClaimVerificationScorer(BaseScorer):
         super().__init__(name="ClaimVerificationScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         # Extract claims from the answer
         claims_prompt = f"""
         Extract all specific claims from this answer. Focus on factual statements.
@@ -244,18 +211,18 @@ class ClaimVerificationScorer(BaseScorer):
         2. [Claim 2]
         3. [Claim 3]
         """
-        
+
         try:
             claims_response = await self._call_model(claims_prompt)
             claims = self._parse_claims(claims_response)
-            
+
             if not claims:
                 return ScoreResult(score=1.0, passed=True, reasoning="No specific claims found", metadata={"claims": []})
-            
+
             # Verify each claim
             verified_claims = []
             total_score = 0.0
-            
+
             for claim in claims:
                 verification_prompt = f"""
                 Context: {context or "No context provided"}
@@ -270,47 +237,35 @@ class ClaimVerificationScorer(BaseScorer):
                 5: Fully verified by context
                 
                 Rating: """
-                
+
                 verification_response = await self._call_model(verification_prompt)
                 score = self._parse_verification_score(verification_response)
                 total_score += score
                 verified_claims.append({"claim": claim, "score": score})
-            
+
             avg_score = total_score / len(claims) / 5.0
             passed = avg_score >= self.threshold
-            
+
             reasoning = f"Verified {len(claims)} claims. Average verification: {avg_score:.3f}"
-            
+
             return ScoreResult(
                 score=avg_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"verified_claims": verified_claims, "total_claims": len(claims)}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_claims(self, text: str) -> list[str]:
-        claims = []
-        lines = text.strip().split("\n")
-        for line in lines:
-            line = line.strip()
-            if line and (line[0].isdigit() or line.startswith("-") or line.startswith("*")):
-                for prefix in ["1.", "2.", "3.", "4.", "5.", "-", "*"]:
-                    if line.startswith(prefix):
-                        claim = line[len(prefix):].strip()
-                        if claim:
-                            claims.append(claim)
-                        break
-        return claims
-    
+        return parse_claims(text)
+
     def _parse_verification_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -318,23 +273,23 @@ class ClaimVerificationScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 # ANSWER COMPLETENESS AND RELEVANCE SCORERS
 class InformationDensityScorer(BaseScorer):
@@ -345,11 +300,11 @@ class InformationDensityScorer(BaseScorer):
         super().__init__(name="InformationDensityScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Question: {input_text}
         Answer: {output_text}
@@ -370,31 +325,30 @@ class InformationDensityScorer(BaseScorer):
         5: Very high information density
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_density_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Information density: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_density_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -402,23 +356,23 @@ class InformationDensityScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class ClarityAndCoherenceScorer(BaseScorer):
     """
@@ -428,11 +382,11 @@ class ClarityAndCoherenceScorer(BaseScorer):
         super().__init__(name="ClarityAndCoherenceScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Answer: {output_text}
         
@@ -453,31 +407,30 @@ class ClarityAndCoherenceScorer(BaseScorer):
         5: Very clear and coherent
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_clarity_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Clarity and coherence: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_clarity_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -485,23 +438,23 @@ class ClarityAndCoherenceScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 # MULTI-CONTEXT INTEGRATION SCORERS
 class ConflictResolutionScorer(BaseScorer):
@@ -512,16 +465,16 @@ class ConflictResolutionScorer(BaseScorer):
         super().__init__(name="ConflictResolutionScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not context or not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No context or output provided", metadata={})
-        
+
         # Split context into chunks to check for conflicts
         context_chunks = context.split("\n\n")
         if len(context_chunks) < 2:
             return ScoreResult(score=1.0, passed=True, reasoning="Single context provided", metadata={"chunks": 1})
-        
+
         prompt = f"""
         Question: {input_text}
         Context chunks: {len(context_chunks)} separate pieces of information
@@ -542,31 +495,30 @@ class ConflictResolutionScorer(BaseScorer):
         5: Excellent conflict resolution
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_conflict_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Conflict resolution: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score, "context_chunks": len(context_chunks)}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_conflict_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -574,23 +526,23 @@ class ConflictResolutionScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class ContextPrioritizationScorer(BaseScorer):
     """
@@ -600,11 +552,11 @@ class ContextPrioritizationScorer(BaseScorer):
         super().__init__(name="ContextPrioritizationScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not context or not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No context or output provided", metadata={})
-        
+
         prompt = f"""
         Question: {input_text}
         Context: {context}
@@ -625,31 +577,30 @@ class ContextPrioritizationScorer(BaseScorer):
         5: Excellent prioritization
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_prioritization_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Context prioritization: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_prioritization_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -657,23 +608,23 @@ class ContextPrioritizationScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class CitationQualityScorer(BaseScorer):
     """
@@ -683,11 +634,11 @@ class CitationQualityScorer(BaseScorer):
         super().__init__(name="CitationQualityScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Answer: {output_text}
         
@@ -707,31 +658,30 @@ class CitationQualityScorer(BaseScorer):
         5: Excellent citation quality
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_citation_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Citation quality: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_citation_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -739,23 +689,23 @@ class CitationQualityScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 # DOMAIN-SPECIFIC EVALUATION SCORERS
 class ToneConsistencyScorer(BaseScorer):
@@ -766,11 +716,11 @@ class ToneConsistencyScorer(BaseScorer):
         super().__init__(name="ToneConsistencyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Question: {input_text}
         Answer: {output_text}
@@ -791,31 +741,30 @@ class ToneConsistencyScorer(BaseScorer):
         5: Excellent tone appropriateness
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_tone_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Tone consistency: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_tone_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -823,23 +772,23 @@ class ToneConsistencyScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class TerminologyConsistencyScorer(BaseScorer):
     """
@@ -849,11 +798,11 @@ class TerminologyConsistencyScorer(BaseScorer):
         super().__init__(name="TerminologyConsistencyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Answer: {output_text}
         
@@ -873,31 +822,30 @@ class TerminologyConsistencyScorer(BaseScorer):
         5: Excellent terminology consistency
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_terminology_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Terminology consistency: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_terminology_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -905,23 +853,23 @@ class TerminologyConsistencyScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class ContextFaithfulnessScorerPP(BaseScorer):
     """
@@ -932,11 +880,11 @@ class ContextFaithfulnessScorerPP(BaseScorer):
         super().__init__(name="ContextFaithfulnessScorerPP", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not context or not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No context or output provided", metadata={})
-        
+
         # Extract claims from the answer
         claims_prompt = f"""
         Extract all factual claims from this answer. List each claim as a separate statement.
@@ -948,18 +896,18 @@ class ContextFaithfulnessScorerPP(BaseScorer):
         2. [Claim 2]
         3. [Claim 3]
         """
-        
+
         try:
             claims_response = await self._call_model(claims_prompt)
             claims = self._parse_claims(claims_response)
-            
+
             if not claims:
                 return ScoreResult(score=1.0, passed=True, reasoning="No factual claims found", metadata={"claims": []})
-            
+
             # Verify each claim against context
             verified_claims = []
             total_score = 0.0
-            
+
             for i, claim in enumerate(claims):
                 verification_prompt = f"""
                 Context: {context}
@@ -974,47 +922,35 @@ class ContextFaithfulnessScorerPP(BaseScorer):
                 5: Fully supported by context
                 
                 Rating: """
-                
+
                 verification_response = await self._call_model(verification_prompt)
                 score = self._parse_verification_score(verification_response)
                 total_score += score
                 verified_claims.append({"claim": claim, "score": score})
-            
+
             avg_score = total_score / len(claims) / 5.0  # Normalize to 0-1
             passed = avg_score >= self.threshold
-            
+
             reasoning = f"Verified {len(claims)} claims. Average faithfulness: {avg_score:.3f}"
-            
+
             return ScoreResult(
                 score=avg_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"verified_claims": verified_claims, "total_claims": len(claims)}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_claims(self, text: str) -> list[str]:
-        claims = []
-        lines = text.strip().split("\n")
-        for line in lines:
-            line = line.strip()
-            if line and (line[0].isdigit() or line.startswith("-") or line.startswith("*")):
-                for prefix in ["1.", "2.", "3.", "4.", "5.", "-", "*"]:
-                    if line.startswith(prefix):
-                        claim = line[len(prefix):].strip()
-                        if claim:
-                            claims.append(claim)
-                        break
-        return claims
-    
+        return parse_claims(text)
+
     def _parse_verification_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -1022,23 +958,23 @@ class ContextFaithfulnessScorerPP(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 1.0  # Default to no hallucinations
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class ContextGroundednessScorer(BaseScorer):
     """
@@ -1049,11 +985,11 @@ class ContextGroundednessScorer(BaseScorer):
         super().__init__(name="ContextGroundednessScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not context or not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No context or output provided", metadata={})
-        
+
         prompt = f"""
         Context: {context}
         
@@ -1073,31 +1009,30 @@ class ContextGroundednessScorer(BaseScorer):
         5: Fully grounded in context
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_groundedness_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Groundedness score: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_groundedness_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -1105,23 +1040,23 @@ class ContextGroundednessScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class ContextCompletenessScorer(BaseScorer):
     """
@@ -1132,11 +1067,11 @@ class ContextCompletenessScorer(BaseScorer):
         super().__init__(name="ContextCompletenessScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not context or not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No context or output provided", metadata={})
-        
+
         prompt = f"""
         Question: {input_text}
         Context: {context}
@@ -1156,31 +1091,30 @@ class ContextCompletenessScorer(BaseScorer):
         5: Context is fully complete for this answer
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_completeness_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Context completeness: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_completeness_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -1188,23 +1122,23 @@ class ContextCompletenessScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class ContextConsistencyScorer(BaseScorer):
     """
@@ -1215,16 +1149,16 @@ class ContextConsistencyScorer(BaseScorer):
         super().__init__(name="ContextConsistencyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not context or not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No context or output provided", metadata={})
-        
+
         # Split context into multiple chunks
         context_chunks = context.split("\n\n")
         if len(context_chunks) < 2:
             return ScoreResult(score=1.0, passed=True, reasoning="Single context provided", metadata={"chunks": 1})
-        
+
         # Evaluate consistency across chunks
         consistency_scores = []
         for i, chunk in enumerate(context_chunks):
@@ -1242,32 +1176,31 @@ class ContextConsistencyScorer(BaseScorer):
             5: Fully consistent
             
             Rating: """
-            
+
             try:
                 response = await self._call_model(prompt)
                 score = self._parse_consistency_score(response)
                 consistency_scores.append(score)
-            except Exception as e:
+            except Exception:
                 consistency_scores.append(3.0)  # Default to neutral
-        
+
         avg_score = sum(consistency_scores) / len(consistency_scores) / 5.0
         passed = avg_score >= self.threshold
-        
+
         reasoning = f"Consistency across {len(context_chunks)} chunks: {avg_score:.3f}"
-        
+
         return ScoreResult(
             score=avg_score,
             passed=passed,
             reasoning=reasoning,
             metadata={"consistency_scores": consistency_scores, "chunks": len(context_chunks)}
         )
-    
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_consistency_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -1275,23 +1208,23 @@ class ContextConsistencyScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class RAGAnswerQualityScorer(BaseScorer):
     """
@@ -1302,11 +1235,11 @@ class RAGAnswerQualityScorer(BaseScorer):
         super().__init__(name="RAGAnswerQualityScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Question: {input_text}
         Context: {context or "No context provided"}
@@ -1328,31 +1261,30 @@ class RAGAnswerQualityScorer(BaseScorer):
         5: Excellent quality
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_quality_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Answer quality: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_quality_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -1360,23 +1292,23 @@ class RAGAnswerQualityScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class HallucinationDetectionScorer(BaseScorer):
     """
@@ -1386,11 +1318,11 @@ class HallucinationDetectionScorer(BaseScorer):
         super().__init__(name="HallucinationDetectionScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Context: {context or "No context provided"}
         Answer: {output_text}
@@ -1410,32 +1342,31 @@ class HallucinationDetectionScorer(BaseScorer):
         5: Major hallucinations
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             hallucination_score = self._parse_hallucination_score(response)
             # Invert the score (lower hallucination = higher quality)
             quality_score = (6 - hallucination_score) / 5.0
             passed = quality_score >= self.threshold
-            
+
             reasoning = f"Hallucination level: {hallucination_score}/5, Quality: {quality_score:.3f}"
-            
+
             return ScoreResult(
                 score=quality_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"hallucination_score": hallucination_score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_hallucination_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -1443,23 +1374,23 @@ class HallucinationDetectionScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 1.0  # Default to no hallucinations
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class SourceAttributionScorer(BaseScorer):
     """
@@ -1469,11 +1400,11 @@ class SourceAttributionScorer(BaseScorer):
         super().__init__(name="SourceAttributionScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Context: {context or "No context provided"}
         Answer: {output_text}
@@ -1493,31 +1424,30 @@ class SourceAttributionScorer(BaseScorer):
         5: Excellent attribution
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_attribution_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Source attribution: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_attribution_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -1525,23 +1455,23 @@ class SourceAttributionScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class AnswerCompletenessScorer(BaseScorer):
     """
@@ -1551,11 +1481,11 @@ class AnswerCompletenessScorer(BaseScorer):
         super().__init__(name="AnswerCompletenessScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Question: {input_text}
         Answer: {output_text}
@@ -1576,31 +1506,30 @@ class AnswerCompletenessScorer(BaseScorer):
         5: Fully complete
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_completeness_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Answer completeness: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_completeness_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -1608,23 +1537,23 @@ class AnswerCompletenessScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class QuestionAnswerAlignmentScorer(BaseScorer):
     """
@@ -1634,11 +1563,11 @@ class QuestionAnswerAlignmentScorer(BaseScorer):
         super().__init__(name="QuestionAnswerAlignmentScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Question: {input_text}
         Answer: {output_text}
@@ -1658,31 +1587,30 @@ class QuestionAnswerAlignmentScorer(BaseScorer):
         5: Directly addresses the question
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_alignment_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Question-answer alignment: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_alignment_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -1690,23 +1618,23 @@ class QuestionAnswerAlignmentScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class CrossContextSynthesisScorer(BaseScorer):
     """
@@ -1716,16 +1644,16 @@ class CrossContextSynthesisScorer(BaseScorer):
         super().__init__(name="CrossContextSynthesisScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not context or not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No context or output provided", metadata={})
-        
+
         # Split context into chunks
         context_chunks = context.split("\n\n")
         if len(context_chunks) < 2:
             return ScoreResult(score=1.0, passed=True, reasoning="Single context provided", metadata={"chunks": 1})
-        
+
         prompt = f"""
         Question: {input_text}
         Context chunks: {len(context_chunks)} separate pieces of information
@@ -1746,31 +1674,30 @@ class CrossContextSynthesisScorer(BaseScorer):
         5: Excellent synthesis
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_synthesis_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Cross-context synthesis: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score, "context_chunks": len(context_chunks)}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_synthesis_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -1778,23 +1705,23 @@ class CrossContextSynthesisScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0
+        )
+        
+        return result.score if hasattr(result, "score") else result
 
 class TechnicalAccuracyScorer(BaseScorer):
     """
@@ -1804,11 +1731,11 @@ class TechnicalAccuracyScorer(BaseScorer):
         super().__init__(name="TechnicalAccuracyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-    
+
     async def evaluate(self, input_text: str, output_text: str, expected_output: Optional[str] = None, context: Optional[str] = None, **kwargs: Any) -> ScoreResult:
         if not output_text:
             return ScoreResult(score=0.0, passed=False, reasoning="No answer provided", metadata={})
-        
+
         prompt = f"""
         Question: {input_text}
         Context: {context or "No context provided"}
@@ -1829,31 +1756,30 @@ class TechnicalAccuracyScorer(BaseScorer):
         5: Technically precise
         
         Rating: """
-        
+
         try:
             response = await self._call_model(prompt)
             score = self._parse_technical_score(response)
             normalized_score = score / 5.0
             passed = normalized_score >= self.threshold
-            
+
             reasoning = f"Technical accuracy: {normalized_score:.3f} ({score}/5)"
-            
+
             return ScoreResult(
                 score=normalized_score,
                 passed=passed,
                 reasoning=reasoning,
                 metadata={"raw_score": score}
             )
-            
+
         except Exception as e:
-            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {str(e)}", metadata={})
-    
+            return ScoreResult(score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={})
+
     async def _call_model(self, prompt: str):
         import asyncio
-        return await asyncio.to_thread(_call_llm, self.model, prompt)
-    
+        return await asyncio.to_thread(call_llm, self.model, prompt)
+
     def _parse_technical_score(self, response: str) -> float:
-        import re
         match = re.search(r"Rating:\s*(\d+)", response)
         if match:
             return float(match.group(1))
@@ -1861,20 +1787,20 @@ class TechnicalAccuracyScorer(BaseScorer):
         if numbers:
             return float(numbers[-1])
         return 3.0  # Default to neutral
-    
+
     def score(self, prediction, ground_truth, context=None):
         import asyncio
-        try:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=ground_truth,
-                    output_text=prediction,
-                    context=context.get("context", "") if context else None
-                )
+        
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,
+                output_text=prediction,
+                context=context_text
             )
-            loop.close()
-            return result.score if hasattr(result, 'score') else result
-        except Exception as e:
-            return 0.0 
+        )
+        
+        return result.score if hasattr(result, "score") else result
