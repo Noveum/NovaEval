@@ -299,19 +299,19 @@ def test_parse_field_list_and_dict_edge_cases():
     ds = AgentDataset()
     # List fields: valid JSON string
     assert ds._parse_field("trace", '[{"a":1}]') == [{"a": 1}]
-    # List fields: invalid JSON string
-    assert ds._parse_field("trace", "[invalid]") == []
+    # List fields: invalid JSON string (kept as string for union fields)
+    assert ds._parse_field("trace", "[invalid]") == "[invalid]"
     # List fields: already a list
     assert ds._parse_field("trace", [{"a": 2}]) == [{"a": 2}]
-    # List fields: wrong type
+    # List fields: wrong type (non-string values return empty list)
     assert ds._parse_field("trace", 123) == []
     # Dict fields: valid JSON string
     assert ds._parse_field("parameters_passed", '{"x":1}') == {"x": 1}
-    # Dict fields: invalid JSON string
-    assert ds._parse_field("parameters_passed", "{invalid}") == {}
+    # Dict fields: invalid JSON string (kept as string for union fields)
+    assert ds._parse_field("parameters_passed", "{invalid}") == "{invalid}"
     # Dict fields: already a dict
     assert ds._parse_field("parameters_passed", {"y": 2}) == {"y": 2}
-    # Dict fields: wrong type
+    # Dict fields: wrong type (non-string values return empty dict)
     assert ds._parse_field("parameters_passed", 123) == {}
     # Non-list/dict field
     assert ds._parse_field("agent_name", "abc") == "abc"
@@ -320,15 +320,15 @@ def test_parse_field_list_and_dict_edge_cases():
 @pytest.mark.unit
 def test_parse_field_list_string_no_brackets():
     ds = AgentDataset()
-    # Should return [] for list field if string does not start/end with brackets
-    assert ds._parse_field("trace", "notalist") == []
+    # For union fields with string, non-JSON strings should be kept as strings
+    assert ds._parse_field("trace", "notalist") == "notalist"
 
 
 @pytest.mark.unit
 def test_parse_field_dict_string_no_braces():
     ds = AgentDataset()
-    # Should return {} for dict field if string does not start/end with braces
-    assert ds._parse_field("parameters_passed", "notadict") == {}
+    # For union fields with string, non-JSON strings should be kept as strings
+    assert ds._parse_field("parameters_passed", "notadict") == "notadict"
 
 
 @pytest.mark.unit
@@ -347,7 +347,7 @@ def test_parse_field_dict_field_non_dict_non_str():
 
 @pytest.mark.unit
 def test_ingest_from_csv_invalid_json(tmp_path):
-    # List/dict fields with invalid JSON
+    # List/dict fields with invalid JSON (now kept as strings for union fields)
     data = {
         "agent_name": "A",
         "trace": "[invalid]",
@@ -364,11 +364,12 @@ def test_ingest_from_csv_invalid_json(tmp_path):
     ds = AgentDataset()
     ds.ingest_from_csv(str(csv_file))
     agent = ds.data[0]
-    assert agent.trace == []
-    assert agent.tools_available == []
-    assert agent.tool_calls == []
-    assert agent.parameters_passed == {}
-    assert agent.tool_call_results == []
+    # Invalid JSON strings are kept as strings for union fields
+    assert agent.trace == "[invalid]"
+    assert agent.tools_available == "[invalid]"
+    assert agent.tool_calls == "[invalid]"
+    assert agent.parameters_passed == "{invalid}"
+    assert agent.tool_call_results == "[invalid]"
 
 
 @pytest.mark.unit
@@ -520,16 +521,16 @@ def test_export_to_csv_empty_file(tmp_path):
 def test_parse_field_invalid_json_list():
     ds = AgentDataset()
     ds._list_fields.add("trace")
-    # Invalid JSON string for list
-    assert ds._parse_field("trace", "[notjson]") == []
+    # Invalid JSON string for list (kept as string for union fields)
+    assert ds._parse_field("trace", "[notjson]") == "[notjson]"
 
 
 @pytest.mark.unit
 def test_parse_field_invalid_json_dict():
     ds = AgentDataset()
     ds._dict_fields.add("parameters_passed")
-    # Invalid JSON string for dict
-    assert ds._parse_field("parameters_passed", "{notjson}") == {}
+    # Invalid JSON string for dict (kept as string for union fields)
+    assert ds._parse_field("parameters_passed", "{notjson}") == "{notjson}"
 
 
 @pytest.mark.unit
@@ -631,12 +632,12 @@ def test_parse_field_raises_keyerror_for_unknown_field():
 @pytest.mark.unit
 def test_parse_field_expected_tool_call_dict_and_json():
     ds = AgentDataset()
-    # As dict
+    # As dict (for union fields, non-string values are kept as-is and handled by Pydantic)
     val = ds._parse_field(
         "expected_tool_call", {"tool_name": "t", "parameters": {}, "call_id": "c"}
     )
-    assert val.tool_name == "t"
-    # As JSON string
+    assert val == {"tool_name": "t", "parameters": {}, "call_id": "c"}
+    # As JSON string (gets parsed to ToolCall)
     val2 = ds._parse_field(
         "expected_tool_call", '{"tool_name": "t2", "parameters": {}, "call_id": "c2"}'
     )
@@ -656,11 +657,11 @@ def test_parse_field_list_and_dict_various_json():
     ds = AgentDataset()
     # List field
     assert ds._parse_field("trace", "[]") == []
-    assert ds._parse_field("trace", "[invalid]") == []
+    assert ds._parse_field("trace", "[invalid]") == "[invalid]"  # kept as string for union fields
     assert ds._parse_field("trace", '[{"a":1}]') == [{"a": 1}]
     # Dict field
     assert ds._parse_field("parameters_passed", "{}") == {}
-    assert ds._parse_field("parameters_passed", "{invalid}") == {}
+    assert ds._parse_field("parameters_passed", "{invalid}") == "{invalid}"  # kept as string for union fields
     assert ds._parse_field("parameters_passed", '{"x":1}') == {"x": 1}
 
 
@@ -771,9 +772,10 @@ def test_parse_field_toolcall_exception(monkeypatch):
 @pytest.mark.unit
 def test_parse_field_toolcall_non_str_non_dict():
     ds = AgentDataset()
-    # Should return None if value is not str or dict for ToolCall
-    assert ds._parse_field("expected_tool_call", 123) is None
-    assert ds._parse_field("expected_tool_call", [1, 2, 3]) is None
+    # For union fields, non-string non-dict values fall through to default behavior
+    # Since expected_tool_call is a union type, non-string values are returned as-is and will be handled by Pydantic validation
+    assert ds._parse_field("expected_tool_call", 123) == 123
+    assert ds._parse_field("expected_tool_call", [1, 2, 3]) == [1, 2, 3]
 
 
 @pytest.mark.unit
@@ -783,7 +785,8 @@ def test_parse_field_list_field_typeerror(monkeypatch):
     monkeypatch.setattr(
         json, "loads", lambda v: (_ for _ in ()).throw(TypeError("fail"))
     )
-    assert ds._parse_field("trace", "[1,2,3]") == []
+    # For union fields, failed JSON parsing keeps the string
+    assert ds._parse_field("trace", "[1,2,3]") == "[1,2,3]"
 
 
 @pytest.mark.unit
@@ -793,7 +796,8 @@ def test_parse_field_dict_field_typeerror(monkeypatch):
     monkeypatch.setattr(
         json, "loads", lambda v: (_ for _ in ()).throw(TypeError("fail"))
     )
-    assert ds._parse_field("parameters_passed", '{"x":1}') == {}
+    # For union fields, failed JSON parsing keeps the string
+    assert ds._parse_field("parameters_passed", '{"x":1}') == '{"x":1}'
 
 
 @pytest.mark.unit
@@ -1229,23 +1233,23 @@ def test_parse_field_bool_string_variations():
     assert ds._parse_field("agent_exit", "off") is False
     assert ds._parse_field("agent_exit", "OFF") is False
 
-    # Test unrecognized strings default to False
-    assert ds._parse_field("agent_exit", "maybe") is False
-    assert ds._parse_field("agent_exit", "unknown") is False
+    # Test unrecognized strings are kept as strings for union fields
+    assert ds._parse_field("agent_exit", "maybe") == "maybe"
+    assert ds._parse_field("agent_exit", "unknown") == "unknown"
 
 
 def test_parse_field_bool_numeric_conversions():
     """Test boolean field parsing with numeric inputs."""
     ds = AgentDataset()
 
-    # Test numeric conversions
-    assert ds._parse_field("agent_exit", 1) is True
-    assert ds._parse_field("agent_exit", 0) is False
-    assert ds._parse_field("agent_exit", 42) is True  # Non-zero is True
-    assert ds._parse_field("agent_exit", -1) is True  # Non-zero is True
+    # For union fields, numeric values are kept as-is (handled by Pydantic)
+    assert ds._parse_field("agent_exit", 1) == 1
+    assert ds._parse_field("agent_exit", 0) == 0
+    assert ds._parse_field("agent_exit", 42) == 42
+    assert ds._parse_field("agent_exit", -1) == -1
 
-    # Test invalid numeric conversions
-    assert ds._parse_field("agent_exit", "not_a_number") is False
+    # Non-boolean strings are kept as strings for union fields
+    assert ds._parse_field("agent_exit", "not_a_number") == "not_a_number"
 
 
 def test_parse_field_bool_exception_handling():
@@ -1259,7 +1263,8 @@ def test_parse_field_bool_exception_handling():
 
     obj = UnconvertibleObj()
     result = ds._parse_field("agent_exit", obj)
-    assert result is False  # Should default to False on exception
+    # For union fields, objects are kept as-is (handled by Pydantic)
+    assert result is obj
 
 
 def test_parse_field_bool_none_with_default():
@@ -1275,23 +1280,23 @@ def test_parse_field_expected_tool_call_invalid_json():
     """Test parsing expected_tool_call with invalid JSON string."""
     ds = AgentDataset()
 
-    # Test with invalid JSON
+    # Test with invalid JSON (kept as string for union fields)
     result = ds._parse_field("expected_tool_call", "invalid json {")
-    assert result is None
+    assert result == "invalid json {"
 
-    # Test with valid JSON but invalid ToolCall structure
+    # Test with valid JSON but invalid ToolCall structure (kept as string for union fields)
     result = ds._parse_field("expected_tool_call", '{"invalid": "structure"}')
-    assert result is None
+    assert result == '{"invalid": "structure"}'
 
 
 def test_parse_field_expected_tool_call_exception():
     """Test parsing expected_tool_call with exception during ToolCall creation."""
     ds = AgentDataset()
 
-    # Test with JSON that causes ToolCall constructor to fail
+    # Test with JSON that causes ToolCall constructor to fail (kept as string for union fields)
     invalid_toolcall_json = '{"tool_name": null, "parameters": "not_a_dict"}'
     result = ds._parse_field("expected_tool_call", invalid_toolcall_json)
-    assert result is None
+    assert result == '{"tool_name": null, "parameters": "not_a_dict"}'
 
 
 def test_get_data_method():
@@ -1359,9 +1364,9 @@ user3,task3,turn3,invalid_json,invalid_json,invalid_json,maybe,invalid_json"""
         assert ds.data[1].expected_tool_call is None
 
         # Third row with invalid data should handle gracefully
-        assert ds.data[2].agent_exit is False  # "maybe" should convert to False
-        assert ds.data[2].trace is None or ds.data[2].trace == []
-        assert ds.data[2].expected_tool_call is None
+        assert ds.data[2].agent_exit == "maybe"  # Non-boolean strings are kept as strings for union fields
+        assert ds.data[2].trace == "invalid_json"  # Invalid JSON kept as string for union fields
+        assert ds.data[2].expected_tool_call == "invalid_json"  # Invalid JSON kept as string
 
     finally:
         os.unlink(temp_file_path)
@@ -1460,3 +1465,304 @@ def test_ingest_from_csv_pandas_exception():
     # Test with a nonexistent file to trigger exception handling
     with pytest.raises(ValueError, match="Error reading CSV file"):
         ds.ingest_from_csv("/nonexistent/file/path.csv")
+
+
+# New tests for string union type functionality
+@pytest.mark.unit
+def test_string_union_fields_detection():
+    """Test that the new union with string fields are properly detected."""
+    ds = AgentDataset()
+    
+    # These fields should be detected as union_with_str_fields
+    expected_union_with_str_fields = {
+        "expected_tool_call",
+        "trace", 
+        "tools_available",
+        "tool_calls",
+        "parameters_passed",
+        "tool_call_results",
+        "agent_exit"
+    }
+    
+    assert ds._union_with_str_fields == expected_union_with_str_fields
+
+
+@pytest.mark.unit
+def test_parse_field_string_union_list_fields():
+    """Test parsing list fields that can also be strings."""
+    ds = AgentDataset()
+    
+    # Test tools_available as string (should keep as string)
+    result = ds._parse_field("tools_available", "some_string_value")
+    assert result == "some_string_value"
+    
+    # Test tools_available as JSON-like string (should parse to list)
+    json_str = '[{"name": "tool1", "description": "desc"}]'
+    result = ds._parse_field("tools_available", json_str)
+    assert isinstance(result, list)
+    assert result[0]["name"] == "tool1"
+    
+    # Test tools_available as invalid JSON-like string (should keep as string)
+    result = ds._parse_field("tools_available", "[invalid_json")
+    assert result == "[invalid_json"
+    
+    # Test tools_available as actual list (should keep as list)
+    list_val = [{"name": "tool1", "description": "desc"}]
+    result = ds._parse_field("tools_available", list_val)
+    assert result == list_val
+
+
+@pytest.mark.unit
+def test_parse_field_string_union_dict_fields():
+    """Test parsing dict fields that can also be strings."""
+    ds = AgentDataset()
+    
+    # Test parameters_passed as string (should keep as string)
+    result = ds._parse_field("parameters_passed", "some_string_value")
+    assert result == "some_string_value"
+    
+    # Test parameters_passed as JSON-like string (should parse to dict)
+    json_str = '{"param1": "value1", "param2": 123}'
+    result = ds._parse_field("parameters_passed", json_str)
+    assert isinstance(result, dict)
+    assert result["param1"] == "value1"
+    assert result["param2"] == 123
+    
+    # Test parameters_passed as invalid JSON-like string (should keep as string)
+    result = ds._parse_field("parameters_passed", "{invalid_json")
+    assert result == "{invalid_json"
+    
+    # Test parameters_passed as actual dict (should keep as dict)
+    dict_val = {"param1": "value1"}
+    result = ds._parse_field("parameters_passed", dict_val)
+    assert result == dict_val
+
+
+@pytest.mark.unit
+def test_parse_field_string_union_bool_fields():
+    """Test parsing bool fields that can also be strings."""
+    ds = AgentDataset()
+    
+    # Test agent_exit as non-boolean string (should keep as string)
+    result = ds._parse_field("agent_exit", "some_string_value")
+    assert result == "some_string_value"
+    
+    # Test agent_exit as boolean-like string (should parse to bool)
+    result = ds._parse_field("agent_exit", "true")
+    assert result is True
+    
+    result = ds._parse_field("agent_exit", "false")
+    assert result is False
+    
+    result = ds._parse_field("agent_exit", "1")
+    assert result is True
+    
+    result = ds._parse_field("agent_exit", "0")
+    assert result is False
+    
+    # Test agent_exit as actual bool (should keep as bool)
+    result = ds._parse_field("agent_exit", True)
+    assert result is True
+
+
+@pytest.mark.unit
+def test_parse_field_string_union_toolcall_fields():
+    """Test parsing ToolCall fields that can also be strings."""
+    ds = AgentDataset()
+    
+    # Test expected_tool_call as string (should keep as string)
+    result = ds._parse_field("expected_tool_call", "some_string_value")
+    assert result == "some_string_value"
+    
+    # Test expected_tool_call as JSON-like string (should parse to ToolCall)
+    json_str = '{"tool_name": "test_tool", "parameters": {"p1": "v1"}, "call_id": "123"}'
+    result = ds._parse_field("expected_tool_call", json_str)
+    assert isinstance(result, ToolCall)
+    assert result.tool_name == "test_tool"
+    assert result.call_id == "123"
+    
+    # Test expected_tool_call as invalid JSON-like string (should keep as string)
+    result = ds._parse_field("expected_tool_call", "{invalid_json")
+    assert result == "{invalid_json"
+    
+    # Test expected_tool_call as actual ToolCall (should keep as ToolCall)
+    toolcall_val = ToolCall(tool_name="test", parameters={}, call_id="456")
+    result = ds._parse_field("expected_tool_call", toolcall_val)
+    assert result == toolcall_val
+
+
+@pytest.mark.unit
+def test_ingest_csv_with_string_union_fields(tmp_path):
+    """Test CSV ingestion with string union fields."""
+    # Create CSV data where some union fields are strings and some are JSON
+    data = {
+        "user_id": "user1",
+        "task_id": "task1", 
+        "agent_name": "TestAgent",
+        "expected_tool_call": "string_representation_of_tool_call",
+        "trace": "string_trace_info",
+        "tools_available": '[{"name": "tool1", "description": "desc"}]',  # JSON
+        "tool_calls": "string_tool_calls", 
+        "parameters_passed": '{"param1": "value1"}',  # JSON
+        "tool_call_results": "string_results",
+        "agent_exit": "custom_exit_state"
+    }
+    
+    csv_file = tmp_path / "string_union_test.csv"
+    with open(csv_file, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=data.keys())
+        writer.writeheader()
+        writer.writerow(data)
+    
+    ds = AgentDataset()
+    ds.ingest_from_csv(str(csv_file))
+    
+    assert len(ds.data) == 1
+    agent = ds.data[0]
+    
+    # Check that string values are preserved as strings
+    assert agent.expected_tool_call == "string_representation_of_tool_call"
+    assert agent.trace == "string_trace_info"
+    assert agent.tool_calls == "string_tool_calls"
+    assert agent.tool_call_results == "string_results"
+    assert agent.agent_exit == "custom_exit_state"
+    
+    # Check that JSON-like strings are parsed
+    assert isinstance(agent.tools_available, list)
+    assert len(agent.tools_available) == 1
+    # tools_available becomes a list of ToolSchema objects when AgentData is constructed
+    assert agent.tools_available[0].name == "tool1"
+    assert isinstance(agent.parameters_passed, dict)
+    assert agent.parameters_passed["param1"] == "value1"
+
+
+@pytest.mark.unit
+def test_ingest_json_with_string_union_fields(tmp_path):
+    """Test JSON ingestion with string union fields."""
+    data = {
+        "user_id": "user1",
+        "task_id": "task1",
+        "agent_name": "TestAgent", 
+        "expected_tool_call": "string_representation_of_tool_call",
+        "trace": "string_trace_info",
+        "tools_available": [{"name": "tool1", "description": "desc"}],  # Actual list
+        "tool_calls": "string_tool_calls",
+        "parameters_passed": {"param1": "value1"},  # Actual dict
+        "tool_call_results": "string_results",
+        "agent_exit": "custom_exit_state"
+    }
+    
+    json_file = tmp_path / "string_union_test.json"
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump([data], f)
+    
+    ds = AgentDataset()
+    ds.ingest_from_json(str(json_file))
+    
+    assert len(ds.data) == 1
+    agent = ds.data[0]
+    
+    # Check that string values are preserved as strings
+    assert agent.expected_tool_call == "string_representation_of_tool_call"
+    assert agent.trace == "string_trace_info"
+    assert agent.tool_calls == "string_tool_calls"
+    assert agent.tool_call_results == "string_results"
+    assert agent.agent_exit == "custom_exit_state"
+    
+    # Check that actual list/dict values are preserved
+    assert isinstance(agent.tools_available, list)
+    assert len(agent.tools_available) == 1
+    # tools_available becomes a list of ToolSchema objects when AgentData is constructed
+    assert agent.tools_available[0].name == "tool1"
+    assert isinstance(agent.parameters_passed, dict)
+    assert agent.parameters_passed["param1"] == "value1"
+
+
+@pytest.mark.unit
+def test_export_preserves_string_union_values(tmp_path):
+    """Test that export methods preserve string union field values."""
+    # Create AgentData with mixed string/parsed values
+    agent = AgentData(
+        user_id="user1",
+        task_id="task1",
+        agent_name="TestAgent",
+        expected_tool_call="string_tool_call",
+        trace="string_trace",
+        tools_available=[{"name": "tool1", "description": "desc", "args_schema": None, "return_schema": None}],  # List
+        tool_calls="string_tool_calls",
+        parameters_passed={"param1": "value1"},  # Dict
+        tool_call_results="string_results",
+        agent_exit="custom_exit"
+    )
+    
+    ds = AgentDataset()
+    ds.data.append(agent)
+    
+    # Test CSV export
+    csv_file = tmp_path / "export_string_union.csv"
+    ds.export_to_csv(str(csv_file))
+    
+    with open(csv_file, encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows = list(reader)
+        assert len(rows) == 1
+        row = rows[0]
+        
+        # String values should be preserved
+        assert row["expected_tool_call"] == "string_tool_call"
+        assert row["trace"] == "string_trace"
+        assert row["tool_calls"] == "string_tool_calls"
+        assert row["tool_call_results"] == "string_results"
+        assert row["agent_exit"] == "custom_exit"
+        
+        # List/dict values should be JSON serialized - check the structure matches what AgentData produces
+        tools_data = json.loads(row["tools_available"])
+        assert len(tools_data) == 1
+        assert tools_data[0]["name"] == "tool1"
+        assert tools_data[0]["description"] == "desc"
+        assert json.loads(row["parameters_passed"]) == {"param1": "value1"}
+    
+    # Test JSON export
+    json_file = tmp_path / "export_string_union.json"
+    ds.export_to_json(str(json_file))
+    
+    with open(json_file, encoding="utf-8") as f:
+        items = json.load(f)
+        assert len(items) == 1
+        item = items[0]
+        
+        # All values should be preserved as-is
+        assert item["expected_tool_call"] == "string_tool_call"
+        assert item["trace"] == "string_trace"
+        assert item["tool_calls"] == "string_tool_calls"
+        assert item["tool_call_results"] == "string_results"
+        assert item["agent_exit"] == "custom_exit"
+        # Check the structure that AgentData actually produces
+        assert len(item["tools_available"]) == 1
+        assert item["tools_available"][0]["name"] == "tool1"
+        assert item["parameters_passed"] == {"param1": "value1"}
+
+
+@pytest.mark.unit
+def test_mixed_string_and_parsed_values_edge_cases():
+    """Test edge cases with mixed string and parsed values."""
+    ds = AgentDataset()
+    
+    # Test empty JSON-like strings
+    assert ds._parse_field("tools_available", "[]") == []
+    assert ds._parse_field("parameters_passed", "{}") == {}
+    
+    # Test whitespace handling
+    assert ds._parse_field("tools_available", "  string_value  ") == "string_value"
+    assert ds._parse_field("parameters_passed", "  string_value  ") == "string_value"
+    
+    # Test JSON parsing with whitespace
+    result = ds._parse_field("tools_available", '  [{"name": "tool1"}]  ')
+    assert isinstance(result, list)
+    assert result[0]["name"] == "tool1"
+    
+    # Test malformed JSON-like strings that don't start/end correctly
+    assert ds._parse_field("tools_available", "not_json]") == "not_json]"
+    assert ds._parse_field("tools_available", "[not_json") == "[not_json"
+    assert ds._parse_field("parameters_passed", "not_json}") == "not_json}"
+    assert ds._parse_field("parameters_passed", "{not_json") == "{not_json"

@@ -30,7 +30,9 @@ For the tool call, evaluate:
 3. Does the tool help progress toward the goal?
 4. Are there better alternatives available?
 
-Provide a single relevancy score from 1-10 for the tool call along with your reasoning.
+The reasoning should be of 50-60 words. It should not be longer than 75 words.
+
+Provide a single relevancy score from 1-10 for the tool call along with your reasoning. IMPORTANT: Use decimal scores (e.g., 7.5, 8.2, 9.1) rather than round numbers (e.g., 7.0, 8.0, 9.0) to provide more nuanced evaluation.
 
 Format your response as a JSON object:
 {{
@@ -67,7 +69,9 @@ For the tool call, evaluate:
 3. Is the call_id properly structured?
 4. Does it match the expected behavior?
 
-Provide a single correctness score from 1-10 for the tool call along with your reasoning.
+The reasoning should be of 50-60 words. It should not be longer than 75 words.
+
+Provide a single correctness score from 1-10 for the tool call along with your reasoning. IMPORTANT: Use decimal scores (e.g., 7.5, 8.2, 9.1) rather than round numbers (e.g., 7.0, 8.0, 9.0) to provide more nuanced evaluation.
 
 Format your response as a JSON object:
 {{
@@ -104,7 +108,9 @@ For the tool call, evaluate:
 3. Do the parameters match what the tool expects?
 4. Did the parameters lead to successful tool execution?
 
-Provide a single parameter correctness score from 1-10 for the tool call along with your reasoning.
+The reasoning should be of 50-60 words. It should not be longer than 75 words.
+
+Provide a single parameter correctness score from 1-10 for the tool call along with your reasoning. IMPORTANT: Use decimal scores (e.g., 7.5, 8.2, 9.1) rather than round numbers (e.g., 7.0, 8.0, 9.0) to provide more nuanced evaluation.
 
 Format your response as a JSON object:
 {{
@@ -143,7 +149,9 @@ Evaluate:
 4. Is the approach efficient and logical?
 5. How much closer is the agent to completing the task?
 
-Provide a single progression score from 1-5 along with your reasoning.
+The reasoning should be of 50-60 words. It should not be longer than 75 words.
+
+Provide a single progression score from 1-5 along with your reasoning. IMPORTANT: Use decimal scores (e.g., 3.5, 4.2, 4.8) rather than round numbers (e.g., 3.0, 4.0, 5.0) to provide more nuanced evaluation.
 
 Format your response as a JSON object:
 {{
@@ -182,7 +190,9 @@ Evaluate:
 4. Does the response demonstrate understanding of the task requirements?
 5. Is the response helpful in progressing toward task completion?
 
-Provide a single appropriateness score from 1-10 along with your reasoning.
+The reasoning should be of 50-60 words. It should not be longer than 75 words.
+
+Provide a single appropriateness score from 1-10 along with your reasoning. IMPORTANT: Use decimal scores (e.g., 7.5, 8.2, 9.1) rather than round numbers (e.g., 7.0, 8.0, 9.0) to provide more nuanced evaluation.
 
 Format your response as a JSON object:
 {{
@@ -224,7 +234,9 @@ Evaluate:
 4. Does the agent stay focused on its assigned task?
 5. Are there any role contradictions or inappropriate behaviors?
 
-Provide a single adherence score from 1-10 along with your reasoning.
+The reasoning should be of 50-60 words. It should not be longer than 75 words.
+
+Provide a single adherence score from 1-10 along with your reasoning. IMPORTANT: Use decimal scores (e.g., 7.5, 8.2, 9.1) rather than round numbers (e.g., 7.0, 8.0, 9.0) to provide more nuanced evaluation.
 
 Format your response as a JSON object:
 {{

@@ -22,6 +22,59 @@ from novaeval.agents.agent_scorers_system_prompts import (
 from novaeval.models.base import BaseModel as LLMModel
 
 
+def safe_serialize_union_field(field_value: Any, field_name: str) -> str:
+    """
+    Safely serialize a union type field that can be either its original type or a string.
+    
+    Args:
+        field_value: The field value which could be a complex type (list, dict, ToolCall, etc.) or string
+        field_name: Name of the field (for error reporting)
+    
+    Returns:
+        String representation suitable for prompt formatting
+    """
+    if isinstance(field_value, str):
+        # If it's already a string, return it directly
+        return field_value
+    elif field_value is None:
+        return ""
+    else:
+        # If it's a complex type, serialize it to JSON
+        try:
+            if hasattr(field_value, 'model_dump'):
+                # Single Pydantic model
+                return json.dumps(field_value.model_dump(), indent=2)
+            elif isinstance(field_value, list) and field_value and hasattr(field_value[0], 'model_dump'):
+                # List of Pydantic models
+                return json.dumps([item.model_dump() for item in field_value], indent=2)
+            else:
+                # Plain dict, list, or other JSON-serializable type
+                return json.dumps(field_value, indent=2)
+        except (TypeError, AttributeError) as e:
+            # Fallback: convert to string if JSON serialization fails
+            return str(field_value)
+
+
+def safe_get_boolean_field(field_value: Any) -> bool:
+    """
+    Safely convert a union boolean field that can be either bool or string to boolean.
+    
+    Args:
+        field_value: The field value which could be bool or string
+        
+    Returns:
+        Boolean value
+    """
+    if isinstance(field_value, bool):
+        return field_value
+    elif isinstance(field_value, str):
+        lower_val = field_value.lower().strip()
+        return lower_val in ("true", "1", "yes", "on")
+    else:
+        # Fallback: convert to bool
+        return bool(field_value)
+
+
 class ScoreWithReasoning(BaseModel):
     """Pydantic model for a single score with reasoning."""
 
@@ -248,7 +301,7 @@ def tool_relevancy_scorer(
     required_fields = {
         "tools_available": agent_data.tools_available is not None,
         "tool_calls": agent_data.tool_calls is not None
-        and len(agent_data.tool_calls) > 0,
+        and (isinstance(agent_data.tool_calls, str) or len(agent_data.tool_calls) > 0),
     }
 
     # Check if all required fields are available
@@ -264,35 +317,54 @@ def tool_relevancy_scorer(
 
     # Format the available tools once (they're the same for all calls)
     tools_available_str = escape_json_for_format(
-        json.dumps([tool.model_dump() for tool in agent_data.tools_available], indent=2)
+        safe_serialize_union_field(agent_data.tools_available, "tools_available")
     )
 
     scores = []
 
-    # Iterate over each tool call individually
-    for tool_call in agent_data.tool_calls:
-        # Format just this single tool call
-        single_tool_call_str = escape_json_for_format(
-            json.dumps(tool_call.model_dump(), indent=2)
-        )
-
-        # Create prompt for this specific tool call
+    # Handle tool_calls as either list or string
+    if isinstance(agent_data.tool_calls, str):
+        # If tool_calls is a string, treat it as a single "tool call"
+        single_tool_call_str = escape_json_for_format(agent_data.tool_calls)
         prompt = TOOL_RELEVANCY_PROMPT.format(
             tools_available=tools_available_str,
-            tool_calls=f"[{single_tool_call_str}]",  # Wrap in array brackets for consistency
+            tool_calls=f"[{single_tool_call_str}]",
         )
-
+        
         try:
             response = model.generate(prompt)
             score_obj = parse_score_with_reasoning(response)
             scores.append(score_obj)
-
         except Exception as e:
-            # Return default low score if parsing fails for this tool call
             default_score = ScoreWithReasoning(
                 score=1.0, reasoning=f"Failed to evaluate tool call: {e!s}"
             )
             scores.append(default_score)
+    else:
+        # Iterate over each tool call individually
+        for tool_call in agent_data.tool_calls:
+            # Format just this single tool call
+            single_tool_call_str = escape_json_for_format(
+                safe_serialize_union_field(tool_call, "tool_call")
+            )
+
+            # Create prompt for this specific tool call
+            prompt = TOOL_RELEVANCY_PROMPT.format(
+                tools_available=tools_available_str,
+                tool_calls=f"[{single_tool_call_str}]",  # Wrap in array brackets for consistency
+            )
+
+            try:
+                response = model.generate(prompt)
+                score_obj = parse_score_with_reasoning(response)
+                scores.append(score_obj)
+
+            except Exception as e:
+                # Return default low score if parsing fails for this tool call
+                default_score = ScoreWithReasoning(
+                    score=1.0, reasoning=f"Failed to evaluate tool call: {e!s}"
+                )
+                scores.append(default_score)
 
     return scores
 
@@ -313,7 +385,7 @@ def tool_correctness_scorer(
     required_fields = {
         "expected_tool_call": agent_data.expected_tool_call is not None,
         "tool_calls": agent_data.tool_calls is not None
-        and len(agent_data.tool_calls) > 0,
+        and (isinstance(agent_data.tool_calls, str) or len(agent_data.tool_calls) > 0),
     }
 
     # Check if all required fields are available
@@ -329,37 +401,56 @@ def tool_correctness_scorer(
 
     # Format the expected call once (same for all comparisons)
     expected_call_str = escape_json_for_format(
-        json.dumps(agent_data.expected_tool_call.model_dump(), indent=2)
+        safe_serialize_union_field(agent_data.expected_tool_call, "expected_tool_call")
         if agent_data.expected_tool_call
         else ""
     )
 
     scores = []
 
-    # Iterate over each tool call individually
-    for tool_call in agent_data.tool_calls:
-        # Format just this single tool call
-        single_tool_call_str = escape_json_for_format(
-            json.dumps(tool_call.model_dump(), indent=2)
-        )
-
-        # Create prompt for this specific tool call comparison
+    # Handle tool_calls as either list or string
+    if isinstance(agent_data.tool_calls, str):
+        # If tool_calls is a string, treat it as a single "tool call"
+        single_tool_call_str = escape_json_for_format(agent_data.tool_calls)
         prompt = TOOL_CORRECTNESS_PROMPT.format(
             expected_tool_call=expected_call_str,
-            tool_calls=f"[{single_tool_call_str}]",  # Wrap in array brackets for consistency
+            tool_calls=f"[{single_tool_call_str}]",
         )
-
+        
         try:
             response = model.generate(prompt)
             score_obj = parse_score_with_reasoning(response)
             scores.append(score_obj)
-
         except Exception as e:
-            # Return default low score if parsing fails for this tool call
             default_score = ScoreWithReasoning(
                 score=1.0, reasoning=f"Failed to evaluate tool call: {e!s}"
             )
             scores.append(default_score)
+    else:
+        # Iterate over each tool call individually
+        for tool_call in agent_data.tool_calls:
+            # Format just this single tool call
+            single_tool_call_str = escape_json_for_format(
+                safe_serialize_union_field(tool_call, "tool_call")
+            )
+
+            # Create prompt for this specific tool call comparison
+            prompt = TOOL_CORRECTNESS_PROMPT.format(
+                expected_tool_call=expected_call_str,
+                tool_calls=f"[{single_tool_call_str}]",  # Wrap in array brackets for consistency
+            )
+
+            try:
+                response = model.generate(prompt)
+                score_obj = parse_score_with_reasoning(response)
+                scores.append(score_obj)
+
+            except Exception as e:
+                # Return default low score if parsing fails for this tool call
+                default_score = ScoreWithReasoning(
+                    score=1.0, reasoning=f"Failed to evaluate tool call: {e!s}"
+                )
+                scores.append(default_score)
 
     return scores
 
@@ -379,7 +470,7 @@ def parameter_correctness_scorer(
     """
     required_fields = {
         "tool_calls": agent_data.tool_calls is not None
-        and len(agent_data.tool_calls) > 0,
+        and (isinstance(agent_data.tool_calls, str) or len(agent_data.tool_calls) > 0),
         "parameters_passed": agent_data.parameters_passed is not None,
         "tool_call_results": agent_data.tool_call_results is not None,
     }
@@ -396,49 +487,110 @@ def parameter_correctness_scorer(
         }
 
     # Create a mapping of call_id to results for easier lookup
-    results_by_call_id = {
-        result.call_id: result for result in (agent_data.tool_call_results or [])
-    }
+    results_by_call_id = {}
+    if isinstance(agent_data.tool_call_results, str):
+        # If tool_call_results is a string, we can't create a mapping, so leave it empty
+        pass
+    elif agent_data.tool_call_results:
+        # If it's a list, create the mapping as before
+        results_by_call_id = {
+            result.call_id: result for result in agent_data.tool_call_results
+            if hasattr(result, 'call_id')  # Safety check in case result is a string
+        }
 
     scores = []
 
-    # Iterate over each tool call individually
-    for tool_call in agent_data.tool_calls:
-        # Find the corresponding result for this tool call
-        corresponding_result = results_by_call_id.get(tool_call.call_id)
-
-        # Create individual tool call with parameters
-        call_with_params = tool_call.model_dump()
-        call_with_params["mapped_parameters"] = agent_data.parameters_passed
-
-        # Format just this single tool call and its result
+    # Handle tool_calls as either list or string
+    if isinstance(agent_data.tool_calls, str):
+        # If tool_calls is a string, treat it as a single "tool call"
+        # Create a simplified version with parameters
+        call_with_params = {
+            "tool_calls": agent_data.tool_calls,
+            "mapped_parameters": safe_serialize_union_field(agent_data.parameters_passed, "parameters_passed")
+        }
+        
         single_tool_call_str = escape_json_for_format(
             json.dumps(call_with_params, indent=2)
         )
         single_result_str = escape_json_for_format(
-            json.dumps(
-                corresponding_result.model_dump() if corresponding_result else {},
-                indent=2,
-            )
+            safe_serialize_union_field(agent_data.tool_call_results, "tool_call_results")
         )
 
-        # Create prompt for this specific tool call
         prompt = PARAMETER_CORRECTNESS_PROMPT.format(
-            tool_calls_with_parameters=f"[{single_tool_call_str}]",  # Wrap in array brackets
-            tool_call_results=f"[{single_result_str}]",  # Wrap in array brackets
+            tool_calls_with_parameters=f"[{single_tool_call_str}]",
+            tool_call_results=f"[{single_result_str}]",
         )
-
+        
         try:
             response = model.generate(prompt)
             score_obj = parse_score_with_reasoning(response)
             scores.append(score_obj)
-
         except Exception as e:
-            # Return default low score if parsing fails for this tool call
             default_score = ScoreWithReasoning(
                 score=1.0, reasoning=f"Failed to evaluate tool call: {e!s}"
             )
             scores.append(default_score)
+    else:
+        # Iterate over each tool call individually
+        for tool_call in agent_data.tool_calls:
+            # Find the corresponding result for this tool call
+            corresponding_result = None
+            if hasattr(tool_call, 'call_id'):
+                corresponding_result = results_by_call_id.get(tool_call.call_id)
+
+            # Create individual tool call with parameters
+            if isinstance(tool_call, str):
+                # If individual tool_call is a string
+                call_with_params = {
+                    "tool_call": tool_call,
+                    "mapped_parameters": safe_serialize_union_field(agent_data.parameters_passed, "parameters_passed")
+                }
+            else:
+                # If tool_call is a ToolCall object
+                call_with_params = safe_serialize_union_field(tool_call, "tool_call")
+                if isinstance(call_with_params, str):
+                    # If serialization returned a string, create a structured object
+                    call_with_params = {
+                        "tool_call": call_with_params,
+                        "mapped_parameters": safe_serialize_union_field(agent_data.parameters_passed, "parameters_passed")
+                    }
+                else:
+                    # If it's a JSON dict, parse and add parameters
+                    try:
+                        call_dict = json.loads(call_with_params) if isinstance(call_with_params, str) else tool_call.model_dump()
+                        call_dict["mapped_parameters"] = safe_serialize_union_field(agent_data.parameters_passed, "parameters_passed")
+                        call_with_params = call_dict
+                    except:
+                        call_with_params = {
+                            "tool_call": str(tool_call),
+                            "mapped_parameters": safe_serialize_union_field(agent_data.parameters_passed, "parameters_passed")
+                        }
+
+            # Format just this single tool call and its result
+            single_tool_call_str = escape_json_for_format(
+                json.dumps(call_with_params, indent=2) if isinstance(call_with_params, dict) else str(call_with_params)
+            )
+            single_result_str = escape_json_for_format(
+                safe_serialize_union_field(corresponding_result, "tool_call_result") if corresponding_result else "{}"
+            )
+
+            # Create prompt for this specific tool call
+            prompt = PARAMETER_CORRECTNESS_PROMPT.format(
+                tool_calls_with_parameters=f"[{single_tool_call_str}]",  # Wrap in array brackets
+                tool_call_results=f"[{single_result_str}]",  # Wrap in array brackets
+            )
+
+            try:
+                response = model.generate(prompt)
+                score_obj = parse_score_with_reasoning(response)
+                scores.append(score_obj)
+
+            except Exception as e:
+                # Return default low score if parsing fails for this tool call
+                default_score = ScoreWithReasoning(
+                    score=1.0, reasoning=f"Failed to evaluate tool call: {e!s}"
+                )
+                scores.append(default_score)
 
     return scores
 
@@ -575,9 +727,7 @@ def role_adherence_scorer(
 
     # Format tool calls for the prompt
     tool_calls_str = escape_json_for_format(
-        json.dumps(
-            [tool_call.model_dump() for tool_call in agent_data.tool_calls], indent=2
-        )
+        safe_serialize_union_field(agent_data.tool_calls, "tool_calls")
     )
 
     prompt = ROLE_ADHERENCE_PROMPT.format(
@@ -612,7 +762,7 @@ def goal_achievement_scorer(
         ScoreWithOriginalTask object with goal achievement score (1-10), or error dict if fields missing
     """
     # Check if agent has exited
-    if not agent_data.agent_exit:
+    if not safe_get_boolean_field(agent_data.agent_exit):
         return ScoreWithOriginalTask(
             original_task="N/A - Agent has not exited",
             score=-1.0,
@@ -620,7 +770,8 @@ def goal_achievement_scorer(
         )
 
     required_fields = {
-        "trace": agent_data.trace is not None and len(agent_data.trace) > 0
+        "trace": agent_data.trace is not None and 
+                (isinstance(agent_data.trace, str) or len(agent_data.trace) > 0)
     }
 
     # Check if all required fields are available
@@ -635,7 +786,7 @@ def goal_achievement_scorer(
         }
 
     # Format the trace for the prompt
-    trace_str = json.dumps(agent_data.trace, indent=2)
+    trace_str = safe_serialize_union_field(agent_data.trace, "trace")
 
     # G-Eval structured prompt for goal achievement
     prompt = f"""# Goal Achievement Evaluation Task
@@ -663,7 +814,7 @@ Evaluate how well the agent achieved its original goal based on the complete int
 ## Instructions:
 Please evaluate the agent's goal achievement step by step following the evaluation steps above.
 First, identify and extract the original task from the trace.
-Then provide your reasoning for the score, and finally give a score from 1 to 10.
+Then provide your reasoning for the score, and finally give a score from 1 to 10. IMPORTANT: Use decimal scores (e.g., 7.5, 8.2, 9.1) rather than round numbers (e.g., 7.0, 8.0, 9.0) to provide more nuanced evaluation.
 
 Format your response as JSON:
 {{
@@ -730,7 +881,7 @@ def conversation_coherence_scorer(
         ScoreWithOriginalTask object with coherence score (1-10), or error dict if fields missing
     """
     # Check if agent has exited
-    if not agent_data.agent_exit:
+    if not safe_get_boolean_field(agent_data.agent_exit):
         return ScoreWithOriginalTask(
             original_task="N/A - Agent has not exited",
             score=-1.0,
@@ -738,7 +889,8 @@ def conversation_coherence_scorer(
         )
 
     required_fields = {
-        "trace": agent_data.trace is not None and len(agent_data.trace) > 0
+        "trace": agent_data.trace is not None and 
+                (isinstance(agent_data.trace, str) or len(agent_data.trace) > 0)
     }
 
     # Check if all required fields are available
@@ -753,7 +905,7 @@ def conversation_coherence_scorer(
         }
 
     # Format the trace for the prompt
-    trace_str = json.dumps(agent_data.trace, indent=2)
+    trace_str = safe_serialize_union_field(agent_data.trace, "trace")
 
     # Prompt for conversation coherence evaluation
     prompt = f"""# Conversation Coherence Evaluation Task
@@ -783,7 +935,7 @@ Evaluate the coherence and logical flow of the agent's conversation based on the
 Please evaluate the agent's conversation coherence step by step following the evaluation steps above.
 First, identify and extract the original task from the trace.
 Then analyze the conversational flow and provide your reasoning for the score.
-Finally, give a score from 1 to 10.
+Finally, give a score from 1 to 10. IMPORTANT: Use decimal scores (e.g., 7.5, 8.2, 9.1) rather than round numbers (e.g., 7.0, 8.0, 9.0) to provide more nuanced evaluation.
 
 Format your response as JSON:
 {{
@@ -855,12 +1007,6 @@ class AgentScorers:
         """Score tool call relevancy."""
         return tool_relevancy_scorer(agent_data, self.model)
 
-    def score_tool_correctness(
-        self, agent_data: AgentData
-    ) -> Union[list[ScoreWithReasoning], dict[str, Any]]:
-        """Score tool call correctness."""
-        return tool_correctness_scorer(agent_data, self.model)
-
     def score_parameter_correctness(
         self, agent_data: AgentData
     ) -> Union[list[ScoreWithReasoning], dict[str, Any]]:
@@ -884,18 +1030,6 @@ class AgentScorers:
     ) -> Union[ScoreWithReasoning, dict[str, Any]]:
         """Score role adherence."""
         return role_adherence_scorer(agent_data, self.model)
-
-    def score_goal_achievement(
-        self, agent_data: AgentData
-    ) -> Union[ScoreWithOriginalTask, dict[str, Any]]:
-        """Score goal achievement."""
-        return goal_achievement_scorer(agent_data, self.model)
-
-    def score_conversation_coherence(
-        self, agent_data: AgentData
-    ) -> Union[ScoreWithOriginalTask, dict[str, Any]]:
-        """Score conversation coherence."""
-        return conversation_coherence_scorer(agent_data, self.model)
 
     def score_all(self, agent_data: AgentData) -> dict[
         str,
@@ -928,9 +1062,6 @@ class AgentScorers:
         # Score tool relevancy if applicable
         results["tool_relevancy"] = self.score_tool_relevancy(agent_data)
 
-        # Score tool correctness if applicable
-        results["tool_correctness"] = self.score_tool_correctness(agent_data)
-
         # Score parameter correctness if applicable
         results["parameter_correctness"] = self.score_parameter_correctness(agent_data)
 
@@ -943,14 +1074,6 @@ class AgentScorers:
         # Score role adherence if applicable
         results["role_adherence"] = self.score_role_adherence(agent_data)
 
-        # Score goal achievement if applicable
-        results["goal_achievement"] = self.score_goal_achievement(agent_data)
-
-        # Score conversation coherence if applicable
-        results["conversation_coherence"] = self.score_conversation_coherence(
-            agent_data
-        )
-
         return results
 
     # Convenience methods without 'score_' prefix for backward compatibility
@@ -959,12 +1082,6 @@ class AgentScorers:
     ) -> Union[list[ScoreWithReasoning], dict[str, Any]]:
         """Score tool call relevancy."""
         return self.score_tool_relevancy(agent_data)
-
-    def tool_correctness(
-        self, agent_data: AgentData
-    ) -> Union[list[ScoreWithReasoning], dict[str, Any]]:
-        """Score tool call correctness."""
-        return self.score_tool_correctness(agent_data)
 
     def parameter_correctness(
         self, agent_data: AgentData
@@ -989,15 +1106,3 @@ class AgentScorers:
     ) -> Union[ScoreWithReasoning, dict[str, Any]]:
         """Score role adherence."""
         return self.score_role_adherence(agent_data)
-
-    def goal_achievement(
-        self, agent_data: AgentData
-    ) -> Union[ScoreWithOriginalTask, dict[str, Any]]:
-        """Score goal achievement."""
-        return self.score_goal_achievement(agent_data)
-
-    def conversation_coherence(
-        self, agent_data: AgentData
-    ) -> Union[ScoreWithOriginalTask, dict[str, Any]]:
-        """Score conversation coherence."""
-        return self.score_conversation_coherence(agent_data)

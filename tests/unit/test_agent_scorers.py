@@ -1941,3 +1941,298 @@ def test_conversation_coherence_scorer_minimal_trace():
     assert isinstance(result, ScoreWithOriginalTask)
     assert result.original_task == "Chat"
     assert result.score == 6.0
+
+
+# Tests for union type handling (string vs complex types)
+
+@pytest.fixture
+def string_union_agent_data():
+    """Create agent data using string values for union fields."""
+    return AgentData(
+        user_id="user123",
+        task_id="task456",
+        turn_id="turn789",
+        ground_truth="The correct answer is 42",
+        expected_tool_call="string_tool_call_representation",
+        agent_name="TestAgent",
+        agent_role="Mathematical assistant",
+        agent_task="Calculate 20 + 22",
+        system_prompt="You are a helpful math assistant.",
+        agent_response="I'll calculate 20 + 22 using the calculator tool.",
+        tools_available="string_tools_available",
+        tool_calls="string_tool_calls",
+        parameters_passed="string_parameters",
+        tool_call_results="string_results",
+        retrieved_context="Math context",
+        trace="string_trace_representation",
+        exit_status="completed",
+        agent_exit="true",  # String representation of boolean
+        metadata="Test metadata",
+    )
+
+
+@pytest.mark.unit
+def test_safe_serialize_union_field_with_string():
+    """Test safe_serialize_union_field with string input."""
+    from novaeval.agents.agent_scorers import safe_serialize_union_field
+    
+    result = safe_serialize_union_field("test_string", "test_field")
+    assert result == "test_string"
+
+
+@pytest.mark.unit
+def test_safe_serialize_union_field_with_dict():
+    """Test safe_serialize_union_field with dict input."""
+    from novaeval.agents.agent_scorers import safe_serialize_union_field
+    
+    test_dict = {"key": "value", "number": 42}
+    result = safe_serialize_union_field(test_dict, "test_field")
+    import json
+    expected = json.dumps(test_dict, indent=2)
+    assert result == expected
+
+
+@pytest.mark.unit
+def test_safe_serialize_union_field_with_pydantic_model():
+    """Test safe_serialize_union_field with Pydantic model input."""
+    from novaeval.agents.agent_scorers import safe_serialize_union_field
+    
+    tool_call = ToolCall(tool_name="test", parameters={}, call_id="123")
+    result = safe_serialize_union_field(tool_call, "test_field")
+    import json
+    expected = json.dumps(tool_call.model_dump(), indent=2)
+    assert result == expected
+
+
+@pytest.mark.unit
+def test_safe_serialize_union_field_with_list_of_models():
+    """Test safe_serialize_union_field with list of Pydantic models."""
+    from novaeval.agents.agent_scorers import safe_serialize_union_field
+    
+    tool_calls = [
+        ToolCall(tool_name="test1", parameters={}, call_id="123"),
+        ToolCall(tool_name="test2", parameters={}, call_id="456")
+    ]
+    result = safe_serialize_union_field(tool_calls, "test_field")
+    import json
+    expected = json.dumps([tc.model_dump() for tc in tool_calls], indent=2)
+    assert result == expected
+
+
+@pytest.mark.unit
+def test_safe_get_boolean_field_with_bool():
+    """Test safe_get_boolean_field with boolean input."""
+    from novaeval.agents.agent_scorers import safe_get_boolean_field
+    
+    assert safe_get_boolean_field(True) is True
+    assert safe_get_boolean_field(False) is False
+
+
+@pytest.mark.unit
+def test_safe_get_boolean_field_with_string():
+    """Test safe_get_boolean_field with string input."""
+    from novaeval.agents.agent_scorers import safe_get_boolean_field
+    
+    # True cases
+    assert safe_get_boolean_field("true") is True
+    assert safe_get_boolean_field("TRUE") is True
+    assert safe_get_boolean_field("1") is True
+    assert safe_get_boolean_field("yes") is True
+    assert safe_get_boolean_field("on") is True
+    
+    # False cases
+    assert safe_get_boolean_field("false") is False
+    assert safe_get_boolean_field("FALSE") is False
+    assert safe_get_boolean_field("0") is False
+    assert safe_get_boolean_field("no") is False
+    assert safe_get_boolean_field("off") is False
+    assert safe_get_boolean_field("maybe") is False
+    assert safe_get_boolean_field("unknown") is False
+
+
+@pytest.mark.unit
+def test_tool_relevancy_scorer_with_string_fields(string_union_agent_data):
+    """Test tool_relevancy_scorer with string union fields."""
+    mock_model = MockLLMModel('{"score": 7.5, "reasoning": "String fields handled correctly"}')
+    
+    result = tool_relevancy_scorer(string_union_agent_data, mock_model)
+    
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert isinstance(result[0], ScoreWithReasoning)
+    assert result[0].score == 7.5
+    assert "String fields handled correctly" in result[0].reasoning
+
+
+@pytest.mark.unit
+def test_tool_correctness_scorer_with_string_fields(string_union_agent_data):
+    """Test tool_correctness_scorer with string union fields."""
+    from novaeval.agents.agent_scorers import tool_correctness_scorer
+    
+    mock_model = MockLLMModel('{"score": 6.0, "reasoning": "String comparison successful"}')
+    
+    result = tool_correctness_scorer(string_union_agent_data, mock_model)
+    
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert isinstance(result[0], ScoreWithReasoning)
+    assert result[0].score == 6.0
+
+
+@pytest.mark.unit
+def test_parameter_correctness_scorer_with_string_fields(string_union_agent_data):
+    """Test parameter_correctness_scorer with string union fields."""
+    from novaeval.agents.agent_scorers import parameter_correctness_scorer
+    
+    mock_model = MockLLMModel('{"score": 8.0, "reasoning": "String parameters processed"}')
+    
+    result = parameter_correctness_scorer(string_union_agent_data, mock_model)
+    
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert isinstance(result[0], ScoreWithReasoning)
+    assert result[0].score == 8.0
+
+
+@pytest.mark.unit
+def test_role_adherence_scorer_with_string_fields(string_union_agent_data):
+    """Test role_adherence_scorer with string union fields."""
+    from novaeval.agents.agent_scorers import role_adherence_scorer
+    
+    mock_model = MockLLMModel('{"score": 9.0, "reasoning": "Role adherence with strings"}')
+    
+    result = role_adherence_scorer(string_union_agent_data, mock_model)
+    
+    assert isinstance(result, ScoreWithReasoning)
+    assert result.score == 9.0
+    assert "Role adherence with strings" in result.reasoning
+
+
+@pytest.mark.unit
+def test_goal_achievement_scorer_with_string_fields(string_union_agent_data):
+    """Test goal_achievement_scorer with string union fields."""
+    mock_response = '{"original_task": "Math calculation", "score": 8.5, "reasoning": "Goal achieved with string trace"}'
+    mock_model = MockLLMModel(mock_response)
+    
+    result = goal_achievement_scorer(string_union_agent_data, mock_model)
+    
+    assert isinstance(result, ScoreWithOriginalTask)
+    assert result.original_task == "Math calculation"
+    assert result.score == 8.5
+    assert "Goal achieved with string trace" in result.reasoning
+
+
+@pytest.mark.unit
+def test_conversation_coherence_scorer_with_string_fields(string_union_agent_data):
+    """Test conversation_coherence_scorer with string union fields."""
+    mock_response = '{"original_task": "Math conversation", "score": 7.0, "reasoning": "Coherent string conversation"}'
+    mock_model = MockLLMModel(mock_response)
+    
+    result = conversation_coherence_scorer(string_union_agent_data, mock_model)
+    
+    assert isinstance(result, ScoreWithOriginalTask)
+    assert result.original_task == "Math conversation"
+    assert result.score == 7.0
+    assert "Coherent string conversation" in result.reasoning
+
+
+@pytest.mark.unit
+def test_mixed_union_types():
+    """Test handling of mixed union types (some string, some complex)."""
+    # Create agent data with mixed types
+    mixed_data = AgentData(
+        user_id="user123",
+        task_id="task456",
+        agent_name="TestAgent",
+        agent_role="Mixed assistant",
+        agent_task="Mixed task",
+        system_prompt="Mixed prompt",
+        agent_response="Mixed response",
+        tools_available="string_tools",  # String
+        tool_calls=[  # List of objects
+            ToolCall(tool_name="test", parameters={}, call_id="123")
+        ],
+        parameters_passed={"key": "value"},  # Dict
+        tool_call_results="string_results",  # String
+        trace="string_trace",  # String
+        agent_exit=True,  # Boolean
+    )
+    
+    mock_model = MockLLMModel('{"score": 8.0, "reasoning": "Mixed types handled"}')
+    
+    # Test with a scorer that uses multiple union fields
+    result = tool_relevancy_scorer(mixed_data, mock_model)
+    
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert isinstance(result[0], ScoreWithReasoning)
+
+
+@pytest.mark.unit
+def test_agent_exit_string_false():
+    """Test agent_exit as string 'false' is handled correctly."""
+    agent_data = AgentData(
+        agent_name="TestAgent",
+        agent_exit="false",  # String false
+        trace="string_trace"
+    )
+    
+    mock_model = MockLLMModel('{"original_task": "Test", "score": 5.0, "reasoning": "Not exited"}')
+    
+    result = goal_achievement_scorer(agent_data, mock_model)
+    
+    # Should return early because agent hasn't exited
+    assert isinstance(result, ScoreWithOriginalTask)
+    assert result.score == -1.0
+    assert "has not yet exited" in result.reasoning
+
+
+@pytest.mark.unit
+def test_agent_exit_string_true():
+    """Test agent_exit as string 'true' is handled correctly."""
+    agent_data = AgentData(
+        agent_name="TestAgent",
+        agent_exit="true",  # String true
+        trace="string_trace"
+    )
+    
+    mock_response = '{"original_task": "Test task", "score": 8.0, "reasoning": "Task completed"}'
+    mock_model = MockLLMModel(mock_response)
+    
+    result = goal_achievement_scorer(agent_data, mock_model)
+    
+    # Should proceed with scoring because agent has exited
+    assert isinstance(result, ScoreWithOriginalTask)
+    assert result.score == 8.0
+    assert result.original_task == "Test task"
+
+
+@pytest.mark.unit
+def test_empty_string_union_fields():
+    """Test handling of empty string union fields."""
+    agent_data = AgentData(
+        user_id="user123",
+        agent_name="TestAgent",
+        agent_role="Test role",
+        agent_task="Test task",
+        agent_response="Test response",
+        tools_available="",  # Empty string
+        tool_calls="",  # Empty string
+        expected_tool_call="",  # Empty string
+        parameters_passed="",  # Empty string
+        tool_call_results="",  # Empty string
+        trace="",  # Empty string
+        agent_exit="true",
+    )
+    
+    mock_model = MockLLMModel('{"score": 5.0, "reasoning": "Empty strings handled"}')
+    
+    # Test various scorers with empty string fields
+    result1 = tool_relevancy_scorer(agent_data, mock_model)
+    assert isinstance(result1, list)  # Should process empty strings
+    assert len(result1) == 1
+    assert isinstance(result1[0], ScoreWithReasoning)
+    
+    from novaeval.agents.agent_scorers import role_adherence_scorer
+    result2 = role_adherence_scorer(agent_data, mock_model)
+    assert isinstance(result2, ScoreWithReasoning)  # Should work with empty tool_calls string

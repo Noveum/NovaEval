@@ -171,15 +171,16 @@ def noveum_spans_preprocessing(
         print("No spans found to process.")
 
 
-def create_dataset(csv_path: str) -> AgentDataset:
+def _prepare_dataset_csv(csv_path: str) -> str:
     """
-    Creates an AgentDataset from the preprocessed CSV file.
-
+    Helper function that reads the input CSV, maps and formats the data,
+    writes it to a temporary CSV, and returns its path.
+    
     Args:
-        csv_path (str): Path to the preprocessed CSV file
-
+        csv_path (str): Path to the input preprocessed CSV file
+        
     Returns:
-        AgentDataset: Dataset ready for evaluation
+        str: Path to the temporary CSV file with processed data
     """
     import csv
     import sys
@@ -257,13 +258,31 @@ def create_dataset(csv_path: str) -> AgentDataset:
         }
         rows.append(mapped)
 
-    # Write to a temp CSV for ingest_from_csv
-    with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".csv") as tmp:
-        pd.DataFrame(rows).to_csv(tmp.name, index=False)
-        tmp.flush()
+    # Write to a temp CSV and return its path
+    tmp = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".csv")
+    pd.DataFrame(rows).to_csv(tmp.name, index=False)
+    tmp.flush()
+    tmp.close()
+    return tmp.name
+
+
+def create_dataset(csv_path: str) -> AgentDataset:
+    """
+    Creates an AgentDataset from the preprocessed CSV file.
+
+    Args:
+        csv_path (str): Path to the preprocessed CSV file
+
+    Returns:
+        AgentDataset: Dataset ready for evaluation
+    """
+    # Use helper function to prepare the dataset CSV
+    temp_csv_path = _prepare_dataset_csv(csv_path)
+    
+    try:
         dataset = AgentDataset()
         dataset.ingest_from_csv(
-            file_path=tmp.name,
+            file_path=temp_csv_path,
             turn_id="turn_id",
             agent_name="agent_name",
             agent_task="agent_task",
@@ -275,10 +294,10 @@ def create_dataset(csv_path: str) -> AgentDataset:
             exit_status="exit_status",
             agent_exit="agent_exit",
         )
-
-    # Clean up temp file
-    os.unlink(tmp.name)
-    return dataset
+        return dataset
+    finally:
+        # Clean up temp file
+        os.unlink(temp_csv_path)
 
 
 def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[AgentData]]:
@@ -293,87 +312,14 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
     Returns:
         Iterator[list[AgentData]]: Iterator yielding lists of AgentData objects
     """
-    import csv
-    import sys
-    import tempfile
-
-    import pandas as pd
-
-    # Handle large CSV fields
-    maxInt = sys.maxsize
-    while True:
-        try:
-            csv.field_size_limit(maxInt)
-            break
-        except OverflowError:
-            maxInt = int(maxInt / 10)
-
-    # First preprocess the CSV like in create_dataset
-    df = pd.read_csv(csv_path)
-    rows = []
-    for _, row in df.iterrows():
-        turn_id = row.get("turn_id")
-        agent_response = row.get("agent_response", "")
-        exit_status = row.get("exit_status")
-        agent_exit = row.get("agent_exit", False)
-
-        # Build tool_call_results
-        tool_call_results = [
-            {
-                "call_id": turn_id,
-                "result": agent_response,
-                "success": True,
-                "error_message": None,
-            }
-        ]
-
-        # Get existing metadata and ensure it's properly formatted
-        metadata_str = row.get("metadata", "{}")
-        try:
-            metadata = (
-                json.loads(metadata_str)
-                if isinstance(metadata_str, str)
-                else metadata_str
-            )
-        except (json.JSONDecodeError, TypeError):
-            metadata = {}
-
-        # Add additional metadata from other columns
-        metadata.update(
-            {
-                "span_name": row.get("span_name", ""),
-                "status": row.get("status", ""),
-                "start_time": row.get("start_time", ""),
-                "end_time": row.get("end_time", ""),
-                "trace_id": row.get("trace_id", ""),
-                "exit_status": exit_status,
-                "agent_exit": agent_exit,
-            }
-        )
-
-        mapped = {
-            "turn_id": turn_id,
-            "agent_name": row.get("agent_name", ""),
-            "agent_task": row.get("agent_task", ""),
-            "agent_role": metadata.get("agent_type", ""),
-            "system_prompt": "",
-            "agent_response": agent_response,
-            "tool_call_results": json.dumps(tool_call_results),
-            "metadata": json.dumps(metadata),
-            "exit_status": exit_status,
-            "agent_exit": agent_exit,
-        }
-        rows.append(mapped)
-
-    # Write to a temp CSV
-    with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".csv") as tmp:
-        pd.DataFrame(rows).to_csv(tmp.name, index=False)
-        tmp.flush()
-
+    # Use helper function to prepare the dataset CSV
+    temp_csv_path = _prepare_dataset_csv(csv_path)
+    
+    try:
         # Now use AgentDataset's stream_from_csv
         dataset = AgentDataset()
         yield from dataset.stream_from_csv(
-            file_path=tmp.name,
+            file_path=temp_csv_path,
             chunk_size=chunk_size,
             turn_id="turn_id",
             agent_name="agent_name",
@@ -386,6 +332,6 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
             exit_status="exit_status",
             agent_exit="agent_exit",
         )
-
+    finally:
         # Clean up temp file
-        os.unlink(tmp.name)
+        os.unlink(temp_csv_path)
