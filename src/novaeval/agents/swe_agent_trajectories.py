@@ -244,6 +244,8 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
     Returns:
         Iterator[list[AgentData]]: Iterator yielding lists of AgentData objects
     """
+    import json
+    import os
     import tempfile
 
     import pandas as pd
@@ -284,15 +286,16 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
         }
         rows.append(mapped)
 
-    # Write to a temp CSV
+    # Use context manager only to get a temp file path
     with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".csv") as tmp:
-        pd.DataFrame(rows).to_csv(tmp.name, index=False)
-        tmp.flush()
+        tmp_path = tmp.name
 
-        # Now use AgentDataset's stream_from_csv
+    pd.DataFrame(rows).to_csv(tmp_path, index=False)
+
+    try:
         dataset = AgentDataset()
         yield from dataset.stream_from_csv(
-            file_path=tmp.name,
+            file_path=tmp_path,
             chunk_size=chunk_size,
             turn_id="turn_id",
             agent_name="agent_name",
@@ -305,8 +308,5 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
             exit_status="exit_status",
             agent_exit="agent_exit",
         )
-
-        # Clean up temp file
-        import os
-
-        os.unlink(tmp.name)
+    finally:
+        os.unlink(tmp_path)
