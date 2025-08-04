@@ -52,6 +52,7 @@ dependencies = [
     "click>=8.1.0",
     "requests>=2.31.0",
     "google-genai>=0.1.0",
+    "ijson>=3.4.0",
 ]
 
 [project.optional-dependencies]
