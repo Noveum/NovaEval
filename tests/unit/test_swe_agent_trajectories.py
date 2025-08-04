@@ -113,10 +113,11 @@ class TestSWEAgentTrajectoriesPreprocessing:
         )
         mock_read_parquet.return_value = mock_df
 
-        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
-            temp_csv_path = temp_csv.name
-
+        temp_csv_path = None
         try:
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
+                temp_csv_path = temp_csv.name
+
             swe_agent_trajectories_preprocessing(
                 parquet_files=["test.parquet"], output_csv=temp_csv_path
             )
@@ -134,7 +135,8 @@ class TestSWEAgentTrajectoriesPreprocessing:
             assert result_df.iloc[0]["action"] == "action1"
 
         finally:
-            os.unlink(temp_csv_path)
+            if temp_csv_path and os.path.exists(temp_csv_path):
+                os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
     def test_successful_preprocessing_with_parquet_directory(self, mock_read_parquet):
@@ -182,10 +184,11 @@ class TestSWEAgentTrajectoriesPreprocessing:
         )
         mock_read_parquet.return_value = mock_df
 
-        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
-            temp_csv_path = temp_csv.name
-
+        temp_csv_path = None
         try:
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
+                temp_csv_path = temp_csv.name
+
             # Should handle missing columns and continue
             swe_agent_trajectories_preprocessing(
                 parquet_files=["test.parquet"], output_csv=temp_csv_path
@@ -194,7 +197,7 @@ class TestSWEAgentTrajectoriesPreprocessing:
             # Should not crash on missing columns, but might create empty output
             pass
         finally:
-            if os.path.exists(temp_csv_path):
+            if temp_csv_path and os.path.exists(temp_csv_path):
                 os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
@@ -213,10 +216,11 @@ class TestSWEAgentTrajectoriesPreprocessing:
         )
         mock_read_parquet.return_value = mock_df
 
-        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
-            temp_csv_path = temp_csv.name
-
+        temp_csv_path = None
         try:
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
+                temp_csv_path = temp_csv.name
+
             swe_agent_trajectories_preprocessing(
                 parquet_files=["test.parquet"], output_csv=temp_csv_path
             )
@@ -227,17 +231,19 @@ class TestSWEAgentTrajectoriesPreprocessing:
             assert len(result_df) == 0
 
         finally:
-            os.unlink(temp_csv_path)
+            if temp_csv_path and os.path.exists(temp_csv_path):
+                os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
     def test_preprocessing_file_error_continues(self, mock_read_parquet):
         """Test that file processing errors are handled gracefully."""
         mock_read_parquet.side_effect = Exception("File read error")
 
-        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
-            temp_csv_path = temp_csv.name
-
+        temp_csv_path = None
         try:
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
+                temp_csv_path = temp_csv.name
+
             # Should not crash, just continue with next file (if any)
             swe_agent_trajectories_preprocessing(
                 parquet_files=["test.parquet"], output_csv=temp_csv_path
@@ -247,7 +253,8 @@ class TestSWEAgentTrajectoriesPreprocessing:
             assert os.path.exists(temp_csv_path)
 
         finally:
-            os.unlink(temp_csv_path)
+            if temp_csv_path and os.path.exists(temp_csv_path):
+                os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
     def test_preprocessing_chunk_processing(self, mock_read_parquet):
@@ -265,10 +272,11 @@ class TestSWEAgentTrajectoriesPreprocessing:
         mock_df = pd.DataFrame(large_data)
         mock_read_parquet.return_value = mock_df
 
-        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
-            temp_csv_path = temp_csv.name
-
+        temp_csv_path = None
         try:
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
+                temp_csv_path = temp_csv.name
+
             swe_agent_trajectories_preprocessing(
                 parquet_files=["large_test.parquet"], output_csv=temp_csv_path
             )
@@ -279,7 +287,8 @@ class TestSWEAgentTrajectoriesPreprocessing:
             assert len(result_df) == 1000  # One row per trajectory step
 
         finally:
-            os.unlink(temp_csv_path)
+            if temp_csv_path and os.path.exists(temp_csv_path):
+                os.unlink(temp_csv_path)
 
 
 class TestSWEAgentTrajectoriesDatasetFunctions:
@@ -298,22 +307,25 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
             "agent_exit": [False, True],
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as temp_file:
-            df = pd.DataFrame(sample_data)
-            df.to_csv(temp_file.name, index=False)
+        temp_file_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as temp_file:
+                temp_file_path = temp_file.name
+                df = pd.DataFrame(sample_data)
+                df.to_csv(temp_file_path, index=False)
 
-            try:
-                dataset = create_dataset(temp_file.name)
-                assert hasattr(dataset, "data")
-                assert len(dataset.data) == 2
+            dataset = create_dataset(temp_file_path)
+            assert hasattr(dataset, "data")
+            assert len(dataset.data) == 2
 
-                # Verify each item is an AgentData instance
-                for item in dataset.data:
-                    assert isinstance(item, AgentData)
-            finally:
-                os.unlink(temp_file.name)
+            # Verify each item is an AgentData instance
+            for item in dataset.data:
+                assert isinstance(item, AgentData)
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
 
     def test_stream_dataset_success(self):
         """Test stream_dataset with valid CSV file."""
@@ -326,23 +338,26 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
             "action": ["action1", "action2", "action3"],
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as temp_file:
-            df = pd.DataFrame(sample_data)
-            df.to_csv(temp_file.name, index=False)
+        temp_file_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as temp_file:
+                temp_file_path = temp_file.name
+                df = pd.DataFrame(sample_data)
+                df.to_csv(temp_file_path, index=False)
 
-            try:
-                chunks = list(stream_dataset(temp_file.name, chunk_size=2))
-                assert len(chunks) >= 1
+            chunks = list(stream_dataset(temp_file_path, chunk_size=2))
+            assert len(chunks) >= 1
 
-                # Check that each chunk contains AgentData objects
-                for chunk in chunks:
-                    assert isinstance(chunk, list)
-                    for item in chunk:
-                        assert isinstance(item, AgentData)
-            finally:
-                os.unlink(temp_file.name)
+            # Check that each chunk contains AgentData objects
+            for chunk in chunks:
+                assert isinstance(chunk, list)
+                for item in chunk:
+                    assert isinstance(item, AgentData)
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
 
     def test_create_dataset_file_not_found(self):
         """Test create_dataset with non-existent file."""
@@ -370,10 +385,11 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
         )
         mock_read_parquet.return_value = mock_df
 
-        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
-            temp_csv_path = temp_csv.name
-
+        temp_csv_path = None
         try:
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
+                temp_csv_path = temp_csv.name
+
             swe_agent_trajectories_preprocessing(
                 parquet_files=["test.parquet"], output_csv=temp_csv_path
             )
@@ -384,7 +400,8 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
             assert len(result_df) == 0
 
         finally:
-            os.unlink(temp_csv_path)
+            if temp_csv_path and os.path.exists(temp_csv_path):
+                os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
     def test_preprocessing_with_non_dict_steps(self, mock_read_parquet):
@@ -404,10 +421,11 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
         )
         mock_read_parquet.return_value = mock_df
 
-        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
-            temp_csv_path = temp_csv.name
-
+        temp_csv_path = None
         try:
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
+                temp_csv_path = temp_csv.name
+
             swe_agent_trajectories_preprocessing(
                 parquet_files=["test.parquet"], output_csv=temp_csv_path
             )
@@ -418,7 +436,8 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
             assert len(result_df) == 0
 
         finally:
-            os.unlink(temp_csv_path)
+            if temp_csv_path and os.path.exists(temp_csv_path):
+                os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
     def test_preprocessing_with_pandas_series_trajectory(self, mock_read_parquet):
@@ -461,10 +480,11 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
 
         mock_read_parquet.return_value = mock_df
 
-        with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
-            temp_csv_path = temp_csv.name
-
+        temp_csv_path = None
         try:
+            with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as temp_csv:
+                temp_csv_path = temp_csv.name
+
             swe_agent_trajectories_preprocessing(
                 parquet_files=["test.parquet"], output_csv=temp_csv_path
             )
@@ -476,7 +496,8 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
             assert result_df.iloc[0]["step"] == 1
 
         finally:
-            os.unlink(temp_csv_path)
+            if temp_csv_path and os.path.exists(temp_csv_path):
+                os.unlink(temp_csv_path)
 
     @patch("csv.field_size_limit")
     def test_create_dataset_overflow_error_handling(self, mock_field_size_limit):
@@ -494,18 +515,21 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
             "action": ["action1"],
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as temp_file:
-            df = pd.DataFrame(sample_data)
-            df.to_csv(temp_file.name, index=False)
+        temp_file_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as temp_file:
+                temp_file_path = temp_file.name
+                df = pd.DataFrame(sample_data)
+                df.to_csv(temp_file_path, index=False)
 
-            try:
-                dataset = create_dataset(temp_file.name)
-                assert hasattr(dataset, "data")
+            dataset = create_dataset(temp_file_path)
+            assert hasattr(dataset, "data")
 
-                # Verify that field_size_limit was called multiple times due to OverflowError
-                assert mock_field_size_limit.call_count >= 2
+            # Verify that field_size_limit was called multiple times due to OverflowError
+            assert mock_field_size_limit.call_count >= 2
 
-            finally:
-                os.unlink(temp_file.name)
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)

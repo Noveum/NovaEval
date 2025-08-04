@@ -201,22 +201,25 @@ class TestNoveumSpansDatasetFunctions:
             "agent_exit": [False, True],
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as temp_file:
-            df = pd.DataFrame(sample_data)
-            df.to_csv(temp_file.name, index=False)
+        temp_file_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as temp_file:
+                temp_file_path = temp_file.name
+                df = pd.DataFrame(sample_data)
+                df.to_csv(temp_file_path, index=False)
 
-            try:
-                dataset = create_dataset(temp_file.name)
-                assert hasattr(dataset, "data")
-                assert len(dataset.data) == 2
+            dataset = create_dataset(temp_file_path)
+            assert hasattr(dataset, "data")
+            assert len(dataset.data) == 2
 
-                # Verify each item is an AgentData instance
-                for item in dataset.data:
-                    assert isinstance(item, AgentData)
-            finally:
-                os.unlink(temp_file.name)
+            # Verify each item is an AgentData instance
+            for item in dataset.data:
+                assert isinstance(item, AgentData)
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
 
     def test_stream_dataset_success(self):
         """Test stream_dataset with valid CSV file."""
@@ -228,23 +231,26 @@ class TestNoveumSpansDatasetFunctions:
             "agent_response": ["response1", "response2", "response3"],
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as temp_file:
-            df = pd.DataFrame(sample_data)
-            df.to_csv(temp_file.name, index=False)
+        temp_file_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as temp_file:
+                temp_file_path = temp_file.name
+                df = pd.DataFrame(sample_data)
+                df.to_csv(temp_file_path, index=False)
 
-            try:
-                chunks = list(stream_dataset(temp_file.name, chunk_size=2))
-                assert len(chunks) >= 1
+            chunks = list(stream_dataset(temp_file_path, chunk_size=2))
+            assert len(chunks) >= 1
 
-                # Check that each chunk contains AgentData objects
-                for chunk in chunks:
-                    assert isinstance(chunk, list)
-                    for item in chunk:
-                        assert isinstance(item, AgentData)
-            finally:
-                os.unlink(temp_file.name)
+            # Check that each chunk contains AgentData objects
+            for chunk in chunks:
+                assert isinstance(chunk, list)
+                for item in chunk:
+                    assert isinstance(item, AgentData)
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
 
     def test_create_dataset_file_not_found(self):
         """Test create_dataset with non-existent file."""
@@ -367,21 +373,24 @@ class TestNoveumSpansDatasetFunctions:
             "agent_response": ["response1"],
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as temp_file:
-            df = pd.DataFrame(sample_dict)
-            df.to_csv(temp_file.name, index=False)
+        temp_file_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as temp_file:
+                temp_file_path = temp_file.name
+                df = pd.DataFrame(sample_dict)
+                df.to_csv(temp_file_path, index=False)
 
-            try:
-                dataset = create_dataset(temp_file.name)
-                assert hasattr(dataset, "data")
+            dataset = create_dataset(temp_file_path)
+            assert hasattr(dataset, "data")
 
-                # Verify that field_size_limit was called multiple times due to OverflowError
-                assert mock_field_size_limit.call_count >= 2
+            # Verify that field_size_limit was called multiple times due to OverflowError
+            assert mock_field_size_limit.call_count >= 2
 
-            finally:
-                os.unlink(temp_file.name)
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
 
     @patch("csv.field_size_limit")
     def test_stream_dataset_overflow_error_handling(self, mock_field_size_limit):
@@ -396,21 +405,24 @@ class TestNoveumSpansDatasetFunctions:
             "agent_response": ["response1"],
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as temp_file:
-            df = pd.DataFrame(sample_data)
-            df.to_csv(temp_file.name, index=False)
+        temp_file_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as temp_file:
+                temp_file_path = temp_file.name
+                df = pd.DataFrame(sample_data)
+                df.to_csv(temp_file_path, index=False)
 
-            try:
-                chunks = list(stream_dataset(temp_file.name, chunk_size=10))
-                assert len(chunks) >= 1
+            chunks = list(stream_dataset(temp_file_path, chunk_size=10))
+            assert len(chunks) >= 1
 
-                # Verify that field_size_limit was called multiple times due to OverflowError
-                assert mock_field_size_limit.call_count >= 2
+            # Verify that field_size_limit was called multiple times due to OverflowError
+            assert mock_field_size_limit.call_count >= 2
 
-            finally:
-                os.unlink(temp_file.name)
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
 
     def test_create_dataset_json_decode_error_handling(self):
         """Test create_dataset with invalid JSON in metadata field."""
@@ -422,23 +434,26 @@ class TestNoveumSpansDatasetFunctions:
             "metadata": ["invalid json {"],  # Malformed JSON
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as temp_file:
-            df = pd.DataFrame(sample_data)
-            df.to_csv(temp_file.name, index=False)
+        temp_file_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as temp_file:
+                temp_file_path = temp_file.name
+                df = pd.DataFrame(sample_data)
+                df.to_csv(temp_file_path, index=False)
 
-            try:
-                dataset = create_dataset(temp_file.name)
-                assert hasattr(dataset, "data")
-                assert len(dataset.data) == 1
+            dataset = create_dataset(temp_file_path)
+            assert hasattr(dataset, "data")
+            assert len(dataset.data) == 1
 
-                # The agent should still be created with empty metadata
-                agent = dataset.data[0]
-                assert isinstance(agent, AgentData)
+            # The agent should still be created with empty metadata
+            agent = dataset.data[0]
+            assert isinstance(agent, AgentData)
 
-            finally:
-                os.unlink(temp_file.name)
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
 
     def test_stream_dataset_json_decode_error_handling(self):
         """Test stream_dataset with invalid JSON in metadata field."""
@@ -450,20 +465,23 @@ class TestNoveumSpansDatasetFunctions:
             "metadata": ["invalid json {"],  # Malformed JSON
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False
-        ) as temp_file:
-            df = pd.DataFrame(sample_data)
-            df.to_csv(temp_file.name, index=False)
+        temp_file_path = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".csv", delete=False
+            ) as temp_file:
+                temp_file_path = temp_file.name
+                df = pd.DataFrame(sample_data)
+                df.to_csv(temp_file_path, index=False)
 
-            try:
-                chunks = list(stream_dataset(temp_file.name, chunk_size=10))
-                assert len(chunks) >= 1
+            chunks = list(stream_dataset(temp_file_path, chunk_size=10))
+            assert len(chunks) >= 1
 
-                # The agent should still be created with empty metadata
-                for chunk in chunks:
-                    for agent in chunk:
-                        assert isinstance(agent, AgentData)
+            # The agent should still be created with empty metadata
+            for chunk in chunks:
+                for agent in chunk:
+                    assert isinstance(agent, AgentData)
 
-            finally:
-                os.unlink(temp_file.name)
+        finally:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
