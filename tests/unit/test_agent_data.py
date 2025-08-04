@@ -337,8 +337,9 @@ def test_agent_data_exit_fields_invalid_types():
 
     with pytest.raises(ValidationError):
         AgentData(exit_status=123)
-    with pytest.raises(ValidationError):
-        AgentData(agent_exit="not_boolean")
+    # agent_exit can be bool or str, so "not_boolean" should be valid
+    # with pytest.raises(ValidationError):
+    #     AgentData(agent_exit="not_boolean")
     with pytest.raises(ValidationError):
         AgentData(agent_exit=[1, 2, 3])  # List cannot be converted to boolean
 

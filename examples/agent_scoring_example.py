@@ -98,7 +98,9 @@ def main():
         print(f"   Error: {e}\n")
 
     print("2. Tool Correctness Scoring:")
-    tool_correctness = scorers.score_tool_correctness(agent_data)
+    # Use the standalone function since AgentScorers doesn't have this method
+    from novaeval.agents.agent_scorers import tool_correctness_scorer
+    tool_correctness = tool_correctness_scorer(agent_data, model)
     if isinstance(tool_correctness, list):
         for i, score_obj in enumerate(tool_correctness, 1):
             print(
@@ -163,7 +165,9 @@ def main():
     ]
 
     print("7. Goal Achievement Scoring:")
-    goal_achievement = scorers.score_goal_achievement(agent_data)
+    # Use the standalone function since AgentScorers doesn't have this method
+    from novaeval.agents.agent_scorers import goal_achievement_scorer
+    goal_achievement = goal_achievement_scorer(agent_data, model)
     if hasattr(goal_achievement, "score"):
         print(f"   Original Task: {goal_achievement.original_task}")
         print(f"   Score: {goal_achievement.score}/10.0")
@@ -173,7 +177,9 @@ def main():
     print()
 
     print("8. Conversation Coherence Scoring:")
-    conversation_coherence = scorers.score_conversation_coherence(agent_data)
+    # Use the standalone function since AgentScorers doesn't have this method
+    from novaeval.agents.agent_scorers import conversation_coherence_scorer
+    conversation_coherence = conversation_coherence_scorer(agent_data, model)
     if hasattr(conversation_coherence, "score"):
         print(f"   Original Task: {conversation_coherence.original_task}")
         print(f"   Score: {conversation_coherence.score}/10.0")
@@ -213,7 +219,7 @@ def main():
     )
 
     print("Goal Achievement Scoring for non-exited agent:")
-    goal_result = scorers.score_goal_achievement(not_exited_data)
+    goal_result = goal_achievement_scorer(not_exited_data, model)
     if hasattr(goal_result, "score"):
         print(f"   Original Task: {goal_result.original_task}")
         print(f"   Score: {goal_result.score}")
@@ -223,7 +229,7 @@ def main():
     print()
 
     print("Conversation Coherence Scoring for non-exited agent:")
-    coherence_result = scorers.score_conversation_coherence(not_exited_data)
+    coherence_result = conversation_coherence_scorer(not_exited_data, model)
     if hasattr(coherence_result, "score"):
         print(f"   Original Task: {coherence_result.original_task}")
         print(f"   Score: {coherence_result.score}")
