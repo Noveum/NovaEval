@@ -24,6 +24,7 @@ from novaeval.agents.swe_agent_trajectories import (
 class TestCreateAgentTrajectories:
     """Test the create_agent_trajectories function."""
 
+    @pytest.mark.unit
     def test_create_agent_trajectories_is_noop(self):
         """Test that create_agent_trajectories is a no-op function."""
         # Should not raise any errors and return None
@@ -34,6 +35,7 @@ class TestCreateAgentTrajectories:
 class TestSWEAgentTrajectoriesPreprocessing:
     """Test the swe_agent_trajectories_preprocessing function."""
 
+    @pytest.mark.unit
     def test_both_parameters_provided_raises_error(self):
         """Test that providing both parquet_dir and parquet_files raises ValueError."""
         with pytest.raises(
@@ -44,6 +46,7 @@ class TestSWEAgentTrajectoriesPreprocessing:
                 parquet_dir="/path", parquet_files=["file.parquet"]
             )
 
+    @pytest.mark.unit
     def test_neither_parameter_provided_raises_error(self):
         """Test that providing neither parquet_dir nor parquet_files raises ValueError."""
         with pytest.raises(
@@ -52,11 +55,13 @@ class TestSWEAgentTrajectoriesPreprocessing:
         ):
             swe_agent_trajectories_preprocessing()
 
+    @pytest.mark.unit
     def test_invalid_directory_raises_error(self):
         """Test that invalid directory path raises ValueError."""
         with pytest.raises(ValueError, match="is not a valid directory"):
             swe_agent_trajectories_preprocessing(parquet_dir="/nonexistent/path")
 
+    @pytest.mark.unit
     def test_non_parquet_files_in_directory_raises_error(self):
         """Test that non-parquet files in directory raise ValueError."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -69,6 +74,7 @@ class TestSWEAgentTrajectoriesPreprocessing:
             ):
                 swe_agent_trajectories_preprocessing(parquet_dir=temp_dir)
 
+    @pytest.mark.unit
     def test_no_parquet_files_in_directory_raises_error(self):
         """Test that directory with no parquet files raises ValueError."""
         with (
@@ -77,6 +83,7 @@ class TestSWEAgentTrajectoriesPreprocessing:
         ):
             swe_agent_trajectories_preprocessing(parquet_dir=temp_dir)
 
+    @pytest.mark.unit
     def test_invalid_parquet_files_list_raises_error(self):
         """Test that invalid parquet_files parameter raises ValueError."""
         with pytest.raises(ValueError, match="parquet_files must be a non-empty list"):
@@ -85,12 +92,14 @@ class TestSWEAgentTrajectoriesPreprocessing:
         with pytest.raises(ValueError, match="parquet_files must be a non-empty list"):
             swe_agent_trajectories_preprocessing(parquet_files=[])
 
+    @pytest.mark.unit
     def test_non_parquet_file_in_list_raises_error(self):
         """Test that non-parquet file in list raises ValueError."""
         with pytest.raises(ValueError, match="is not a parquet file"):
             swe_agent_trajectories_preprocessing(parquet_files=["test.txt"])
 
     @patch("pandas.read_parquet")
+    @pytest.mark.unit
     def test_successful_preprocessing_with_parquet_files(self, mock_read_parquet):
         """Test successful preprocessing with valid parquet files."""
         # Mock the parquet data
@@ -139,6 +148,7 @@ class TestSWEAgentTrajectoriesPreprocessing:
                 os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
+    @pytest.mark.unit
     def test_successful_preprocessing_with_parquet_directory(self, mock_read_parquet):
         """Test successful preprocessing with parquet directory."""
         mock_df = pd.DataFrame(
@@ -172,6 +182,7 @@ class TestSWEAgentTrajectoriesPreprocessing:
             assert len(result_df) == 1
 
     @patch("pandas.read_parquet")
+    @pytest.mark.unit
     def test_preprocessing_handles_missing_columns(self, mock_read_parquet):
         """Test preprocessing handles missing required columns gracefully."""
         # Missing some required columns
@@ -201,6 +212,7 @@ class TestSWEAgentTrajectoriesPreprocessing:
                 os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
+    @pytest.mark.unit
     def test_preprocessing_with_empty_trajectory(self, mock_read_parquet):
         """Test preprocessing with empty trajectory."""
         mock_df = pd.DataFrame(
@@ -235,6 +247,7 @@ class TestSWEAgentTrajectoriesPreprocessing:
                 os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
+    @pytest.mark.unit
     def test_preprocessing_file_error_continues(self, mock_read_parquet):
         """Test that file processing errors are handled gracefully."""
         mock_read_parquet.side_effect = Exception("File read error")
@@ -257,6 +270,7 @@ class TestSWEAgentTrajectoriesPreprocessing:
                 os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
+    @pytest.mark.unit
     def test_preprocessing_chunk_processing(self, mock_read_parquet):
         """Test that large datasets are processed in chunks."""
         # Create a large mock dataset
@@ -294,6 +308,7 @@ class TestSWEAgentTrajectoriesPreprocessing:
 class TestSWEAgentTrajectoriesDatasetFunctions:
     """Test the dataset creation and streaming functions."""
 
+    @pytest.mark.unit
     def test_create_dataset_success(self):
         """Test create_dataset with valid CSV file."""
         # Create sample CSV data matching expected format
@@ -327,6 +342,7 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
             if temp_file_path and os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
 
+    @pytest.mark.unit
     def test_stream_dataset_success(self):
         """Test stream_dataset with valid CSV file."""
         # Create sample CSV data
@@ -359,17 +375,20 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
             if temp_file_path and os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
 
+    @pytest.mark.unit
     def test_create_dataset_file_not_found(self):
         """Test create_dataset with non-existent file."""
         with contextlib.suppress(FileNotFoundError, Exception):
             create_dataset("/nonexistent/file.csv")
 
+    @pytest.mark.unit
     def test_stream_dataset_file_not_found(self):
         """Test stream_dataset with non-existent file."""
         with contextlib.suppress(FileNotFoundError, Exception):
             list(stream_dataset("/nonexistent/file.csv"))
 
     @patch("pandas.read_parquet")
+    @pytest.mark.unit
     def test_preprocessing_with_non_list_trajectory(self, mock_read_parquet):
         """Test preprocessing when trajectory is not a list."""
         mock_df = pd.DataFrame(
@@ -404,6 +423,7 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
                 os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
+    @pytest.mark.unit
     def test_preprocessing_with_non_dict_steps(self, mock_read_parquet):
         """Test preprocessing when trajectory steps are not dicts."""
         mock_df = pd.DataFrame(
@@ -440,6 +460,7 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
                 os.unlink(temp_csv_path)
 
     @patch("pandas.read_parquet")
+    @pytest.mark.unit
     def test_preprocessing_with_pandas_series_trajectory(self, mock_read_parquet):
         """Test preprocessing when trajectory needs tolist() conversion."""
         import pandas as pd
@@ -500,6 +521,7 @@ class TestSWEAgentTrajectoriesDatasetFunctions:
                 os.unlink(temp_csv_path)
 
     @patch("csv.field_size_limit")
+    @pytest.mark.unit
     def test_create_dataset_overflow_error_handling(self, mock_field_size_limit):
         """Test create_dataset with OverflowError in field_size_limit."""
 
