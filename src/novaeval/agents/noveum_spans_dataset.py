@@ -175,10 +175,10 @@ def _prepare_dataset_csv(csv_path: str) -> str:
     """
     Helper function that reads the input CSV, maps and formats the data,
     writes it to a temporary CSV, and returns its path.
-    
+
     Args:
         csv_path (str): Path to the input preprocessed CSV file
-        
+
     Returns:
         str: Path to the temporary CSV file with processed data
     """
@@ -259,11 +259,10 @@ def _prepare_dataset_csv(csv_path: str) -> str:
         rows.append(mapped)
 
     # Write to a temp CSV and return its path
-    tmp = tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".csv")
-    pd.DataFrame(rows).to_csv(tmp.name, index=False)
-    tmp.flush()
-    tmp.close()
-    return tmp.name
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False, suffix=".csv") as tmp:
+        pd.DataFrame(rows).to_csv(tmp.name, index=False)
+        tmp.flush()
+        return tmp.name
 
 
 def create_dataset(csv_path: str) -> AgentDataset:
@@ -278,7 +277,7 @@ def create_dataset(csv_path: str) -> AgentDataset:
     """
     # Use helper function to prepare the dataset CSV
     temp_csv_path = _prepare_dataset_csv(csv_path)
-    
+
     try:
         dataset = AgentDataset()
         dataset.ingest_from_csv(
@@ -314,7 +313,7 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
     """
     # Use helper function to prepare the dataset CSV
     temp_csv_path = _prepare_dataset_csv(csv_path)
-    
+
     try:
         # Now use AgentDataset's stream_from_csv
         dataset = AgentDataset()

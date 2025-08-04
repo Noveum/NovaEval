@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel
 
@@ -29,7 +29,7 @@ class AgentData(BaseModel):
     turn_id: Optional[str] = None
 
     ground_truth: Optional[str] = None
-    expected_tool_call: Optional[ToolCall | str] = None
+    expected_tool_call: Optional[Union[ToolCall, str]] = None
 
     agent_name: Optional[str] = None
     agent_role: Optional[str] = None
@@ -37,19 +37,19 @@ class AgentData(BaseModel):
 
     system_prompt: Optional[str] = None
     agent_response: Optional[str] = None
-    trace: Optional[list[dict[str, Any]] | str] = (
+    trace: Optional[Union[list[dict[str, Any]], str]] = (
         None  # we might need a method to parse this, will do once the trace is formalized  # will have all the past context. useful for evaluating the agent
     )
 
-    tools_available: list[ToolSchema] | str = []
-    tool_calls: list[ToolCall] | str = []
-    parameters_passed: dict[str, Any] | str = {}  # JSON-like dict
-    tool_call_results: Optional[list[ToolResult] | str] = None
+    tools_available: Union[list[ToolSchema], str] = []
+    tool_calls: Union[list[ToolCall], str] = []
+    parameters_passed: Union[dict[str, Any], str] = {}  # JSON-like dict
+    tool_call_results: Optional[Union[list[ToolResult], str]] = None
 
     retrieval_query: Optional[str] = None
     retrieved_context: Optional[str] = None
 
     exit_status: Optional[str] = None
-    agent_exit: bool | str = False
+    agent_exit: Union[bool, str] = False
 
     metadata: Optional[str] = None

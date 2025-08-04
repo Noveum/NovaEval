@@ -13,6 +13,7 @@ def test_imports():
     from novaeval.agents import (
         AgentData,
         AgentDataset,
+        AgentScorers,
         ToolCall,
         ToolResult,
         ToolSchema,
@@ -21,6 +22,7 @@ def test_imports():
     # Verify all classes are imported correctly
     assert AgentData is not None
     assert AgentDataset is not None
+    assert AgentScorers is not None
     assert ToolCall is not None
     assert ToolResult is not None
     assert ToolSchema is not None
@@ -34,6 +36,7 @@ def test_all_exports():
     expected_exports = [
         "AgentData",
         "AgentDataset",
+        "AgentScorers",
         "ToolCall",
         "ToolResult",
         "ToolSchema",

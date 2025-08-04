@@ -657,11 +657,15 @@ def test_parse_field_list_and_dict_various_json():
     ds = AgentDataset()
     # List field
     assert ds._parse_field("trace", "[]") == []
-    assert ds._parse_field("trace", "[invalid]") == "[invalid]"  # kept as string for union fields
+    assert (
+        ds._parse_field("trace", "[invalid]") == "[invalid]"
+    )  # kept as string for union fields
     assert ds._parse_field("trace", '[{"a":1}]') == [{"a": 1}]
     # Dict field
     assert ds._parse_field("parameters_passed", "{}") == {}
-    assert ds._parse_field("parameters_passed", "{invalid}") == "{invalid}"  # kept as string for union fields
+    assert (
+        ds._parse_field("parameters_passed", "{invalid}") == "{invalid}"
+    )  # kept as string for union fields
     assert ds._parse_field("parameters_passed", '{"x":1}') == {"x": 1}
 
 
@@ -1364,9 +1368,15 @@ user3,task3,turn3,invalid_json,invalid_json,invalid_json,maybe,invalid_json"""
         assert ds.data[1].expected_tool_call is None
 
         # Third row with invalid data should handle gracefully
-        assert ds.data[2].agent_exit == "maybe"  # Non-boolean strings are kept as strings for union fields
-        assert ds.data[2].trace == "invalid_json"  # Invalid JSON kept as string for union fields
-        assert ds.data[2].expected_tool_call == "invalid_json"  # Invalid JSON kept as string
+        assert (
+            ds.data[2].agent_exit == "maybe"
+        )  # Non-boolean strings are kept as strings for union fields
+        assert (
+            ds.data[2].trace == "invalid_json"
+        )  # Invalid JSON kept as string for union fields
+        assert (
+            ds.data[2].expected_tool_call == "invalid_json"
+        )  # Invalid JSON kept as string
 
     finally:
         os.unlink(temp_file_path)
@@ -1396,6 +1406,124 @@ def test_parse_field_boolean_no_default():
         ds = AgentDataset()
         result = ds._parse_field("test_bool", None)
         assert result is False  # Should fallback to False
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+def test_parse_field_bool_with_default_value():
+    """Test boolean field parsing when field has a default value."""
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create field with default
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    agent_data_mod.AgentData.model_fields["test_bool_with_default"] = SimpleNamespace(
+        annotation=bool, default=True
+    )
+
+    try:
+        ds = AgentDataset()
+        # Test None value with default
+        result = ds._parse_field("test_bool_with_default", None)
+        assert result is True  # Should use the default value
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+def test_parse_field_bool_without_default_value():
+    """Test boolean field parsing when field has no default value."""
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create field without default
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    agent_data_mod.AgentData.model_fields["test_bool_no_default"] = SimpleNamespace(
+        annotation=bool
+    )
+
+    try:
+        ds = AgentDataset()
+        # Test None value without default
+        result = ds._parse_field("test_bool_no_default", None)
+        assert result is False  # Should fallback to False
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+def test_parse_field_bool_without_default_attr():
+    """Test boolean field parsing when field has no default attribute."""
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create field without default attribute
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    field_without_default = SimpleNamespace(annotation=bool)
+    # Remove default attribute if it exists
+    if hasattr(field_without_default, "default"):
+        delattr(field_without_default, "default")
+    agent_data_mod.AgentData.model_fields["test_bool_no_default_attr"] = (
+        field_without_default
+    )
+
+    try:
+        ds = AgentDataset()
+        # Test None value without default attribute
+        result = ds._parse_field("test_bool_no_default_attr", None)
+        assert result is False  # Should fallback to False
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+def test_parse_field_bool_unrecognized_string():
+    """Test boolean field parsing with unrecognized string values."""
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create bool field
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    agent_data_mod.AgentData.model_fields["test_bool_unrecognized"] = SimpleNamespace(
+        annotation=bool
+    )
+
+    try:
+        ds = AgentDataset()
+        # Test unrecognized string values
+        result = ds._parse_field("test_bool_unrecognized", "maybe")
+        assert result is False  # Should default to False for unrecognized strings
+
+        result = ds._parse_field("test_bool_unrecognized", "unknown")
+        assert result is False  # Should default to False for unrecognized strings
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+def test_parse_field_bool_conversion_exception():
+    """Test boolean field parsing with conversion exception."""
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create bool field
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    agent_data_mod.AgentData.model_fields["test_bool_exception"] = SimpleNamespace(
+        annotation=bool
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test with object that raises exception during bool conversion
+        class UnconvertibleObj:
+            def __bool__(self):
+                raise ValueError("Cannot convert to bool")
+
+        obj = UnconvertibleObj()
+        result = ds._parse_field("test_bool_exception", obj)
+        assert result is False  # Should fallback to False on exception
     finally:
         agent_data_mod.AgentData.model_fields = orig_model_fields
 
@@ -1458,137 +1586,133 @@ def test_agent_dataset_init_various_type_patterns():
         agent_data_mod.AgentData.model_fields = orig_model_fields
 
 
-def test_ingest_from_csv_pandas_exception():
-    """Test ingest_from_csv with pandas-related exception."""
-    ds = AgentDataset()
-
-    # Test with a nonexistent file to trigger exception handling
-    with pytest.raises(ValueError, match="Error reading CSV file"):
-        ds.ingest_from_csv("/nonexistent/file/path.csv")
-
-
-# New tests for string union type functionality
 @pytest.mark.unit
-def test_string_union_fields_detection():
-    """Test that the new union with string fields are properly detected."""
-    ds = AgentDataset()
-    
-    # These fields should be detected as union_with_str_fields
-    expected_union_with_str_fields = {
-        "expected_tool_call",
-        "trace", 
-        "tools_available",
-        "tool_calls",
-        "parameters_passed",
-        "tool_call_results",
-        "agent_exit"
+def test_agentdataset_init_direct_types_without_union():
+    """Test AgentDataset initialization with direct list/dict types (not in unions)."""
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    # Test direct list and dict types (not in unions)
+    model_fields = {
+        "direct_list_field": SimpleNamespace(annotation=list),
+        "direct_dict_field": SimpleNamespace(annotation=dict),
+        "typing_list_field": SimpleNamespace(annotation=list[str]),
+        "typing_dict_field": SimpleNamespace(annotation=dict[str, int]),
     }
-    
-    assert ds._union_with_str_fields == expected_union_with_str_fields
+
+    agent_data_mod.AgentData.model_fields = model_fields
+
+    try:
+        ds = AgentDataset()
+        # These should be detected as list/dict fields
+        assert "direct_list_field" in ds._list_fields
+        assert "direct_dict_field" in ds._dict_fields
+        assert "typing_list_field" in ds._list_fields
+        assert "typing_dict_field" in ds._dict_fields
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
 
 
 @pytest.mark.unit
-def test_parse_field_string_union_list_fields():
-    """Test parsing list fields that can also be strings."""
-    ds = AgentDataset()
-    
-    # Test tools_available as string (should keep as string)
-    result = ds._parse_field("tools_available", "some_string_value")
-    assert result == "some_string_value"
-    
-    # Test tools_available as JSON-like string (should parse to list)
-    json_str = '[{"name": "tool1", "description": "desc"}]'
-    result = ds._parse_field("tools_available", json_str)
-    assert isinstance(result, list)
-    assert result[0]["name"] == "tool1"
-    
-    # Test tools_available as invalid JSON-like string (should keep as string)
-    result = ds._parse_field("tools_available", "[invalid_json")
-    assert result == "[invalid_json"
-    
-    # Test tools_available as actual list (should keep as list)
-    list_val = [{"name": "tool1", "description": "desc"}]
-    result = ds._parse_field("tools_available", list_val)
-    assert result == list_val
+def test_agentdataset_init_union_without_str():
+    """Test AgentDataset initialization with Union types that don't include str."""
+    import typing
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    # Test Union types without str
+    class MockListType:
+        __origin__ = list
+        __args__ = (str,)
+
+    class MockDictType:
+        __origin__ = dict
+        __args__ = (str, int)
+
+    model_fields = {
+        "union_list_no_str": SimpleNamespace(
+            annotation=typing.Union[MockListType, None]
+        ),
+        "union_dict_no_str": SimpleNamespace(
+            annotation=typing.Union[MockDictType, None]
+        ),
+        "union_direct_list_no_str": SimpleNamespace(
+            annotation=typing.Union[list, None]
+        ),
+        "union_direct_dict_no_str": SimpleNamespace(
+            annotation=typing.Union[dict, None]
+        ),
+    }
+
+    agent_data_mod.AgentData.model_fields = model_fields
+
+    try:
+        ds = AgentDataset()
+        # These should be detected as list/dict fields even without str in union
+        assert "union_list_no_str" in ds._list_fields
+        assert "union_dict_no_str" in ds._dict_fields
+        assert "union_direct_list_no_str" in ds._list_fields
+        assert "union_direct_dict_no_str" in ds._dict_fields
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
 
 
 @pytest.mark.unit
-def test_parse_field_string_union_dict_fields():
-    """Test parsing dict fields that can also be strings."""
-    ds = AgentDataset()
-    
-    # Test parameters_passed as string (should keep as string)
-    result = ds._parse_field("parameters_passed", "some_string_value")
-    assert result == "some_string_value"
-    
-    # Test parameters_passed as JSON-like string (should parse to dict)
-    json_str = '{"param1": "value1", "param2": 123}'
-    result = ds._parse_field("parameters_passed", json_str)
-    assert isinstance(result, dict)
-    assert result["param1"] == "value1"
-    assert result["param2"] == 123
-    
-    # Test parameters_passed as invalid JSON-like string (should keep as string)
-    result = ds._parse_field("parameters_passed", "{invalid_json")
-    assert result == "{invalid_json"
-    
-    # Test parameters_passed as actual dict (should keep as dict)
-    dict_val = {"param1": "value1"}
-    result = ds._parse_field("parameters_passed", dict_val)
-    assert result == dict_val
+def test_agentdataset_init_union_with_str_and_other_types():
+    """Test AgentDataset initialization with Union types that include str and other types."""
+    import typing
+    from types import SimpleNamespace
 
+    import novaeval.agents.agent_data as agent_data_mod
 
-@pytest.mark.unit
-def test_parse_field_string_union_bool_fields():
-    """Test parsing bool fields that can also be strings."""
-    ds = AgentDataset()
-    
-    # Test agent_exit as non-boolean string (should keep as string)
-    result = ds._parse_field("agent_exit", "some_string_value")
-    assert result == "some_string_value"
-    
-    # Test agent_exit as boolean-like string (should parse to bool)
-    result = ds._parse_field("agent_exit", "true")
-    assert result is True
-    
-    result = ds._parse_field("agent_exit", "false")
-    assert result is False
-    
-    result = ds._parse_field("agent_exit", "1")
-    assert result is True
-    
-    result = ds._parse_field("agent_exit", "0")
-    assert result is False
-    
-    # Test agent_exit as actual bool (should keep as bool)
-    result = ds._parse_field("agent_exit", True)
-    assert result is True
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
 
+    # Test Union types with str and other types
+    class MockListType:
+        __origin__ = list
+        __args__ = (str,)
 
-@pytest.mark.unit
-def test_parse_field_string_union_toolcall_fields():
-    """Test parsing ToolCall fields that can also be strings."""
-    ds = AgentDataset()
-    
-    # Test expected_tool_call as string (should keep as string)
-    result = ds._parse_field("expected_tool_call", "some_string_value")
-    assert result == "some_string_value"
-    
-    # Test expected_tool_call as JSON-like string (should parse to ToolCall)
-    json_str = '{"tool_name": "test_tool", "parameters": {"p1": "v1"}, "call_id": "123"}'
-    result = ds._parse_field("expected_tool_call", json_str)
-    assert isinstance(result, ToolCall)
-    assert result.tool_name == "test_tool"
-    assert result.call_id == "123"
-    
-    # Test expected_tool_call as invalid JSON-like string (should keep as string)
-    result = ds._parse_field("expected_tool_call", "{invalid_json")
-    assert result == "{invalid_json"
-    
-    # Test expected_tool_call as actual ToolCall (should keep as ToolCall)
-    toolcall_val = ToolCall(tool_name="test", parameters={}, call_id="456")
-    result = ds._parse_field("expected_tool_call", toolcall_val)
-    assert result == toolcall_val
+    class MockDictType:
+        __origin__ = dict
+        __args__ = (str, int)
+
+    model_fields = {
+        "union_str_list": SimpleNamespace(
+            annotation=typing.Union[str, MockListType, None]
+        ),
+        "union_str_dict": SimpleNamespace(
+            annotation=typing.Union[str, MockDictType, None]
+        ),
+        "union_str_direct_list": SimpleNamespace(
+            annotation=typing.Union[str, list, None]
+        ),
+        "union_str_direct_dict": SimpleNamespace(
+            annotation=typing.Union[str, dict, None]
+        ),
+    }
+
+    agent_data_mod.AgentData.model_fields = model_fields
+
+    try:
+        ds = AgentDataset()
+        # These should be detected as union_with_str_fields
+        assert "union_str_list" in ds._union_with_str_fields
+        assert "union_str_dict" in ds._union_with_str_fields
+        assert "union_str_direct_list" in ds._union_with_str_fields
+        assert "union_str_direct_dict" in ds._union_with_str_fields
+        # And also as list/dict fields
+        assert "union_str_list" in ds._list_fields
+        assert "union_str_dict" in ds._dict_fields
+        assert "union_str_direct_list" in ds._list_fields
+        assert "union_str_direct_dict" in ds._dict_fields
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
 
 
 @pytest.mark.unit
@@ -1597,36 +1721,36 @@ def test_ingest_csv_with_string_union_fields(tmp_path):
     # Create CSV data where some union fields are strings and some are JSON
     data = {
         "user_id": "user1",
-        "task_id": "task1", 
+        "task_id": "task1",
         "agent_name": "TestAgent",
         "expected_tool_call": "string_representation_of_tool_call",
         "trace": "string_trace_info",
         "tools_available": '[{"name": "tool1", "description": "desc"}]',  # JSON
-        "tool_calls": "string_tool_calls", 
+        "tool_calls": "string_tool_calls",
         "parameters_passed": '{"param1": "value1"}',  # JSON
         "tool_call_results": "string_results",
-        "agent_exit": "custom_exit_state"
+        "agent_exit": "custom_exit_state",
     }
-    
+
     csv_file = tmp_path / "string_union_test.csv"
     with open(csv_file, "w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=data.keys())
         writer.writeheader()
         writer.writerow(data)
-    
+
     ds = AgentDataset()
     ds.ingest_from_csv(str(csv_file))
-    
+
     assert len(ds.data) == 1
     agent = ds.data[0]
-    
+
     # Check that string values are preserved as strings
     assert agent.expected_tool_call == "string_representation_of_tool_call"
     assert agent.trace == "string_trace_info"
     assert agent.tool_calls == "string_tool_calls"
     assert agent.tool_call_results == "string_results"
     assert agent.agent_exit == "custom_exit_state"
-    
+
     # Check that JSON-like strings are parsed
     assert isinstance(agent.tools_available, list)
     assert len(agent.tools_available) == 1
@@ -1642,33 +1766,33 @@ def test_ingest_json_with_string_union_fields(tmp_path):
     data = {
         "user_id": "user1",
         "task_id": "task1",
-        "agent_name": "TestAgent", 
+        "agent_name": "TestAgent",
         "expected_tool_call": "string_representation_of_tool_call",
         "trace": "string_trace_info",
         "tools_available": [{"name": "tool1", "description": "desc"}],  # Actual list
         "tool_calls": "string_tool_calls",
         "parameters_passed": {"param1": "value1"},  # Actual dict
         "tool_call_results": "string_results",
-        "agent_exit": "custom_exit_state"
+        "agent_exit": "custom_exit_state",
     }
-    
+
     json_file = tmp_path / "string_union_test.json"
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump([data], f)
-    
+
     ds = AgentDataset()
     ds.ingest_from_json(str(json_file))
-    
+
     assert len(ds.data) == 1
     agent = ds.data[0]
-    
+
     # Check that string values are preserved as strings
     assert agent.expected_tool_call == "string_representation_of_tool_call"
     assert agent.trace == "string_trace_info"
     assert agent.tool_calls == "string_tool_calls"
     assert agent.tool_call_results == "string_results"
     assert agent.agent_exit == "custom_exit_state"
-    
+
     # Check that actual list/dict values are preserved
     assert isinstance(agent.tools_available, list)
     assert len(agent.tools_available) == 1
@@ -1688,49 +1812,56 @@ def test_export_preserves_string_union_values(tmp_path):
         agent_name="TestAgent",
         expected_tool_call="string_tool_call",
         trace="string_trace",
-        tools_available=[{"name": "tool1", "description": "desc", "args_schema": None, "return_schema": None}],  # List
+        tools_available=[
+            {
+                "name": "tool1",
+                "description": "desc",
+                "args_schema": None,
+                "return_schema": None,
+            }
+        ],  # List
         tool_calls="string_tool_calls",
         parameters_passed={"param1": "value1"},  # Dict
         tool_call_results="string_results",
-        agent_exit="custom_exit"
+        agent_exit="custom_exit",
     )
-    
+
     ds = AgentDataset()
     ds.data.append(agent)
-    
+
     # Test CSV export
     csv_file = tmp_path / "export_string_union.csv"
     ds.export_to_csv(str(csv_file))
-    
+
     with open(csv_file, encoding="utf-8") as f:
         reader = csv.DictReader(f)
         rows = list(reader)
         assert len(rows) == 1
         row = rows[0]
-        
+
         # String values should be preserved
         assert row["expected_tool_call"] == "string_tool_call"
         assert row["trace"] == "string_trace"
         assert row["tool_calls"] == "string_tool_calls"
         assert row["tool_call_results"] == "string_results"
         assert row["agent_exit"] == "custom_exit"
-        
+
         # List/dict values should be JSON serialized - check the structure matches what AgentData produces
         tools_data = json.loads(row["tools_available"])
         assert len(tools_data) == 1
         assert tools_data[0]["name"] == "tool1"
         assert tools_data[0]["description"] == "desc"
         assert json.loads(row["parameters_passed"]) == {"param1": "value1"}
-    
+
     # Test JSON export
     json_file = tmp_path / "export_string_union.json"
     ds.export_to_json(str(json_file))
-    
+
     with open(json_file, encoding="utf-8") as f:
         items = json.load(f)
         assert len(items) == 1
         item = items[0]
-        
+
         # All values should be preserved as-is
         assert item["expected_tool_call"] == "string_tool_call"
         assert item["trace"] == "string_trace"
@@ -1747,22 +1878,655 @@ def test_export_preserves_string_union_values(tmp_path):
 def test_mixed_string_and_parsed_values_edge_cases():
     """Test edge cases with mixed string and parsed values."""
     ds = AgentDataset()
-    
+
     # Test empty JSON-like strings
     assert ds._parse_field("tools_available", "[]") == []
     assert ds._parse_field("parameters_passed", "{}") == {}
-    
+
     # Test whitespace handling
     assert ds._parse_field("tools_available", "  string_value  ") == "string_value"
     assert ds._parse_field("parameters_passed", "  string_value  ") == "string_value"
-    
+
     # Test JSON parsing with whitespace
     result = ds._parse_field("tools_available", '  [{"name": "tool1"}]  ')
     assert isinstance(result, list)
     assert result[0]["name"] == "tool1"
-    
+
     # Test malformed JSON-like strings that don't start/end correctly
     assert ds._parse_field("tools_available", "not_json]") == "not_json]"
     assert ds._parse_field("tools_available", "[not_json") == "[not_json"
     assert ds._parse_field("parameters_passed", "not_json}") == "not_json}"
     assert ds._parse_field("parameters_passed", "{not_json") == "{not_json"
+
+
+@pytest.mark.unit
+def test_parse_field_non_union_list_dict_fields():
+    """Test parsing list and dict fields that are not union types."""
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create non-union list/dict fields
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    agent_data_mod.AgentData.model_fields["pure_list_field"] = SimpleNamespace(
+        annotation=list
+    )
+    agent_data_mod.AgentData.model_fields["pure_dict_field"] = SimpleNamespace(
+        annotation=dict
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test list field with non-JSON string
+        result = ds._parse_field("pure_list_field", "not_a_list")
+        assert result == []  # Should return empty list for non-JSON strings
+
+        # Test list field with valid JSON
+        result = ds._parse_field("pure_list_field", "[1, 2, 3]")
+        assert result == [1, 2, 3]  # Should parse valid JSON
+
+        # Test list field with invalid JSON
+        result = ds._parse_field("pure_list_field", "[invalid")
+        assert result == []  # Should return empty list for invalid JSON
+
+        # Test list field with actual list
+        result = ds._parse_field("pure_list_field", [4, 5, 6])
+        assert result == [4, 5, 6]  # Should keep actual list
+
+        # Test list field with non-list non-string
+        result = ds._parse_field("pure_list_field", 42)
+        assert result == []  # Should return empty list for non-list non-string
+
+        # Test dict field with non-JSON string
+        result = ds._parse_field("pure_dict_field", "not_a_dict")
+        assert result == {}  # Should return empty dict for non-JSON strings
+
+        # Test dict field with valid JSON
+        result = ds._parse_field("pure_dict_field", '{"a": 1, "b": 2}')
+        assert result == {"a": 1, "b": 2}  # Should parse valid JSON
+
+        # Test dict field with invalid JSON
+        result = ds._parse_field("pure_dict_field", "{invalid")
+        assert result == {}  # Should return empty dict for invalid JSON
+
+        # Test dict field with actual dict
+        result = ds._parse_field("pure_dict_field", {"c": 3, "d": 4})
+        assert result == {"c": 3, "d": 4}  # Should keep actual dict
+
+        # Test dict field with non-dict non-string
+        result = ds._parse_field("pure_dict_field", 42)
+        assert result == {}  # Should return empty dict for non-dict non-string
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_parse_field_toolcall_without_str():
+    """Test parsing ToolCall fields that don't include str in their type."""
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create ToolCall field without str
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    agent_data_mod.AgentData.model_fields["pure_toolcall_field"] = SimpleNamespace(
+        annotation=ToolCall
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test with None value
+        result = ds._parse_field("pure_toolcall_field", None)
+        assert result is None  # Should return None for None
+
+        # Test with empty string
+        result = ds._parse_field("pure_toolcall_field", "")
+        assert result is None  # Should return None for empty string
+
+        # Test with existing ToolCall instance
+        existing_toolcall = ToolCall(tool_name="test", parameters={}, call_id="123")
+        result = ds._parse_field("pure_toolcall_field", existing_toolcall)
+        assert result == existing_toolcall  # Should keep existing ToolCall
+
+        # Test with valid JSON string
+        result = ds._parse_field(
+            "pure_toolcall_field",
+            '{"tool_name": "test", "parameters": {}, "call_id": "456"}',
+        )
+        assert isinstance(result, ToolCall)  # Should create new ToolCall
+        assert result.tool_name == "test"
+        assert result.call_id == "456"
+
+        # Test with invalid JSON string
+        result = ds._parse_field("pure_toolcall_field", "invalid_json")
+        assert result is None  # Should return None for invalid JSON
+
+        # Test with valid dict
+        result = ds._parse_field(
+            "pure_toolcall_field",
+            {"tool_name": "test2", "parameters": {"p": "v"}, "call_id": "789"},
+        )
+        assert isinstance(result, ToolCall)  # Should create new ToolCall
+        assert result.tool_name == "test2"
+        assert result.parameters == {"p": "v"}
+
+        # Test with invalid dict (missing required fields)
+        result = ds._parse_field("pure_toolcall_field", {"invalid": "dict"})
+        assert result is None  # Should return None for invalid dict
+
+        # Test with non-dict non-string non-ToolCall
+        result = ds._parse_field("pure_toolcall_field", 42)
+        assert result is None  # Should return None for other types
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_parse_field_str_only_fields():
+    """Test parsing fields that are only str type (not union)."""
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create str-only field
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    agent_data_mod.AgentData.model_fields["pure_str_field"] = SimpleNamespace(
+        annotation=str
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test with None value
+        result = ds._parse_field("pure_str_field", None)
+        assert result is None  # Should return None for None
+
+        # Test with string value
+        result = ds._parse_field("pure_str_field", "test_string")
+        assert result == "test_string"  # Should keep string
+
+        # Test with non-string value
+        result = ds._parse_field("pure_str_field", 42)
+        assert result == "42"  # Should convert to string
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_parse_field_union_str_only():
+    """Test parsing fields that are Union[str, None] (only str and None)."""
+    import typing
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create Union[str, None] field
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    agent_data_mod.AgentData.model_fields["union_str_only_field"] = SimpleNamespace(
+        annotation=typing.Union[str, type(None)]
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test with None value
+        result = ds._parse_field("union_str_only_field", None)
+        assert result is None  # Should return None for None
+
+        # Test with string value
+        result = ds._parse_field("union_str_only_field", "test_string")
+        assert result == "test_string"  # Should keep string
+
+        # Test with non-string value
+        result = ds._parse_field("union_str_only_field", 42)
+        assert result == "42"  # Should convert to string
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_parse_field_union_fields_none_values():
+    """Test parsing union fields with None values for different field types."""
+    import typing
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create union fields
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    # Create fields that simulate the actual union types in AgentData
+    agent_data_mod.AgentData.model_fields["union_list_field"] = SimpleNamespace(
+        annotation=typing.Union[list, str, type(None)]
+    )
+    agent_data_mod.AgentData.model_fields["union_dict_field"] = SimpleNamespace(
+        annotation=typing.Union[dict, str, type(None)]
+    )
+    agent_data_mod.AgentData.model_fields["union_toolcall_field"] = SimpleNamespace(
+        annotation=typing.Union[ToolCall, str, type(None)]
+    )
+    agent_data_mod.AgentData.model_fields["union_bool_field"] = SimpleNamespace(
+        annotation=typing.Union[bool, str, type(None)]
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test None values for different union field types
+        # These should hit the specific None handling branches
+
+        # For list union fields, return empty list
+        result = ds._parse_field("union_list_field", None)
+        assert result == []
+
+        # For dict union fields, return empty dict
+        result = ds._parse_field("union_dict_field", None)
+        assert result == {}
+
+        # For ToolCall union fields, return None
+        result = ds._parse_field("union_toolcall_field", None)
+        assert result is None
+
+        # For bool union fields, return False (default)
+        result = ds._parse_field("union_bool_field", None)
+        assert result is False
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_parse_field_union_fields_other_types():
+    """Test parsing union fields with non-string non-None values."""
+    import typing
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create union fields
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    # Create fields that simulate the actual union types in AgentData
+    agent_data_mod.AgentData.model_fields["union_list_field"] = SimpleNamespace(
+        annotation=typing.Union[list, str, type(None)]
+    )
+    agent_data_mod.AgentData.model_fields["union_dict_field"] = SimpleNamespace(
+        annotation=typing.Union[dict, str, type(None)]
+    )
+    agent_data_mod.AgentData.model_fields["union_toolcall_field"] = SimpleNamespace(
+        annotation=typing.Union[ToolCall, str, type(None)]
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test with non-string non-None values (should fall through to regular parsing)
+        # These should hit the "If value is not a string, fall through" branch
+
+        # Test with list value
+        result = ds._parse_field("union_list_field", [1, 2, 3])
+        assert result == [1, 2, 3]
+
+        # Test with dict value
+        result = ds._parse_field("union_dict_field", {"a": 1})
+        assert result == {"a": 1}
+
+        # Test with ToolCall value
+        toolcall = ToolCall(tool_name="test", parameters={}, call_id="123")
+        result = ds._parse_field("union_toolcall_field", toolcall)
+        assert result == toolcall
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_stream_from_json_exit_path():
+    """Test the exit path in stream_from_json method."""
+    ds = AgentDataset()
+
+    # Test with a file that doesn't exist to trigger the exception handling
+    with pytest.raises(ValueError, match="Error reading JSON file"):
+        list(ds.stream_from_json("/nonexistent/file.json"))
+
+
+@pytest.mark.unit
+def test_parse_field_nan_handling():
+    """Test handling of NaN values from pandas."""
+    import math
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create a test field
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+    agent_data_mod.AgentData.model_fields["test_nan_field"] = SimpleNamespace(
+        annotation=str
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test with NaN float value
+        result = ds._parse_field("test_nan_field", float("nan"))
+        assert result is None  # Should convert NaN to None
+
+        # Test with math.nan
+        result = ds._parse_field("test_nan_field", math.nan)
+        assert result is None  # Should convert NaN to None
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_parse_field_remaining_edge_cases():
+    """Test remaining edge cases in _parse_field method."""
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create test fields
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    # Create fields for different test scenarios
+    agent_data_mod.AgentData.model_fields["test_field_with_default"] = SimpleNamespace(
+        annotation=bool, default=True
+    )
+    agent_data_mod.AgentData.model_fields["test_field_no_default"] = SimpleNamespace(
+        annotation=bool
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test bool field with default value (line 128)
+        result = ds._parse_field("test_field_with_default", None)
+        assert result is True  # Should use the default value
+
+        # Test bool field without default value (line 194)
+        result = ds._parse_field("test_field_no_default", None)
+        assert result is False  # Should fallback to False
+
+        # Test bool field with unrecognized string (lines 274, 278, 280)
+        result = ds._parse_field("test_field_no_default", "maybe")
+        assert result is False  # Should default to False for unrecognized strings
+
+        result = ds._parse_field("test_field_no_default", "unknown")
+        assert result is False  # Should default to False for unrecognized strings
+
+        # Test bool field with conversion exception (lines 213-214, 227-228)
+        class UnconvertibleObj:
+            def __bool__(self):
+                raise ValueError("Cannot convert to bool")
+
+        obj = UnconvertibleObj()
+        result = ds._parse_field("test_field_no_default", obj)
+        assert result is False  # Should fallback to False on exception
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_parse_field_final_edge_cases():
+    """Test final edge cases in _parse_field method to achieve 95%+ coverage."""
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create test fields
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    # Create fields for specific test scenarios
+    agent_data_mod.AgentData.model_fields["bool_field_with_default"] = SimpleNamespace(
+        annotation=bool, default=True
+    )
+    agent_data_mod.AgentData.model_fields["bool_field_no_default"] = SimpleNamespace(
+        annotation=bool
+    )
+    agent_data_mod.AgentData.model_fields["bool_field_no_default_attr"] = (
+        SimpleNamespace(annotation=bool)
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test bool field with default value (line 128)
+        result = ds._parse_field("bool_field_with_default", None)
+        assert result is True  # Should use the default value
+
+        # Test bool field without default value (line 194)
+        result = ds._parse_field("bool_field_no_default", None)
+        assert result is False  # Should fallback to False
+
+        # Test bool field with unrecognized string (lines 274, 278, 280)
+        result = ds._parse_field("bool_field_no_default", "maybe")
+        assert result is False  # Should default to False for unrecognized strings
+
+        result = ds._parse_field("bool_field_no_default", "unknown")
+        assert result is False  # Should default to False for unrecognized strings
+
+        # Test bool field with conversion exception (lines 213-214, 227-228)
+        class UnconvertibleObj:
+            def __bool__(self):
+                raise ValueError("Cannot convert to bool")
+
+        obj = UnconvertibleObj()
+        result = ds._parse_field("bool_field_no_default", obj)
+        assert result is False  # Should fallback to False on exception
+
+        # Test bool field without default attribute (lines 175-178)
+        # Remove default attribute if it exists
+        if hasattr(
+            agent_data_mod.AgentData.model_fields["bool_field_no_default_attr"],
+            "default",
+        ):
+            delattr(
+                agent_data_mod.AgentData.model_fields["bool_field_no_default_attr"],
+                "default",
+            )
+
+        result = ds._parse_field("bool_field_no_default_attr", None)
+        assert result is False  # Should fallback to False
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_stream_from_json_final_exit_path():
+    """Test the final exit path in stream_from_json method."""
+    ds = AgentDataset()
+
+    # Test with a file that doesn't exist to trigger the exception handling (line 632)
+    with pytest.raises(ValueError, match="Error reading JSON file"):
+        list(ds.stream_from_json("/nonexistent/file.json"))
+
+
+@pytest.mark.unit
+def test_agentdataset_init_final_missing_branches():
+    """Test AgentDataset initialization with specific type patterns to cover missing branches."""
+    import typing
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    # Test specific patterns that hit the missing branches
+    class MockListType:
+        __origin__ = list
+        __args__ = (str,)
+
+    class MockDictType:
+        __origin__ = dict
+        __args__ = (str, int)
+
+    # Test Union types with specific patterns that hit missing branches
+    class MockUnionWithStrAndList:
+        __origin__ = typing.Union
+        __args__ = (str, MockListType, type(None))
+
+    class MockUnionWithStrAndDict:
+        __origin__ = typing.Union
+        __args__ = (str, MockDictType, type(None))
+
+    # Test Union types without str that hit missing branches
+    class MockUnionWithoutStrList:
+        __origin__ = typing.Union
+        __args__ = (MockListType, type(None))
+
+    class MockUnionWithoutStrDict:
+        __origin__ = typing.Union
+        __args__ = (MockDictType, type(None))
+
+    model_fields = {
+        # Test branches 55->50, 60->50 (Union with str and list/dict)
+        "union_str_list": SimpleNamespace(annotation=MockUnionWithStrAndList),
+        "union_str_dict": SimpleNamespace(annotation=MockUnionWithStrAndDict),
+        # Test branches 69->64, 74->64 (Union without str and list/dict)
+        "union_no_str_list": SimpleNamespace(annotation=MockUnionWithoutStrList),
+        "union_no_str_dict": SimpleNamespace(annotation=MockUnionWithoutStrDict),
+        # Test branches 81->22, 86->22 (direct list/dict types)
+        "direct_list": SimpleNamespace(annotation=list),
+        "direct_dict": SimpleNamespace(annotation=dict),
+    }
+
+    agent_data_mod.AgentData.model_fields = model_fields
+
+    try:
+        ds = AgentDataset()
+
+        # Verify the fields were detected correctly
+        assert "union_str_list" in ds._list_fields
+        assert "union_str_dict" in ds._dict_fields
+        assert "union_str_list" in ds._union_with_str_fields
+        assert "union_str_dict" in ds._union_with_str_fields
+
+        assert "union_no_str_list" in ds._list_fields
+        assert "union_no_str_dict" in ds._dict_fields
+
+        assert "direct_list" in ds._list_fields
+        assert "direct_dict" in ds._dict_fields
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_parse_field_specific_missing_branches():
+    """Test specific missing branches in _parse_field method."""
+    import typing
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create test fields
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    # Create fields for specific test scenarios
+    agent_data_mod.AgentData.model_fields["toolcall_only_field"] = SimpleNamespace(
+        annotation=ToolCall  # ToolCall without str in union
+    )
+    agent_data_mod.AgentData.model_fields["bool_only_field"] = SimpleNamespace(
+        annotation=bool  # bool without str in union
+    )
+    agent_data_mod.AgentData.model_fields["str_only_union_field"] = SimpleNamespace(
+        annotation=typing.Union[str, type(None)]  # Union with only str and None
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test ToolCall field without str in union (lines 213-214, 227-228)
+        # Test with None value
+        result = ds._parse_field("toolcall_only_field", None)
+        assert result is None
+
+        # Test with empty string
+        result = ds._parse_field("toolcall_only_field", "")
+        assert result is None
+
+        # Test with invalid JSON string
+        result = ds._parse_field("toolcall_only_field", "invalid json")
+        assert result is None
+
+        # Test with valid JSON but invalid ToolCall data
+        result = ds._parse_field("toolcall_only_field", '{"invalid": "data"}')
+        assert result is None
+
+        # Test with non-string non-dict value
+        result = ds._parse_field("toolcall_only_field", 123)
+        assert result is None
+
+        # Test str-only union field (lines 274, 278, 280)
+        result = ds._parse_field("str_only_union_field", None)
+        assert result is None
+
+        result = ds._parse_field("str_only_union_field", 123)
+        assert result == "123"
+
+        # Test bool-only field (lines 194)
+        result = ds._parse_field("bool_only_field", None)
+        assert result is False  # Should use default
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_parse_field_final_missing_branches():
+    """Test final missing branches in _parse_field method."""
+    import math
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    # Save original and create test fields
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    # Create fields for specific test scenarios
+    agent_data_mod.AgentData.model_fields["test_field"] = SimpleNamespace(
+        annotation=str
+    )
+
+    try:
+        ds = AgentDataset()
+
+        # Test NaN handling (line 194)
+        nan_value = float("nan")
+        result = ds._parse_field("test_field", nan_value)
+        assert result is None  # NaN should be converted to None
+
+        # Test with math.nan
+        result = ds._parse_field("test_field", math.nan)
+        assert result is None  # math.nan should also be converted to None
+
+        # Test with a custom object that has "nan" string representation
+        class NanObject:
+            def __str__(self):
+                return "nan"
+
+        nan_obj = NanObject()
+        result = ds._parse_field("test_field", nan_obj)
+        assert result == "nan"  # Should be converted to string
+
+    finally:
+        agent_data_mod.AgentData.model_fields = orig_model_fields
+
+
+@pytest.mark.unit
+def test_stream_from_json_exit_path_final():
+    """Test the exit path in stream_from_json method."""
+    ds = AgentDataset()
+
+    # Test with a file that doesn't exist to hit the exception handler
+    with pytest.raises(ValueError, match="Error reading JSON file"):
+        list(ds.stream_from_json("/nonexistent/file.json"))

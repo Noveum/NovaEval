@@ -100,6 +100,7 @@ def main():
     print("2. Tool Correctness Scoring:")
     # Use the standalone function since AgentScorers doesn't have this method
     from novaeval.agents.agent_scorers import tool_correctness_scorer
+
     tool_correctness = tool_correctness_scorer(agent_data, model)
     if isinstance(tool_correctness, list):
         for i, score_obj in enumerate(tool_correctness, 1):
@@ -167,6 +168,7 @@ def main():
     print("7. Goal Achievement Scoring:")
     # Use the standalone function since AgentScorers doesn't have this method
     from novaeval.agents.agent_scorers import goal_achievement_scorer
+
     goal_achievement = goal_achievement_scorer(agent_data, model)
     if hasattr(goal_achievement, "score"):
         print(f"   Original Task: {goal_achievement.original_task}")
@@ -179,6 +181,7 @@ def main():
     print("8. Conversation Coherence Scoring:")
     # Use the standalone function since AgentScorers doesn't have this method
     from novaeval.agents.agent_scorers import conversation_coherence_scorer
+
     conversation_coherence = conversation_coherence_scorer(agent_data, model)
     if hasattr(conversation_coherence, "score"):
         print(f"   Original Task: {conversation_coherence.original_task}")

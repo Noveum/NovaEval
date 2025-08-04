@@ -17,8 +17,8 @@ from novaeval.agents.agent_scorers import (
     ScoreWithOriginalTask,
     ScoreWithReasoning,
     SingleScoreResponse,
-    conversation_coherence_scorer,
     context_relevancy_scorer,
+    conversation_coherence_scorer,
     escape_json_for_format,
     goal_achievement_scorer,
     parameter_correctness_scorer,
@@ -709,26 +709,52 @@ def test_tool_correctness_scorer_multiple_tool_calls():
 
 
 def test_tool_correctness_scorer_exception_handling():
-    """Test tool_correctness_scorer with exception during scoring."""
+    """Test tool_correctness_scorer with exception handling."""
     from novaeval.agents.agent_scorers import tool_correctness_scorer
 
+    # Create agent data with valid fields
     agent_data = AgentData(
-        user_id="user123",
-        task_id="task456",
-        turn_id="turn789",
+        agent_name="TestAgent",
         expected_tool_call=ToolCall(
-            tool_name="expected_tool", parameters={}, call_id="expected"
+            tool_name="calculator",
+            parameters={"operation": "add", "a": 20, "b": 22},
+            call_id="call_001",
         ),
-        tool_calls=[ToolCall(tool_name="actual_tool", parameters={}, call_id="actual")],
+        tool_calls=[
+            ToolCall(
+                tool_name="calculator",
+                parameters={"operation": "add", "a": 20, "b": 22},
+                call_id="call_001",
+            )
+        ],
     )
 
-    # Mock model that throws exception
-    mock_model = Mock()
-    mock_model.generate.side_effect = Exception("Model failed")
+    # Create a mock model that raises an exception
+    class ExceptionModel:
+        def generate(self, prompt):
+            raise ValueError("Model error")
 
-    result = tool_correctness_scorer(agent_data, mock_model)
+    model = ExceptionModel()
 
-    # Should return default low score
+    # Test with string tool_calls (lines 342-346)
+    agent_data.tool_calls = "string_tool_call"
+    result = tool_correctness_scorer(agent_data, model)
+
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert result[0].score == 1.0
+    assert "Failed to evaluate tool call" in result[0].reasoning
+
+    # Test with list tool_calls (lines 428-432)
+    agent_data.tool_calls = [
+        ToolCall(
+            tool_name="calculator",
+            parameters={"operation": "add", "a": 20, "b": 22},
+            call_id="call_001",
+        )
+    ]
+    result = tool_correctness_scorer(agent_data, model)
+
     assert isinstance(result, list)
     assert len(result) == 1
     assert result[0].score == 1.0
@@ -1866,6 +1892,7 @@ def test_conversation_coherence_scorer_minimal_trace():
 
 # Tests for union type handling (string vs complex types)
 
+
 @pytest.fixture
 def string_union_agent_data():
     """Create agent data using string values for union fields."""
@@ -1896,7 +1923,7 @@ def string_union_agent_data():
 def test_safe_serialize_union_field_with_string():
     """Test safe_serialize_union_field with string input."""
     from novaeval.agents.agent_scorers import safe_serialize_union_field
-    
+
     result = safe_serialize_union_field("test_string", "test_field")
     assert result == "test_string"
 
@@ -1905,10 +1932,11 @@ def test_safe_serialize_union_field_with_string():
 def test_safe_serialize_union_field_with_dict():
     """Test safe_serialize_union_field with dict input."""
     from novaeval.agents.agent_scorers import safe_serialize_union_field
-    
+
     test_dict = {"key": "value", "number": 42}
     result = safe_serialize_union_field(test_dict, "test_field")
     import json
+
     expected = json.dumps(test_dict, indent=2)
     assert result == expected
 
@@ -1917,10 +1945,11 @@ def test_safe_serialize_union_field_with_dict():
 def test_safe_serialize_union_field_with_pydantic_model():
     """Test safe_serialize_union_field with Pydantic model input."""
     from novaeval.agents.agent_scorers import safe_serialize_union_field
-    
+
     tool_call = ToolCall(tool_name="test", parameters={}, call_id="123")
     result = safe_serialize_union_field(tool_call, "test_field")
     import json
+
     expected = json.dumps(tool_call.model_dump(), indent=2)
     assert result == expected
 
@@ -1929,13 +1958,14 @@ def test_safe_serialize_union_field_with_pydantic_model():
 def test_safe_serialize_union_field_with_list_of_models():
     """Test safe_serialize_union_field with list of Pydantic models."""
     from novaeval.agents.agent_scorers import safe_serialize_union_field
-    
+
     tool_calls = [
         ToolCall(tool_name="test1", parameters={}, call_id="123"),
-        ToolCall(tool_name="test2", parameters={}, call_id="456")
+        ToolCall(tool_name="test2", parameters={}, call_id="456"),
     ]
     result = safe_serialize_union_field(tool_calls, "test_field")
     import json
+
     expected = json.dumps([tc.model_dump() for tc in tool_calls], indent=2)
     assert result == expected
 
@@ -1944,7 +1974,7 @@ def test_safe_serialize_union_field_with_list_of_models():
 def test_safe_get_boolean_field_with_bool():
     """Test safe_get_boolean_field with boolean input."""
     from novaeval.agents.agent_scorers import safe_get_boolean_field
-    
+
     assert safe_get_boolean_field(True) is True
     assert safe_get_boolean_field(False) is False
 
@@ -1953,14 +1983,14 @@ def test_safe_get_boolean_field_with_bool():
 def test_safe_get_boolean_field_with_string():
     """Test safe_get_boolean_field with string input."""
     from novaeval.agents.agent_scorers import safe_get_boolean_field
-    
+
     # True cases
     assert safe_get_boolean_field("true") is True
     assert safe_get_boolean_field("TRUE") is True
     assert safe_get_boolean_field("1") is True
     assert safe_get_boolean_field("yes") is True
     assert safe_get_boolean_field("on") is True
-    
+
     # False cases
     assert safe_get_boolean_field("false") is False
     assert safe_get_boolean_field("FALSE") is False
@@ -1974,10 +2004,12 @@ def test_safe_get_boolean_field_with_string():
 @pytest.mark.unit
 def test_tool_relevancy_scorer_with_string_fields(string_union_agent_data):
     """Test tool_relevancy_scorer with string union fields."""
-    mock_model = MockLLMModel('{"score": 7.5, "reasoning": "String fields handled correctly"}')
-    
+    mock_model = MockLLMModel(
+        '{"score": 7.5, "reasoning": "String fields handled correctly"}'
+    )
+
     result = tool_relevancy_scorer(string_union_agent_data, mock_model)
-    
+
     assert isinstance(result, list)
     assert len(result) == 1
     assert isinstance(result[0], ScoreWithReasoning)
@@ -1989,11 +2021,13 @@ def test_tool_relevancy_scorer_with_string_fields(string_union_agent_data):
 def test_tool_correctness_scorer_with_string_fields(string_union_agent_data):
     """Test tool_correctness_scorer with string union fields."""
     from novaeval.agents.agent_scorers import tool_correctness_scorer
-    
-    mock_model = MockLLMModel('{"score": 6.0, "reasoning": "String comparison successful"}')
-    
+
+    mock_model = MockLLMModel(
+        '{"score": 6.0, "reasoning": "String comparison successful"}'
+    )
+
     result = tool_correctness_scorer(string_union_agent_data, mock_model)
-    
+
     assert isinstance(result, list)
     assert len(result) == 1
     assert isinstance(result[0], ScoreWithReasoning)
@@ -2004,11 +2038,13 @@ def test_tool_correctness_scorer_with_string_fields(string_union_agent_data):
 def test_parameter_correctness_scorer_with_string_fields(string_union_agent_data):
     """Test parameter_correctness_scorer with string union fields."""
     from novaeval.agents.agent_scorers import parameter_correctness_scorer
-    
-    mock_model = MockLLMModel('{"score": 8.0, "reasoning": "String parameters processed"}')
-    
+
+    mock_model = MockLLMModel(
+        '{"score": 8.0, "reasoning": "String parameters processed"}'
+    )
+
     result = parameter_correctness_scorer(string_union_agent_data, mock_model)
-    
+
     assert isinstance(result, list)
     assert len(result) == 1
     assert isinstance(result[0], ScoreWithReasoning)
@@ -2019,11 +2055,13 @@ def test_parameter_correctness_scorer_with_string_fields(string_union_agent_data
 def test_role_adherence_scorer_with_string_fields(string_union_agent_data):
     """Test role_adherence_scorer with string union fields."""
     from novaeval.agents.agent_scorers import role_adherence_scorer
-    
-    mock_model = MockLLMModel('{"score": 9.0, "reasoning": "Role adherence with strings"}')
-    
+
+    mock_model = MockLLMModel(
+        '{"score": 9.0, "reasoning": "Role adherence with strings"}'
+    )
+
     result = role_adherence_scorer(string_union_agent_data, mock_model)
-    
+
     assert isinstance(result, ScoreWithReasoning)
     assert result.score == 9.0
     assert "Role adherence with strings" in result.reasoning
@@ -2034,9 +2072,9 @@ def test_goal_achievement_scorer_with_string_fields(string_union_agent_data):
     """Test goal_achievement_scorer with string union fields."""
     mock_response = '{"original_task": "Math calculation", "score": 8.5, "reasoning": "Goal achieved with string trace"}'
     mock_model = MockLLMModel(mock_response)
-    
+
     result = goal_achievement_scorer(string_union_agent_data, mock_model)
-    
+
     assert isinstance(result, ScoreWithOriginalTask)
     assert result.original_task == "Math calculation"
     assert result.score == 8.5
@@ -2048,9 +2086,9 @@ def test_conversation_coherence_scorer_with_string_fields(string_union_agent_dat
     """Test conversation_coherence_scorer with string union fields."""
     mock_response = '{"original_task": "Math conversation", "score": 7.0, "reasoning": "Coherent string conversation"}'
     mock_model = MockLLMModel(mock_response)
-    
+
     result = conversation_coherence_scorer(string_union_agent_data, mock_model)
-    
+
     assert isinstance(result, ScoreWithOriginalTask)
     assert result.original_task == "Math conversation"
     assert result.score == 7.0
@@ -2078,12 +2116,12 @@ def test_mixed_union_types():
         trace="string_trace",  # String
         agent_exit=True,  # Boolean
     )
-    
+
     mock_model = MockLLMModel('{"score": 8.0, "reasoning": "Mixed types handled"}')
-    
+
     # Test with a scorer that uses multiple union fields
     result = tool_relevancy_scorer(mixed_data, mock_model)
-    
+
     assert isinstance(result, list)
     assert len(result) == 1
     assert isinstance(result[0], ScoreWithReasoning)
@@ -2093,15 +2131,15 @@ def test_mixed_union_types():
 def test_agent_exit_string_false():
     """Test agent_exit as string 'false' is handled correctly."""
     agent_data = AgentData(
-        agent_name="TestAgent",
-        agent_exit="false",  # String false
-        trace="string_trace"
+        agent_name="TestAgent", agent_exit="false", trace="string_trace"  # String false
     )
-    
-    mock_model = MockLLMModel('{"original_task": "Test", "score": 5.0, "reasoning": "Not exited"}')
-    
+
+    mock_model = MockLLMModel(
+        '{"original_task": "Test", "score": 5.0, "reasoning": "Not exited"}'
+    )
+
     result = goal_achievement_scorer(agent_data, mock_model)
-    
+
     # Should return early because agent hasn't exited
     assert isinstance(result, ScoreWithOriginalTask)
     assert result.score == -1.0
@@ -2112,16 +2150,16 @@ def test_agent_exit_string_false():
 def test_agent_exit_string_true():
     """Test agent_exit as string 'true' is handled correctly."""
     agent_data = AgentData(
-        agent_name="TestAgent",
-        agent_exit="true",  # String true
-        trace="string_trace"
+        agent_name="TestAgent", agent_exit="true", trace="string_trace"  # String true
     )
-    
-    mock_response = '{"original_task": "Test task", "score": 8.0, "reasoning": "Task completed"}'
+
+    mock_response = (
+        '{"original_task": "Test task", "score": 8.0, "reasoning": "Task completed"}'
+    )
     mock_model = MockLLMModel(mock_response)
-    
+
     result = goal_achievement_scorer(agent_data, mock_model)
-    
+
     # Should proceed with scoring because agent has exited
     assert isinstance(result, ScoreWithOriginalTask)
     assert result.score == 8.0
@@ -2145,15 +2183,110 @@ def test_empty_string_union_fields():
         trace="",  # Empty string
         agent_exit="true",
     )
-    
+
     mock_model = MockLLMModel('{"score": 5.0, "reasoning": "Empty strings handled"}')
-    
+
     # Test various scorers with empty string fields
     result1 = tool_relevancy_scorer(agent_data, mock_model)
     assert isinstance(result1, list)  # Should process empty strings
     assert len(result1) == 1
     assert isinstance(result1[0], ScoreWithReasoning)
-    
+
     from novaeval.agents.agent_scorers import role_adherence_scorer
+
     result2 = role_adherence_scorer(agent_data, mock_model)
-    assert isinstance(result2, ScoreWithReasoning)  # Should work with empty tool_calls string
+    assert isinstance(
+        result2, ScoreWithReasoning
+    )  # Should work with empty tool_calls string
+
+
+@pytest.mark.unit
+def test_safe_serialize_union_field_edge_cases():
+    """Test edge cases in safe_serialize_union_field function."""
+    from novaeval.agents.agent_scorers import safe_serialize_union_field
+
+    # Test with None value (line 40)
+    result = safe_serialize_union_field(None, "test_field")
+    assert result == ""
+
+    # Test with non-serializable object that raises TypeError (lines 57-59)
+    class NonSerializableObj:
+        def __str__(self):
+            return "non_serializable"
+
+    obj = NonSerializableObj()
+    result = safe_serialize_union_field(obj, "test_field")
+    assert result == "non_serializable"
+
+    # Test with object that has no model_dump but is JSON serializable
+    result = safe_serialize_union_field([1, 2, 3], "test_field")
+    assert result == "[\n  1,\n  2,\n  3\n]"  # Uses indent=2
+
+
+@pytest.mark.unit
+def test_safe_get_boolean_field_edge_cases():
+    """Test edge cases in safe_get_boolean_field function."""
+    from novaeval.agents.agent_scorers import safe_get_boolean_field
+
+    # Test with non-string non-bool value (line 79)
+    result = safe_get_boolean_field(42)
+    assert result is True  # Non-zero number should be True
+
+    result = safe_get_boolean_field(0)
+    assert result is False  # Zero should be False
+
+    result = safe_get_boolean_field([])
+    assert result is False  # Empty list should be False
+
+    result = safe_get_boolean_field([1, 2, 3])
+    assert result is True  # Non-empty list should be True
+
+
+@pytest.mark.unit
+def test_parse_score_with_original_task_unexpected_format():
+    """Test parse_score_with_original_task with unexpected response format."""
+    from novaeval.agents.agent_scorers import parse_score_with_original_task
+
+    # Test with valid JSON that is not a dict (line 254)
+    # This should hit the "Unexpected response format" branch
+    unexpected_response = "[1, 2, 3]"  # Valid JSON but not a dict
+    result = parse_score_with_original_task(unexpected_response)
+
+    assert result.original_task == "Unknown task"
+    assert result.score == 1.0
+    assert "Unexpected response format" in result.reasoning
+
+
+@pytest.mark.unit
+def test_tool_relevancy_scorer_string_exception():
+    """Test tool_relevancy_scorer with string tool_calls and exception handling."""
+    from novaeval.agents.agent_scorers import tool_relevancy_scorer
+
+    # Create agent data with string tool_calls
+    agent_data = AgentData(
+        agent_name="TestAgent",
+        tools_available=[
+            ToolSchema(
+                name="calculator",
+                description="Performs basic mathematical operations",
+                args_schema={"operation": "str", "a": "number", "b": "number"},
+                return_schema={"result": "number"},
+            )
+        ],
+        tool_calls="string_tool_call",  # String instead of list
+    )
+
+    # Create a mock model that raises an exception
+    class ExceptionModel:
+        def generate(self, prompt):
+            raise ValueError("Model error")
+
+    model = ExceptionModel()
+
+    # This should hit the exception handling branch for string tool_calls (lines 342-346)
+    result = tool_relevancy_scorer(agent_data, model)
+
+    assert isinstance(result, list)
+    assert len(result) == 1
+    assert result[0].score == 1.0
+    assert "Failed to evaluate tool call" in result[0].reasoning

@@ -15,22 +15,26 @@ class AgentDataset:
         # Dynamically determine field types from AgentData model
         self._list_fields = set()
         self._dict_fields = set()
-        self._union_with_str_fields = set()  # Fields that can be either their type or str
-        
+        self._union_with_str_fields = (
+            set()
+        )  # Fields that can be either their type or str
+
         for field_name, field_info in AgentData.model_fields.items():
             if hasattr(field_info, "annotation"):
                 annotation = field_info.annotation
                 # Unwrap typing.Optional, typing.Union, etc.
                 origin = getattr(annotation, "__origin__", None)
                 args = getattr(annotation, "__args__", ())
-                
+
                 # Handle both typing.Union and modern | union syntax
-                is_union = (origin is typing.Union) or (origin is None and hasattr(annotation, "__args__") and len(args) > 1)
-                
+                is_union = (origin is typing.Union) or (
+                    origin is None and hasattr(annotation, "__args__") and len(args) > 1
+                )
+
                 if is_union:
                     non_none_types = []
                     has_str = False
-                    
+
                     for arg in args:
                         if arg is type(None):
                             continue
@@ -38,7 +42,7 @@ class AgentDataset:
                             has_str = True
                         else:
                             non_none_types.append(arg)
-                    
+
                     # If we have a union with str, track it separately
                     if has_str and non_none_types:
                         self._union_with_str_fields.add(field_name)
@@ -69,7 +73,7 @@ class AgentDataset:
                                     self._list_fields.add(field_name)
                                 elif arg is dict:
                                     self._dict_fields.add(field_name)
-                                    
+
                 # Handle direct types
                 elif origin in (list, dict):
                     if origin is list:
@@ -85,27 +89,30 @@ class AgentDataset:
     def _parse_field(self, field: str, value: Any) -> Any:
         if field not in AgentData.model_fields:
             raise KeyError(f"Field '{field}' not found in AgentData.model_fields.")
-            
+
         # Get the annotation for the field
         annotation = AgentData.model_fields[field].annotation
         origin = getattr(annotation, "__origin__", None)
         args = getattr(annotation, "__args__", ())
-        
+
         # Handle Optional[X] and Union types
         if origin is typing.Union and type(None) in args:
             non_none_args = [arg for arg in args if arg is not type(None)]
             actual_type = non_none_args[0] if len(non_none_args) == 1 else annotation
         else:
             actual_type = annotation
-            
+
         # Special handling for fields that can be either their type or string
         if field in self._union_with_str_fields:
             # Handle None values for union fields
             if value is None:
                 # For bool union fields, return the default
-                if 'bool' in str(actual_type):
+                if "bool" in str(actual_type):
                     field_info = AgentData.model_fields[field]
-                    if hasattr(field_info, "default") and field_info.default is not None:
+                    if (
+                        hasattr(field_info, "default")
+                        and field_info.default is not None
+                    ):
                         return field_info.default
                     return False
                 # For list union fields, return empty list
@@ -115,15 +122,15 @@ class AgentDataset:
                 elif field in self._dict_fields:
                     return {}
                 # For ToolCall union fields, return None (will be handled by Pydantic Optional)
-                elif 'ToolCall' in str(actual_type):
+                elif "ToolCall" in str(actual_type):
                     return None
                 # For other union fields, return None (will be handled by Pydantic)
                 return None
-                
+
             # If value is already a string, we need to decide whether to parse it or keep as string
             if isinstance(value, str):
                 value = value.strip()
-                
+
                 # For list fields that can also be strings
                 if field in self._list_fields:
                     # If it looks like JSON, try to parse it
@@ -135,8 +142,8 @@ class AgentDataset:
                             return value
                     # Otherwise keep as string
                     return value
-                    
-                # For dict fields that can also be strings  
+
+                # For dict fields that can also be strings
                 elif field in self._dict_fields:
                     # If it looks like JSON, try to parse it
                     if value.startswith("{") and value.endswith("}"):
@@ -147,12 +154,21 @@ class AgentDataset:
                             return value
                     # Otherwise keep as string
                     return value
-                    
+
                 # For bool fields that can also be strings (like agent_exit)
-                elif 'bool' in str(actual_type):
+                elif "bool" in str(actual_type):
                     # Check if it's a boolean-like string
                     lower_val = value.lower()
-                    if lower_val in ("true", "false", "1", "0", "yes", "no", "on", "off"):
+                    if lower_val in (
+                        "true",
+                        "false",
+                        "1",
+                        "0",
+                        "yes",
+                        "no",
+                        "on",
+                        "off",
+                    ):
                         # Parse as boolean
                         if lower_val in ("true", "1", "yes", "on"):
                             return True
@@ -160,9 +176,9 @@ class AgentDataset:
                             return False
                     # Otherwise keep as string
                     return value
-                    
+
                 # For ToolCall fields that can also be strings (like expected_tool_call)
-                elif 'ToolCall' in str(actual_type):
+                elif "ToolCall" in str(actual_type):
                     # If it looks like JSON, try to parse as ToolCall
                     if value.startswith("{") and value.endswith("}"):
                         try:
@@ -173,16 +189,20 @@ class AgentDataset:
                             return value
                     # Otherwise keep as string
                     return value
-                    
+
                 # For other union with string fields, keep as string
                 return value
-                
+
             # If value is not a string, fall through to regular parsing logic below
-        
+
         # Handle NaN values from pandas (convert to None)
-        if hasattr(value, '__class__') and 'float' in str(type(value)) and str(value) == 'nan':
+        if (
+            hasattr(value, "__class__")
+            and "float" in str(type(value))
+            and str(value) == "nan"
+        ):
             value = None
-            
+
         # Handle list fields
         if field in self._list_fields:
             if isinstance(value, str):
@@ -196,7 +216,7 @@ class AgentDataset:
                     # For non-JSON strings in list fields that don't allow strings, return empty list
                     return []
             return value if isinstance(value, list) else []
-            
+
         # Handle dict fields
         if field in self._dict_fields:
             if isinstance(value, str):
@@ -210,9 +230,9 @@ class AgentDataset:
                     # For non-JSON strings in dict fields that don't allow strings, return empty dict
                     return {}
             return value if isinstance(value, dict) else {}
-            
+
         # Handle ToolCall fields
-        if 'ToolCall' in str(actual_type) and 'str' not in str(actual_type):
+        if "ToolCall" in str(actual_type) and "str" not in str(actual_type):
             if value is None or value == "":
                 return None
             if isinstance(value, ToolCall):
@@ -231,15 +251,19 @@ class AgentDataset:
                 return ToolCall(**value_dict)
             except Exception:
                 return None
-                
+
         # Handle str fields
-        if actual_type is str or (origin is typing.Union and str in args and len([a for a in args if a is not type(None)]) == 1):
+        if actual_type is str or (
+            origin is typing.Union
+            and str in args
+            and len([a for a in args if a is not type(None)]) == 1
+        ):
             if value is None:
                 return None
             return str(value)
-            
-        # Handle bool fields  
-        if 'bool' in str(actual_type) and 'str' not in str(actual_type):
+
+        # Handle bool fields
+        if "bool" in str(actual_type) and "str" not in str(actual_type):
             if value is None:
                 # Return default value for boolean fields
                 field_info = AgentData.model_fields[field]
@@ -261,7 +285,7 @@ class AgentDataset:
                 return bool(value)
             except (ValueError, TypeError):
                 return False
-                
+
         # Default: return as is
         return value
 

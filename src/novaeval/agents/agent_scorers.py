@@ -22,14 +22,14 @@ from novaeval.agents.agent_scorers_system_prompts import (
 from novaeval.models.base import BaseModel as LLMModel
 
 
-def safe_serialize_union_field(field_value: Any, field_name: str) -> str:
+def safe_serialize_union_field(field_value: Any, _field_name: str) -> str:
     """
     Safely serialize a union type field that can be either its original type or a string.
-    
+
     Args:
         field_value: The field value which could be a complex type (list, dict, ToolCall, etc.) or string
-        field_name: Name of the field (for error reporting)
-    
+        _field_name: Name of the field (for error reporting)
+
     Returns:
         String representation suitable for prompt formatting
     """
@@ -41,16 +41,20 @@ def safe_serialize_union_field(field_value: Any, field_name: str) -> str:
     else:
         # If it's a complex type, serialize it to JSON
         try:
-            if hasattr(field_value, 'model_dump'):
+            if hasattr(field_value, "model_dump"):
                 # Single Pydantic model
                 return json.dumps(field_value.model_dump(), indent=2)
-            elif isinstance(field_value, list) and field_value and hasattr(field_value[0], 'model_dump'):
+            elif (
+                isinstance(field_value, list)
+                and field_value
+                and hasattr(field_value[0], "model_dump")
+            ):
                 # List of Pydantic models
                 return json.dumps([item.model_dump() for item in field_value], indent=2)
             else:
                 # Plain dict, list, or other JSON-serializable type
                 return json.dumps(field_value, indent=2)
-        except (TypeError, AttributeError) as e:
+        except (TypeError, AttributeError):
             # Fallback: convert to string if JSON serialization fails
             return str(field_value)
 
@@ -58,10 +62,10 @@ def safe_serialize_union_field(field_value: Any, field_name: str) -> str:
 def safe_get_boolean_field(field_value: Any) -> bool:
     """
     Safely convert a union boolean field that can be either bool or string to boolean.
-    
+
     Args:
         field_value: The field value which could be bool or string
-        
+
     Returns:
         Boolean value
     """
@@ -330,7 +334,7 @@ def tool_relevancy_scorer(
             tools_available=tools_available_str,
             tool_calls=f"[{single_tool_call_str}]",
         )
-        
+
         try:
             response = model.generate(prompt)
             score_obj = parse_score_with_reasoning(response)
@@ -416,7 +420,7 @@ def tool_correctness_scorer(
             expected_tool_call=expected_call_str,
             tool_calls=f"[{single_tool_call_str}]",
         )
-        
+
         try:
             response = model.generate(prompt)
             score_obj = parse_score_with_reasoning(response)
@@ -494,8 +498,9 @@ def parameter_correctness_scorer(
     elif agent_data.tool_call_results:
         # If it's a list, create the mapping as before
         results_by_call_id = {
-            result.call_id: result for result in agent_data.tool_call_results
-            if hasattr(result, 'call_id')  # Safety check in case result is a string
+            result.call_id: result
+            for result in agent_data.tool_call_results
+            if hasattr(result, "call_id")  # Safety check in case result is a string
         }
 
     scores = []
@@ -504,23 +509,27 @@ def parameter_correctness_scorer(
     if isinstance(agent_data.tool_calls, str):
         # If tool_calls is a string, treat it as a single "tool call"
         # Create a simplified version with parameters
-        call_with_params = {
+        single_call_with_params = {
             "tool_calls": agent_data.tool_calls,
-            "mapped_parameters": safe_serialize_union_field(agent_data.parameters_passed, "parameters_passed")
+            "mapped_parameters": safe_serialize_union_field(
+                agent_data.parameters_passed, "parameters_passed"
+            ),
         }
-        
+
         single_tool_call_str = escape_json_for_format(
-            json.dumps(call_with_params, indent=2)
+            json.dumps(single_call_with_params, indent=2)
         )
         single_result_str = escape_json_for_format(
-            safe_serialize_union_field(agent_data.tool_call_results, "tool_call_results")
+            safe_serialize_union_field(
+                agent_data.tool_call_results, "tool_call_results"
+            )
         )
 
         prompt = PARAMETER_CORRECTNESS_PROMPT.format(
             tool_calls_with_parameters=f"[{single_tool_call_str}]",
             tool_call_results=f"[{single_result_str}]",
         )
-        
+
         try:
             response = model.generate(prompt)
             score_obj = parse_score_with_reasoning(response)
@@ -535,7 +544,7 @@ def parameter_correctness_scorer(
         for tool_call in agent_data.tool_calls:
             # Find the corresponding result for this tool call
             corresponding_result = None
-            if hasattr(tool_call, 'call_id'):
+            if hasattr(tool_call, "call_id"):
                 corresponding_result = results_by_call_id.get(tool_call.call_id)
 
             # Create individual tool call with parameters
@@ -543,35 +552,29 @@ def parameter_correctness_scorer(
                 # If individual tool_call is a string
                 call_with_params = {
                     "tool_call": tool_call,
-                    "mapped_parameters": safe_serialize_union_field(agent_data.parameters_passed, "parameters_passed")
+                    "mapped_parameters": safe_serialize_union_field(
+                        agent_data.parameters_passed, "parameters_passed"
+                    ),
                 }
             else:
                 # If tool_call is a ToolCall object
-                call_with_params = safe_serialize_union_field(tool_call, "tool_call")
-                if isinstance(call_with_params, str):
-                    # If serialization returned a string, create a structured object
-                    call_with_params = {
-                        "tool_call": call_with_params,
-                        "mapped_parameters": safe_serialize_union_field(agent_data.parameters_passed, "parameters_passed")
-                    }
-                else:
-                    # If it's a JSON dict, parse and add parameters
-                    try:
-                        call_dict = json.loads(call_with_params) if isinstance(call_with_params, str) else tool_call.model_dump()
-                        call_dict["mapped_parameters"] = safe_serialize_union_field(agent_data.parameters_passed, "parameters_passed")
-                        call_with_params = call_dict
-                    except:
-                        call_with_params = {
-                            "tool_call": str(tool_call),
-                            "mapped_parameters": safe_serialize_union_field(agent_data.parameters_passed, "parameters_passed")
-                        }
+                call_with_params = {
+                    "tool_call": safe_serialize_union_field(tool_call, "tool_call"),
+                    "mapped_parameters": safe_serialize_union_field(
+                        agent_data.parameters_passed, "parameters_passed"
+                    ),
+                }
 
             # Format just this single tool call and its result
             single_tool_call_str = escape_json_for_format(
-                json.dumps(call_with_params, indent=2) if isinstance(call_with_params, dict) else str(call_with_params)
+                json.dumps(call_with_params, indent=2)
+                if isinstance(call_with_params, dict)
+                else str(call_with_params)
             )
             single_result_str = escape_json_for_format(
-                safe_serialize_union_field(corresponding_result, "tool_call_result") if corresponding_result else "{}"
+                safe_serialize_union_field(corresponding_result, "tool_call_result")
+                if corresponding_result
+                else "{}"
             )
 
             # Create prompt for this specific tool call
@@ -770,8 +773,8 @@ def goal_achievement_scorer(
         )
 
     required_fields = {
-        "trace": agent_data.trace is not None and 
-                (isinstance(agent_data.trace, str) or len(agent_data.trace) > 0)
+        "trace": agent_data.trace is not None
+        and (isinstance(agent_data.trace, str) or len(agent_data.trace) > 0)
     }
 
     # Check if all required fields are available
@@ -889,8 +892,8 @@ def conversation_coherence_scorer(
         )
 
     required_fields = {
-        "trace": agent_data.trace is not None and 
-                (isinstance(agent_data.trace, str) or len(agent_data.trace) > 0)
+        "trace": agent_data.trace is not None
+        and (isinstance(agent_data.trace, str) or len(agent_data.trace) > 0)
     }
 
     # Check if all required fields are available
