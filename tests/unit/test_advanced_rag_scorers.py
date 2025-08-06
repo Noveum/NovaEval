@@ -333,6 +333,7 @@ def test_contextual_recall_scorer_pp(mock_llm):
     else:
         assert result >= 0.0
 
+
 @pytest.mark.unit
 def test_retrieval_ranking_scorer():
     scorer = RetrievalRankingScorer(threshold=0.5)

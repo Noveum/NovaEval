@@ -528,7 +528,9 @@ class RetrievalRankingScorer(BaseScorer):
                 # Simple fallback: just use average ranking score
                 ranking_scores = []
                 for rank in rankings:
-                    score = (max_rank + 1 - rank) / max_rank if rank <= max_rank else 0.0
+                    score = (
+                        (max_rank + 1 - rank) / max_rank if rank <= max_rank else 0.0
+                    )
                     ranking_scores.append(score)
 
                 avg_score = np.mean(ranking_scores) if ranking_scores else 0.0
@@ -697,7 +699,9 @@ class RetrievalDiversityScorer(BaseScorer):
     Evaluates diversity of retrieved context chunks using cosine distance between embeddings.
     """
 
-    def __init__(self, embedding_model="all-MiniLM-L6-v2", threshold: float = 0.3, **kwargs):
+    def __init__(
+        self, embedding_model="all-MiniLM-L6-v2", threshold: float = 0.3, **kwargs
+    ):
         super().__init__(name="RetrievalDiversityScorer", **kwargs)
         self.embedding_model = embedding_model
         self.threshold = threshold
@@ -855,7 +859,13 @@ class AggregateRAGScorer(BaseScorer):
     Combines multiple retrieval scorers with weighted averaging.
     """
 
-    def __init__(self, scorers: dict, weights: Optional[dict] = None, threshold: float = 0.5, **kwargs):
+    def __init__(
+        self,
+        scorers: dict,
+        weights: Optional[dict] = None,
+        threshold: float = 0.5,
+        **kwargs,
+    ):
         super().__init__(name="AggregateRetrievalScorer", **kwargs)
         self.scorers = scorers
         self.weights = weights or dict.fromkeys(scorers.keys(), 1.0)

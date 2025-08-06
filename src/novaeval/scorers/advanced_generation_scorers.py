@@ -13,7 +13,7 @@ Key Features:
 """
 
 import re
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from novaeval.scorers.base import BaseScorer, ScoreResult
 from novaeval.utils.llm import call_llm
@@ -191,7 +191,12 @@ Now evaluate the provided question and answer for bias.
                 "reasoning": "Fallback parsing used",
             }
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -381,7 +386,12 @@ Now evaluate the factual accuracy of the provided answer against the context.
                 "reasoning": "Fallback parsing used",
             }
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -1601,7 +1611,12 @@ class ContextGroundednessScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available

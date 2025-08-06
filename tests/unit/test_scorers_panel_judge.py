@@ -56,7 +56,7 @@ class TestPanelOfJudgesScorer:
             model=mock_judge.model,
             name=mock_judge.name,
             weight=mock_judge.weight,
-            temperature=mock_judge.temperature
+            temperature=mock_judge.temperature,
         )
         return PanelOfJudgesScorer(judges=[judge_config])
 
@@ -85,7 +85,7 @@ class TestPanelOfJudgesScorer:
         result = await panel_scorer.evaluate(
             input_text="What is machine learning?",
             output_text="Machine learning is a subset of AI",
-            expected_output="Machine learning is a subset of artificial intelligence"
+            expected_output="Machine learning is a subset of artificial intelligence",
         )
 
         assert isinstance(result, ScoreResult)
@@ -98,13 +98,15 @@ class TestPanelOfJudgesScorer:
     def test_score_exception_handling(self, panel_scorer, mock_judge):
         """Test exception handling in score method."""
         # Mock judge to throw an exception using the sync method
-        mock_judge.model.generate_sync_method.side_effect = Exception("Evaluation failed")
+        mock_judge.model.generate_sync_method.side_effect = Exception(
+            "Evaluation failed"
+        )
 
         # The score method should handle exceptions gracefully
         result = panel_scorer.score(
             prediction="Machine learning is a subset of AI",
             ground_truth="Machine learning is a subset of artificial intelligence",
-            context={"context": "AI includes machine learning"}
+            context={"context": "AI includes machine learning"},
         )
 
         # Should return a valid result even when judge fails
@@ -120,12 +122,14 @@ class TestPanelOfJudgesScorer:
     async def test_evaluate_all_judges_fail(self, panel_scorer, mock_judge):
         """Test when all judges fail to evaluate."""
         # Mock all judges to throw exceptions
-        mock_judge.model.generate_method.side_effect = Exception("Judge evaluation failed")
+        mock_judge.model.generate_method.side_effect = Exception(
+            "Judge evaluation failed"
+        )
 
         result = await panel_scorer.evaluate(
             input_text="What is machine learning?",
             output_text="Machine learning is a subset of AI",
-            expected_output="Machine learning is a subset of artificial intelligence"
+            expected_output="Machine learning is a subset of artificial intelligence",
         )
 
         # Should return a ScoreResult with 0.0 score when all judges fail
@@ -164,14 +168,14 @@ class TestPanelOfJudgesScorer:
             model=second_judge.model,
             name=second_judge.name,
             weight=second_judge.weight,
-            temperature=second_judge.temperature
+            temperature=second_judge.temperature,
         )
         panel_scorer.judges.append(second_judge_config)
 
         result = await panel_scorer.evaluate(
             input_text="What is machine learning?",
             output_text="Machine learning is a subset of AI",
-            expected_output="Machine learning is a subset of artificial intelligence"
+            expected_output="Machine learning is a subset of artificial intelligence",
         )
 
         # Should still return a valid result
@@ -184,13 +188,15 @@ class TestPanelOfJudgesScorer:
     def test_score_method_handles_exceptions(self, panel_scorer, mock_judge):
         """Test that the score method properly handles exceptions."""
         # Mock judge to throw an exception using the sync method
-        mock_judge.model.generate_sync_method.side_effect = Exception("Evaluation failed")
+        mock_judge.model.generate_sync_method.side_effect = Exception(
+            "Evaluation failed"
+        )
 
         # The score method should handle exceptions and return a valid result
         result = panel_scorer.score(
             prediction="Machine learning is a subset of AI",
             ground_truth="Machine learning is a subset of artificial intelligence",
-            context={"context": "AI includes machine learning"}
+            context={"context": "AI includes machine learning"},
         )
 
         # Should return a valid result even when judge fails
@@ -229,16 +235,10 @@ class TestPanelOfJudgesScorer:
         """
 
         judge_config1 = JudgeConfig(
-            model=model1,
-            name="Judge1",
-            weight=1.0,
-            temperature=0.7
+            model=model1, name="Judge1", weight=1.0, temperature=0.7
         )
         judge_config2 = JudgeConfig(
-            model=model2,
-            name="Judge2",
-            weight=1.0,
-            temperature=0.7
+            model=model2, name="Judge2", weight=1.0, temperature=0.7
         )
 
         panel_scorer = PanelOfJudgesScorer(judges=[judge_config1, judge_config2])
@@ -247,7 +247,7 @@ class TestPanelOfJudgesScorer:
         result = panel_scorer.score(
             prediction="Machine learning is a subset of AI",
             ground_truth="Machine learning is a subset of artificial intelligence",
-            context={"context": "AI includes machine learning"}
+            context={"context": "AI includes machine learning"},
         )
 
         assert isinstance(result, (float, dict))

@@ -55,6 +55,7 @@ from .rag import AnswerRelevancyScorer, FaithfulnessScorer, RAGASScorer
 
 # Define AgentData for compatibility
 
+
 class AgentData(BaseModel):
     """AgentData structure for RAG pipeline evaluation."""
 
@@ -116,9 +117,15 @@ class RAGEvaluationResult:
     detailed_scores: dict[str, Union[float, dict[str, Any]]]
     recommendations: list[str]
     # Enhanced scoring results
-    basic_rag_scores: dict[str, Union[float, dict[str, Any]]] = field(default_factory=dict)
-    advanced_generation_scores: dict[str, Union[float, dict[str, Any]]] = field(default_factory=dict)
-    comprehensive_scores: dict[str, Union[float, dict[str, Any]]] = field(default_factory=dict)
+    basic_rag_scores: dict[str, Union[float, dict[str, Any]]] = field(
+        default_factory=dict
+    )
+    advanced_generation_scores: dict[str, Union[float, dict[str, Any]]] = field(
+        default_factory=dict
+    )
+    comprehensive_scores: dict[str, Union[float, dict[str, Any]]] = field(
+        default_factory=dict
+    )
 
 
 class QueryProcessingEvaluator(BaseScorer):
@@ -365,7 +372,9 @@ class RetrievalStageEvaluator(BaseScorer):
                 "", ground_truth, {"retrieved_contexts": retrieved_contexts}
             )
             # Calculate F1 manually since ContextualF1Scorer is not available
-            f1_result = {"score": 0.0}  # Placeholder - F1 would be calculated from precision and recall
+            f1_result = {
+                "score": 0.0
+            }  # Placeholder - F1 would be calculated from precision and recall
             ranking_result = self.ranking_scorer.score(
                 "", ground_truth, {"retrieved_contexts": retrieved_contexts}
             )
@@ -530,7 +539,11 @@ class RerankingEvaluator(BaseScorer):
 
             context_dict = {
                 "context": context_text,
-                "retrieved_context": [ctx.content for ctx in retrieved_contexts] if retrieved_contexts else [],
+                "retrieved_context": (
+                    [ctx.content for ctx in retrieved_contexts]
+                    if retrieved_contexts
+                    else []
+                ),
                 "relevant_indices": [],
             }
 
@@ -756,14 +769,14 @@ class LatencyAnalysisScorer(BaseScorer):
             # Score based on configurable latency thresholds
             latency_thresholds = {
                 "excellent": 1000,  # Under 1 second
-                "good": 5000,       # Under 5 seconds
-                "acceptable": 10000  # Under 10 seconds
+                "good": 5000,  # Under 5 seconds
+                "acceptable": 10000,  # Under 10 seconds
             }
             latency_scores = {
                 "excellent": 0.9,
                 "good": 0.7,
                 "acceptable": 0.5,
-                "poor": 0.2
+                "poor": 0.2,
             }
 
             if total_latency < latency_thresholds["excellent"]:
@@ -1062,11 +1075,21 @@ class RAGPipelineEvaluator:
         rag_sample = self._convert_agent_data_to_rag_sample(agent_data)
 
         # Extract retrieved contexts and generated answer
-        retrieved_contexts = [RAGContext(content=agent_data.retrieved_context or "", source="agent_data")] if agent_data.retrieved_context else []
+        retrieved_contexts = (
+            [
+                RAGContext(
+                    content=agent_data.retrieved_context or "", source="agent_data"
+                )
+            ]
+            if agent_data.retrieved_context
+            else []
+        )
         generated_answer = agent_data.agent_response or ""
 
         # Evaluate the pipeline
-        return self.evaluate_rag_pipeline(rag_sample, retrieved_contexts, generated_answer, weights)
+        return self.evaluate_rag_pipeline(
+            rag_sample, retrieved_contexts, generated_answer, weights
+        )
 
     def test_pipeline_compatibility(
         self, sample_agent_data: AgentData
@@ -1134,7 +1157,9 @@ class RAGPipelineEvaluator:
             # Stage 1: Query Processing Evaluation
             query_start = time.time()
             # Pass query as prediction parameter to maintain BaseScorer interface compatibility
-            query_result = self.query_evaluator.score(rag_sample.query, "", None, query_weights)
+            query_result = self.query_evaluator.score(
+                rag_sample.query, "", None, query_weights
+            )
             query_latency = (time.time() - query_start) * 1000
             # Extract score and success from JSON result
             success_threshold = 0.6  # Configurable success threshold
@@ -1143,7 +1168,11 @@ class RAGPipelineEvaluator:
                 query_success = query_score >= success_threshold
                 query_reasoning = query_result.get("reasoning", "")
             else:
-                query_score = float(query_result) if isinstance(query_result, (int, float)) else 0.0
+                query_score = (
+                    float(query_result)
+                    if isinstance(query_result, (int, float))
+                    else 0.0
+                )
                 query_success = query_score >= success_threshold
                 query_reasoning = f"Query processing score: {query_score}"
 
@@ -1172,7 +1201,11 @@ class RAGPipelineEvaluator:
                 retrieval_success = retrieval_score >= success_threshold
                 retrieval_reasoning = retrieval_result.get("reasoning", "")
             else:
-                retrieval_score = float(retrieval_result) if isinstance(retrieval_result, (int, float)) else 0.0
+                retrieval_score = (
+                    float(retrieval_result)
+                    if isinstance(retrieval_result, (int, float))
+                    else 0.0
+                )
                 retrieval_success = retrieval_score >= success_threshold
                 retrieval_reasoning = f"Retrieval score: {retrieval_score}"
 
@@ -1203,7 +1236,11 @@ class RAGPipelineEvaluator:
                 generation_success = generation_score >= success_threshold
                 generation_reasoning = generation_result.get("reasoning", "")
             else:
-                generation_score = float(generation_result) if isinstance(generation_result, (int, float)) else 0.0
+                generation_score = (
+                    float(generation_result)
+                    if isinstance(generation_result, (int, float))
+                    else 0.0
+                )
                 generation_success = generation_score >= success_threshold
                 generation_reasoning = f"Generation score: {generation_score}"
 
@@ -1250,7 +1287,7 @@ class RAGPipelineEvaluator:
                 answer_relevancy_result = {
                     "score": float(answer_relevancy_score),
                     "reasoning": f"Answer relevancy score: {answer_relevancy_score}",
-                    "details": {"relevancy_score": float(answer_relevancy_score)}
+                    "details": {"relevancy_score": float(answer_relevancy_score)},
                 }
             else:
                 answer_relevancy_result = answer_relevancy_score
@@ -1259,7 +1296,7 @@ class RAGPipelineEvaluator:
                 faithfulness_result = {
                     "score": float(faithfulness_score),
                     "reasoning": f"Faithfulness score: {faithfulness_score}",
-                    "details": {"faithfulness_score": float(faithfulness_score)}
+                    "details": {"faithfulness_score": float(faithfulness_score)},
                 }
             else:
                 faithfulness_result = faithfulness_score
@@ -1293,18 +1330,23 @@ class RAGPipelineEvaluator:
             overall_score = (
                 retrieval_score * pipeline_weights.get("retrieval", 0.3)
                 + generation_score * pipeline_weights.get("generation", 0.4)
-                + pipeline_coordination_score * pipeline_weights.get("pipeline_coordination", 0.2)
-                + error_propagation_score * pipeline_weights.get("error_propagation", 0.1)
+                + pipeline_coordination_score
+                * pipeline_weights.get("pipeline_coordination", 0.2)
+                + error_propagation_score
+                * pipeline_weights.get("error_propagation", 0.1)
             )
 
             # Latency analysis
             latency_values = [stage.latency_ms for stage in stage_metrics.values()]
             latency_analysis: dict[str, float] = {
                 "total_latency": float(sum(latency_values)),
-                "avg_latency": float(np.mean(latency_values)) if latency_values else 0.0,
+                "avg_latency": (
+                    float(np.mean(latency_values)) if latency_values else 0.0
+                ),
                 "max_latency": float(max(latency_values)) if latency_values else 0.0,
                 "latency_distribution": {
-                    name: float(stage.latency_ms) for name, stage in stage_metrics.items()
+                    name: float(stage.latency_ms)
+                    for name, stage in stage_metrics.items()
                 },
             }
 
@@ -1314,7 +1356,9 @@ class RAGPipelineEvaluator:
                 resource_utilization: dict[str, float] = {
                     "cpu_efficiency": resource_details.get("cpu_usage", 0.0),
                     "memory_efficiency": resource_details.get("memory_usage", 0.0),
-                    "overall_efficiency": resource_details.get("resource_efficiency", 0.0),
+                    "overall_efficiency": resource_details.get(
+                        "resource_efficiency", 0.0
+                    ),
                 }
             else:
                 resource_utilization = {
@@ -1373,7 +1417,7 @@ class RAGPipelineEvaluator:
                 lambda: {
                     "score": 0.0,
                     "reasoning": "ContextualF1Scorer not available",
-                    "details": {"error": "ContextualF1Scorer not implemented"}
+                    "details": {"error": "ContextualF1Scorer not implemented"},
                 },
             ),
             ("retrieval_ranking", lambda: RetrievalRankingScorer()),

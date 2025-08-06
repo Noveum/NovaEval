@@ -260,15 +260,18 @@ class PanelOfJudgesScorer(BaseScorer):
 
         if is_macos:
             # Use sequential execution on macOS to avoid segmentation faults
-            return self._score_sequential(input_text, prediction, ground_truth, context_str)
+            return self._score_sequential(
+                input_text, prediction, ground_truth, context_str
+            )
 
         try:
             # Use ThreadPoolExecutor with conservative settings for other platforms
-            max_workers = min(len(self.judges), 4)  # Limit max workers to prevent memory issues
+            max_workers = min(
+                len(self.judges), 4
+            )  # Limit max workers to prevent memory issues
 
             with concurrent.futures.ThreadPoolExecutor(
-                max_workers=max_workers,
-                thread_name_prefix="PanelJudge"
+                max_workers=max_workers, thread_name_prefix="PanelJudge"
             ) as executor:
                 # Submit all judge evaluations as concurrent tasks
                 future_to_judge = {}
@@ -280,27 +283,36 @@ class PanelOfJudgesScorer(BaseScorer):
                         input_text,
                         prediction,
                         ground_truth,
-                        context_str
+                        context_str,
                     )
                     future_to_judge[future] = judge
 
                 # Collect results with timeout to prevent hanging
                 judge_results = []
                 try:
-                    for future in concurrent.futures.as_completed(future_to_judge, timeout=30):
+                    for future in concurrent.futures.as_completed(
+                        future_to_judge, timeout=30
+                    ):
                         judge = future_to_judge[future]
                         try:
                             result = future.result(timeout=10)  # Individual timeout
                             judge_results.append((judge, result))
                         except (concurrent.futures.TimeoutError, Exception) as e:
                             # Handle individual judge failures
-                            judge_results.append((judge, {"score": 0.0, "reasoning": f"Judge failed: {e}"}))
+                            judge_results.append(
+                                (
+                                    judge,
+                                    {"score": 0.0, "reasoning": f"Judge failed: {e}"},
+                                )
+                            )
                 except concurrent.futures.TimeoutError:
                     # Handle overall timeout
                     for future in future_to_judge:
                         if not future.done():
                             judge = future_to_judge[future]
-                            judge_results.append((judge, {"score": 0.0, "reasoning": "Judge timed out"}))
+                            judge_results.append(
+                                (judge, {"score": 0.0, "reasoning": "Judge timed out"})
+                            )
 
             # Process results and return score
             return self._process_judge_results_sync(judge_results)
@@ -308,7 +320,9 @@ class PanelOfJudgesScorer(BaseScorer):
         except Exception:
             # Fallback to sequential execution if ThreadPoolExecutor fails
             try:
-                return self._score_sequential(input_text, prediction, ground_truth, context_str)
+                return self._score_sequential(
+                    input_text, prediction, ground_truth, context_str
+                )
             except Exception:
                 # If everything fails, return 0.0 as a fallback
                 return 0.0
@@ -319,7 +333,7 @@ class PanelOfJudgesScorer(BaseScorer):
         input_text: str,
         prediction: str,
         ground_truth: str,
-        context: Optional[str] = None
+        context: Optional[str] = None,
     ) -> dict[str, Any]:
         """Synchronous version of _evaluate_with_judge for ThreadPoolExecutor."""
 
@@ -340,6 +354,7 @@ class PanelOfJudgesScorer(BaseScorer):
             else:
                 # Fallback to async method if sync method not available
                 import asyncio
+
                 response = asyncio.run(judge.model.generate(evaluation_prompt))
 
             # Restore original temperature
@@ -393,7 +408,7 @@ class PanelOfJudgesScorer(BaseScorer):
         input_text: str,
         prediction: str,
         ground_truth: str,
-        context_str: Optional[str] = None
+        context_str: Optional[str] = None,
     ) -> float:
         """Fallback sequential evaluation when ThreadPoolExecutor fails."""
 
@@ -406,11 +421,15 @@ class PanelOfJudgesScorer(BaseScorer):
                 )
                 judge_results.append((judge, result))
             except Exception as e:
-                judge_results.append((judge, {"score": 0.0, "reasoning": f"Judge failed: {e}"}))
+                judge_results.append(
+                    (judge, {"score": 0.0, "reasoning": f"Judge failed: {e}"})
+                )
 
         return self._process_judge_results_sync(judge_results)
 
-    def _process_judge_results_sync(self, judge_results: list[tuple[JudgeConfig, dict[str, Any]]]) -> float:
+    def _process_judge_results_sync(
+        self, judge_results: list[tuple[JudgeConfig, dict[str, Any]]]
+    ) -> float:
         """Process judge results and return aggregated score."""
         if not judge_results:
             return 0.0

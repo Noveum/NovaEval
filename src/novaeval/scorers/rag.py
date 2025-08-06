@@ -284,7 +284,9 @@ class FaithfulnessScorer(BaseScorer):
             # Score calculation: full points for supported, half points for partial
             total_claims = len(claims)
             partial_weight = 0.5  # Configurable weight for partial support
-            faithfulness_score = (supported_count + partial_weight * partial_count) / total_claims
+            faithfulness_score = (
+                supported_count + partial_weight * partial_count
+            ) / total_claims
 
             reasoning = f"""
             Faithfulness Analysis:
