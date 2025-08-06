@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v0.4.0 (2025-07-23)
+
+### BREAKING CHANGE
+
+- GitHub Pages navigation structure has been completely redesigned
+
+### Feat
+
+- add comprehensive GitHub badges and hero CTA buttons (#10)
+- **docs**: comprehensive documentation improvements and GitHub Pages redesign (#9)
+
+### Fix
+
+- fix conversational metrics (#16)
+- REmove extra medicine (#14)
+
 ## v0.3.3 (2025-07-14)
 
 ### Feat
