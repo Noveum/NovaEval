@@ -283,7 +283,8 @@ class FaithfulnessScorer(BaseScorer):
 
             # Score calculation: full points for supported, half points for partial
             total_claims = len(claims)
-            faithfulness_score = (supported_count + 0.5 * partial_count) / total_claims
+            partial_weight = 0.5  # Configurable weight for partial support
+            faithfulness_score = (supported_count + partial_weight * partial_count) / total_claims
 
             reasoning = f"""
             Faithfulness Analysis:
@@ -600,7 +601,8 @@ class ContextualRecallScorer(BaseScorer):
                     partial_count += 1
 
             total_info = len(key_information)
-            recall_score = (present_count + 0.5 * partial_count) / total_info
+            partial_weight = 0.5  # Configurable weight for partial presence
+            recall_score = (present_count + partial_weight * partial_count) / total_info
 
             reasoning = f"""
             Contextual Recall Analysis:

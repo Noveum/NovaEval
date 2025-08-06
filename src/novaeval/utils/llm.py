@@ -10,6 +10,7 @@ from typing import Any
 # LangChain detection
 try:
     from langchain_core.language_models.base import BaseLanguageModel
+
     _HAS_LANGCHAIN = True
 except ImportError:
     _HAS_LANGCHAIN = False
@@ -44,7 +45,9 @@ def call_llm(model: Any, prompt: str) -> str:
             raise ValueError("LangChain LLM does not support invoke or generate.")
     elif isinstance(model, str):
         # Built-in: string model name, use OpenAI API
-        raise NotImplementedError("String-based LLM calling not implemented. Please provide a LangChain LLM or implement OpenAI call here.")
+        raise NotImplementedError(
+            "String-based LLM calling not implemented. Please provide a LangChain LLM or implement OpenAI call here."
+        )
     else:
         # Assume model has a .generate method (NovaEval style)
         return model.generate(prompt)

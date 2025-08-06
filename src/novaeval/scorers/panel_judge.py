@@ -145,7 +145,13 @@ class PanelOfJudgesScorer(BaseScorer):
                         f"{self.judges[i].name or f'Judge_{i}'}: {result!s}"
                     )
                 else:
-                    valid_results.append((self.judges[i], result))
+                    # Check if the result is an exception returned by _evaluate_with_judge
+                    if isinstance(result, Exception):
+                        failed_judges.append(
+                            f"{self.judges[i].name or f'Judge_{i}'}: {result!s}"
+                        )
+                    else:
+                        valid_results.append((self.judges[i], result))
 
             if not valid_results:
                 return ScoreResult(
@@ -217,6 +223,7 @@ class PanelOfJudgesScorer(BaseScorer):
             )
 
         except Exception as e:
+            # Handle any unexpected exceptions in the evaluate method itself
             return ScoreResult(
                 score=0.0,
                 passed=False,
@@ -231,7 +238,7 @@ class PanelOfJudgesScorer(BaseScorer):
         context: Optional[dict[str, Any]] = None,
     ) -> float:
         """
-        Synchronous wrapper around the async evaluate method.
+        Synchronous wrapper around the async evaluate method using ThreadPoolExecutor for true parallelism.
 
         Args:
             prediction: Model's prediction
@@ -241,23 +248,191 @@ class PanelOfJudgesScorer(BaseScorer):
         Returns:
             Score value between 0 and 1
         """
-        import asyncio
-        
+        import concurrent.futures
+        import platform
+
         # Extract input text from context if available, otherwise use ground_truth
         input_text = context.get("input", ground_truth) if context else ground_truth
         context_str = context.get("context") if context else None
 
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=input_text,
-                output_text=prediction,
-                expected_output=ground_truth,
-                context=context_str,
+        # Detect macOS and use sequential execution to avoid segmentation faults
+        is_macos = platform.system() == "Darwin"
+
+        if is_macos:
+            # Use sequential execution on macOS to avoid segmentation faults
+            return self._score_sequential(input_text, prediction, ground_truth, context_str)
+
+        try:
+            # Use ThreadPoolExecutor with conservative settings for other platforms
+            max_workers = min(len(self.judges), 4)  # Limit max workers to prevent memory issues
+
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=max_workers,
+                thread_name_prefix="PanelJudge"
+            ) as executor:
+                # Submit all judge evaluations as concurrent tasks
+                future_to_judge = {}
+
+                for judge in self.judges:
+                    future = executor.submit(
+                        self._evaluate_with_judge_sync,
+                        judge,
+                        input_text,
+                        prediction,
+                        ground_truth,
+                        context_str
+                    )
+                    future_to_judge[future] = judge
+
+                # Collect results with timeout to prevent hanging
+                judge_results = []
+                try:
+                    for future in concurrent.futures.as_completed(future_to_judge, timeout=30):
+                        judge = future_to_judge[future]
+                        try:
+                            result = future.result(timeout=10)  # Individual timeout
+                            judge_results.append((judge, result))
+                        except (concurrent.futures.TimeoutError, Exception) as e:
+                            # Handle individual judge failures
+                            judge_results.append((judge, {"score": 0.0, "reasoning": f"Judge failed: {e}"}))
+                except concurrent.futures.TimeoutError:
+                    # Handle overall timeout
+                    for future in future_to_judge:
+                        if not future.done():
+                            judge = future_to_judge[future]
+                            judge_results.append((judge, {"score": 0.0, "reasoning": "Judge timed out"}))
+
+            # Process results and return score
+            return self._process_judge_results_sync(judge_results)
+
+        except Exception:
+            # Fallback to sequential execution if ThreadPoolExecutor fails
+            try:
+                return self._score_sequential(input_text, prediction, ground_truth, context_str)
+            except Exception:
+                # If everything fails, return 0.0 as a fallback
+                return 0.0
+
+    def _evaluate_with_judge_sync(
+        self,
+        judge: JudgeConfig,
+        input_text: str,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[str] = None
+    ) -> dict[str, Any]:
+        """Synchronous version of _evaluate_with_judge for ThreadPoolExecutor."""
+
+        try:
+            # Build evaluation prompt
+            evaluation_prompt = self._build_evaluation_prompt(
+                input_text, prediction, ground_truth, context
             )
-        )
-        
-        return result.score
+
+            # Set judge-specific temperature if different from default
+            original_temp = getattr(judge.model, "temperature", None)
+            if hasattr(judge.model, "temperature"):
+                judge.model.temperature = judge.temperature
+
+            # Get evaluation from judge (synchronous call)
+            if hasattr(judge.model, "generate_sync"):
+                response = judge.model.generate_sync(evaluation_prompt)
+            else:
+                # Fallback to async method if sync method not available
+                import asyncio
+                response = asyncio.run(judge.model.generate(evaluation_prompt))
+
+            # Restore original temperature
+            if original_temp is not None and hasattr(judge.model, "temperature"):
+                judge.model.temperature = original_temp
+
+            # Parse JSON response
+            import json
+            import re
+
+            # Extract JSON from response
+            json_match = re.search(r"\{.*\}", response, re.DOTALL)
+            if not json_match:
+                raise ValueError("No JSON found in judge response")
+
+            result = json.loads(json_match.group())
+
+            # Validate required fields
+            if "score" not in result or "reasoning" not in result:
+                raise ValueError("Judge response missing required fields")
+
+            # Normalize score to 0-1 range
+            score = float(result["score"])
+            if score < 1 or score > 5:
+                raise ValueError(f"Score must be between 1 and 5, got {score}")
+
+            normalized_score = (score - 1) / 4  # Convert 1-5 to 0-1
+
+            return {
+                "score": normalized_score,
+                "reasoning": result["reasoning"],
+                "raw_score": score,
+                "strengths": result.get("strengths", ""),
+                "weaknesses": result.get("weaknesses", ""),
+                "confidence": result.get("confidence", 3),
+            }
+
+        except Exception as e:
+            # Return error result instead of raising
+            return {
+                "score": 0.0,
+                "reasoning": f"Judge evaluation failed: {e!s}",
+                "raw_score": 0,
+                "strengths": "",
+                "weaknesses": f"Error: {e!s}",
+                "confidence": 0,
+            }
+
+    def _score_sequential(
+        self,
+        input_text: str,
+        prediction: str,
+        ground_truth: str,
+        context_str: Optional[str] = None
+    ) -> float:
+        """Fallback sequential evaluation when ThreadPoolExecutor fails."""
+
+        judge_results = []
+
+        for judge in self.judges:
+            try:
+                result = self._evaluate_with_judge_sync(
+                    judge, input_text, prediction, ground_truth, context_str
+                )
+                judge_results.append((judge, result))
+            except Exception as e:
+                judge_results.append((judge, {"score": 0.0, "reasoning": f"Judge failed: {e}"}))
+
+        return self._process_judge_results_sync(judge_results)
+
+    def _process_judge_results_sync(self, judge_results: list[tuple[JudgeConfig, dict[str, Any]]]) -> float:
+        """Process judge results and return aggregated score."""
+        if not judge_results:
+            return 0.0
+
+        # Extract scores from judge results
+        scores = [
+            result[1]["score"]
+            for result in judge_results
+            if isinstance(result[1], dict) and "score" in result[1]
+        ]
+
+        if not scores:
+            return 0.0
+
+        # Calculate aggregated score using the configured method
+        weights = [result[0].weight for result in judge_results if len(result) > 0]
+
+        # Ensure weights list has same length as scores
+        if len(weights) != len(scores):
+            weights = [1.0] * len(scores)
+
+        return self._aggregate_scores(scores, weights, self.aggregation_method)
 
     def _build_evaluation_prompt(
         self,
@@ -362,7 +537,9 @@ class PanelOfJudgesScorer(BaseScorer):
             }
 
         except Exception as e:
-            raise Exception(f"Judge evaluation failed: {e!s}")
+            # Return the exception instead of re-raising it
+            # This allows the evaluate method to handle it properly
+            return Exception(f"Judge evaluation failed: {e!s}")
 
     def _calculate_consensus(self, scores: list[float]) -> float:
         """Calculate consensus level among judges (0-1)."""
