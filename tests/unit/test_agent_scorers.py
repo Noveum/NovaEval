@@ -2319,6 +2319,7 @@ def test_safe_serialize_union_field_improved_error_handling():
     class StrExceptionObj:
         def __str__(self):
             raise Exception("str conversion failed")
+
         def __repr__(self):
             return "StrExceptionObj()"
 
@@ -2344,6 +2345,7 @@ def test_safe_serialize_union_field_early_returns():
     test_dict = {"key": "value"}
     result = safe_serialize_union_field(test_dict, "test_field")
     import json
+
     expected = json.dumps(test_dict, indent=2)
     assert result == expected
 
@@ -2357,6 +2359,7 @@ def test_safe_serialize_union_field_pydantic_handling():
     tool_call = ToolCall(tool_name="test", parameters={}, call_id="123")
     result = safe_serialize_union_field(tool_call, "test_field")
     import json
+
     expected = json.dumps(tool_call.model_dump(), indent=2)
     assert result == expected
 

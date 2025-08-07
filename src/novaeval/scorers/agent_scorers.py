@@ -59,7 +59,9 @@ def safe_serialize_union_field(field_value: Any, field_name: str) -> str:
             try:
                 return str(field_value)
             except Exception:
-                print(f"Error serializing field {field_name}: {type(field_value).__name__}")
+                print(
+                    f"Error serializing field {field_name}: {type(field_value).__name__}"
+                )
                 return "Error serializing field"
 
 
