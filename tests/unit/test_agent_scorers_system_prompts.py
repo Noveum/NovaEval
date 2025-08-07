@@ -6,7 +6,7 @@ Tests all system prompt constants used by agent scorers.
 
 import pytest
 
-from novaeval.agents.agent_scorers_system_prompts import (
+from novaeval.scorers.agent_scorers_system_prompts import (
     CONTEXT_RELEVANCY_PROMPT,
     PARAMETER_CORRECTNESS_PROMPT,
     ROLE_ADHERENCE_PROMPT,

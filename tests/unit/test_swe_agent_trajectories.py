@@ -13,23 +13,11 @@ import pandas as pd
 import pytest
 
 from novaeval.agents.agent_data import AgentData
-from novaeval.agents.swe_agent_trajectories import (
-    create_agent_trajectories,
+from novaeval.datasets.swe_agent_trajectories_dataset import (
     create_dataset,
     stream_dataset,
     swe_agent_trajectories_preprocessing,
 )
-
-
-class TestCreateAgentTrajectories:
-    """Test the create_agent_trajectories function."""
-
-    @pytest.mark.unit
-    def test_create_agent_trajectories_is_noop(self):
-        """Test that create_agent_trajectories is a no-op function."""
-        # Should not raise any errors and return None
-        result = create_agent_trajectories()
-        assert result is None
 
 
 class TestSWEAgentTrajectoriesPreprocessing:

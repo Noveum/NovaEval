@@ -7,7 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from novaeval.agents.agent_data import AgentData
-from novaeval.agents.agent_dataset import AgentDataset, ToolCall
+from novaeval.datasets.agent_dataset import AgentDataset, ToolCall
 
 
 def minimal_agent_data_dict():
@@ -747,7 +747,7 @@ def test_parse_field_toolcall_exception(monkeypatch):
     ds = AgentDataset()
     # Patch ToolCall in agent_dataset and AgentData.model_fields annotation
     import novaeval.agents.agent_data as agent_data_mod
-    import novaeval.agents.agent_dataset as agent_dataset_mod
+    import novaeval.datasets.agent_dataset as agent_dataset_mod
 
     orig_toolcall = agent_dataset_mod.ToolCall
     orig_model_fields = agent_data_mod.AgentData.model_fields.copy()

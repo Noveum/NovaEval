@@ -12,8 +12,6 @@ def test_imports():
     """Test that all classes can be imported from the agents module."""
     from novaeval.agents import (
         AgentData,
-        AgentDataset,
-        AgentScorers,
         ToolCall,
         ToolResult,
         ToolSchema,
@@ -21,8 +19,6 @@ def test_imports():
 
     # Verify all classes are imported correctly
     assert AgentData is not None
-    assert AgentDataset is not None
-    assert AgentScorers is not None
     assert ToolCall is not None
     assert ToolResult is not None
     assert ToolSchema is not None
@@ -35,8 +31,6 @@ def test_all_exports():
 
     expected_exports = [
         "AgentData",
-        "AgentDataset",
-        "AgentScorers",
         "ToolCall",
         "ToolResult",
         "ToolSchema",
@@ -63,7 +57,7 @@ def test_star_import():
 def test_direct_imports():
     """Test that classes can be imported directly from submodules."""
     from novaeval.agents.agent_data import AgentData, ToolCall, ToolResult, ToolSchema
-    from novaeval.agents.agent_dataset import AgentDataset
+    from novaeval.datasets.agent_dataset import AgentDataset
 
     # Verify direct imports work
     assert AgentData is not None
@@ -78,7 +72,6 @@ def test_class_types():
     """Test that imported classes are of the correct type."""
     from novaeval.agents import (
         AgentData,
-        AgentDataset,
         ToolCall,
         ToolResult,
         ToolSchema,
@@ -86,7 +79,6 @@ def test_class_types():
 
     # All should be classes (type)
     assert isinstance(AgentData, type)
-    assert isinstance(AgentDataset, type)
     assert isinstance(ToolCall, type)
     assert isinstance(ToolResult, type)
     assert isinstance(ToolSchema, type)
@@ -97,15 +89,12 @@ def test_instantiation():
     """Test that classes can be instantiated."""
     from novaeval.agents import (
         AgentData,
-        AgentDataset,
         ToolCall,
         ToolResult,
         ToolSchema,
     )
 
     # Test basic instantiation without errors
-    dataset = AgentDataset()
-    assert dataset is not None
 
     agent_data = AgentData()
     assert agent_data is not None

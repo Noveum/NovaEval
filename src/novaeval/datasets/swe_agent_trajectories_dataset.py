@@ -6,11 +6,7 @@ from typing import Optional
 import pandas as pd
 
 from novaeval.agents.agent_data import AgentData
-from novaeval.agents.agent_dataset import AgentDataset
-
-
-def create_agent_trajectories() -> None:
-    pass
+from novaeval.datasets.agent_dataset import AgentDataset
 
 
 def swe_agent_trajectories_preprocessing(

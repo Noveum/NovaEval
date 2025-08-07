@@ -6,7 +6,7 @@ from typing import Optional
 import pandas as pd
 
 from novaeval.agents.agent_data import AgentData
-from novaeval.agents.agent_dataset import AgentDataset
+from novaeval.datasets.agent_dataset import AgentDataset
 
 
 def noveum_spans_preprocessing(

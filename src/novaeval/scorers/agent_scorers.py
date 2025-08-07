@@ -11,7 +11,8 @@ from typing import Any, Union
 from pydantic import BaseModel, Field
 
 from novaeval.agents.agent_data import AgentData
-from novaeval.agents.agent_scorers_system_prompts import (
+from novaeval.models.base import BaseModel as LLMModel
+from novaeval.scorers.agent_scorers_system_prompts import (
     CONTEXT_RELEVANCY_PROMPT,
     PARAMETER_CORRECTNESS_PROMPT,
     ROLE_ADHERENCE_PROMPT,
@@ -19,7 +20,6 @@ from novaeval.agents.agent_scorers_system_prompts import (
     TOOL_CORRECTNESS_PROMPT,
     TOOL_RELEVANCY_PROMPT,
 )
-from novaeval.models.base import BaseModel as LLMModel
 
 
 def safe_serialize_union_field(field_value: Any, _field_name: str) -> str:

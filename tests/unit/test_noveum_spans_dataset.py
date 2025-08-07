@@ -14,7 +14,7 @@ import pandas as pd
 import pytest
 
 from novaeval.agents.agent_data import AgentData
-from novaeval.agents.noveum_spans_dataset import (
+from novaeval.datasets.noveum_spans_dataset import (
     create_dataset,
     noveum_spans_preprocessing,
     stream_dataset,

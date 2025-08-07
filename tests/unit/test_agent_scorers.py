@@ -10,7 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from novaeval.agents.agent_data import AgentData, ToolCall, ToolResult, ToolSchema
-from novaeval.agents.agent_scorers import (
+from novaeval.scorers.agent_scorers import (
     AgentScorers,
     FieldAvailabilityError,
     ScoreListResponse,
@@ -588,7 +588,7 @@ def test_models_serialization():
 
 def test_tool_correctness_scorer_missing_expected_tool_call():
     """Test tool_correctness_scorer with missing expected_tool_call."""
-    from novaeval.agents.agent_scorers import tool_correctness_scorer
+    from novaeval.scorers.agent_scorers import tool_correctness_scorer
 
     # Create agent data without expected_tool_call
     agent_data = AgentData(
@@ -609,7 +609,7 @@ def test_tool_correctness_scorer_missing_expected_tool_call():
 
 def test_tool_correctness_scorer_missing_tool_calls():
     """Test tool_correctness_scorer with missing tool_calls."""
-    from novaeval.agents.agent_scorers import tool_correctness_scorer
+    from novaeval.scorers.agent_scorers import tool_correctness_scorer
 
     # Create agent data without tool_calls
     agent_data = AgentData(
@@ -632,7 +632,7 @@ def test_tool_correctness_scorer_missing_tool_calls():
 
 def test_tool_correctness_scorer_empty_tool_calls():
     """Test tool_correctness_scorer with empty tool_calls list."""
-    from novaeval.agents.agent_scorers import tool_correctness_scorer
+    from novaeval.scorers.agent_scorers import tool_correctness_scorer
 
     # Create agent data with empty tool_calls
     agent_data = AgentData(
@@ -656,7 +656,7 @@ def test_tool_correctness_scorer_empty_tool_calls():
 
 def test_tool_correctness_scorer_single_tool_call():
     """Test tool_correctness_scorer with single tool call."""
-    from novaeval.agents.agent_scorers import tool_correctness_scorer
+    from novaeval.scorers.agent_scorers import tool_correctness_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -683,7 +683,7 @@ def test_tool_correctness_scorer_single_tool_call():
 
 def test_tool_correctness_scorer_multiple_tool_calls():
     """Test tool_correctness_scorer with multiple tool calls."""
-    from novaeval.agents.agent_scorers import tool_correctness_scorer
+    from novaeval.scorers.agent_scorers import tool_correctness_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -710,7 +710,7 @@ def test_tool_correctness_scorer_multiple_tool_calls():
 
 def test_tool_correctness_scorer_exception_handling():
     """Test tool_correctness_scorer with exception handling."""
-    from novaeval.agents.agent_scorers import tool_correctness_scorer
+    from novaeval.scorers.agent_scorers import tool_correctness_scorer
 
     # Create agent data with valid fields
     agent_data = AgentData(
@@ -763,7 +763,7 @@ def test_tool_correctness_scorer_exception_handling():
 
 def test_parameter_correctness_scorer_missing_fields():
     """Test parameter_correctness_scorer with missing required fields."""
-    from novaeval.agents.agent_scorers import parameter_correctness_scorer
+    from novaeval.scorers.agent_scorers import parameter_correctness_scorer
 
     # Create agent data without parameters_passed and tool_call_results
     agent_data = AgentData(
@@ -783,7 +783,7 @@ def test_parameter_correctness_scorer_missing_fields():
 
 def test_parameter_correctness_scorer_success():
     """Test parameter_correctness_scorer with valid data."""
-    from novaeval.agents.agent_scorers import parameter_correctness_scorer
+    from novaeval.scorers.agent_scorers import parameter_correctness_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -816,7 +816,7 @@ def test_parameter_correctness_scorer_success():
 
 def test_role_adherence_scorer_missing_fields():
     """Test role_adherence_scorer with missing required fields."""
-    from novaeval.agents.agent_scorers import role_adherence_scorer
+    from novaeval.scorers.agent_scorers import role_adherence_scorer
 
     # Create agent data without agent_role
     agent_data = AgentData(
@@ -836,7 +836,7 @@ def test_role_adherence_scorer_missing_fields():
 
 def test_role_adherence_scorer_success():
     """Test role_adherence_scorer with valid data."""
-    from novaeval.agents.agent_scorers import role_adherence_scorer
+    from novaeval.scorers.agent_scorers import role_adherence_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -858,7 +858,7 @@ def test_role_adherence_scorer_success():
 
 def test_task_progression_scorer_missing_fields():
     """Test task_progression_scorer with missing required fields."""
-    from novaeval.agents.agent_scorers import task_progression_scorer
+    from novaeval.scorers.agent_scorers import task_progression_scorer
 
     # Create agent data without trace
     agent_data = AgentData(
@@ -878,7 +878,7 @@ def test_task_progression_scorer_missing_fields():
 
 def test_task_progression_scorer_success():
     """Test task_progression_scorer with valid data."""
-    from novaeval.agents.agent_scorers import task_progression_scorer
+    from novaeval.scorers.agent_scorers import task_progression_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -904,7 +904,7 @@ def test_task_progression_scorer_success():
 
 def test_context_relevancy_scorer_missing_fields():
     """Test context_relevancy_scorer with missing required fields."""
-    from novaeval.agents.agent_scorers import context_relevancy_scorer
+    from novaeval.scorers.agent_scorers import context_relevancy_scorer
 
     # Create agent data without retrieved_context
     agent_data = AgentData(
@@ -924,7 +924,7 @@ def test_context_relevancy_scorer_missing_fields():
 
 def test_context_relevancy_scorer_success():
     """Test context_relevancy_scorer with valid data."""
-    from novaeval.agents.agent_scorers import context_relevancy_scorer
+    from novaeval.scorers.agent_scorers import context_relevancy_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -980,7 +980,7 @@ def test_parse_score_with_reasoning_edge_cases():
 
 def test_parse_score_with_original_task_edge_cases():
     """Test parse_score_with_original_task with various edge cases."""
-    from novaeval.agents.agent_scorers import parse_score_with_original_task
+    from novaeval.scorers.agent_scorers import parse_score_with_original_task
 
     # Test with malformed JSON
     result = parse_score_with_original_task("not json at all")
@@ -1455,7 +1455,7 @@ def test_parse_score_with_original_task_exception_handling():
 @pytest.mark.unit
 def test_parameter_correctness_scorer_missing_tool_call_results():
     """Test parameter_correctness_scorer when tool_call_results is None."""
-    from novaeval.agents.agent_scorers import parameter_correctness_scorer
+    from novaeval.scorers.agent_scorers import parameter_correctness_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -1477,7 +1477,7 @@ def test_parameter_correctness_scorer_missing_tool_call_results():
 @pytest.mark.unit
 def test_parameter_correctness_scorer_no_matching_result():
     """Test parameter_correctness_scorer when no matching result is found for a call."""
-    from novaeval.agents.agent_scorers import parameter_correctness_scorer
+    from novaeval.scorers.agent_scorers import parameter_correctness_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -1506,7 +1506,7 @@ def test_parameter_correctness_scorer_no_matching_result():
 @pytest.mark.unit
 def test_parameter_correctness_scorer_exception_handling():
     """Test parameter_correctness_scorer exception handling."""
-    from novaeval.agents.agent_scorers import parameter_correctness_scorer
+    from novaeval.scorers.agent_scorers import parameter_correctness_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -1535,7 +1535,7 @@ def test_parameter_correctness_scorer_exception_handling():
 @pytest.mark.unit
 def test_task_progression_scorer_exception_handling():
     """Test task_progression_scorer exception handling."""
-    from novaeval.agents.agent_scorers import task_progression_scorer
+    from novaeval.scorers.agent_scorers import task_progression_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -1563,7 +1563,7 @@ def test_task_progression_scorer_exception_handling():
 @pytest.mark.unit
 def test_context_relevancy_scorer_exception_handling():
     """Test context_relevancy_scorer exception handling."""
-    from novaeval.agents.agent_scorers import context_relevancy_scorer
+    from novaeval.scorers.agent_scorers import context_relevancy_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -1589,7 +1589,7 @@ def test_context_relevancy_scorer_exception_handling():
 @pytest.mark.unit
 def test_role_adherence_scorer_exception_handling():
     """Test role_adherence_scorer exception handling."""
-    from novaeval.agents.agent_scorers import role_adherence_scorer
+    from novaeval.scorers.agent_scorers import role_adherence_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -1802,7 +1802,7 @@ def test_parse_score_with_original_task_no_braces_in_response():
 @pytest.mark.unit
 def test_parameter_correctness_scorer_with_multiple_results():
     """Test parameter_correctness_scorer with multiple matching and non-matching results."""
-    from novaeval.agents.agent_scorers import parameter_correctness_scorer
+    from novaeval.scorers.agent_scorers import parameter_correctness_scorer
 
     agent_data = AgentData(
         user_id="user123",
@@ -1922,7 +1922,7 @@ def string_union_agent_data():
 @pytest.mark.unit
 def test_safe_serialize_union_field_with_string():
     """Test safe_serialize_union_field with string input."""
-    from novaeval.agents.agent_scorers import safe_serialize_union_field
+    from novaeval.scorers.agent_scorers import safe_serialize_union_field
 
     result = safe_serialize_union_field("test_string", "test_field")
     assert result == "test_string"
@@ -1931,7 +1931,7 @@ def test_safe_serialize_union_field_with_string():
 @pytest.mark.unit
 def test_safe_serialize_union_field_with_dict():
     """Test safe_serialize_union_field with dict input."""
-    from novaeval.agents.agent_scorers import safe_serialize_union_field
+    from novaeval.scorers.agent_scorers import safe_serialize_union_field
 
     test_dict = {"key": "value", "number": 42}
     result = safe_serialize_union_field(test_dict, "test_field")
@@ -1944,7 +1944,7 @@ def test_safe_serialize_union_field_with_dict():
 @pytest.mark.unit
 def test_safe_serialize_union_field_with_pydantic_model():
     """Test safe_serialize_union_field with Pydantic model input."""
-    from novaeval.agents.agent_scorers import safe_serialize_union_field
+    from novaeval.scorers.agent_scorers import safe_serialize_union_field
 
     tool_call = ToolCall(tool_name="test", parameters={}, call_id="123")
     result = safe_serialize_union_field(tool_call, "test_field")
@@ -1957,7 +1957,7 @@ def test_safe_serialize_union_field_with_pydantic_model():
 @pytest.mark.unit
 def test_safe_serialize_union_field_with_list_of_models():
     """Test safe_serialize_union_field with list of Pydantic models."""
-    from novaeval.agents.agent_scorers import safe_serialize_union_field
+    from novaeval.scorers.agent_scorers import safe_serialize_union_field
 
     tool_calls = [
         ToolCall(tool_name="test1", parameters={}, call_id="123"),
@@ -1973,7 +1973,7 @@ def test_safe_serialize_union_field_with_list_of_models():
 @pytest.mark.unit
 def test_safe_get_boolean_field_with_bool():
     """Test safe_get_boolean_field with boolean input."""
-    from novaeval.agents.agent_scorers import safe_get_boolean_field
+    from novaeval.scorers.agent_scorers import safe_get_boolean_field
 
     assert safe_get_boolean_field(True) is True
     assert safe_get_boolean_field(False) is False
@@ -1982,7 +1982,7 @@ def test_safe_get_boolean_field_with_bool():
 @pytest.mark.unit
 def test_safe_get_boolean_field_with_string():
     """Test safe_get_boolean_field with string input."""
-    from novaeval.agents.agent_scorers import safe_get_boolean_field
+    from novaeval.scorers.agent_scorers import safe_get_boolean_field
 
     # True cases
     assert safe_get_boolean_field("true") is True
@@ -2020,7 +2020,7 @@ def test_tool_relevancy_scorer_with_string_fields(string_union_agent_data):
 @pytest.mark.unit
 def test_tool_correctness_scorer_with_string_fields(string_union_agent_data):
     """Test tool_correctness_scorer with string union fields."""
-    from novaeval.agents.agent_scorers import tool_correctness_scorer
+    from novaeval.scorers.agent_scorers import tool_correctness_scorer
 
     mock_model = MockLLMModel(
         '{"score": 6.0, "reasoning": "String comparison successful"}'
@@ -2037,7 +2037,7 @@ def test_tool_correctness_scorer_with_string_fields(string_union_agent_data):
 @pytest.mark.unit
 def test_parameter_correctness_scorer_with_string_fields(string_union_agent_data):
     """Test parameter_correctness_scorer with string union fields."""
-    from novaeval.agents.agent_scorers import parameter_correctness_scorer
+    from novaeval.scorers.agent_scorers import parameter_correctness_scorer
 
     mock_model = MockLLMModel(
         '{"score": 8.0, "reasoning": "String parameters processed"}'
@@ -2054,7 +2054,7 @@ def test_parameter_correctness_scorer_with_string_fields(string_union_agent_data
 @pytest.mark.unit
 def test_role_adherence_scorer_with_string_fields(string_union_agent_data):
     """Test role_adherence_scorer with string union fields."""
-    from novaeval.agents.agent_scorers import role_adherence_scorer
+    from novaeval.scorers.agent_scorers import role_adherence_scorer
 
     mock_model = MockLLMModel(
         '{"score": 9.0, "reasoning": "Role adherence with strings"}'
@@ -2192,7 +2192,7 @@ def test_empty_string_union_fields():
     assert len(result1) == 1
     assert isinstance(result1[0], ScoreWithReasoning)
 
-    from novaeval.agents.agent_scorers import role_adherence_scorer
+    from novaeval.scorers.agent_scorers import role_adherence_scorer
 
     result2 = role_adherence_scorer(agent_data, mock_model)
     assert isinstance(
@@ -2203,7 +2203,7 @@ def test_empty_string_union_fields():
 @pytest.mark.unit
 def test_safe_serialize_union_field_edge_cases():
     """Test edge cases in safe_serialize_union_field function."""
-    from novaeval.agents.agent_scorers import safe_serialize_union_field
+    from novaeval.scorers.agent_scorers import safe_serialize_union_field
 
     # Test with None value (line 40)
     result = safe_serialize_union_field(None, "test_field")
@@ -2226,7 +2226,7 @@ def test_safe_serialize_union_field_edge_cases():
 @pytest.mark.unit
 def test_safe_get_boolean_field_edge_cases():
     """Test edge cases in safe_get_boolean_field function."""
-    from novaeval.agents.agent_scorers import safe_get_boolean_field
+    from novaeval.scorers.agent_scorers import safe_get_boolean_field
 
     # Test with non-string non-bool value (line 79)
     result = safe_get_boolean_field(42)
@@ -2245,7 +2245,7 @@ def test_safe_get_boolean_field_edge_cases():
 @pytest.mark.unit
 def test_parse_score_with_original_task_unexpected_format():
     """Test parse_score_with_original_task with unexpected response format."""
-    from novaeval.agents.agent_scorers import parse_score_with_original_task
+    from novaeval.scorers.agent_scorers import parse_score_with_original_task
 
     # Test with valid JSON that is not a dict (line 254)
     # This should hit the "Unexpected response format" branch
@@ -2260,7 +2260,7 @@ def test_parse_score_with_original_task_unexpected_format():
 @pytest.mark.unit
 def test_tool_relevancy_scorer_string_exception():
     """Test tool_relevancy_scorer with string tool_calls and exception handling."""
-    from novaeval.agents.agent_scorers import tool_relevancy_scorer
+    from novaeval.scorers.agent_scorers import tool_relevancy_scorer
 
     # Create agent data with string tool_calls
     agent_data = AgentData(
