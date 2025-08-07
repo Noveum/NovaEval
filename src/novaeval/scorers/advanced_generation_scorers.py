@@ -160,7 +160,7 @@ Now evaluate the provided question and answer for bias.
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -355,7 +355,7 @@ Now evaluate the factual accuracy of the provided answer against the context.
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -653,7 +653,7 @@ Now verify the provided claim against the context.
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -696,7 +696,12 @@ Now verify the provided claim against the context.
                     "reasoning": "Fallback parsing used",
                 }
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -778,7 +783,7 @@ class InformationDensityScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -792,7 +797,12 @@ class InformationDensityScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -873,7 +883,7 @@ class ClarityAndCoherenceScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -887,7 +897,12 @@ class ClarityAndCoherenceScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -982,7 +997,7 @@ class ConflictResolutionScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -996,7 +1011,12 @@ class ConflictResolutionScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -1080,7 +1100,7 @@ class ContextPrioritizationScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -1094,7 +1114,12 @@ class ContextPrioritizationScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -1174,7 +1199,7 @@ class CitationQualityScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -1188,7 +1213,12 @@ class CitationQualityScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -1274,7 +1304,7 @@ class ToneConsistencyScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -1288,7 +1318,12 @@ class ToneConsistencyScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -1368,7 +1403,7 @@ class TerminologyConsistencyScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -1382,7 +1417,12 @@ class TerminologyConsistencyScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -1496,7 +1536,7 @@ class ContextFaithfulnessScorerPP(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -1513,7 +1553,12 @@ class ContextFaithfulnessScorerPP(BaseScorer):
             return float(numbers[-1])
         return 1.0  # Default to no hallucinations
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -1597,7 +1642,7 @@ class ContextGroundednessScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -1700,7 +1745,7 @@ class ContextCompletenessScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -1714,7 +1759,12 @@ class ContextCompletenessScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -1808,7 +1858,7 @@ class ContextConsistencyScorer(BaseScorer):
             },
         )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -1822,7 +1872,12 @@ class ContextConsistencyScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -1905,7 +1960,7 @@ class RAGAnswerQualityScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -1919,7 +1974,12 @@ class RAGAnswerQualityScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -2000,7 +2060,7 @@ class HallucinationDetectionScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -2014,7 +2074,12 @@ class HallucinationDetectionScorer(BaseScorer):
             return float(numbers[-1])
         return 1.0  # Default to no hallucinations
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -2094,7 +2159,7 @@ class SourceAttributionScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -2108,7 +2173,12 @@ class SourceAttributionScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -2189,7 +2259,7 @@ class AnswerCompletenessScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -2203,7 +2273,12 @@ class AnswerCompletenessScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -2283,7 +2358,7 @@ class QuestionAnswerAlignmentScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -2297,7 +2372,12 @@ class QuestionAnswerAlignmentScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -2391,7 +2471,7 @@ class CrossContextSynthesisScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -2405,7 +2485,12 @@ class CrossContextSynthesisScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available
@@ -2486,7 +2571,7 @@ class TechnicalAccuracyScorer(BaseScorer):
                 score=0.0, passed=False, reasoning=f"Error: {e!s}", metadata={}
             )
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         import asyncio
 
         return await asyncio.to_thread(call_llm, self.model, prompt)
@@ -2500,7 +2585,12 @@ class TechnicalAccuracyScorer(BaseScorer):
             return float(numbers[-1])
         return 3.0  # Default to neutral
 
-    def score(self, prediction, ground_truth, context=None):
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Extract context from dict if available

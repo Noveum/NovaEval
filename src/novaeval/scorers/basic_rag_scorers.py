@@ -25,11 +25,11 @@ class AsyncLLMScorer(BaseScorer):
     Provides shared functionality for async model interaction.
     """
 
-    def __init__(self, model, **kwargs):
+    def __init__(self, model: Any, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.model = model
 
-    async def _call_model(self, prompt: str):
+    async def _call_model(self, prompt: str) -> str:
         """Async wrapper for call_llm."""
         import asyncio
 
@@ -43,7 +43,7 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
     Precision = (Number of relevant chunks retrieved) ÷ (Total number of chunks retrieved)
     """
 
-    def __init__(self, model, relevance_threshold=0.7, **kwargs):
+    def __init__(self, model: Any, relevance_threshold=0.7, **kwargs: Any) -> None:
         super().__init__(name="RetrievalPrecisionScorer", model=model, **kwargs)
         self.relevance_threshold = relevance_threshold
 
@@ -102,7 +102,7 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[str] = None,
+        context: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         if not context or not input_text:
@@ -197,7 +197,7 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
     Recall = (Number of relevant chunks retrieved) ÷ (Estimated total relevant chunks)
     """
 
-    def __init__(self, model, relevance_threshold=0.7, **kwargs):
+    def __init__(self, model: Any, relevance_threshold=0.7, **kwargs: Any) -> None:
         super().__init__(name="RetrievalRecallScorer", model=model, **kwargs)
         self.relevance_threshold = relevance_threshold
 
@@ -288,7 +288,7 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
         input_text: str,
         output_text: str,
         expected_output: Optional[str] = None,
-        context: Optional[str] = None,
+        context: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> ScoreResult:
         if not context or not input_text:
@@ -389,12 +389,12 @@ class RetrievalF1Scorer(BaseScorer):
     F1 score combining precision and recall for contextual evaluation.
     """
 
-    def __init__(self, precision_scorer, recall_scorer, threshold=0.5, **kwargs):
+    def __init__(self, precision_scorer: Any, recall_scorer: Any, threshold=0.5, **kwargs: Any) -> None:
         super().__init__(name="ContextualF1Scorer", **kwargs)
         self.precision_scorer = precision_scorer
         self.recall_scorer = recall_scorer
         self.threshold = threshold
-        self._last_result = None
+        self._last_result: Optional[ScoreResult] = None
 
     def score(
         self,
@@ -434,10 +434,10 @@ class RetrievalRankingScorer(BaseScorer):
     Computes ranking metrics for retrieved context.
     """
 
-    def __init__(self, threshold=0.5, **kwargs):
+    def __init__(self, threshold=0.5, **kwargs: Any) -> None:
         super().__init__(name="RetrievalRankingScorer", **kwargs)
         self.threshold = threshold
-        self._last_result = None
+        self._last_result: Optional[ScoreResult] = None
 
     def score(
         self,
@@ -562,41 +562,26 @@ class SemanticSimilarityScorer(BaseScorer):
     Computes semantic similarity between query and retrieved context.
     """
 
-    def __init__(self, threshold=0.7, embedding_model="all-MiniLM-L6-v2", **kwargs):
+    def __init__(self, threshold=0.7, embedding_model="all-MiniLM-L6-v2", **kwargs: Any) -> None:
         super().__init__(name="SemanticSimilarityScorer", **kwargs)
         self.threshold = threshold
         self.embedding_model = embedding_model
-        self.model = None
+        self.model: Optional[SentenceTransformer] = None
         self._model_loaded = False
-        self._last_result = None
+        self._last_result: Optional[ScoreResult] = None
 
-    def _load_model(self):
-        if self.model is None and not self._model_loaded:
-            try:
-                # Add safety checks for macOS/ARM64 issues
-                import os
-                import platform
+    def _load_model(self) -> None:
+        """Load the sentence transformer model."""
+        try:
+            from sentence_transformers import SentenceTransformer
 
-                # Check if we're on macOS ARM64 (M1/M2) which has known issues
-                if platform.system() == "Darwin" and platform.machine() == "arm64":
-                    print(
-                        "Warning: Detected macOS ARM64, using fallback mode to avoid segmentation faults"
-                    )
-                    self.model = None
-                    self._model_loaded = True
-                    return
-
-                # Set environment variables to help with macOS issues
-                os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
-
-                # Try to load the model with error handling
-                self.model = SentenceTransformer(self.embedding_model)
-                self._model_loaded = True
-            except Exception as e:
-                # If model loading fails, we'll use a fallback approach
-                print(f"Warning: Could not load SentenceTransformer model: {e}")
-                self.model = None
-                self._model_loaded = True  # Prevent retry
+            self.model = SentenceTransformer(self.embedding_model)
+        except ImportError:
+            self.model = None
+            print(
+                "Warning: sentence_transformers not installed. "
+                "Using simple similarity computation."
+            )
 
     def _compute_simple_similarity(self, query: str, chunks: list) -> float:
         """Fallback similarity computation without embeddings."""
@@ -700,16 +685,16 @@ class RetrievalDiversityScorer(BaseScorer):
     """
 
     def __init__(
-        self, embedding_model="all-MiniLM-L6-v2", threshold: float = 0.3, **kwargs
-    ):
+        self, embedding_model="all-MiniLM-L6-v2", threshold: float = 0.3, **kwargs: Any
+    ) -> None:
         super().__init__(name="RetrievalDiversityScorer", **kwargs)
         self.embedding_model = embedding_model
         self.threshold = threshold
-        self.model = None
+        self.model: Optional[SentenceTransformer] = None
         self._model_loaded = False
-        self._last_result = None
+        self._last_result: Optional[ScoreResult] = None
 
-    def _load_model(self):
+    def _load_model(self) -> None:
         if self.model is None and not self._model_loaded:
             try:
                 # Add safety checks for macOS/ARM64 issues
@@ -737,7 +722,7 @@ class RetrievalDiversityScorer(BaseScorer):
                 self.model = None
                 self._model_loaded = True  # Prevent retry
 
-    def _compute_pairwise_cosine_distance(self, embeddings):
+    def _compute_pairwise_cosine_distance(self, embeddings: list) -> float:
         """Compute pairwise cosine distances between embeddings."""
         if len(embeddings) < 2:
             return 0.0
@@ -861,25 +846,25 @@ class AggregateRAGScorer(BaseScorer):
 
     def __init__(
         self,
-        scorers: dict,
-        weights: Optional[dict] = None,
+        scorers: dict[str, Any],
+        weights: Optional[dict[str, float]] = None,
         threshold: float = 0.5,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         super().__init__(name="AggregateRetrievalScorer", **kwargs)
         self.scorers = scorers
         self.weights = weights or dict.fromkeys(scorers.keys(), 1.0)
         self.threshold = threshold
-        self._last_result = None
+        self._last_result: Optional[ScoreResult] = None
 
     def score(
         self,
         prediction: str,
         ground_truth: str,
         context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+    ) -> Union[float, dict[str, Any]]:
         # Calls each scorer, extracts main score, and computes weighted average
-        scores = {}
+        scores: dict[str, float] = {}
         total_weight = 0.0
         weighted_sum = 0.0
 
