@@ -190,8 +190,6 @@ def _prepare_dataset_csv(csv_path: str) -> str:
     import sys
     import tempfile
 
-    import pandas as pd
-
     # Handle large CSV fields
     maxInt = sys.maxsize
     while True:

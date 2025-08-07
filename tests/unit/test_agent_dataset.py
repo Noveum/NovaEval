@@ -977,6 +977,7 @@ def test_exit_fields_with_field_mapping(tmp_path):
 # Test coverage improvements for missing lines
 
 
+@pytest.mark.unit
 def test_stream_from_csv_basic():
     """Test basic stream_from_csv functionality."""
     csv_data = """user_id,task_id,turn_id,ground_truth,agent_name,agent_response
@@ -1010,6 +1011,7 @@ user3,task3,turn3,truth3,agent3,response3"""
         os.unlink(temp_file_path)
 
 
+@pytest.mark.unit
 def test_stream_from_csv_with_field_mapping():
     """Test stream_from_csv with custom field mapping."""
     csv_data = """custom_user,custom_task,custom_turn,custom_agent,custom_response
@@ -1045,6 +1047,7 @@ user2,task2,turn2,agent2,response2"""
         os.unlink(temp_file_path)
 
 
+@pytest.mark.unit
 def test_stream_from_csv_file_error():
     """Test stream_from_csv with file read error."""
     ds = AgentDataset()
@@ -1109,6 +1112,7 @@ def test_stream_from_json_basic():
         os.unlink(temp_file_path)
 
 
+@pytest.mark.unit
 def test_stream_from_json_with_field_mapping():
     """Test stream_from_json with custom field mapping."""
     json_data = [
@@ -1143,6 +1147,7 @@ def test_stream_from_json_with_field_mapping():
         os.unlink(temp_file_path)
 
 
+@pytest.mark.unit
 def test_stream_from_json_non_dict_items():
     """Test stream_from_json skips non-dict items."""
     json_data = [
@@ -1174,6 +1179,7 @@ def test_stream_from_json_non_dict_items():
         os.unlink(temp_file_path)
 
 
+@pytest.mark.unit
 def test_stream_from_json_import_error():
     """Test stream_from_json when ijson is not available."""
     ds = AgentDataset()
@@ -1187,6 +1193,7 @@ def test_stream_from_json_import_error():
         list(ds.stream_from_json("dummy.json"))
 
 
+@pytest.mark.unit
 def test_stream_from_json_file_error():
     """Test stream_from_json with file read error."""
     ds = AgentDataset()
@@ -1195,6 +1202,7 @@ def test_stream_from_json_file_error():
         list(ds.stream_from_json("/nonexistent/file.json"))
 
 
+@pytest.mark.unit
 def test_stream_from_json_remaining_data():
     """Test that stream_from_json yields remaining data at the end."""
     json_data = [
@@ -1224,6 +1232,7 @@ def test_stream_from_json_remaining_data():
         os.unlink(temp_file_path)
 
 
+@pytest.mark.unit
 def test_parse_field_bool_string_variations():
     """Test boolean field parsing with various string inputs."""
     ds = AgentDataset()
@@ -1253,6 +1262,7 @@ def test_parse_field_bool_string_variations():
     assert ds._parse_field("agent_exit", "unknown") == "unknown"
 
 
+@pytest.mark.unit
 def test_parse_field_bool_numeric_conversions():
     """Test boolean field parsing with numeric inputs."""
     ds = AgentDataset()
@@ -1267,6 +1277,7 @@ def test_parse_field_bool_numeric_conversions():
     assert ds._parse_field("agent_exit", "not_a_number") == "not_a_number"
 
 
+@pytest.mark.unit
 def test_parse_field_bool_exception_handling():
     """Test boolean field parsing exception handling."""
     ds = AgentDataset()
@@ -1282,6 +1293,7 @@ def test_parse_field_bool_exception_handling():
     assert result is obj
 
 
+@pytest.mark.unit
 def test_parse_field_bool_none_with_default():
     """Test boolean field parsing with None value and field defaults."""
     ds = AgentDataset()
@@ -1291,6 +1303,7 @@ def test_parse_field_bool_none_with_default():
     assert result is False  # Should use default
 
 
+@pytest.mark.unit
 def test_parse_field_expected_tool_call_invalid_json():
     """Test parsing expected_tool_call with invalid JSON string."""
     ds = AgentDataset()
@@ -1304,6 +1317,7 @@ def test_parse_field_expected_tool_call_invalid_json():
     assert result == '{"invalid": "structure"}'
 
 
+@pytest.mark.unit
 def test_parse_field_expected_tool_call_exception():
     """Test parsing expected_tool_call with exception during ToolCall creation."""
     ds = AgentDataset()
@@ -1314,6 +1328,7 @@ def test_parse_field_expected_tool_call_exception():
     assert result == '{"tool_name": null, "parameters": "not_a_dict"}'
 
 
+@pytest.mark.unit
 def test_get_data_method():
     """Test get_data method returns a copy of the data."""
     ds = AgentDataset()
@@ -1330,6 +1345,7 @@ def test_get_data_method():
     assert data_copy[0] == ds.data[0]  # But elements should be the same
 
 
+@pytest.mark.unit
 def test_get_datapoint_iterator():
     """Test get_datapoint method returns an iterator."""
     ds = AgentDataset()
@@ -1346,6 +1362,7 @@ def test_get_datapoint_iterator():
     assert datapoints[1] == ds.data[1]
 
 
+@pytest.mark.unit
 def test_ingest_from_csv_complex_field_parsing():
     """Test complex field parsing scenarios in ingest_from_csv."""
     # Create CSV with various complex field types
@@ -1393,6 +1410,7 @@ user3,task3,turn3,invalid_json,invalid_json,invalid_json,maybe,invalid_json"""
         os.unlink(temp_file_path)
 
 
+@pytest.mark.unit
 def test_parse_field_tool_call_instance():
     """Test parsing when value is already a ToolCall instance."""
     ds = AgentDataset()
@@ -1401,6 +1419,7 @@ def test_parse_field_tool_call_instance():
     assert result == existing_toolcall
 
 
+@pytest.mark.unit
 def test_parse_field_boolean_no_default():
     """Test boolean field parsing when field has no default value."""
     from types import SimpleNamespace
@@ -1421,6 +1440,7 @@ def test_parse_field_boolean_no_default():
         agent_data_mod.AgentData.model_fields = orig_model_fields
 
 
+@pytest.mark.unit
 def test_parse_field_bool_with_default_value():
     """Test boolean field parsing when field has a default value."""
     from types import SimpleNamespace
@@ -1442,6 +1462,7 @@ def test_parse_field_bool_with_default_value():
         agent_data_mod.AgentData.model_fields = orig_model_fields
 
 
+@pytest.mark.unit
 def test_parse_field_bool_without_default_value():
     """Test boolean field parsing when field has no default value."""
     from types import SimpleNamespace
@@ -1463,6 +1484,7 @@ def test_parse_field_bool_without_default_value():
         agent_data_mod.AgentData.model_fields = orig_model_fields
 
 
+@pytest.mark.unit
 def test_parse_field_bool_without_default_attr():
     """Test boolean field parsing when field has no default attribute."""
     from types import SimpleNamespace
@@ -1488,6 +1510,7 @@ def test_parse_field_bool_without_default_attr():
         agent_data_mod.AgentData.model_fields = orig_model_fields
 
 
+@pytest.mark.unit
 def test_parse_field_bool_unrecognized_string():
     """Test boolean field parsing with unrecognized string values."""
     from types import SimpleNamespace
@@ -1512,6 +1535,7 @@ def test_parse_field_bool_unrecognized_string():
         agent_data_mod.AgentData.model_fields = orig_model_fields
 
 
+@pytest.mark.unit
 def test_agent_dataset_init_various_type_patterns():
     """Test AgentDataset initialization with various type annotation patterns."""
     import typing

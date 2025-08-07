@@ -212,8 +212,6 @@ def create_dataset(csv_path: str) -> AgentDataset:
     import csv
     import sys
 
-    import pandas as pd
-
     maxInt = sys.maxsize
 
     while True:
