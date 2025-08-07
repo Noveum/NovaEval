@@ -1673,7 +1673,7 @@ def test_agent_scorers_score_all_with_errors():
     result = scorers.score_all(agent_data)
 
     assert isinstance(result, dict)
-    assert len(result) == 5  # All 5 scoring categories should be present
+    assert len(result) == 8  # All 5 scoring categories should be present
 
     # Check that error responses are properly included
     for key in result:
@@ -2290,3 +2290,123 @@ def test_tool_relevancy_scorer_string_exception():
     assert len(result) == 1
     assert result[0].score == 1.0
     assert "Failed to evaluate tool call" in result[0].reasoning
+
+
+@pytest.mark.unit
+def test_safe_serialize_union_field_improved_error_handling():
+    """Test the improved error handling in safe_serialize_union_field function."""
+    from novaeval.scorers.agent_scorers import safe_serialize_union_field
+
+    # Test with object that raises TypeError during JSON serialization
+    class TypeErrorObj:
+        def __str__(self):
+            return "type_error_object"
+
+    obj = TypeErrorObj()
+    result = safe_serialize_union_field(obj, "test_field")
+    assert result == "type_error_object"
+
+    # Test with object that raises AttributeError during JSON serialization
+    class AttributeErrorObj:
+        def __str__(self):
+            return "attribute_error_object"
+
+    obj = AttributeErrorObj()
+    result = safe_serialize_union_field(obj, "test_field")
+    assert result == "attribute_error_object"
+
+    # Test with object that raises Exception during str() conversion
+    class StrExceptionObj:
+        def __str__(self):
+            raise Exception("str conversion failed")
+        def __repr__(self):
+            return "StrExceptionObj()"
+
+    obj = StrExceptionObj()
+    result = safe_serialize_union_field(obj, "test_field")
+    assert result == "Error serializing field"
+
+
+@pytest.mark.unit
+def test_safe_serialize_union_field_early_returns():
+    """Test the early return optimizations in safe_serialize_union_field function."""
+    from novaeval.scorers.agent_scorers import safe_serialize_union_field
+
+    # Test early return for string values
+    result = safe_serialize_union_field("simple_string", "test_field")
+    assert result == "simple_string"
+
+    # Test early return for None values
+    result = safe_serialize_union_field(None, "test_field")
+    assert result == ""
+
+    # Test that complex types still go through JSON serialization
+    test_dict = {"key": "value"}
+    result = safe_serialize_union_field(test_dict, "test_field")
+    import json
+    expected = json.dumps(test_dict, indent=2)
+    assert result == expected
+
+
+@pytest.mark.unit
+def test_safe_serialize_union_field_pydantic_handling():
+    """Test Pydantic model handling in safe_serialize_union_field function."""
+    from novaeval.scorers.agent_scorers import safe_serialize_union_field
+
+    # Test single Pydantic model
+    tool_call = ToolCall(tool_name="test", parameters={}, call_id="123")
+    result = safe_serialize_union_field(tool_call, "test_field")
+    import json
+    expected = json.dumps(tool_call.model_dump(), indent=2)
+    assert result == expected
+
+    # Test list of Pydantic models
+    tool_calls = [
+        ToolCall(tool_name="test1", parameters={}, call_id="123"),
+        ToolCall(tool_name="test2", parameters={}, call_id="456"),
+    ]
+    result = safe_serialize_union_field(tool_calls, "test_field")
+    expected = json.dumps([tc.model_dump() for tc in tool_calls], indent=2)
+    assert result == expected
+
+    # Test empty list of Pydantic models
+    empty_list = []
+    result = safe_serialize_union_field(empty_list, "test_field")
+    expected = json.dumps(empty_list, indent=2)
+    assert result == expected
+
+
+@pytest.mark.unit
+def test_safe_serialize_union_field_mixed_types():
+    """Test safe_serialize_union_field with various mixed type scenarios."""
+    from novaeval.scorers.agent_scorers import safe_serialize_union_field
+
+    # Test with empty string
+    result = safe_serialize_union_field("", "test_field")
+    assert result == ""
+
+    # Test with whitespace string
+    result = safe_serialize_union_field("   ", "test_field")
+    assert result == "   "
+
+    # Test with numeric values
+    result = safe_serialize_union_field(42, "test_field")
+    assert result == "42"
+
+    result = safe_serialize_union_field(3.14, "test_field")
+    assert result == "3.14"
+
+    # Test with boolean values
+    result = safe_serialize_union_field(True, "test_field")
+    assert result == "true"
+
+    result = safe_serialize_union_field(False, "test_field")
+    assert result == "false"
+
+    # Test with empty list
+    result = safe_serialize_union_field([], "test_field")
+    assert result == "[]"
+
+    # Test with empty dict
+    result = safe_serialize_union_field({}, "test_field")
+    assert result == "{}"

@@ -240,11 +240,7 @@ def stream_dataset(csv_path: str, chunk_size: int = 1000) -> Iterator[list[Agent
     Returns:
         Iterator[list[AgentData]]: Iterator yielding lists of AgentData objects
     """
-    import json
-    import os
     import tempfile
-
-    import pandas as pd
 
     # First preprocess the CSV like in create_dataset
     df = pd.read_csv(csv_path)

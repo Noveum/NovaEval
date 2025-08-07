@@ -22,13 +22,13 @@ from novaeval.scorers.agent_scorers_system_prompts import (
 )
 
 
-def safe_serialize_union_field(field_value: Any, _field_name: str) -> str:
+def safe_serialize_union_field(field_value: Any, field_name: str) -> str:
     """
     Safely serialize a union type field that can be either its original type or a string.
 
     Args:
         field_value: The field value which could be a complex type (list, dict, ToolCall, etc.) or string
-        _field_name: Name of the field (for error reporting)
+        field_name: Name of the field (for error reporting)
 
     Returns:
         String representation suitable for prompt formatting
@@ -56,7 +56,11 @@ def safe_serialize_union_field(field_value: Any, _field_name: str) -> str:
                 return json.dumps(field_value, indent=2)
         except (TypeError, AttributeError):
             # Fallback: convert to string if JSON serialization fails
-            return str(field_value)
+            try:
+                return str(field_value)
+            except Exception:
+                print(f"Error serializing field {field_name}: {type(field_value).__name__}")
+                return "Error serializing field"
 
 
 def safe_get_boolean_field(field_value: Any) -> bool:
@@ -1034,6 +1038,24 @@ class AgentScorers:
         """Score role adherence."""
         return role_adherence_scorer(agent_data, self.model)
 
+    def score_tool_correctness(
+        self, agent_data: AgentData
+    ) -> Union[list[ScoreWithReasoning], dict[str, Any]]:
+        """Score tool call correctness."""
+        return tool_correctness_scorer(agent_data, self.model)
+
+    def score_goal_achievement(
+        self, agent_data: AgentData
+    ) -> Union[ScoreWithOriginalTask, dict[str, Any]]:
+        """Score goal achievement."""
+        return goal_achievement_scorer(agent_data, self.model)
+
+    def score_conversation_coherence(
+        self, agent_data: AgentData
+    ) -> Union[ScoreWithOriginalTask, dict[str, Any]]:
+        """Score conversation coherence."""
+        return conversation_coherence_scorer(agent_data, self.model)
+
     def score_all(self, agent_data: AgentData) -> dict[
         str,
         Union[
@@ -1065,6 +1087,9 @@ class AgentScorers:
         # Score tool relevancy if applicable
         results["tool_relevancy"] = self.score_tool_relevancy(agent_data)
 
+        # Score tool correctness if applicable
+        results["tool_correctness"] = self.score_tool_correctness(agent_data)
+
         # Score parameter correctness if applicable
         results["parameter_correctness"] = self.score_parameter_correctness(agent_data)
 
@@ -1076,6 +1101,14 @@ class AgentScorers:
 
         # Score role adherence if applicable
         results["role_adherence"] = self.score_role_adherence(agent_data)
+
+        # Score goal achievement if applicable
+        results["goal_achievement"] = self.score_goal_achievement(agent_data)
+
+        # Score conversation coherence if applicable
+        results["conversation_coherence"] = self.score_conversation_coherence(
+            agent_data
+        )
 
         return results
 
