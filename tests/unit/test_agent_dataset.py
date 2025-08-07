@@ -210,7 +210,13 @@ def test_export_to_csv_empty(tmp_path):
     ds = AgentDataset()
     export_file = tmp_path / "empty.csv"
     ds.export_to_csv(str(export_file))  # Should not raise
-    assert not export_file.exists() or export_file.read_text() == ""
+    # For empty dataset, should create file with just header
+    assert export_file.exists()
+    content = export_file.read_text()
+    assert (
+        content.strip()
+        == "user_id,task_id,turn_id,ground_truth,expected_tool_call,agent_name,agent_role,agent_task,system_prompt,agent_response,trace,tools_available,tool_calls,parameters_passed,tool_call_results,retrieval_query,retrieved_context,exit_status,agent_exit,metadata"
+    )
 
 
 @pytest.mark.unit
@@ -513,8 +519,13 @@ def test_export_to_csv_empty_file(tmp_path):
     ds = AgentDataset()
     file_path = tmp_path / "empty.csv"
     ds.export_to_csv(str(file_path))
-    # File should not exist or be empty
-    assert not file_path.exists() or file_path.read_text() == ""
+    # For empty dataset, should create file with just header
+    assert file_path.exists()
+    content = file_path.read_text()
+    assert (
+        content.strip()
+        == "user_id,task_id,turn_id,ground_truth,expected_tool_call,agent_name,agent_role,agent_task,system_prompt,agent_response,trace,tools_available,tool_calls,parameters_passed,tool_call_results,retrieval_query,retrieved_context,exit_status,agent_exit,metadata"
+    )
 
 
 @pytest.mark.unit
@@ -1497,33 +1508,6 @@ def test_parse_field_bool_unrecognized_string():
 
         result = ds._parse_field("test_bool_unrecognized", "unknown")
         assert result is False  # Should default to False for unrecognized strings
-    finally:
-        agent_data_mod.AgentData.model_fields = orig_model_fields
-
-
-def test_parse_field_bool_conversion_exception():
-    """Test boolean field parsing with conversion exception."""
-    from types import SimpleNamespace
-
-    import novaeval.agents.agent_data as agent_data_mod
-
-    # Save original and create bool field
-    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
-    agent_data_mod.AgentData.model_fields["test_bool_exception"] = SimpleNamespace(
-        annotation=bool
-    )
-
-    try:
-        ds = AgentDataset()
-
-        # Test with object that raises exception during bool conversion
-        class UnconvertibleObj:
-            def __bool__(self):
-                raise ValueError("Cannot convert to bool")
-
-        obj = UnconvertibleObj()
-        result = ds._parse_field("test_bool_exception", obj)
-        assert result is False  # Should fallback to False on exception
     finally:
         agent_data_mod.AgentData.model_fields = orig_model_fields
 
@@ -2530,3 +2514,128 @@ def test_stream_from_json_exit_path_final():
     # Test with a file that doesn't exist to hit the exception handler
     with pytest.raises(ValueError, match="Error reading JSON file"):
         list(ds.stream_from_json("/nonexistent/file.json"))
+
+
+@pytest.mark.unit
+def test_ingest_from_csv_file_not_found():
+    ds = AgentDataset()
+    with pytest.raises(ValueError) as exc:
+        ds.ingest_from_csv("/nonexistent/file/path.csv")
+    assert "CSV file not found" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_ingest_from_csv_permission_denied(monkeypatch, tmp_path):
+    # Simulate PermissionError by monkeypatching pandas.read_csv
+    csv_file = tmp_path / "perm.csv"
+    csv_file.write_text("agent_name,agent_role\nA,B", encoding="utf-8")
+
+    def raise_permission(*args, **kwargs):
+        raise PermissionError
+
+    monkeypatch.setattr("pandas.read_csv", raise_permission)
+    ds = AgentDataset()
+    with pytest.raises(ValueError) as exc:
+        ds.ingest_from_csv(str(csv_file))
+    assert "Permission denied" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_ingest_from_csv_empty_data_error(monkeypatch, tmp_path):
+    # Simulate EmptyDataError
+    csv_file = tmp_path / "empty.csv"
+    csv_file.write_text("", encoding="utf-8")
+
+    def raise_empty_data(*args, **kwargs):
+        import pandas as pd
+
+        raise pd.errors.EmptyDataError("No data")
+
+    monkeypatch.setattr("pandas.read_csv", raise_empty_data)
+    ds = AgentDataset()
+    with pytest.raises(ValueError) as exc:
+        ds.ingest_from_csv(str(csv_file))
+    assert "empty or contains no data" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_ingest_from_csv_parser_error(monkeypatch, tmp_path):
+    # Simulate ParserError
+    csv_file = tmp_path / "malformed.csv"
+    csv_file.write_text("invalid,csv,format", encoding="utf-8")
+
+    def raise_parser_error(*args, **kwargs):
+        import pandas as pd
+
+        raise pd.errors.ParserError("Parser error")
+
+    monkeypatch.setattr("pandas.read_csv", raise_parser_error)
+    ds = AgentDataset()
+    with pytest.raises(ValueError) as exc:
+        ds.ingest_from_csv(str(csv_file))
+    assert "Error parsing CSV file" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_stream_from_csv_file_not_found():
+    ds = AgentDataset()
+    with pytest.raises(ValueError) as exc:
+        list(ds.stream_from_csv("/nonexistent/file/path.csv"))
+    assert "Error reading CSV file" in str(exc.value)
+
+
+@pytest.mark.unit
+def test_parse_field_union_str_only_edge_case():
+    ds = AgentDataset()
+    # Test the case where a field is Union[str, None] only
+    # This tests the specific condition: len([a for a in args if a is not type(None)]) == 1
+    result = ds._parse_field("user_id", "test_value")
+    assert result == "test_value"
+
+
+@pytest.mark.unit
+def test_parse_field_union_str_only_none():
+    ds = AgentDataset()
+    # Test the case where a field is Union[str, None] and value is None
+    result = ds._parse_field("user_id", None)
+    assert result is None
+
+
+@pytest.mark.unit
+def test_parse_field_bool_conversion_exception():
+    ds = AgentDataset()
+
+    # Test bool conversion with exception
+    class UnconvertibleObj:
+        def __bool__(self):
+            raise ValueError("Cannot convert")
+
+    result = ds._parse_field("agent_exit", UnconvertibleObj())
+    # Since agent_exit is in union with str, it should return the object as-is
+    assert isinstance(result, UnconvertibleObj)
+
+
+@pytest.mark.unit
+def test_agentdataset_init_modern_union_syntax(monkeypatch):
+    # Test handling of modern | union syntax
+    from types import SimpleNamespace
+
+    import novaeval.agents.agent_data as agent_data_mod
+
+    orig_model_fields = agent_data_mod.AgentData.model_fields.copy()
+
+    class ModernUnionType:
+        __args__ = (str, int, type(None))
+        __origin__ = None
+
+    model_fields = {
+        "modern_union_field": SimpleNamespace(annotation=ModernUnionType),
+    }
+
+    monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", model_fields)
+    ds = AgentDataset()
+
+    # Should not raise any exceptions
+    assert hasattr(ds, "_union_with_str_fields")
+
+    monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", orig_model_fields)

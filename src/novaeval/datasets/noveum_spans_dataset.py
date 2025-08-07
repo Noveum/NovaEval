@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from collections.abc import Iterator
 from typing import Optional
@@ -7,6 +8,9 @@ import pandas as pd
 
 from novaeval.agents.agent_data import AgentData
 from novaeval.datasets.agent_dataset import AgentDataset
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 
 def noveum_spans_preprocessing(
@@ -49,7 +53,7 @@ def noveum_spans_preprocessing(
     rows = []
 
     for json_file in json_files:
-        print(f"Processing {json_file}")
+        logger.info(f"Processing {json_file}")
 
         try:
             with open(json_file, encoding="utf-8") as f:
@@ -156,19 +160,19 @@ def noveum_spans_preprocessing(
                 rows.append(row)
 
         except json.JSONDecodeError as e:
-            print(f"Error parsing JSON file {json_file}: {e}")
+            logger.error(f"Error parsing JSON file {json_file}: {e}")
             continue
         except Exception as e:
-            print(f"Error processing file {json_file}: {e}")
+            logger.error(f"Error processing file {json_file}: {e}")
             continue
 
     # Convert to DataFrame and save
     if rows:
         df = pd.DataFrame(rows)
         df.to_csv(output_csv, index=False, encoding="utf-8", quoting=1)
-        print(f"Processed {len(rows)} spans and saved to {output_csv}")
+        logger.info(f"Processed {len(rows)} spans and saved to {output_csv}")
     else:
-        print("No spans found to process.")
+        logger.info("No spans found to process.")
 
 
 def _prepare_dataset_csv(csv_path: str) -> str:

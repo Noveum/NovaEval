@@ -586,6 +586,7 @@ def test_models_serialization():
 # Additional tests for missing coverage areas
 
 
+@pytest.mark.unit
 def test_tool_correctness_scorer_missing_expected_tool_call():
     """Test tool_correctness_scorer with missing expected_tool_call."""
     from novaeval.scorers.agent_scorers import tool_correctness_scorer
@@ -607,6 +608,7 @@ def test_tool_correctness_scorer_missing_expected_tool_call():
     assert "expected_tool_call" in result["missing_fields"]
 
 
+@pytest.mark.unit
 def test_tool_correctness_scorer_missing_tool_calls():
     """Test tool_correctness_scorer with missing tool_calls."""
     from novaeval.scorers.agent_scorers import tool_correctness_scorer
@@ -630,6 +632,7 @@ def test_tool_correctness_scorer_missing_tool_calls():
     assert "tool_calls" in result["missing_fields"]
 
 
+@pytest.mark.unit
 def test_tool_correctness_scorer_empty_tool_calls():
     """Test tool_correctness_scorer with empty tool_calls list."""
     from novaeval.scorers.agent_scorers import tool_correctness_scorer
@@ -654,6 +657,7 @@ def test_tool_correctness_scorer_empty_tool_calls():
     assert "tool_calls" in result["missing_fields"]
 
 
+@pytest.mark.unit
 def test_tool_correctness_scorer_single_tool_call():
     """Test tool_correctness_scorer with single tool call."""
     from novaeval.scorers.agent_scorers import tool_correctness_scorer
@@ -681,6 +685,7 @@ def test_tool_correctness_scorer_single_tool_call():
     assert result[0].reasoning == "Tool call is mostly correct"
 
 
+@pytest.mark.unit
 def test_tool_correctness_scorer_multiple_tool_calls():
     """Test tool_correctness_scorer with multiple tool calls."""
     from novaeval.scorers.agent_scorers import tool_correctness_scorer
@@ -708,6 +713,7 @@ def test_tool_correctness_scorer_multiple_tool_calls():
     assert all(score.score == 6.0 for score in result)
 
 
+@pytest.mark.unit
 def test_tool_correctness_scorer_exception_handling():
     """Test tool_correctness_scorer with exception handling."""
     from novaeval.scorers.agent_scorers import tool_correctness_scorer
@@ -761,6 +767,7 @@ def test_tool_correctness_scorer_exception_handling():
     assert "Failed to evaluate tool call" in result[0].reasoning
 
 
+@pytest.mark.unit
 def test_parameter_correctness_scorer_missing_fields():
     """Test parameter_correctness_scorer with missing required fields."""
     from novaeval.scorers.agent_scorers import parameter_correctness_scorer
@@ -781,6 +788,7 @@ def test_parameter_correctness_scorer_missing_fields():
     assert result["error"] == "Missing required fields"
 
 
+@pytest.mark.unit
 def test_parameter_correctness_scorer_success():
     """Test parameter_correctness_scorer with valid data."""
     from novaeval.scorers.agent_scorers import parameter_correctness_scorer
@@ -814,6 +822,7 @@ def test_parameter_correctness_scorer_success():
     assert result[0].reasoning == "Parameters are correct"
 
 
+@pytest.mark.unit
 def test_role_adherence_scorer_missing_fields():
     """Test role_adherence_scorer with missing required fields."""
     from novaeval.scorers.agent_scorers import role_adherence_scorer
@@ -834,6 +843,7 @@ def test_role_adherence_scorer_missing_fields():
     assert result["error"] == "Missing required fields"
 
 
+@pytest.mark.unit
 def test_role_adherence_scorer_success():
     """Test role_adherence_scorer with valid data."""
     from novaeval.scorers.agent_scorers import role_adherence_scorer
@@ -856,6 +866,7 @@ def test_role_adherence_scorer_success():
     assert result.reasoning == "Good role adherence"
 
 
+@pytest.mark.unit
 def test_task_progression_scorer_missing_fields():
     """Test task_progression_scorer with missing required fields."""
     from novaeval.scorers.agent_scorers import task_progression_scorer
@@ -876,6 +887,7 @@ def test_task_progression_scorer_missing_fields():
     assert result["error"] == "Missing required fields"
 
 
+@pytest.mark.unit
 def test_task_progression_scorer_success():
     """Test task_progression_scorer with valid data."""
     from novaeval.scorers.agent_scorers import task_progression_scorer
@@ -902,6 +914,7 @@ def test_task_progression_scorer_success():
     assert result.reasoning == "Making good progress"
 
 
+@pytest.mark.unit
 def test_context_relevancy_scorer_missing_fields():
     """Test context_relevancy_scorer with missing required fields."""
     from novaeval.scorers.agent_scorers import context_relevancy_scorer
@@ -922,6 +935,7 @@ def test_context_relevancy_scorer_missing_fields():
     assert result["error"] == "Missing required fields"
 
 
+@pytest.mark.unit
 def test_context_relevancy_scorer_success():
     """Test context_relevancy_scorer with valid data."""
     from novaeval.scorers.agent_scorers import context_relevancy_scorer
@@ -945,6 +959,7 @@ def test_context_relevancy_scorer_success():
     assert result.reasoning == "Context is relevant"
 
 
+@pytest.mark.unit
 def test_parse_score_with_reasoning_edge_cases():
     """Test parse_score_with_reasoning with various edge cases."""
     # Test with malformed JSON
@@ -978,6 +993,7 @@ def test_parse_score_with_reasoning_edge_cases():
     )
 
 
+@pytest.mark.unit
 def test_parse_score_with_original_task_edge_cases():
     """Test parse_score_with_original_task with various edge cases."""
     from novaeval.scorers.agent_scorers import parse_score_with_original_task
@@ -1006,6 +1022,7 @@ def test_parse_score_with_original_task_edge_cases():
     assert result.reasoning == "Good"
 
 
+@pytest.mark.unit
 def test_escape_json_for_format():
     """Test escape_json_for_format function."""
     # Test basic escaping
@@ -1021,6 +1038,7 @@ def test_escape_json_for_format():
     assert result == ""
 
 
+@pytest.mark.unit
 def test_agent_scorers_class_missing_fields():
     """Test AgentScorers methods with missing fields."""
     mock_model = MockLLMModel()
@@ -1043,6 +1061,7 @@ def test_agent_scorers_class_missing_fields():
     assert isinstance(result, dict) and "error" in result
 
 
+@pytest.mark.unit
 def test_agent_scorers_class_successful_scoring():
     """Test AgentScorers methods with complete data."""
     mock_model = MockLLMModel(
@@ -1087,6 +1106,7 @@ def test_agent_scorers_class_successful_scoring():
     assert isinstance(result, list)
 
 
+@pytest.mark.unit
 def test_single_score_response_validation():
     """Test SingleScoreResponse validation."""
     # Test valid creation
@@ -1095,6 +1115,7 @@ def test_single_score_response_validation():
     assert response.reasoning == "Good"
 
 
+@pytest.mark.unit
 def test_score_list_response_validation():
     """Test ScoreListResponse validation."""
     # Test valid creation

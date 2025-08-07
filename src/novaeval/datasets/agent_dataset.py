@@ -337,8 +337,6 @@ class AgentDataset:
         }
 
         try:
-            import pandas as pd
-
             # Process CSV in chunks to save memory
             chunk_size = 1000  # Adjust based on memory constraints
 
@@ -358,8 +356,16 @@ class AgentDataset:
                 # Clear chunk from memory
                 del chunk_df
 
+        except FileNotFoundError:
+            raise ValueError(f"CSV file not found: '{file_path}'")
+        except PermissionError:
+            raise ValueError(f"Permission denied when reading CSV file: '{file_path}'")
+        except pd.errors.EmptyDataError:
+            raise ValueError(f"CSV file '{file_path}' is empty or contains no data")
+        except pd.errors.ParserError as e:
+            raise ValueError(f"Error parsing CSV file '{file_path}': {e!s}")
         except Exception as e:
-            raise ValueError(f"Error reading CSV file '{file_path}': {e!s}")
+            raise ValueError(f"Unexpected error reading CSV file '{file_path}': {e!s}")
 
     def ingest_from_json(
         self,
@@ -432,8 +438,6 @@ class AgentDataset:
             self.data.append(AgentData(**data_kwargs))
 
     def export_to_csv(self, file_path: str) -> None:
-        if not self.data:
-            return
         with open(file_path, "w", encoding="utf-8", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=list(AgentData.model_fields.keys()))
             writer.writeheader()
