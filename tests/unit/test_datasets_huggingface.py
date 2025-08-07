@@ -176,25 +176,33 @@ class TestHuggingFaceDataset:
         assert len(loaded_data) == 3
 
     @patch("novaeval.datasets.huggingface.load_dataset")
-    @patch("novaeval.datasets.huggingface.random.seed")
-    @patch("novaeval.datasets.huggingface.random.shuffle")
-    def test_load_data_seeding_and_shuffling(
-        self, mock_shuffle, mock_seed, mock_load_dataset
-    ):
-        """Test that data is seeded and shuffled."""
-        mock_dataset = [
-            {"input": "Q1", "target": "A1"},
-            {"input": "Q2", "target": "A2"},
-        ]
+    def test_load_data_seeding_and_shuffling(self, mock_load_dataset):
+        """Test that data is shuffled deterministically with seed."""
+        mock_dataset = [{"input": f"Q{i}", "target": f"A{i}"} for i in range(10)]
         mock_load_dataset.return_value = mock_dataset
 
-        dataset = HuggingFaceDataset("test_dataset", seed=123)
-        dataset.load_data()
+        # Load data with same seed twice
+        dataset1 = HuggingFaceDataset("test_dataset", seed=123)
+        dataset2 = HuggingFaceDataset("test_dataset", seed=123)
 
-        # Verify seed was set
-        mock_seed.assert_called_once_with(123)
-        # Verify shuffle was called
-        mock_shuffle.assert_called_once()
+        data1 = dataset1.load_data()
+        data2 = dataset2.load_data()
+
+        # Verify deterministic shuffling - same seed should produce same order
+        assert len(data1) == len(data2) == 10
+        for i in range(10):
+            assert data1[i]["input"] == data2[i]["input"]
+            assert data1[i]["expected"] == data2[i]["expected"]
+
+        # Verify data with different seed produces different order
+        dataset3 = HuggingFaceDataset("test_dataset", seed=456)
+        data3 = dataset3.load_data()
+
+        # With different seed, at least some items should be in different positions
+        different_positions = sum(
+            1 for i in range(10) if data1[i]["input"] != data3[i]["input"]
+        )
+        assert different_positions > 0  # Should have some differences
 
     def test_convert_sample_valid(self):
         """Test converting a valid sample."""

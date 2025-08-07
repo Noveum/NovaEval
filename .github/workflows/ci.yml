@@ -34,7 +34,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-        pip install -e .
+        pip install -e .[api]
 
     - name: Lint with ruff
       run: |
@@ -96,7 +96,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-        pip install -e .
+        pip install -e .[api]
+
+    - name: Verify FastAPI installation
+      run: |
+        python -c "import fastapi; print(f'FastAPI version: {fastapi.__version__}')"
+        python -c "from fastapi.testclient import TestClient; print('FastAPI TestClient import successful')"
+        pip list | grep -E "(fastapi|starlette|pydantic)" || echo "Package listing completed"
 
     - name: Run unit tests
       run: |
@@ -104,6 +110,7 @@ jobs:
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
     - name: Upload coverage reports to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
@@ -162,7 +169,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-        pip install -e .
+        pip install -e .[api]
+
+    - name: Verify FastAPI installation
+      run: |
+        python -c "import fastapi; print(f'FastAPI version: {fastapi.__version__}')"
+        python -c "from fastapi.testclient import TestClient; print('FastAPI TestClient import successful')"
+        pip list | grep -E "(fastapi|starlette|pydantic)" || echo "Package listing completed"
 
     - name: Run full test suite (unit + integration)
       run: |
@@ -171,6 +184,7 @@ jobs:
         INTEGRATION_TESTS: "true"
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
     - name: Upload coverage reports to Codecov (main branch)
       uses: codecov/codecov-action@v5
@@ -227,16 +241,21 @@ jobs:
     - name: Build Docker image for testing
       run: |
         # Build image with test dependencies
-        docker build -t novaeval:test --build-arg INSTALL_DEV=true .
+        docker build -t novaeval:test --build-arg INSTALL_DEV=true . --progress=plain
 
     - name: Test Docker image CLI
       run: |
         docker run --rm novaeval:test novaeval --version
 
+    - name: Verify FastAPI is installed
+      run: |
+        docker run --rm novaeval:test python -c "import fastapi; print(f'FastAPI version: {fastapi.__version__}')"
+
     - name: Run tests inside Docker
       run: |
         docker run --rm \
-          -e OPENAI_API_KEY=test_key \
-          -e ANTHROPIC_API_KEY=test_key \
+          -e OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
+          -e ANTHROPIC_API_KEY="${{ secrets.ANTHROPIC_API_KEY }}" \
+          -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
           novaeval:test \
           python -m pytest tests/ -v --tb=short --junitxml=junit.xml -o junit_family=legacy
