@@ -12,15 +12,13 @@ import pandas as pd
 from tqdm import tqdm
 
 from novaeval.datasets.agent_dataset import AgentDataset
-from novaeval.evaluators.base import BaseEvaluator
 from novaeval.models.base import BaseModel
-from novaeval.scorers.base import BaseScorer
 from novaeval.utils.logging import setup_logging
 
 logger = logging.getLogger(__name__)
 
 
-class AgentEvaluator(BaseEvaluator):
+class AgentEvaluator:
     """
     Evaluator for agent evaluation tasks.
 
@@ -44,41 +42,24 @@ class AgentEvaluator(BaseEvaluator):
         Args:
             agent_dataset: The agent dataset to evaluate on
             models: List of models to evaluate
-            agent_scorers: List of agent scorers to use for evaluation
+            scoring_functions: List of scoring functions to use for evaluation
             output_dir: Directory to save results
-            config: Additional configuration options (placeholder)
+            config: Additional configuration options
             stream: Whether to use streaming mode
             include_reasoning: Whether to include reasoning in results
         """
-        # Convert agent_dataset to BaseDataset for compatibility
-        # We'll store the original agent_dataset separately
         self.agent_dataset = agent_dataset
+        self.models = models
         self.scoring_functions = scoring_functions
         self.stream = stream
         self.include_reasoning = include_reasoning
+        self.config = config or {}
 
-        # Initialize with empty dataset for base class compatibility
-        # We'll use agent_dataset directly in our methods
-        from novaeval.datasets.base import BaseDataset
-
-        # Create a dummy dataset for base class compatibility
-        class DummyDataset(BaseDataset):
-            def __init__(self) -> None:
-                pass
-
-            def get_data(self) -> list:
-                return []
-
-            def load_data(self) -> list[dict[str, Any]]:
-                return []
-
-        super().__init__(
-            dataset=DummyDataset(),
-            models=models,
-            scorers=[],  # We'll use scoring_functions instead
-            output_dir=output_dir,
-            config=config or {},
-        )
+        # Set output directory
+        if output_dir is None:
+            self.output_dir = Path("results")
+        else:
+            self.output_dir = Path(output_dir)
 
         # Ensure output directory exists
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -158,7 +139,7 @@ class AgentEvaluator(BaseEvaluator):
             if not model:
                 logger.error("No model available for evaluation")
                 continue
-            sample_result = self.evaluate_sample(sample, model, [])
+            sample_result = self.evaluate_sample(sample, model)
 
             # Add result to DataFrame
             self._add_result_to_dataframe(sample_result)
@@ -313,7 +294,7 @@ class AgentEvaluator(BaseEvaluator):
             logger.error(f"Failed to run {aggregation_type} aggregation: {e}")
 
     def evaluate_sample(
-        self, sample: dict[str, Any], model: BaseModel, scorers: list[BaseScorer]
+        self, sample: dict[str, Any], model: BaseModel
     ) -> dict[str, Any]:
         """
         Evaluate a single sample using all scoring functions.
@@ -321,7 +302,6 @@ class AgentEvaluator(BaseEvaluator):
         Args:
             sample: The sample to evaluate
             model: The model to use for evaluation
-            scorers: List of scorers to apply
 
         Returns:
             Dictionary containing evaluation results
@@ -508,15 +488,3 @@ class AgentEvaluator(BaseEvaluator):
         for col in self.results_df.columns:
             if self.results_df[col].dtype == "object":
                 self.results_df[col] = self.results_df[col].astype(str)
-
-    def run(self) -> dict[str, Any]:
-        """
-        Run the evaluation.
-
-        Returns:
-            Dictionary containing evaluation results
-        """
-        # This method is required by the base class but not used in agent evaluation
-        # We use run_all() instead for agent evaluation
-        logger.warning("run() method called on AgentEvaluator. Use run_all() instead.")
-        return {"status": "not_implemented", "message": "Use run_all() method instead"}

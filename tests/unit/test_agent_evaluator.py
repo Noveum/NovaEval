@@ -5,10 +5,13 @@ Tests for the AgentEvaluator class.
 from unittest.mock import Mock, patch
 
 import pandas as pd
+import pytest
 
 from novaeval.datasets.agent_dataset import AgentDataset
 from novaeval.evaluators.agent_evaluator import AgentEvaluator
 from novaeval.models.base import BaseModel
+
+pytestmark = pytest.mark.unit
 
 
 class TestAgentEvaluator:
@@ -152,7 +155,7 @@ class TestAgentEvaluator:
         sample.agent_name = "agent1"
 
         # Evaluate sample
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Verify result structure
         assert result["user_id"] == "user1"
@@ -293,33 +296,6 @@ class TestAgentEvaluator:
         csv_file = tmp_path / "agent_evaluation_results.csv"
         assert csv_file.exists()
 
-    def test_run_method(self, tmp_path):
-        """Test the run method."""
-        agent_dataset = Mock(spec=AgentDataset)
-        agent_dataset.get_datapoint.return_value = []  # Empty dataset
-
-        models = [Mock(spec=BaseModel)]
-
-        def mock_scorer(sample, model):
-            return Mock()
-
-        scoring_functions = [mock_scorer]
-
-        evaluator = AgentEvaluator(
-            agent_dataset=agent_dataset,
-            models=models,
-            scoring_functions=scoring_functions,
-            output_dir=tmp_path,
-        )
-
-        # Run evaluation
-        result = evaluator.run()
-
-        # Verify result structure
-        assert "status" in result
-        assert result["status"] == "not_implemented"
-        assert "message" in result
-
     def test_run_all_with_samples(self, tmp_path):
         """Test run_all with actual samples."""
         agent_dataset = Mock(spec=AgentDataset)
@@ -437,7 +413,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, None, [])
+        result = evaluator.evaluate_sample(sample, None)
 
         # Should return early with empty scores
         assert result["user_id"] == "user1"
@@ -472,7 +448,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         assert result["scores"]["mock"] == 0.8
         assert result["reasoning"]["mock"] == "Good"
@@ -501,7 +477,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         assert result["scores"]["mock"] == 0.0
         assert "Error: Something went wrong" in result["reasoning"]["mock"]
@@ -530,7 +506,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         assert result["scores"]["mock"] == 0.9
         assert result["reasoning"]["mock"] == "Excellent work"
@@ -558,7 +534,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         assert result["scores"]["mock"] == 0.75
 
@@ -585,7 +561,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         assert result["scores"]["mock"] == 0.0
 
@@ -613,7 +589,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         assert result["scores"]["mock"] == 0.0
         assert "Error: Scorer failed" in result["reasoning"]["mock"]
@@ -749,7 +725,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should fall through to the else case and set score to 0.0
         assert result["scores"]["mock"] == 0.0
@@ -778,7 +754,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         assert result["scores"]["mock"] == 0.0
 
@@ -805,7 +781,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         assert result["scores"]["mock"] == 0.0
 
@@ -979,7 +955,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should have score but no reasoning
         assert result["scores"]["mock"] == 0.8
@@ -1013,7 +989,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should have score but no reasoning
         assert result["scores"]["mock"] == 0.8
@@ -1043,7 +1019,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should have score but no reasoning since dict didn't have reasoning key
         assert result["scores"]["mock"] == 0.9
@@ -1165,7 +1141,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should have score and reasoning
         assert result["scores"]["mock"] == 0.0
@@ -1234,7 +1210,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should catch the exception and set score to 0.0 and reasoning to error message
         assert result["scores"]["mock"] == 0.0
@@ -1504,7 +1480,7 @@ class TestAgentEvaluator:
             "reasoning": "not_a_dict",
         }
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should convert to empty dicts
         assert isinstance(result["scores"], dict)
@@ -1533,7 +1509,7 @@ class TestAgentEvaluator:
         sample.turn_id = "turn1"
         sample.agent_name = "agent1"
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # The exception is caught in the inner try-catch, not the outer one
         # So it should have scores and reasoning with error messages
@@ -1716,7 +1692,7 @@ class TestAgentEvaluator:
         # Manually set the sample_result to trigger the conversion logic
         evaluator.sample_result = sample_result
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should convert to empty dicts
         assert isinstance(result["scores"], dict)
@@ -1913,7 +1889,7 @@ class TestAgentEvaluator:
         # Manually set the sample_result to trigger the conversion logic
         evaluator.sample_result = sample_result
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should convert to empty dicts
         assert isinstance(result["scores"], dict)
@@ -2064,7 +2040,7 @@ class TestAgentEvaluator:
 
         evaluator.scoring_functions = [failing_scorer]
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should handle the exception gracefully
         assert "scores" in result
@@ -2265,7 +2241,7 @@ class TestAgentEvaluator:
 
         evaluator.scoring_functions = [complex_scorer]
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should handle the complex object properly
         assert "scores" in result
@@ -2425,7 +2401,7 @@ class TestAgentEvaluator:
 
         # Run multiple evaluations to cover different code paths
         for _ in range(10):
-            result = evaluator.evaluate_sample(sample, models[0], [])
+            result = evaluator.evaluate_sample(sample, models[0])
             assert "scores" in result
             assert "reasoning" in result
 
@@ -2517,7 +2493,7 @@ class TestAgentEvaluator:
                 "reasoning": reasoning_val,
             }
 
-            result = evaluator.evaluate_sample(sample, models[0], [])
+            result = evaluator.evaluate_sample(sample, models[0])
 
             # Should convert to empty dicts
             assert isinstance(result["scores"], dict)
@@ -2690,34 +2666,6 @@ class TestAgentEvaluator:
 
             # Should catch all exceptions and log errors
 
-    def test_dummy_dataset_methods(self, tmp_path):
-        """Test DummyDataset methods to cover lines 70, 73."""
-        agent_dataset = Mock(spec=AgentDataset)
-        models = [Mock(spec=BaseModel)]
-
-        def mock_scorer(sample, model):
-            return Mock()
-
-        scoring_functions = [mock_scorer]
-
-        evaluator = AgentEvaluator(
-            agent_dataset=agent_dataset,
-            models=models,
-            scoring_functions=scoring_functions,
-            output_dir=tmp_path,
-        )
-
-        # Access the DummyDataset instance created during initialization
-        dummy_dataset = evaluator.dataset
-
-        # Test get_data method (line 70)
-        data = dummy_dataset.get_data()
-        assert data == []
-
-        # Test load_data method (line 73)
-        loaded_data = dummy_dataset.load_data()
-        assert loaded_data == []
-
     def test_evaluate_sample_with_non_dict_scores_reasoning_initialization_comprehensive(
         self, tmp_path
     ):
@@ -2759,7 +2707,7 @@ class TestAgentEvaluator:
                 "reasoning": reasoning_val,
             }
 
-            result = evaluator.evaluate_sample(sample, models[0], [])
+            result = evaluator.evaluate_sample(sample, models[0])
 
             # Should convert to empty dicts
             assert isinstance(result["scores"], dict)
@@ -2796,7 +2744,7 @@ class TestAgentEvaluator:
 
         evaluator.scoring_functions = [exception_scorer]
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should handle the exception gracefully
         assert "scores" in result
@@ -2815,7 +2763,7 @@ class TestAgentEvaluator:
 
         evaluator.scoring_functions = [type_error_scorer]
 
-        result = evaluator.evaluate_sample(sample, models[0], [])
+        result = evaluator.evaluate_sample(sample, models[0])
 
         # Should handle the exception gracefully
         assert any(score == 0.0 for score in result["scores"].values())

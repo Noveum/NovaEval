@@ -7,6 +7,8 @@ grouping criteria (task, user, agent) with streaming support for memory efficien
 
 import json
 import logging
+import os
+import tempfile
 from pathlib import Path
 from typing import Callable, Optional, Union
 
@@ -199,20 +201,40 @@ def _aggregate_by_task_streaming(
             task_scores_json: dict[str, list[float]] = {}
 
             with open(input_file) as f:
-                if f.read(1) == "[":
-                    # JSON array format
-                    f.seek(0)
-                    for chunk in pd.read_json(input_file, chunksize=chunk_size):
-                        for _, row in chunk.iterrows():
-                            task_id = row.get("task_id", "unknown")
-                            score = row.get(scorer_col)
-                            if pd.notna(score) and score is not None:
-                                if task_id not in task_scores_json:
-                                    task_scores_json[task_id] = []
-                                task_scores_json[task_id].append(float(score))
+                first_char = f.read(1)
+                f.seek(0)
+
+                if first_char == "[":
+                    # JSON array format - convert to JSONL for streaming
+
+                    # Read the JSON array
+                    data = json.load(f)
+
+                    # Create a temporary JSONL file
+                    with tempfile.NamedTemporaryFile(
+                        mode="w", suffix=".jsonl", delete=False
+                    ) as temp_file:
+                        for item in data:
+                            temp_file.write(json.dumps(item) + "\n")
+                        temp_file_path = temp_file.name
+
+                    try:
+                        # Process the temporary JSONL file
+                        for chunk in pd.read_json(
+                            temp_file_path, lines=True, chunksize=chunk_size
+                        ):
+                            for _, row in chunk.iterrows():
+                                task_id = row.get("task_id", "unknown")
+                                score = row.get(scorer_col)
+                                if pd.notna(score) and score is not None:
+                                    if task_id not in task_scores_json:
+                                        task_scores_json[task_id] = []
+                                    task_scores_json[task_id].append(float(score))
+                    finally:
+                        # Clean up temporary file
+                        os.unlink(temp_file_path)
                 else:
                     # JSONL format
-                    f.seek(0)
                     for chunk in pd.read_json(
                         input_file, lines=True, chunksize=chunk_size
                     ):
@@ -371,20 +393,40 @@ def _aggregate_by_user_streaming(
             user_scores_json: dict[str, list[float]] = {}
 
             with open(input_file) as f:
-                if f.read(1) == "[":
-                    # JSON array format
-                    f.seek(0)
-                    for chunk in pd.read_json(input_file, chunksize=chunk_size):
-                        for _, row in chunk.iterrows():
-                            user_id = row.get("user_id", "unknown")
-                            score = row.get(scorer_col)
-                            if pd.notna(score) and score is not None:
-                                if user_id not in user_scores_json:
-                                    user_scores_json[user_id] = []
-                                user_scores_json[user_id].append(float(score))
+                first_char = f.read(1)
+                f.seek(0)
+
+                if first_char == "[":
+                    # JSON array format - convert to JSONL for streaming
+
+                    # Read the JSON array
+                    data = json.load(f)
+
+                    # Create a temporary JSONL file
+                    with tempfile.NamedTemporaryFile(
+                        mode="w", suffix=".jsonl", delete=False
+                    ) as temp_file:
+                        for item in data:
+                            temp_file.write(json.dumps(item) + "\n")
+                        temp_file_path = temp_file.name
+
+                    try:
+                        # Process the temporary JSONL file
+                        for chunk in pd.read_json(
+                            temp_file_path, lines=True, chunksize=chunk_size
+                        ):
+                            for _, row in chunk.iterrows():
+                                user_id = row.get("user_id", "unknown")
+                                score = row.get(scorer_col)
+                                if pd.notna(score) and score is not None:
+                                    if user_id not in user_scores_json:
+                                        user_scores_json[user_id] = []
+                                    user_scores_json[user_id].append(float(score))
+                    finally:
+                        # Clean up temporary file
+                        os.unlink(temp_file_path)
                 else:
                     # JSONL format
-                    f.seek(0)
                     for chunk in pd.read_json(
                         input_file, lines=True, chunksize=chunk_size
                     ):
@@ -542,20 +584,40 @@ def _aggregate_by_agent_streaming(
             agent_scores_json: dict[str, list[float]] = {}
 
             with open(input_file) as f:
-                if f.read(1) == "[":
-                    # JSON array format
-                    f.seek(0)
-                    for chunk in pd.read_json(input_file, chunksize=chunk_size):
-                        for _, row in chunk.iterrows():
-                            agent_name = row.get("agent_name", "unknown")
-                            score = row.get(scorer_col)
-                            if pd.notna(score) and score is not None:
-                                if agent_name not in agent_scores_json:
-                                    agent_scores_json[agent_name] = []
-                                agent_scores_json[agent_name].append(float(score))
+                first_char = f.read(1)
+                f.seek(0)
+
+                if first_char == "[":
+                    # JSON array format - convert to JSONL for streaming
+
+                    # Read the JSON array
+                    data = json.load(f)
+
+                    # Create a temporary JSONL file
+                    with tempfile.NamedTemporaryFile(
+                        mode="w", suffix=".jsonl", delete=False
+                    ) as temp_file:
+                        for item in data:
+                            temp_file.write(json.dumps(item) + "\n")
+                        temp_file_path = temp_file.name
+
+                    try:
+                        # Process the temporary JSONL file
+                        for chunk in pd.read_json(
+                            temp_file_path, lines=True, chunksize=chunk_size
+                        ):
+                            for _, row in chunk.iterrows():
+                                agent_name = row.get("agent_name", "unknown")
+                                score = row.get(scorer_col)
+                                if pd.notna(score) and score is not None:
+                                    if agent_name not in agent_scores_json:
+                                        agent_scores_json[agent_name] = []
+                                    agent_scores_json[agent_name].append(float(score))
+                    finally:
+                        # Clean up temporary file
+                        os.unlink(temp_file_path)
                 else:
                     # JSONL format
-                    f.seek(0)
                     for chunk in pd.read_json(
                         input_file, lines=True, chunksize=chunk_size
                     ):

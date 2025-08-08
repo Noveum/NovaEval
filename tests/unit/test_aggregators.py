@@ -20,6 +20,8 @@ from novaeval.evaluators.aggregators import (
     mean_callable,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestAggregators:
     """Test cases for aggregators module."""

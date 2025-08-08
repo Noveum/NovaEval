@@ -102,14 +102,14 @@ def main():
         include_reasoning=True,  # Set to False to exclude reasoning
         config={
             "log_level": "INFO",
-            "save_every": 5,  # Save results every 50 samples
+            "save_every": 5,  # Save results every 5 samples
         },
     )
 
     # Run the evaluation
     print("Starting agent evaluation...")
     evaluator.run_all(
-        save_every=5, file_type="csv"  # Save every 50 samples  # or "json"
+        save_every=5, file_type="csv"  # Save every 5 samples  # or "json"
     )
 
     print(f"Evaluation completed! Results saved to {output_dir}")
@@ -117,7 +117,7 @@ def main():
     # You can also run individual samples
     print("\nExample of evaluating a single sample:")
     sample = next(agent_dataset.get_datapoint())
-    sample_result = evaluator.evaluate_sample(sample, model, [])
+    sample_result = evaluator.evaluate_sample(sample, model)
     print(f"Sample result: {sample_result}")
 
 
