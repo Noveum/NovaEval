@@ -18,6 +18,7 @@ from sentence_transformers import SentenceTransformer
 
 from novaeval.models.base import BaseModel as LLMModel
 from novaeval.scorers.base import BaseScorer, ScoreResult
+from novaeval.utils.parsing import parse_claims
 
 
 class AnswerRelevancyScorer(BaseScorer):
@@ -35,10 +36,33 @@ class AnswerRelevancyScorer(BaseScorer):
         embedding_model: str = "all-MiniLM-L6-v2",
         **kwargs: Any,
     ) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name="AnswerRelevancyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
         self.embedding_model = SentenceTransformer(embedding_model)
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
 
     async def evaluate(
         self,
@@ -78,7 +102,8 @@ class AnswerRelevancyScorer(BaseScorer):
                     metadata={"error": "question_generation_failed"},
                 )
 
-            # Calculate semantic similarity between original question and generated questions
+            # Calculate semantic similarity between original question and generated
+            # questions
             original_embedding = self.embedding_model.encode([input_text])
             generated_embeddings = self.embedding_model.encode(generated_questions)
 
@@ -124,29 +149,6 @@ class AnswerRelevancyScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    def score(
-        self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
-        """Synchronous wrapper for the async evaluate method."""
-        import asyncio
-
-        # Extract context from dict if available
-        context_text = context.get("context") if context else None
-
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
-                output_text=prediction,
-                context=context_text,
-            )
-        )
-
-        return result.score
-
     def _parse_questions(self, response: str) -> list[str]:
         """Parse generated questions from LLM response."""
         questions = []
@@ -179,9 +181,32 @@ class FaithfulnessScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, threshold: float = 0.8, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name="FaithfulnessScorer", **kwargs)
         self.threshold = threshold
         self.model = model
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
 
     async def evaluate(
         self,
@@ -259,7 +284,10 @@ class FaithfulnessScorer(BaseScorer):
 
             # Score calculation: full points for supported, half points for partial
             total_claims = len(claims)
-            faithfulness_score = (supported_count + 0.5 * partial_count) / total_claims
+            partial_weight = 0.5  # Configurable weight for partial support
+            faithfulness_score = (
+                supported_count + partial_weight * partial_count
+            ) / total_claims
 
             reasoning = f"""
             Faithfulness Analysis:
@@ -294,6 +322,24 @@ class FaithfulnessScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
+    def _parse_claims(self, response: str) -> list[str]:
+        """Parse claims from LLM response."""
+        return parse_claims(response)
+
+
+class ContextualPrecisionScorer(BaseScorer):
+    """
+    Evaluates the precision of the retrieved context.
+
+    This metric measures whether the retrieved context contains relevant
+    information for answering the question.
+    """
+
+    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
+        super().__init__(name="ContextualPrecisionScorer", **kwargs)
+        self.threshold = threshold
+        self.model = model
+
     def score(
         self,
         prediction: str,
@@ -316,55 +362,6 @@ class FaithfulnessScorer(BaseScorer):
         )
 
         return result.score
-
-    def _parse_claims(self, response: str) -> list[str]:
-        """Parse claims from LLM response."""
-        claims = []
-        lines = response.strip().split("\n")
-
-        for line in lines:
-            line = line.strip()
-            if line and (
-                line[0].isdigit() or line.startswith("-") or line.startswith("*")
-            ):
-                # Remove numbering and bullet points
-                claim = line
-                for prefix in [
-                    "1.",
-                    "2.",
-                    "3.",
-                    "4.",
-                    "5.",
-                    "6.",
-                    "7.",
-                    "8.",
-                    "9.",
-                    "10.",
-                    "-",
-                    "*",
-                ]:
-                    if claim.startswith(prefix):
-                        claim = claim[len(prefix) :].strip()
-                        break
-
-                if claim:
-                    claims.append(claim)
-
-        return claims
-
-
-class ContextualPrecisionScorer(BaseScorer):
-    """
-    Evaluates the precision of the retrieved context.
-
-    This metric measures whether the retrieved context contains relevant
-    information for answering the question.
-    """
-
-    def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.threshold = threshold
-        self.model = model
 
     async def evaluate(
         self,
@@ -454,29 +451,6 @@ class ContextualPrecisionScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    def score(
-        self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
-        """Synchronous wrapper for the async evaluate method."""
-        import asyncio
-
-        # Extract context from dict if available
-        context_text = context.get("context") if context else None
-
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
-                output_text=prediction,
-                context=context_text,
-            )
-        )
-
-        return result.score
-
     def _split_context(self, context: str) -> list[str]:
         """Split context into chunks for evaluation."""
         # Simple splitting by double newlines or sentences
@@ -526,9 +500,34 @@ class ContextualRecallScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name="ContextualRecallScorer", **kwargs)
         self.threshold = threshold
         self.model = model
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context and expected_output from dict if available
+        context_text = context.get("context") if context else None
+        expected_output = context.get("expected_output") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                expected_output=expected_output,
+                context=context_text,
+            )
+        )
+
+        return result.score
 
     async def evaluate(
         self,
@@ -605,7 +604,8 @@ class ContextualRecallScorer(BaseScorer):
                     partial_count += 1
 
             total_info = len(key_information)
-            recall_score = (present_count + 0.5 * partial_count) / total_info
+            partial_weight = 0.5  # Configurable weight for partial presence
+            recall_score = (present_count + partial_weight * partial_count) / total_info
 
             reasoning = f"""
             Contextual Recall Analysis:
@@ -640,6 +640,45 @@ class ContextualRecallScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
+    def _parse_claims(self, response: str) -> list[str]:
+        """Parse claims/information from LLM response."""
+        return parse_claims(response)
+
+
+class RAGASScorer(BaseScorer):
+    """
+    Composite RAGAS (Retrieval-Augmented Generation Assessment) scorer.
+
+    Combines multiple RAG metrics into a single comprehensive score.
+    """
+
+    def __init__(
+        self,
+        model: LLMModel,
+        threshold: float = 0.7,
+        weights: Optional[dict[str, float]] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(name="RAGASScorer", **kwargs)
+        self.threshold = threshold
+        self.model = model
+
+        # Default weights for different metrics
+        self.weights = weights or {
+            "answer_relevancy": 0.25,
+            "faithfulness": 0.35,
+            "contextual_precision": 0.2,
+            "contextual_recall": 0.2,
+        }
+
+        # Initialize individual scorers
+        self.answer_relevancy_scorer = AnswerRelevancyScorer(model, threshold=0.7)
+        self.faithfulness_scorer = FaithfulnessScorer(model, threshold=0.8)
+        self.contextual_precision_scorer = ContextualPrecisionScorer(
+            model, threshold=0.7
+        )
+        self.contextual_recall_scorer = ContextualRecallScorer(model, threshold=0.7)
+
     def score(
         self,
         prediction: str,
@@ -664,76 +703,6 @@ class ContextualRecallScorer(BaseScorer):
         )
 
         return result.score
-
-    def _parse_claims(self, response: str) -> list[str]:
-        """Parse claims/information from LLM response."""
-        claims = []
-        lines = response.strip().split("\n")
-
-        for line in lines:
-            line = line.strip()
-            if line and (
-                line[0].isdigit() or line.startswith("-") or line.startswith("*")
-            ):
-                # Remove numbering and bullet points
-                claim = line
-                for prefix in [
-                    "1.",
-                    "2.",
-                    "3.",
-                    "4.",
-                    "5.",
-                    "6.",
-                    "7.",
-                    "8.",
-                    "9.",
-                    "10.",
-                    "-",
-                    "*",
-                ]:
-                    if claim.startswith(prefix):
-                        claim = claim[len(prefix) :].strip()
-                        break
-
-                if claim:
-                    claims.append(claim)
-
-        return claims
-
-
-class RAGASScorer(BaseScorer):
-    """
-    Composite RAGAS (Retrieval-Augmented Generation Assessment) scorer.
-
-    Combines multiple RAG metrics into a single comprehensive score.
-    """
-
-    def __init__(
-        self,
-        model: LLMModel,
-        threshold: float = 0.7,
-        weights: Optional[dict[str, float]] = None,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(**kwargs)
-        self.threshold = threshold
-        self.model = model
-
-        # Default weights for different metrics
-        self.weights = weights or {
-            "answer_relevancy": 0.25,
-            "faithfulness": 0.35,
-            "contextual_precision": 0.2,
-            "contextual_recall": 0.2,
-        }
-
-        # Initialize individual scorers
-        self.answer_relevancy_scorer = AnswerRelevancyScorer(model, threshold=0.7)
-        self.faithfulness_scorer = FaithfulnessScorer(model, threshold=0.8)
-        self.contextual_precision_scorer = ContextualPrecisionScorer(
-            model, threshold=0.7
-        )
-        self.contextual_recall_scorer = ContextualRecallScorer(model, threshold=0.7)
 
     async def evaluate(
         self,
