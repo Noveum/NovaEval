@@ -24,14 +24,16 @@ class ToolResult(BaseModel):
 
 
 class AgentData(BaseModel):
-    user_id: Optional[str] = None # unique to each user (each project from a user gets a diff id)
-    task_id: Optional[str] = None # unique to each trace
-    turn_id: Optional[str] = None # unique to each span/turn
+    user_id: Optional[str] = (
+        None  # unique to each user (each project from a user gets a diff id)
+    )
+    task_id: Optional[str] = None  # unique to each trace
+    turn_id: Optional[str] = None  # unique to each span/turn
 
     ground_truth: Optional[str] = None
     expected_tool_call: Optional[Union[ToolCall, str]] = None
 
-    agent_name: Optional[str] = None # unique to each agent (for the same user)
+    agent_name: Optional[str] = None  # unique to each agent (for the same user)
     agent_role: Optional[str] = None
     agent_task: Optional[str] = None  # has the current input.
 

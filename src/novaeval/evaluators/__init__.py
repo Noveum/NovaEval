@@ -15,11 +15,11 @@ from novaeval.evaluators.base import BaseEvaluator
 from novaeval.evaluators.standard import Evaluator
 
 __all__ = [
-    "BaseEvaluator", 
-    "Evaluator", 
     "AgentEvaluator",
-    "aggregate_by_task",
-    "aggregate_by_user", 
+    "BaseEvaluator",
+    "Evaluator",
     "aggregate_by_agent_name",
+    "aggregate_by_task",
+    "aggregate_by_user",
     "mean_callable",
 ]
