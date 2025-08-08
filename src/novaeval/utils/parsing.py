@@ -26,18 +26,18 @@ def parse_claims(text: str) -> list[str]:
             claim = line
             for prefix in [
                 "1.",
-                    "2.",
-                    "3.",
-                    "4.",
-                    "5.",
-                    "6.",
-                    "7.",
-                    "8.",
-                    "9.",
-                    "10.",
-                    "-",
-                    "*",
-                    ]:
+                "2.",
+                "3.",
+                "4.",
+                "5.",
+                "6.",
+                "7.",
+                "8.",
+                "9.",
+                "10.",
+                "-",
+                "*",
+            ]:
                 if claim.startswith(prefix):
                     claim = claim[len(prefix) :].strip()
                     break

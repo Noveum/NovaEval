@@ -47,7 +47,6 @@ class JudgeConfig(BaseModel):
     )
 
     @validator("weight")
-
     def validate_weight(cls, v: float) -> float:
         if v < 0.0:
             raise ValueError("Judge weight must be non-negative")
@@ -82,15 +81,15 @@ class PanelOfJudgesScorer(BaseScorer):
 
     def __init__(
         self,
-            judges: list[JudgeConfig],
-            aggregation_method: AggregationMethod = AggregationMethod.WEIGHTED_MEAN,
-            threshold: float = 0.7,
-            require_consensus: bool = False,
-            consensus_threshold: float = 0.8,
-            evaluation_criteria: Optional[str] = None,
-            name: str = "panel_judge",
-            **kwargs: Any,
-            ) -> None:
+        judges: list[JudgeConfig],
+        aggregation_method: AggregationMethod = AggregationMethod.WEIGHTED_MEAN,
+        threshold: float = 0.7,
+        require_consensus: bool = False,
+        consensus_threshold: float = 0.8,
+        evaluation_criteria: Optional[str] = None,
+        name: str = "panel_judge",
+        **kwargs: Any,
+    ) -> None:
         super().__init__(name=name, **kwargs)
         self.threshold = threshold
 
@@ -114,12 +113,12 @@ class PanelOfJudgesScorer(BaseScorer):
 
     async def evaluate(
         self,
-            input_text: str,
-            output_text: str,
-            expected_output: Optional[str] = None,
-            context: Optional[str] = None,
-            **kwargs: Any,
-            ) -> ScoreResult:
+        input_text: str,
+        output_text: str,
+        expected_output: Optional[str] = None,
+        context: Optional[str] = None,
+        **kwargs: Any,
+    ) -> ScoreResult:
         """Evaluate using a panel of LLM judges."""
 
         try:
@@ -158,10 +157,10 @@ class PanelOfJudgesScorer(BaseScorer):
             if not valid_results:
                 return ScoreResult(
                     score=0.0,
-                        passed=False,
-                        reasoning="All judges failed to evaluate",
-                        metadata={"failed_judges": failed_judges},
-                        )
+                    passed=False,
+                    reasoning="All judges failed to evaluate",
+                    metadata={"failed_judges": failed_judges},
+                )
 
             # Extract scores and reasonings
             individual_scores = [
@@ -186,14 +185,14 @@ class PanelOfJudgesScorer(BaseScorer):
             if self.require_consensus and consensus_level < self.consensus_threshold:
                 return ScoreResult(
                     score=0.0,
-                        passed=False,
-                        reasoning=f"Insufficient consensus among judges (consensus: {consensus_level:.3f}, required: {self.consensus_threshold})",
-                        metadata={
+                    passed=False,
+                    reasoning=f"Insufficient consensus among judges (consensus: {consensus_level:.3f}, required: {self.consensus_threshold})",
+                    metadata={
                         "individual_scores": individual_scores,
-                            "consensus_level": consensus_level,
-                            "failed_consensus": True,
-                            },
-                        )
+                        "consensus_level": consensus_level,
+                        "failed_consensus": True,
+                    },
+                )
 
             # Aggregate scores
             aggregated_score = self._aggregate_scores(
@@ -203,42 +202,42 @@ class PanelOfJudgesScorer(BaseScorer):
             # Create panel result
             panel_result = PanelResult(
                 individual_scores=individual_scores,
-                    individual_reasonings=individual_reasonings,
-                    judge_names=judge_names,
-                    aggregated_score=aggregated_score,
-                    aggregation_method=self.aggregation_method,
-                    consensus_level=consensus_level,
-                    metadata={
+                individual_reasonings=individual_reasonings,
+                judge_names=judge_names,
+                aggregated_score=aggregated_score,
+                aggregation_method=self.aggregation_method,
+                consensus_level=consensus_level,
+                metadata={
                     "failed_judges": failed_judges,
-                        "judge_weights": judge_weights,
-                        },
-                    )
+                    "judge_weights": judge_weights,
+                },
+            )
 
             # Generate comprehensive reasoning
             reasoning = self._generate_panel_reasoning(panel_result)
 
             return ScoreResult(
                 score=aggregated_score,
-                    passed=aggregated_score >= self.threshold,
-                    reasoning=reasoning,
-                    metadata=panel_result.dict(),
-                    )
+                passed=aggregated_score >= self.threshold,
+                reasoning=reasoning,
+                metadata=panel_result.dict(),
+            )
 
         except Exception as e:
             # Handle any unexpected exceptions in the evaluate method itself
             return ScoreResult(
                 score=0.0,
-                    passed=False,
-                    reasoning=f"Panel evaluation failed: {e!s}",
-                    metadata={"error": str(e)},
-                    )
+                passed=False,
+                reasoning=f"Panel evaluation failed: {e!s}",
+                metadata={"error": str(e)},
+            )
 
     def score(
         self,
-            prediction: str,
-            ground_truth: str,
-            context: Optional[dict[str, Any]] = None,
-            ) -> float:
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> float:
         """
         Synchronous wrapper around the async evaluate method using ThreadPoolExecutor for true parallelism.
 
@@ -281,12 +280,12 @@ class PanelOfJudgesScorer(BaseScorer):
                 for judge in self.judges:
                     future = executor.submit(
                         self._evaluate_with_judge_sync,
-                            judge,
-                            input_text,
-                            prediction,
-                            ground_truth,
-                            context_str,
-                            )
+                        judge,
+                        input_text,
+                        prediction,
+                        ground_truth,
+                        context_str,
+                    )
                     future_to_judge[future] = judge
 
                 # Collect results with timeout to prevent hanging
@@ -304,8 +303,8 @@ class PanelOfJudgesScorer(BaseScorer):
                             judge_results.append(
                                 (
                                     judge,
-                                        {"score": 0.0, "reasoning": f"Judge failed: {e}"},
-                                        )
+                                    {"score": 0.0, "reasoning": f"Judge failed: {e}"},
+                                )
                             )
                 except concurrent.futures.TimeoutError:
                     # Handle overall timeout
@@ -331,12 +330,12 @@ class PanelOfJudgesScorer(BaseScorer):
 
     def _evaluate_with_judge_sync(
         self,
-            judge: JudgeConfig,
-            input_text: str,
-            prediction: str,
-            ground_truth: str,
-            context: Optional[str] = None,
-            ) -> dict[str, Any]:
+        judge: JudgeConfig,
+        input_text: str,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[str] = None,
+    ) -> dict[str, Any]:
         """Synchronous version of _evaluate_with_judge for ThreadPoolExecutor."""
 
         try:
@@ -391,31 +390,31 @@ class PanelOfJudgesScorer(BaseScorer):
 
             return {
                 "score": normalized_score,
-                    "reasoning": result["reasoning"],
-                    "raw_score": score,
-                    "strengths": result.get("strengths", ""),
-                    "weaknesses": result.get("weaknesses", ""),
-                    "confidence": result.get("confidence", 3),
-                    }
+                "reasoning": result["reasoning"],
+                "raw_score": score,
+                "strengths": result.get("strengths", ""),
+                "weaknesses": result.get("weaknesses", ""),
+                "confidence": result.get("confidence", 3),
+            }
 
         except Exception as e:
             # Return error result instead of raising
             return {
                 "score": 0.0,
-                    "reasoning": f"Judge evaluation failed: {e!s}",
-                    "raw_score": 0,
-                    "strengths": "",
-                    "weaknesses": f"Error: {e!s}",
-                    "confidence": 0,
-                    }
+                "reasoning": f"Judge evaluation failed: {e!s}",
+                "raw_score": 0,
+                "strengths": "",
+                "weaknesses": f"Error: {e!s}",
+                "confidence": 0,
+            }
 
     def _score_sequential(
         self,
-            input_text: str,
-            prediction: str,
-            ground_truth: str,
-            context_str: Optional[str] = None,
-            ) -> float:
+        input_text: str,
+        prediction: str,
+        ground_truth: str,
+        context_str: Optional[str] = None,
+    ) -> float:
         """Fallback sequential evaluation when ThreadPoolExecutor fails."""
 
         judge_results = []
@@ -461,19 +460,19 @@ class PanelOfJudgesScorer(BaseScorer):
 
     def _build_evaluation_prompt(
         self,
-            input_text: str,
-            output_text: str,
-            expected_output: Optional[str] = None,
-            context: Optional[str] = None,
-            ) -> str:
+        input_text: str,
+        output_text: str,
+        expected_output: Optional[str] = None,
+        context: Optional[str] = None,
+    ) -> str:
         """Build evaluation prompt for judges."""
 
         prompt_parts = [
             "You are an expert evaluator tasked with assessing the quality of an AI model's response.",
-                f"\nEvaluation Criteria: {self.evaluation_criteria}",
-                f"\nInput/Question: {input_text}",
-                f"\nAI Response to Evaluate: {output_text}",
-                ]
+            f"\nEvaluation Criteria: {self.evaluation_criteria}",
+            f"\nInput/Question: {input_text}",
+            f"\nAI Response to Evaluate: {output_text}",
+        ]
 
         if expected_output:
             prompt_parts.append(f"\nExpected/Reference Answer: {expected_output}")
@@ -484,30 +483,30 @@ class PanelOfJudgesScorer(BaseScorer):
         prompt_parts.extend(
             [
                 "\nPlease evaluate the AI response based on the following criteria:",
-                    "1. Accuracy and correctness",
-                    "2. Completeness and thoroughness",
-                    "3. Clarity and coherence",
-                    "4. Relevance to the input",
-                    "5. Overall helpfulness",
-                    "",
-                    "Provide your evaluation in the following JSON format:",
-                    "{",
-                    '  "score": <numeric_score_from_1_to_5>,',
-                    '  "reasoning": "<detailed_explanation_of_your_evaluation>",',
-                    '  "strengths": "<what_the_response_does_well>",',
-                    '  "weaknesses": "<areas_for_improvement>",',
-                    '  "confidence": <confidence_level_from_1_to_5>',
-                    "}",
-                    "",
-                    "Score Guidelines:",
-                    "1 = Poor (major issues, incorrect or unhelpful)",
-                    "2 = Below Average (some issues, partially correct)",
-                    "3 = Average (acceptable, meets basic requirements)",
-                    "4 = Good (high quality, minor issues)",
-                    "5 = Excellent (outstanding, comprehensive, accurate)",
-                    "",
-                    "Ensure your response is valid JSON and provide detailed reasoning for your score.",
-                    ]
+                "1. Accuracy and correctness",
+                "2. Completeness and thoroughness",
+                "3. Clarity and coherence",
+                "4. Relevance to the input",
+                "5. Overall helpfulness",
+                "",
+                "Provide your evaluation in the following JSON format:",
+                "{",
+                '  "score": <numeric_score_from_1_to_5>,',
+                '  "reasoning": "<detailed_explanation_of_your_evaluation>",',
+                '  "strengths": "<what_the_response_does_well>",',
+                '  "weaknesses": "<areas_for_improvement>",',
+                '  "confidence": <confidence_level_from_1_to_5>',
+                "}",
+                "",
+                "Score Guidelines:",
+                "1 = Poor (major issues, incorrect or unhelpful)",
+                "2 = Below Average (some issues, partially correct)",
+                "3 = Average (acceptable, meets basic requirements)",
+                "4 = Good (high quality, minor issues)",
+                "5 = Excellent (outstanding, comprehensive, accurate)",
+                "",
+                "Ensure your response is valid JSON and provide detailed reasoning for your score.",
+            ]
         )
 
         return "\n".join(prompt_parts)
@@ -554,23 +553,23 @@ class PanelOfJudgesScorer(BaseScorer):
 
             return {
                 "score": normalized_score,
-                    "reasoning": result["reasoning"],
-                    "raw_score": score,
-                    "strengths": result.get("strengths", ""),
-                    "weaknesses": result.get("weaknesses", ""),
-                    "confidence": result.get("confidence", 3),
-                    }
+                "reasoning": result["reasoning"],
+                "raw_score": score,
+                "strengths": result.get("strengths", ""),
+                "weaknesses": result.get("weaknesses", ""),
+                "confidence": result.get("confidence", 3),
+            }
 
         except Exception as e:
             # Return error result instead of raising
             return {
                 "score": 0.0,
-                    "reasoning": f"Judge evaluation failed: {e!s}",
-                    "raw_score": 0,
-                    "strengths": "",
-                    "weaknesses": f"Error: {e!s}",
-                    "confidence": 0,
-                    }
+                "reasoning": f"Judge evaluation failed: {e!s}",
+                "raw_score": 0,
+                "strengths": "",
+                "weaknesses": f"Error: {e!s}",
+                "confidence": 0,
+            }
 
     def _calculate_consensus(self, scores: list[float]) -> float:
         """Calculate consensus level among judges (0-1)."""
@@ -632,26 +631,26 @@ class PanelOfJudgesScorer(BaseScorer):
 
         reasoning_parts = [
             f"Panel of {len(panel_result.individual_scores)} LLM Judges Evaluation",
-                f"Aggregation Method: {panel_result.aggregation_method.value}",
-                f"Final Score: {panel_result.aggregated_score:.3f}",
-                f"Consensus Level: {panel_result.consensus_level:.3f}",
-                "",
-                "Individual Judge Scores:",
-                ]
+            f"Aggregation Method: {panel_result.aggregation_method.value}",
+            f"Final Score: {panel_result.aggregated_score:.3f}",
+            f"Consensus Level: {panel_result.consensus_level:.3f}",
+            "",
+            "Individual Judge Scores:",
+        ]
 
         for i, (name, score, reasoning) in enumerate(
             zip(
                 panel_result.judge_names,
-                    panel_result.individual_scores,
-                    panel_result.individual_reasonings,
-                    )
+                panel_result.individual_scores,
+                panel_result.individual_reasonings,
+            )
         ):
             reasoning_parts.extend(
                 [
                     f"{i+1}. {name}: {score:.3f}",
-                        f"   Reasoning: {reasoning[:200]}{'...' if len(reasoning) > 200 else ''}",
-                        "",
-                        ]
+                    f"   Reasoning: {reasoning[:200]}{'...' if len(reasoning) > 200 else ''}",
+                    "",
+                ]
             )
 
         # Add summary statistics
@@ -659,12 +658,12 @@ class PanelOfJudgesScorer(BaseScorer):
         reasoning_parts.extend(
             [
                 "Summary Statistics:",
-                    f"• Mean Score: {statistics.mean(scores):.3f}",
-                    f"• Median Score: {statistics.median(scores):.3f}",
-                    f"• Score Range: {min(scores):.3f} - {max(scores):.3f}",
-                    f"• Standard Deviation: {statistics.stdev(scores) if len(scores) > 1 else 0:.3f}",
-                    "",
-                    ]
+                f"• Mean Score: {statistics.mean(scores):.3f}",
+                f"• Median Score: {statistics.median(scores):.3f}",
+                f"• Score Range: {min(scores):.3f} - {max(scores):.3f}",
+                f"• Standard Deviation: {statistics.stdev(scores) if len(scores) > 1 else 0:.3f}",
+                "",
+            ]
         )
 
         # Add consensus analysis
@@ -688,40 +687,38 @@ class SpecializedPanelScorer(PanelOfJudgesScorer):
     """
 
     @classmethod
-
     def create_diverse_panel(
         cls,
-            models: list[LLMModel],
-            evaluation_criteria: str = "overall quality and correctness",
-            **kwargs: Any,
-            ) -> "SpecializedPanelScorer":
+        models: list[LLMModel],
+        evaluation_criteria: str = "overall quality and correctness",
+        **kwargs: Any,
+    ) -> "SpecializedPanelScorer":
         """Create a diverse panel with different model types."""
 
         judges = []
         specialties = [
             "accuracy",
-                "clarity",
-                "completeness",
-                "relevance",
-                "helpfulness",
-                ]
+            "clarity",
+            "completeness",
+            "relevance",
+            "helpfulness",
+        ]
 
         for i, model in enumerate(models):
             specialty = specialties[i % len(specialties)]
             judges.append(
                 JudgeConfig(
                     model=model,
-                        weight=1.0,
-                        name=f"{model.__class__.__name__}_{specialty}",
-                        specialty=specialty,
-                        temperature=0.0,
-                        )
+                    weight=1.0,
+                    name=f"{model.__class__.__name__}_{specialty}",
+                    specialty=specialty,
+                    temperature=0.0,
+                )
             )
 
         return cls(judges=judges, evaluation_criteria=evaluation_criteria, **kwargs)
 
     @classmethod
-
     def create_consensus_panel(
         cls, models: list[LLMModel], consensus_threshold: float = 0.8, **kwargs: Any
     ) -> "SpecializedPanelScorer":
@@ -736,29 +733,28 @@ class SpecializedPanelScorer(PanelOfJudgesScorer):
 
         return cls(
             judges=judges,
-                aggregation_method=AggregationMethod.CONSENSUS,
-                require_consensus=True,
-                consensus_threshold=consensus_threshold,
-                **kwargs,
-                )
+            aggregation_method=AggregationMethod.CONSENSUS,
+            require_consensus=True,
+            consensus_threshold=consensus_threshold,
+            **kwargs,
+        )
 
     @classmethod
-
     def create_weighted_expert_panel(
         cls,
-            expert_models: list[tuple[LLMModel, float]],  # (model, expertise_weight)
+        expert_models: list[tuple[LLMModel, float]],  # (model, expertise_weight)
         **kwargs: Any,
-            ) -> "SpecializedPanelScorer":
+    ) -> "SpecializedPanelScorer":
         """Create a panel with weighted expert judges."""
 
         judges = [
             JudgeConfig(
                 model=model,
-                    weight=weight,
-                    name=f"Expert_{i+1}",
-                    specialty="domain_expert",
-                    temperature=0.0,
-                    )
+                weight=weight,
+                name=f"Expert_{i+1}",
+                specialty="domain_expert",
+                temperature=0.0,
+            )
             for i, (model, weight) in enumerate(expert_models)
         ]
 

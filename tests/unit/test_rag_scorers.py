@@ -8,16 +8,14 @@ from test_utils import MockLLM
 from novaeval.scorers.base import ScoreResult
 from novaeval.scorers.rag import (
     AnswerRelevancyScorer,
-        ContextualPrecisionScorer,
-        ContextualRecallScorer,
-        FaithfulnessScorer,
-        RAGASScorer,
-        )
+    ContextualPrecisionScorer,
+    ContextualRecallScorer,
+    FaithfulnessScorer,
+    RAGASScorer,
+)
 
 
 @pytest.mark.asyncio
-
-
 async def test_answer_relevancy_scorer():
     """Test AnswerRelevancyScorer."""
     mock_llm = MockLLM()
@@ -25,9 +23,9 @@ async def test_answer_relevancy_scorer():
 
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
-            output_text="Paris is the capital of France.",
-            context="Paris is the capital of France.",
-            )
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France.",
+    )
 
     assert isinstance(result, ScoreResult)
     assert 0 <= result.score <= 1
@@ -38,8 +36,6 @@ async def test_answer_relevancy_scorer():
 
 
 @pytest.mark.asyncio
-
-
 async def test_faithfulness_scorer():
     """Test FaithfulnessScorer."""
     mock_llm = MockLLM()
@@ -47,9 +43,9 @@ async def test_faithfulness_scorer():
 
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
-            output_text="Paris is the capital of France.",
-            context="Paris is the capital of France. France is in Europe.",
-            )
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France. France is in Europe.",
+    )
 
     assert isinstance(result, ScoreResult)
     assert 0 <= result.score <= 1
@@ -60,8 +56,6 @@ async def test_faithfulness_scorer():
 
 
 @pytest.mark.asyncio
-
-
 async def test_contextual_precision_scorer():
     """Test ContextualPrecisionScorer."""
     mock_llm = MockLLM()
@@ -69,9 +63,9 @@ async def test_contextual_precision_scorer():
 
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
-            output_text="Paris is the capital of France.",
-            context="Paris is the capital of France.\n\nFrance is in Europe.\n\nParis has the Eiffel Tower.",
-            )
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France.\n\nFrance is in Europe.\n\nParis has the Eiffel Tower.",
+    )
 
     assert isinstance(result, ScoreResult)
     assert 0 <= result.score <= 1
@@ -82,8 +76,6 @@ async def test_contextual_precision_scorer():
 
 
 @pytest.mark.asyncio
-
-
 async def test_contextual_recall_scorer():
     """Test ContextualRecallScorer."""
     mock_llm = MockLLM()
@@ -91,10 +83,10 @@ async def test_contextual_recall_scorer():
 
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
-            output_text="Paris is the capital of France.",
-            expected_output="Paris is the capital of France and is known for the Eiffel Tower.",
-            context="Paris is the capital of France.\n\nFrance is in Europe.\n\nParis has the Eiffel Tower.",
-            )
+        output_text="Paris is the capital of France.",
+        expected_output="Paris is the capital of France and is known for the Eiffel Tower.",
+        context="Paris is the capital of France.\n\nFrance is in Europe.\n\nParis has the Eiffel Tower.",
+    )
 
     assert isinstance(result, ScoreResult)
     assert 0 <= result.score <= 1
@@ -105,8 +97,6 @@ async def test_contextual_recall_scorer():
 
 
 @pytest.mark.asyncio
-
-
 async def test_ragas_scorer():
     """Test RAGASScorer (composite scorer)."""
     mock_llm = MockLLM()
@@ -114,10 +104,10 @@ async def test_ragas_scorer():
 
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
-            output_text="Paris is the capital of France.",
-            expected_output="Paris is the capital of France and is known for the Eiffel Tower.",
-            context="Paris is the capital of France.\n\nFrance is in Europe.\n\nParis has the Eiffel Tower.",
-            )
+        output_text="Paris is the capital of France.",
+        expected_output="Paris is the capital of France and is known for the Eiffel Tower.",
+        context="Paris is the capital of France.\n\nFrance is in Europe.\n\nParis has the Eiffel Tower.",
+    )
 
     assert isinstance(result, ScoreResult)
     assert 0 <= result.score <= 1
@@ -135,17 +125,15 @@ async def test_ragas_scorer():
 #     # Test AnswerRelevancyScorer sync method
 #     scorer = AnswerRelevancyScorer(model=mock_llm, threshold=0.7)
 #     score = scorer.score(
-    #         prediction="Paris is the capital of France.",
-    #         ground_truth="What is the capital of France?",
-    #         context={"context": "Paris is the capital of France."}
+#         prediction="Paris is the capital of France.",
+#         ground_truth="What is the capital of France?",
+#         context={"context": "Paris is the capital of France."}
 #     )
 #     assert isinstance(score, (float, dict))
 #     print(f"Sync Answer Relevancy: {score}")
 
 
 @pytest.mark.asyncio
-
-
 async def test_error_handling():
     """Test comprehensive error handling with various failure scenarios."""
 
@@ -155,9 +143,9 @@ async def test_error_handling():
 
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
-            output_text="Paris is the capital of France.",
-            context=None,
-            )
+        output_text="Paris is the capital of France.",
+        context=None,
+    )
 
     # Should handle gracefully
     assert isinstance(result, ScoreResult)
@@ -175,9 +163,9 @@ async def test_error_handling():
 
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
-            output_text="Paris is the capital of France.",
-            context="Paris is the capital of France.",
-            )
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France.",
+    )
 
     # Should handle LLM exceptions gracefully
     assert isinstance(result, ScoreResult)
@@ -198,9 +186,9 @@ async def test_error_handling():
 
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
-            output_text="Paris is the capital of France.",
-            context="Paris is the capital of France.",
-            )
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France.",
+    )
 
     # Should handle malformed responses gracefully
     assert isinstance(result, ScoreResult)
@@ -220,9 +208,9 @@ async def test_error_handling():
 
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
-            output_text="Paris is the capital of France.",
-            context="Paris is the capital of France.",
-            )
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France.",
+    )
 
     # Should handle empty responses gracefully
     assert isinstance(result, ScoreResult)
@@ -242,9 +230,9 @@ async def test_error_handling():
 
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
-            output_text="Paris is the capital of France.",
-            context="Paris is the capital of France.",
-            )
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France.",
+    )
 
     # Should handle unexpected response formats gracefully
     assert isinstance(result, ScoreResult)
@@ -266,9 +254,9 @@ async def test_error_handling():
 
     result = await scorer.evaluate(
         input_text="What is the capital of France?",
-            output_text="Paris is the capital of France.",
-            context="Paris is the capital of France.",
-            )
+        output_text="Paris is the capital of France.",
+        context="Paris is the capital of France.",
+    )
 
     # Should handle timeout errors gracefully
     assert isinstance(result, ScoreResult)
