@@ -34,6 +34,7 @@ class AgentData(BaseModel):
     expected_tool_call: Optional[Union[ToolCall, str]] = None
 
     agent_name: Optional[str] = None  # unique to each agent (for the same user)
+
     agent_role: Optional[str] = None
     agent_task: Optional[str] = None  # has the current input.
 
