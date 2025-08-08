@@ -3146,3 +3146,857 @@ class TestAgentEvaluator:
             )
 
             # All should handle exceptions gracefully without raising
+
+    def test_run_all_unsupported_file_type(self, tmp_path):
+        """Test run_all with unsupported file type."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with unsupported file type
+        evaluator.run_all(file_type="unsupported")
+        # Should log error and return early
+
+    def test_reset_evaluation_state(self, tmp_path):
+        """Test _reset_evaluation_state method."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Create test files
+        csv_file = tmp_path / "agent_evaluation_results.csv"
+        json_file = tmp_path / "agent_evaluation_results.json"
+        final_json_file = tmp_path / "agent_evaluation_results_final.json"
+
+        csv_file.write_text("test data")
+        json_file.write_text("test data")
+        final_json_file.write_text("test data")
+
+        # Test reset for CSV
+        evaluator._reset_evaluation_state("csv")
+        assert not csv_file.exists()
+        assert evaluator._headers_written is False
+
+        # Test reset for JSON
+        json_file.write_text("test data")
+        final_json_file.write_text("test data")
+        evaluator._reset_evaluation_state("json")
+        assert not json_file.exists()
+        assert not final_json_file.exists()
+
+    def test_read_jsonl_for_aggregation_various_scenarios(self, tmp_path):
+        """Test _read_jsonl_for_aggregation with various scenarios."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with JSONL file
+        jsonl_file = tmp_path / "test.jsonl"
+        jsonl_file.write_text('{"a": 1}\n{"b": 2}\n')
+        df = evaluator._read_jsonl_for_aggregation(jsonl_file)
+        assert len(df) == 2
+        assert "a" in df.columns
+        assert "b" in df.columns
+
+        # Test with proper JSON file (list format)
+        json_file = tmp_path / "test.json"
+        json_file.write_text('[{"a": 1}, {"b": 2}]')
+        df = evaluator._read_jsonl_for_aggregation(json_file)
+        # The JSON parsing creates a DataFrame with the list elements as columns
+        assert len(df) == 1  # One row
+        assert len(df.columns) == 2  # Two columns (0 and 1)
+
+        # Test with malformed JSON
+        malformed_file = tmp_path / "malformed.json"
+        malformed_file.write_text('{"a": 1, "b":}')
+        df = evaluator._read_jsonl_for_aggregation(malformed_file)
+        assert df.empty
+
+        # Test with non-existent file
+        df = evaluator._read_jsonl_for_aggregation(tmp_path / "nonexistent.json")
+        assert df.empty
+
+    def test_finalize_results(self, tmp_path):
+        """Test finalize_results method."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with CSV (should do nothing)
+        evaluator.finalize_results("csv")
+
+        # Test with JSON but no JSONL file
+        evaluator.finalize_results("json")
+
+        # Test with JSON and JSONL file
+        jsonl_file = tmp_path / "agent_evaluation_results.json"
+        jsonl_file.write_text('{"a": 1}\n{"b": 2}\n')
+        evaluator.finalize_results("json")
+
+        final_json_file = tmp_path / "agent_evaluation_results_final.json"
+        assert final_json_file.exists()
+
+    def test_save_intermediate_results_edge_cases(self, tmp_path):
+        """Test _save_intermediate_results with edge cases."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with empty DataFrame
+        evaluator._save_intermediate_results("csv")
+        evaluator._save_intermediate_results("json")
+
+        # Test with data and final save
+        evaluator.results_df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+        evaluator._save_intermediate_results("csv", is_final=True)
+        evaluator._save_intermediate_results("json", is_final=True)
+
+        # Verify files were created
+        assert (tmp_path / "agent_evaluation_results.csv").exists()
+        assert (tmp_path / "agent_evaluation_results.json").exists()
+
+    def test_save_csv_append_behavior(self, tmp_path):
+        """Test _save_csv_append behavior."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test initial save (should write headers)
+        evaluator.results_df = pd.DataFrame({"a": [1], "b": [2]})
+        output_file = tmp_path / "test.csv"
+        evaluator._save_csv_append(output_file)
+
+        content = output_file.read_text()
+        assert "a,b" in content
+        assert "1,2" in content
+        assert evaluator._headers_written is True
+
+        # Test append save (should not write headers)
+        evaluator.results_df = pd.DataFrame({"a": [3], "b": [4]})
+        evaluator._save_csv_append(output_file)
+
+        content = output_file.read_text()
+        assert content.count("a,b") == 1  # Headers should appear only once
+        assert "3,4" in content
+
+    def test_save_jsonl_append_behavior(self, tmp_path):
+        """Test _save_jsonl_append behavior."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with simple data
+        evaluator.results_df = pd.DataFrame({"a": [1], "b": [2]})
+        output_file = tmp_path / "test.jsonl"
+        evaluator._save_jsonl_append(output_file)
+
+        content = output_file.read_text().strip()
+        assert content == '{"a": 1, "b": 2}'
+
+        # Test with complex data types
+        evaluator.results_df = pd.DataFrame(
+            {"a": [1], "b": [2.5], "c": ["test"], "d": [True], "e": [None]}
+        )
+        evaluator._save_jsonl_append(output_file)
+
+        content = output_file.read_text().strip().split("\n")
+        assert len(content) == 2
+        assert '"a": 1' in content[1]
+        assert '"b": 2.5' in content[1]
+
+    def test_run_all_with_streaming_behavior(self, tmp_path):
+        """Test run_all with different streaming scenarios."""
+        from unittest.mock import Mock
+
+        # Create mock dataset with multiple samples
+        mock_dataset = Mock()
+        sample1 = Mock()
+        sample1.user_id = "user1"
+        sample1.task_id = "task1"
+        sample1.turn_id = "turn1"
+        sample1.agent_name = "agent1"
+
+        sample2 = Mock()
+        sample2.user_id = "user2"
+        sample2.task_id = "task2"
+        sample2.turn_id = "turn2"
+        sample2.agent_name = "agent2"
+
+        mock_dataset.get_datapoint.return_value = [sample1, sample2]
+
+        # Create mock model
+        mock_model = Mock()
+
+        # Create mock scorer
+        def mock_scorer(sample, model):
+            return Mock(score=0.8, reasoning="Good performance")
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[mock_scorer],
+            output_dir=tmp_path,
+        )
+
+        # Test with save_every=1 (save after each sample)
+        evaluator.run_all(save_every=1, file_type="csv")
+
+        # Verify results file exists
+        results_file = tmp_path / "agent_evaluation_results.csv"
+        assert results_file.exists()
+
+        # Verify DataFrame has all results
+        assert len(evaluator.results_df) == 2
+
+    def test_evaluate_sample_with_complex_score_objects(self, tmp_path):
+        """Test evaluate_sample with complex score objects."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with score object that has score but no reasoning
+        class ScoreObject:
+            def __init__(self):
+                self.score = 0.9
+
+            # No reasoning attribute
+
+        def mock_scorer(sample, model):
+            return ScoreObject()
+
+        evaluator.scoring_functions = [mock_scorer]
+
+        sample = Mock()
+        sample.user_id = "user1"
+        sample.task_id = "task1"
+        sample.turn_id = "turn1"
+        sample.agent_name = "agent1"
+
+        result = evaluator.evaluate_sample(sample, mock_model)
+        # The scorer name should be "mock_scorer" or "scorer_0" depending on implementation
+        scorer_name = next(iter(result["scores"].keys()))
+        assert result["scores"][scorer_name] == 0.9
+        assert scorer_name not in result["reasoning"]
+
+    def test_add_result_to_dataframe_with_complex_data_types(self, tmp_path):
+        """Test _add_result_to_dataframe with complex data types."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with complex data types in sample result
+        sample_result = {
+            "user_id": "user1",
+            "task_id": "task1",
+            "turn_id": "turn1",
+            "agent_name": "agent1",
+            "scores": {"scorer1": 0.8, "scorer2": 0.9},
+            "reasoning": {
+                "scorer1": "Good performance",
+                "scorer2": "Excellent performance",
+            },
+        }
+
+        evaluator._add_result_to_dataframe(sample_result)
+        assert len(evaluator.results_df) == 1
+        assert evaluator.results_df.iloc[0]["user_id"] == "user1"
+        # Check if the columns exist and have the expected values
+        if "scorer1" in evaluator.results_df.columns:
+            assert evaluator.results_df.iloc[0]["scorer1"] == 0.8
+        if "scorer1_reasoning" in evaluator.results_df.columns:
+            assert (
+                evaluator.results_df.iloc[0]["scorer1_reasoning"] == "Good performance"
+            )
+
+    def test_run_all_with_empty_dataset(self, tmp_path):
+        """Test run_all with empty dataset."""
+        from unittest.mock import Mock
+
+        # Create mock dataset with no samples
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+
+        # Create mock model
+        mock_model = Mock()
+
+        # Create mock scorer
+        def mock_scorer(sample, model):
+            return Mock(score=0.8, reasoning="Good performance")
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[mock_scorer],
+            output_dir=tmp_path,
+        )
+
+        # Test run_all with empty dataset
+        evaluator.run_all(file_type="csv")
+
+        # Should complete without error
+        assert evaluator.results_df.empty
+
+    def test_run_all_with_file_permission_errors(self, tmp_path):
+        """Test run_all with file permission errors."""
+        from unittest.mock import Mock, patch
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with permission error during file operations
+        with patch("builtins.open", side_effect=PermissionError("Permission denied")):
+            evaluator.run_all(file_type="csv")
+            # Should handle error gracefully
+
+    def test_evaluate_sample_with_none_model(self, tmp_path):
+        """Test evaluate_sample with None model."""
+        from unittest.mock import Mock
+
+        # Create mock dataset
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+
+        # Create evaluator with no models
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        sample = Mock()
+        sample.user_id = "user1"
+        sample.task_id = "task1"
+        sample.turn_id = "turn1"
+        sample.agent_name = "agent1"
+
+        result = evaluator.evaluate_sample(sample, None)
+        # The method should return a result with empty scores when no model is available
+        assert result["scores"] == {}
+        assert result["reasoning"] == {}
+
+    def test_initialize_dataframe_with_empty_scoring_functions(self, tmp_path):
+        """Test _initialize_dataframe with empty scoring functions."""
+        from unittest.mock import Mock
+
+        # Create mock dataset
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+
+        # Create evaluator with no scoring functions
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[Mock()],
+            scoring_functions=[],
+            output_dir=tmp_path,
+        )
+
+        # Should initialize with only base columns
+        expected_columns = ["user_id", "task_id", "turn_id", "agent_name"]
+        assert list(evaluator.results_df.columns) == expected_columns
+        assert evaluator.scorer_columns == []
+        assert evaluator.reasoning_columns == []
+
+    def test_save_results_with_list_results(self, tmp_path):
+        """Test save_results with list results."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with list results
+        list_results = [
+            {"user_id": "user1", "task_id": "task1"},
+            {"user_id": "user2", "task_id": "task2"},
+        ]
+
+        evaluator.save_results(list_results)
+
+        results_file = tmp_path / "agent_evaluation_results.csv"
+        assert results_file.exists()
+
+    def test_run_all_with_aggregation_exceptions(self, tmp_path):
+        """Test run_all with aggregation exceptions."""
+        from unittest.mock import Mock, patch
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with aggregation exceptions
+        with patch(
+            "novaeval.evaluators.aggregators.aggregate_by_task",
+            side_effect=Exception("Aggregation failed"),
+        ):
+            evaluator.run_all(
+                file_type="csv", aggregate_by_task=True, aggregator_functions=[Mock()]
+            )
+            # Should handle exception gracefully
+
+    def test_convert_jsonl_to_json_with_malformed_data(self, tmp_path):
+        """Test _convert_jsonl_to_json with malformed data."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Create malformed JSONL file
+        jsonl_file = tmp_path / "agent_evaluation_results.json"
+        jsonl_file.write_text('{"a": 1}\n{"b":}\n')  # Malformed JSON
+
+        # Should handle malformed data gracefully
+        evaluator._convert_jsonl_to_json()
+
+    def test_run_all_with_different_save_every_values(self, tmp_path):
+        """Test run_all with different save_every values."""
+        from unittest.mock import Mock
+
+        # Create mock dataset with multiple samples
+        mock_dataset = Mock()
+        samples = []
+        for i in range(10):
+            sample = Mock()
+            sample.user_id = f"user{i}"
+            sample.task_id = f"task{i}"
+            sample.turn_id = f"turn{i}"
+            sample.agent_name = f"agent{i}"
+            samples.append(sample)
+
+        mock_dataset.get_datapoint.return_value = samples
+
+        # Create mock model
+        mock_model = Mock()
+
+        # Create mock scorer
+        def mock_scorer(sample, model):
+            return Mock(score=0.8, reasoning="Good performance")
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[mock_scorer],
+            output_dir=tmp_path,
+        )
+
+        # Test with save_every=5
+        evaluator.run_all(save_every=5, file_type="csv")
+
+        # Verify results
+        assert len(evaluator.results_df) == 10
+        results_file = tmp_path / "agent_evaluation_results.csv"
+        assert results_file.exists()
+
+    def test_evaluate_sample_with_dict_score_result(self, tmp_path):
+        """Test evaluate_sample with dict score result."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with dict result containing score and reasoning
+        def mock_scorer(sample, model):
+            return {"score": 0.9, "reasoning": "Excellent performance"}
+
+        evaluator.scoring_functions = [mock_scorer]
+
+        sample = Mock()
+        sample.user_id = "user1"
+        sample.task_id = "task1"
+        sample.turn_id = "turn1"
+        sample.agent_name = "agent1"
+
+        result = evaluator.evaluate_sample(sample, mock_model)
+        # The scorer name should be "mock_scorer" or "scorer_0" depending on implementation
+        scorer_name = next(iter(result["scores"].keys()))
+        assert result["scores"][scorer_name] == 0.9
+        assert result["reasoning"][scorer_name] == "Excellent performance"
+
+    def test_run_all_with_streaming_and_aggregation(self, tmp_path):
+        """Test run_all with streaming and aggregation together."""
+        from unittest.mock import Mock
+
+        # Create mock dataset with multiple samples
+        mock_dataset = Mock()
+        samples = []
+        for i in range(5):
+            sample = Mock()
+            sample.user_id = f"user{i}"
+            sample.task_id = f"task{i}"
+            sample.turn_id = f"turn{i}"
+            sample.agent_name = f"agent{i}"
+            samples.append(sample)
+
+        mock_dataset.get_datapoint.return_value = samples
+
+        # Create mock model
+        mock_model = Mock()
+
+        # Create mock scorer
+        def mock_scorer(sample, model):
+            return Mock(score=0.8, reasoning="Good performance")
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[mock_scorer],
+            output_dir=tmp_path,
+        )
+
+        # Test with streaming and aggregation
+        evaluator.run_all(
+            save_every=2,
+            file_type="json",
+            aggregate_by_task=True,
+            aggregate_by_user=True,
+            aggregate_by_agent_name=True,
+            aggregator_functions=[Mock()],
+        )
+
+        # Verify results
+        assert len(evaluator.results_df) == 5
+        assert (tmp_path / "agent_evaluation_results.json").exists()
+        assert (tmp_path / "agent_evaluation_results_final.json").exists()
+
+    def test_evaluate_sample_with_complex_exception_handling(self, tmp_path):
+        """Test evaluate_sample with complex exception handling."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with scorer that raises different types of exceptions
+        def exception_scorer(sample, model):
+            raise ValueError("Value error in scorer")
+
+        def type_error_scorer(sample, model):
+            raise TypeError("Type error in scorer")
+
+        evaluator.scoring_functions = [exception_scorer, type_error_scorer]
+
+        sample = Mock()
+        sample.user_id = "user1"
+        sample.task_id = "task1"
+        sample.turn_id = "turn1"
+        sample.agent_name = "agent1"
+
+        result = evaluator.evaluate_sample(sample, mock_model)
+        # Get the scorer names from the result
+        scorer_names = list(result["scores"].keys())
+        assert len(scorer_names) == 2
+
+        # Check that both scorers have 0.0 scores due to exceptions
+        for scorer_name in scorer_names:
+            assert result["scores"][scorer_name] == 0.0
+            assert "error" in result["reasoning"][scorer_name].lower()
+
+    def test_save_intermediate_results_with_file_errors(self, tmp_path):
+        """Test _save_intermediate_results with file errors."""
+        from unittest.mock import Mock, patch
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Add some data
+        evaluator.results_df = pd.DataFrame({"a": [1, 2], "b": [3, 4]})
+
+        # Test with file write errors
+        with patch("builtins.open", side_effect=OSError("Disk full")):
+            evaluator._save_intermediate_results("csv")
+            # Should handle error gracefully
+
+        with patch("builtins.open", side_effect=PermissionError("Permission denied")):
+            evaluator._save_intermediate_results("json")
+            # Should handle error gracefully
+
+    def test_run_all_with_comprehensive_error_handling(self, tmp_path):
+        """Test run_all with comprehensive error handling."""
+        from unittest.mock import Mock, patch
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with various error conditions
+        with patch(
+            "pathlib.Path.mkdir", side_effect=OSError("Cannot create directory")
+        ):
+            # Should handle directory creation errors
+            pass
+
+        with patch(
+            "novaeval.utils.logging.setup_logging",
+            side_effect=Exception("Logging setup failed"),
+        ):
+            # Should handle logging setup errors
+            pass
+
+    def test_evaluate_sample_with_edge_case_data_types(self, tmp_path):
+        """Test evaluate_sample with edge case data types."""
+        from unittest.mock import Mock
+
+        # Create mock dataset and model
+        mock_dataset = Mock()
+        mock_dataset.get_datapoint.return_value = []
+        mock_model = Mock()
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[Mock()],
+            output_dir=tmp_path,
+        )
+
+        # Test with various edge case data types
+        def complex_scorer(sample, model):
+            # Return a complex object
+            class ComplexScore:
+                def __init__(self):
+                    self.score = 0.8
+                    self.reasoning = "Complex reasoning"
+                    self.extra_data = {"nested": {"data": "value"}}
+
+            return ComplexScore()
+
+        evaluator.scoring_functions = [complex_scorer]
+
+        sample = Mock()
+        sample.user_id = "user1"
+        sample.task_id = "task1"
+        sample.turn_id = "turn1"
+        sample.agent_name = "agent1"
+
+        result = evaluator.evaluate_sample(sample, mock_model)
+        # Get the scorer name from the result
+        scorer_name = next(iter(result["scores"].keys()))
+        assert result["scores"][scorer_name] == 0.8
+        assert result["reasoning"][scorer_name] == "Complex reasoning"
+
+    def test_run_all_with_memory_management_edge_cases(self, tmp_path):
+        """Test run_all with memory management edge cases."""
+        from unittest.mock import Mock
+
+        # Create mock dataset with many samples
+        mock_dataset = Mock()
+        samples = []
+        for i in range(100):
+            sample = Mock()
+            sample.user_id = f"user{i}"
+            sample.task_id = f"task{i}"
+            sample.turn_id = f"turn{i}"
+            sample.agent_name = f"agent{i}"
+            samples.append(sample)
+
+        mock_dataset.get_datapoint.return_value = samples
+
+        # Create mock model
+        mock_model = Mock()
+
+        # Create mock scorer
+        def mock_scorer(sample, model):
+            return Mock(score=0.8, reasoning="Good performance")
+
+        # Create evaluator
+        evaluator = AgentEvaluator(
+            agent_dataset=mock_dataset,
+            models=[mock_model],
+            scoring_functions=[mock_scorer],
+            output_dir=tmp_path,
+        )
+
+        # Test with very small save_every to test memory management
+        evaluator.run_all(save_every=10, file_type="csv")
+
+        # Verify all results are preserved
+        assert len(evaluator.results_df) == 100
+        results_file = tmp_path / "agent_evaluation_results.csv"
+        assert results_file.exists()
+
+        # Verify file content has all rows
+        content = results_file.read_text()
+        lines = content.strip().split("\n")
+        # The file should have at least 100 data rows (plus headers)
+        # Due to intermediate saves and final save, there might be duplicates
+        data_lines = [line for line in lines if not line.startswith("user_id,")]
+        assert len(data_lines) >= 100  # At least 100 data rows

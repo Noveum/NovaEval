@@ -2146,15 +2146,15 @@ class TestAggregators:
         res = pd.read_csv(out)
         assert "task_id" in res.columns
         assert "mean_callable_score1" in res.columns
-        
+
         # Check that we have 2 tasks
         assert len(res) == 2
-        
+
         # Check that task t1 has mean of 0.5 (1.0 + 0.0) / 2
         task_t1 = res[res["task_id"] == "t1"]
         assert len(task_t1) == 1
         assert task_t1["mean_callable_score1"].iloc[0] == 0.5
-        
+
         # Check that task t2 has mean of 0.5
         task_t2 = res[res["task_id"] == "t2"]
         assert len(task_t2) == 1
@@ -2351,15 +2351,15 @@ class TestAggregatorsAdditional:
         res = pd.read_csv(out)
         assert "user_id" in res.columns
         assert "mean_callable_score1" in res.columns
-        
+
         # Check that we have 2 users
         assert len(res) == 2
-        
+
         # Check that user u1 has mean of 0.5 (1.0 + 0.0) / 2
         user_u1 = res[res["user_id"] == "u1"]
         assert len(user_u1) == 1
         assert user_u1["mean_callable_score1"].iloc[0] == 0.5
-        
+
         # Check that user u2 has mean of 0.5
         user_u2 = res[res["user_id"] == "u2"]
         assert len(user_u2) == 1
@@ -2403,15 +2403,15 @@ class TestAggregatorsAdditional:
         res = pd.read_csv(out)
         assert "agent_name" in res.columns
         assert "mean_callable_score1" in res.columns
-        
+
         # Check that we have 2 agents
         assert len(res) == 2
-        
+
         # Check that agent a1 has mean of 0.5 (1.0 + 0.0) / 2
         agent_a1 = res[res["agent_name"] == "a1"]
         assert len(agent_a1) == 1
         assert agent_a1["mean_callable_score1"].iloc[0] == 0.5
-        
+
         # Check that agent a2 has mean of 0.5
         agent_a2 = res[res["agent_name"] == "a2"]
         assert len(agent_a2) == 1

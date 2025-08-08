@@ -4,6 +4,7 @@ Agent evaluator for NovaEval.
 This module provides an evaluator specifically designed for agent evaluation tasks.
 """
 
+import json
 import logging
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
@@ -73,6 +74,9 @@ class AgentEvaluator:
             log_file=self.output_dir / "agent_evaluation.log",
         )
 
+        # Track if headers have been written for CSV/JSONL
+        self._headers_written = False
+
     def _initialize_dataframe(self) -> None:
         """Initialize the pandas DataFrame with required columns."""
         # Base columns
@@ -103,6 +107,27 @@ class AgentEvaluator:
         self.scorer_columns = scorer_columns
         self.reasoning_columns = reasoning_columns if self.include_reasoning else []
 
+    def _reset_evaluation_state(self, file_type: str) -> None:
+        """
+        Reset evaluation state for a new run.
+
+        Args:
+            file_type: Type of file being used
+        """
+        # Reset headers written flag
+        self._headers_written = False
+
+        # Clear any existing results file
+        output_file = self.output_dir / f"agent_evaluation_results.{file_type}"
+        if output_file.exists():
+            output_file.unlink()
+
+        # Clear final JSON file if it exists
+        if file_type.lower() == "json":
+            final_json_file = self.output_dir / "agent_evaluation_results_final.json"
+            if final_json_file.exists():
+                final_json_file.unlink()
+
     def run_all(
         self,
         save_every: int = 100,
@@ -127,13 +152,24 @@ class AgentEvaluator:
         """
         logger.info("Starting agent evaluation process")
 
+        # Validate file_type
+        if file_type.lower() not in ["csv", "json"]:
+            logger.error(f"Unsupported file type: {file_type}")
+            return
+
+        # Reset evaluation state
+        self._reset_evaluation_state(file_type)
+
         # Get the generator from the agent dataset
         samples_generator = self.agent_dataset.get_datapoint()
 
         # Process samples directly from the generator to preserve streaming
         # Note: We can't get the total count without consuming the generator,
         # so we'll use tqdm without a total count for streaming behavior
-        for i, sample in enumerate(tqdm(samples_generator, desc="Evaluating samples")):
+        samples_list = list(samples_generator)  # Convert to list to get length
+        all_results = []  # Accumulate all results for final save
+
+        for i, sample in enumerate(tqdm(samples_list, desc="Evaluating samples")):
             # Evaluate the sample
             model = self.models[0] if self.models else None
             if not model:
@@ -143,15 +179,29 @@ class AgentEvaluator:
 
             # Add result to DataFrame
             self._add_result_to_dataframe(sample_result)
+            all_results.append(sample_result)
 
             # Save periodically to avoid memory leaks
             if (i + 1) % save_every == 0:
                 logger.info(f"Saving intermediate results after {i + 1} samples")
-                self._save_intermediate_results(file_type)
+                # For intermediate saves, clear the DataFrame to free memory
+                self._save_intermediate_results(file_type, is_final=False)
+
+        # Restore all results for final save
+        if all_results:
+            # Clear and rebuild DataFrame with all results
+            self.results_df = pd.DataFrame(columns=self.results_df.columns)
+            for result in all_results:
+                self._add_result_to_dataframe(result)
 
         # Save final results
         logger.info("Saving final results")
-        self._save_intermediate_results(file_type)
+        # Only save final results if there's data in the DataFrame
+        if not self.results_df.empty:
+            self._save_intermediate_results(file_type, is_final=True)
+
+        # Finalize results (convert JSONL to JSON if needed)
+        self.finalize_results(file_type)
 
         # Run aggregations if requested
         if any([aggregate_by_task, aggregate_by_user, aggregate_by_agent_name]):
@@ -193,7 +243,13 @@ class AgentEvaluator:
             aggregator_functions = [mean_callable]
 
         # Determine input file path
-        input_file = self.output_dir / f"agent_evaluation_results.{file_type}"
+        # For JSON, use the final JSON file if it exists, otherwise use JSONL
+        if file_type.lower() == "json":
+            input_file = self.output_dir / "agent_evaluation_results_final.json"
+            if not input_file.exists():
+                input_file = self.output_dir / f"agent_evaluation_results.{file_type}"
+        else:
+            input_file = self.output_dir / f"agent_evaluation_results.{file_type}"
 
         if not input_file.exists():
             logger.warning(
@@ -232,6 +288,45 @@ class AgentEvaluator:
                 aggregation_chunk_size,
             )
 
+    def _read_jsonl_for_aggregation(self, file_path: Path) -> pd.DataFrame:
+        """
+        Read JSONL or JSON file and convert to DataFrame for aggregation.
+
+        Args:
+            file_path: Path to JSONL or JSON file
+
+        Returns:
+            DataFrame containing the data
+        """
+        try:
+            # First try to read as JSONL (one JSON object per line)
+            records: list[dict[str, Any]] = []
+            with open(file_path, encoding="utf-8") as f:
+                records.extend(json.loads(line) for line in f if line.strip())
+
+            if records:
+                return pd.DataFrame(records)
+
+        except json.JSONDecodeError:
+            # If JSONL fails, try reading as proper JSON
+            try:
+                with open(file_path, encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        return pd.DataFrame(data)
+                    else:
+                        logger.error(f"Unexpected JSON format in {file_path}")
+                        return pd.DataFrame()
+            except Exception as e:
+                logger.error(f"Failed to read JSON file {file_path}: {e}")
+                return pd.DataFrame()
+
+        except Exception as e:
+            logger.error(f"Failed to read file {file_path}: {e}")
+            return pd.DataFrame()
+
+        return pd.DataFrame()
+
     def _run_single_aggregation(
         self,
         aggregation_type: str,
@@ -259,6 +354,9 @@ class AgentEvaluator:
         logger.info(f"Running {aggregation_type} aggregation")
 
         try:
+            # The aggregation functions support both CSV and JSON files directly
+            # No need to convert JSON files to CSV
+
             if aggregation_type == "task":
                 aggregate_by_task(
                     input_file=input_file,
@@ -445,22 +543,76 @@ class AgentEvaluator:
 
             self.results_df = pd.concat([self.results_df, new_df], ignore_index=True)
 
-    def _save_intermediate_results(self, file_type: str) -> None:
+    def _save_intermediate_results(
+        self, file_type: str, is_final: bool = False
+    ) -> None:
         """
-        Save intermediate results to disk.
+        Save intermediate results to disk using streaming/append mode to avoid memory bloat.
 
         Args:
             file_type: Type of file to save ('csv' or 'json')
+            is_final: Whether this is the final save (don't clear DataFrame)
         """
+        if self.results_df.empty:
+            logger.debug("No results to save")
+            return
+
         output_file = self.output_dir / f"agent_evaluation_results.{file_type}"
 
-        if file_type.lower() == "json":
-            self._convert_to_json()
-            self.results_df.to_json(output_file, orient="records", indent=2)
-        else:
-            self.results_df.to_csv(output_file, index=False)
+        try:
+            if file_type.lower() == "json":
+                # Use JSONL format for streaming JSON
+                self._save_jsonl_append(output_file)
+            else:
+                # Use append mode for CSV
+                self._save_csv_append(output_file)
 
-        logger.info(f"Intermediate results saved to {output_file}")
+            # Clear DataFrame to free memory (except on final save)
+            # Only clear if this is an intermediate save and we have data
+            if not is_final and len(self.results_df) > 0:
+                self.results_df = pd.DataFrame(columns=self.results_df.columns)
+            logger.info(f"Intermediate results saved to {output_file}")
+
+        except Exception as e:
+            logger.error(f"Failed to save intermediate results: {e}")
+
+    def _save_csv_append(self, output_file: Path) -> None:
+        """
+        Save DataFrame to CSV in append mode.
+
+        Args:
+            output_file: Path to output file
+        """
+        # Write headers only if file doesn't exist or headers haven't been written
+        header = not output_file.exists() or not self._headers_written
+
+        self.results_df.to_csv(
+            output_file, mode="a" if not header else "w", header=header, index=False
+        )
+
+        if header:
+            self._headers_written = True
+
+    def _save_jsonl_append(self, output_file: Path) -> None:
+        """
+        Save DataFrame to JSONL format in append mode.
+
+        Args:
+            output_file: Path to output file
+        """
+        # Convert DataFrame to JSONL format (one JSON object per line)
+        records = self.results_df.to_dict("records")
+
+        # Convert any non-serializable types to strings
+        for record in records:
+            for key, value in record.items():
+                if not isinstance(value, (str, int, float, bool, type(None))):
+                    record[key] = str(value)
+
+        # Append to file
+        with open(output_file, "a", encoding="utf-8") as f:
+            for record in records:
+                f.write(json.dumps(record) + "\n")
 
     def save_results(self, results: dict[str, Any]) -> None:
         """
@@ -482,9 +634,40 @@ class AgentEvaluator:
         self.results_df.to_csv(output_file, index=False)
         logger.info(f"Results saved to {output_file}")
 
-    def _convert_to_json(self) -> None:
-        """Convert DataFrame to JSON-compatible format."""
-        # Convert any non-serializable types to strings
-        for col in self.results_df.columns:
-            if self.results_df[col].dtype == "object":
-                self.results_df[col] = self.results_df[col].astype(str)
+    def finalize_results(self, file_type: str = "csv") -> None:
+        """
+        Finalize results by converting streaming format to final format if needed.
+
+        This method should be called after all processing is complete to convert
+        JSONL files to proper JSON format if desired.
+
+        Args:
+            file_type: Type of file to finalize ('csv' or 'json')
+        """
+        if file_type.lower() == "json":
+            self._convert_jsonl_to_json()
+        # CSV files are already in final format, no conversion needed
+
+    def _convert_jsonl_to_json(self) -> None:
+        """
+        Convert JSONL file to proper JSON format for final output.
+        """
+        jsonl_file = self.output_dir / "agent_evaluation_results.json"
+        json_file = self.output_dir / "agent_evaluation_results_final.json"
+
+        if not jsonl_file.exists():
+            logger.warning("JSONL file not found for conversion")
+            return
+
+        try:
+            records = []
+            with open(jsonl_file, encoding="utf-8") as f:
+                records = [json.loads(line) for line in f if line.strip()]
+
+            with open(json_file, "w", encoding="utf-8") as f:
+                json.dump(records, f, indent=2)
+
+            logger.info(f"Converted JSONL to JSON: {json_file}")
+
+        except Exception as e:
+            logger.error(f"Failed to convert JSONL to JSON: {e}")

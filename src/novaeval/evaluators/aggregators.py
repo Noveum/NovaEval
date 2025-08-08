@@ -168,8 +168,8 @@ def _aggregate_by_task_streaming(
     if input_file.suffix.lower() == ".json":
         # Use ijson to get column names from first item
         try:
-            with open(input_file, 'rb') as f:
-                parser = ijson.items(f, 'item')
+            with open(input_file, "rb") as f:
+                parser = ijson.items(f, "item")
                 first_item = next(parser)
                 if first_item:
                     # Get all columns from the first item
@@ -206,16 +206,18 @@ def _aggregate_by_task_streaming(
             task_scores_json: dict[str, list[float]] = {}
 
             try:
-                with open(input_file, 'rb') as f:
+                with open(input_file, "rb") as f:
                     # Stream through JSON array items
-                    parser = ijson.items(f, 'item')
-                    
+                    parser = ijson.items(f, "item")
+
                     for item in parser:
                         try:
                             task_id = item.get("task_id", "unknown")
                             score = item.get(scorer_col)
-                            
-                            if score is not None and not (isinstance(score, float) and pd.isna(score)):
+
+                            if score is not None and not (
+                                isinstance(score, float) and pd.isna(score)
+                            ):
                                 if task_id not in task_scores_json:
                                     task_scores_json[task_id] = []
                                 task_scores_json[task_id].append(float(score))
@@ -341,8 +343,8 @@ def _aggregate_by_user_streaming(
     if input_file.suffix.lower() == ".json":
         # Use ijson to get column names from first item
         try:
-            with open(input_file, 'rb') as f:
-                parser = ijson.items(f, 'item')
+            with open(input_file, "rb") as f:
+                parser = ijson.items(f, "item")
                 first_item = next(parser)
                 if first_item:
                     # Get all columns from the first item
@@ -379,16 +381,18 @@ def _aggregate_by_user_streaming(
             user_scores_json: dict[str, list[float]] = {}
 
             try:
-                with open(input_file, 'rb') as f:
+                with open(input_file, "rb") as f:
                     # Stream through JSON array items
-                    parser = ijson.items(f, 'item')
-                    
+                    parser = ijson.items(f, "item")
+
                     for item in parser:
                         try:
                             user_id = item.get("user_id", "unknown")
                             score = item.get(scorer_col)
-                            
-                            if score is not None and not (isinstance(score, float) and pd.isna(score)):
+
+                            if score is not None and not (
+                                isinstance(score, float) and pd.isna(score)
+                            ):
                                 if user_id not in user_scores_json:
                                     user_scores_json[user_id] = []
                                 user_scores_json[user_id].append(float(score))
@@ -513,8 +517,8 @@ def _aggregate_by_agent_streaming(
     if input_file.suffix.lower() == ".json":
         # Use ijson to get column names from first item
         try:
-            with open(input_file, 'rb') as f:
-                parser = ijson.items(f, 'item')
+            with open(input_file, "rb") as f:
+                parser = ijson.items(f, "item")
                 first_item = next(parser)
                 if first_item:
                     # Get all columns from the first item
@@ -551,16 +555,18 @@ def _aggregate_by_agent_streaming(
             agent_scores_json: dict[str, list[float]] = {}
 
             try:
-                with open(input_file, 'rb') as f:
+                with open(input_file, "rb") as f:
                     # Stream through JSON array items
-                    parser = ijson.items(f, 'item')
-                    
+                    parser = ijson.items(f, "item")
+
                     for item in parser:
                         try:
                             agent_name = item.get("agent_name", "unknown")
                             score = item.get(scorer_col)
-                            
-                            if score is not None and not (isinstance(score, float) and pd.isna(score)):
+
+                            if score is not None and not (
+                                isinstance(score, float) and pd.isna(score)
+                            ):
                                 if agent_name not in agent_scores_json:
                                     agent_scores_json[agent_name] = []
                                 agent_scores_json[agent_name].append(float(score))
