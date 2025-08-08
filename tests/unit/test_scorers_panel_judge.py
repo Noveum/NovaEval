@@ -136,8 +136,8 @@ class TestPanelOfJudgesScorer:
         assert isinstance(result, ScoreResult)
         assert result.score == 0.0
         assert not result.passed
-        assert "All judges failed to evaluate" in result.reasoning
-        assert "failed_judges" in result.metadata
+        assert "Judge evaluation failed" in result.reasoning
+        assert "individual_scores" in result.metadata
 
     @pytest.mark.unit
     @pytest.mark.asyncio

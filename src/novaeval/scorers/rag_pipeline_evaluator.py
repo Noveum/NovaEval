@@ -16,6 +16,8 @@ from typing import Any, Callable, Optional, Union
 import numpy as np
 from pydantic import BaseModel
 
+from novaeval.models.base import BaseModel as ModelBase
+
 # Import all scorers from advanced_generation_scorers
 from .advanced_generation_scorers import (
     AnswerCompletenessScorer,
@@ -40,7 +42,7 @@ from .advanced_generation_scorers import (
     TerminologyConsistencyScorer,
     ToneConsistencyScorer,
 )
-from .base import BaseScorer
+from .base import BaseScorer, ScoreResult
 
 # Import the required scorers from other modules
 # Import all scorers from basic_rag_scorers
@@ -111,10 +113,10 @@ class RAGEvaluationResult:
     retrieval_score: float
     generation_score: float
     pipeline_coordination_score: float
-    latency_analysis: dict[str, float]
+    latency_analysis: dict[str, Union[float, dict[str, float]]]
     resource_utilization: dict[str, float]
     error_propagation_score: float
-    detailed_scores: dict[str, Union[float, dict[str, Any]]]
+    detailed_scores: dict[str, Union[float, dict[str, Any], ScoreResult]]
     recommendations: list[str]
     # Enhanced scoring results
     basic_rag_scores: dict[str, Union[float, dict[str, Any]]] = field(
@@ -385,8 +387,10 @@ class RetrievalStageEvaluator(BaseScorer):
             # Calculate manual diversity
             manual_diversity = self._calculate_diversity(retrieved_contexts)
 
-            def extract_score(result: Union[float, dict[str, Any]]) -> float:
-                if isinstance(result, dict):
+            def extract_score(result: Union[float, dict[str, Any], ScoreResult]) -> float:
+                if isinstance(result, ScoreResult):
+                    return result.score
+                elif isinstance(result, dict):
                     return result.get("score", 0.0)
                 return float(result) if result is not None else 0.0
 
@@ -585,8 +589,10 @@ class RerankingEvaluator(BaseScorer):
                 generated_answer, ground_truth, context_dict
             )
 
-            def extract_score(result: Union[float, dict[str, Any]]) -> float:
-                if isinstance(result, dict):
+            def extract_score(result: Union[float, dict[str, Any], ScoreResult]) -> float:
+                if isinstance(result, ScoreResult):
+                    return result.score
+                elif isinstance(result, dict):
                     return result.get("score", 0.0)
                 return float(result) if result is not None else 0.0
 
@@ -1001,13 +1007,33 @@ class RAGPipelineEvaluator:
         # Convert llm to proper model instance if needed
         if isinstance(llm, str):
             # Create a simple model wrapper for string-based LLM
-            class SimpleLLMModel:
+            class SimpleLLMModel(ModelBase):
                 def __init__(self, model_name: str):
-                    self.model_name = model_name
+                    super().__init__(name="simple_llm", model_name=model_name)
 
-                async def generate(self, prompt: str) -> str:
+                def generate(
+                    self,
+                    prompt: str,
+                    max_tokens: Optional[int] = None,
+                    temperature: Optional[float] = None,
+                    stop: Optional[Union[str, list[str]]] = None,
+                    **kwargs: Any,
+                ) -> str:
                     # This is a placeholder - in real usage, you'd implement actual LLM calls
                     return f"Generated response for: {prompt[:50]}..."
+
+                def generate_batch(
+                    self,
+                    prompts: list[str],
+                    max_tokens: Optional[int] = None,
+                    temperature: Optional[float] = None,
+                    stop: Optional[Union[str, list[str]]] = None,
+                    **kwargs: Any,
+                ) -> list[str]:
+                    return [self.generate(prompt) for prompt in prompts]
+
+                def get_provider(self) -> str:
+                    return "simple_llm"
 
             model_instance = SimpleLLMModel(llm)
         else:
@@ -1145,7 +1171,7 @@ class RAGPipelineEvaluator:
         """
         time.time()
         stage_metrics = {}
-        detailed_scores = {}
+        detailed_scores: dict[str, Union[float, dict[str, Any], ScoreResult]] = {}
 
         try:
             # Extract weights for different components
@@ -1269,10 +1295,10 @@ class RAGPipelineEvaluator:
             resource_result = self.resource_scorer.score("", "", context_with_metrics)
             error_result = self.error_scorer.score("", "", context_with_metrics)
 
-            detailed_scores["coordination"] = coordination_result
-            detailed_scores["latency"] = latency_result
-            detailed_scores["resource"] = resource_result
-            detailed_scores["error_propagation"] = error_result
+            detailed_scores["coordination"] = coordination_result  # type: ignore
+            detailed_scores["latency"] = latency_result  # type: ignore
+            detailed_scores["resource"] = resource_result  # type: ignore
+            detailed_scores["error_propagation"] = error_result  # type: ignore
 
             # Overall evaluation
             answer_relevancy_score = self.answer_relevancy_scorer.score(
@@ -1284,29 +1310,31 @@ class RAGPipelineEvaluator:
 
             # Convert float scores to JSON format
             if isinstance(answer_relevancy_score, (int, float)):
-                answer_relevancy_result = {
+                answer_relevancy_result: Union[float, dict[str, Any], ScoreResult] = {
                     "score": float(answer_relevancy_score),
                     "reasoning": f"Answer relevancy score: {answer_relevancy_score}",
                     "details": {"relevancy_score": float(answer_relevancy_score)},
                 }
             else:
-                answer_relevancy_result = answer_relevancy_score
+                answer_relevancy_result = answer_relevancy_score  # type: ignore[assignment]
 
             if isinstance(faithfulness_score, (int, float)):
-                faithfulness_result = {
+                faithfulness_result: Union[float, dict[str, Any], ScoreResult] = {
                     "score": float(faithfulness_score),
                     "reasoning": f"Faithfulness score: {faithfulness_score}",
                     "details": {"faithfulness_score": float(faithfulness_score)},
                 }
             else:
-                faithfulness_result = faithfulness_score
+                faithfulness_result = faithfulness_score  # type: ignore[assignment]
 
             detailed_scores["answer_relevancy"] = answer_relevancy_result
             detailed_scores["faithfulness"] = faithfulness_result
 
             # Calculate overall scores - extract from JSON results
-            def extract_score(result: Union[float, dict[str, Any]]) -> float:
-                if isinstance(result, dict):
+            def extract_score(result: Union[float, dict[str, Any], ScoreResult]) -> float:
+                if isinstance(result, ScoreResult):
+                    return result.score
+                elif isinstance(result, dict):
                     return result.get("score", 0.0)
                 elif isinstance(result, (int, float)):
                     return float(result)
@@ -1338,7 +1366,7 @@ class RAGPipelineEvaluator:
 
             # Latency analysis
             latency_values = [stage.latency_ms for stage in stage_metrics.values()]
-            latency_analysis: dict[str, float] = {
+            latency_analysis: dict[str, Union[float, dict[str, float]]] = {
                 "total_latency": float(sum(latency_values)),
                 "avg_latency": (
                     float(np.mean(latency_values)) if latency_values else 0.0
@@ -1387,7 +1415,7 @@ class RAGPipelineEvaluator:
 
         except Exception as e:
             # Return error result
-            error_result = RAGEvaluationResult(
+            pipeline_error_result = RAGEvaluationResult(
                 overall_score=0.0,
                 stage_metrics={},
                 retrieval_score=0.0,
@@ -1399,7 +1427,7 @@ class RAGPipelineEvaluator:
                 detailed_scores={},
                 recommendations=[f"Pipeline evaluation failed: {e!s}"],
             )
-            return error_result
+            return pipeline_error_result
 
     def _get_scorer_factories(self) -> list[tuple[str, Callable]]:
         """
@@ -1457,7 +1485,7 @@ class RAGPipelineEvaluator:
         generated_answer: str,
         ground_truth: str,
         context_dict: dict[str, Any],
-    ) -> Union[float, dict[str, Any]]:
+    ) -> Union[float, dict[str, Any], ScoreResult]:
         """
         Evaluate a single scorer with unified error handling.
 
@@ -1469,7 +1497,7 @@ class RAGPipelineEvaluator:
             context_dict: Context dictionary for the scorer
 
         Returns:
-            ScoreResult with evaluation result or error
+            Score result (float, dict, or ScoreResult)
         """
         try:
             scorer = factory_func()
@@ -1490,7 +1518,7 @@ class RAGPipelineEvaluator:
         rag_sample: RAGSample,
         retrieved_contexts: list[RAGContext],
         generated_answer: str,
-    ) -> dict[str, Union[float, dict[str, Any]]]:
+    ) -> dict[str, Union[float, dict[str, Any], ScoreResult]]:
         """Run comprehensive evaluation using all available scorers."""
         comprehensive_scores = {}
         context_text = " ".join([ctx.content for ctx in retrieved_contexts])
@@ -1515,7 +1543,7 @@ class RAGPipelineEvaluator:
     def _generate_recommendations(
         self,
         stage_metrics: dict[str, StageMetrics],
-        detailed_scores: dict[str, Union[float, dict[str, Any]]],
+        detailed_scores: dict[str, Union[float, dict[str, Any], ScoreResult]],
     ) -> list[str]:
         """Generate improvement recommendations based on evaluation results."""
         recommendations = []
@@ -1539,8 +1567,10 @@ class RAGPipelineEvaluator:
             )
 
         # Check for low scores
-        def extract_score(result: Union[float, dict[str, Any]]) -> float:
-            if isinstance(result, dict):
+        def extract_score(result: Union[float, dict[str, Any], ScoreResult]) -> float:
+            if isinstance(result, ScoreResult):
+                return result.score
+            elif isinstance(result, dict):
                 return result.get("score", 0.0)
             elif isinstance(result, (int, float)):
                 return float(result)

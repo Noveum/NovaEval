@@ -43,7 +43,9 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
     Precision = (Number of relevant chunks retrieved) ÷ (Total number of chunks retrieved)
     """
 
-    def __init__(self, model: Any, relevance_threshold=0.7, **kwargs: Any) -> None:
+    def __init__(
+        self, model: Any, relevance_threshold: float = 0.7, **kwargs: Any
+    ) -> None:
         super().__init__(name="RetrievalPrecisionScorer", model=model, **kwargs)
         self.relevance_threshold = relevance_threshold
 
@@ -61,7 +63,7 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
         Respond with a JSON object in this exact format:
         {{
             "relevant": true/false,
-            "reasoning": "brief explanation"
+                "reasoning": "brief explanation"
         }}
         """
 
@@ -94,34 +96,34 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
                 "relevant": "yes" in response_lower
                 or "true" in response_lower
                 or "1" in response_lower,
-                "reasoning": "Fallback parsing used",
-            }
+                    "reasoning": "Fallback parsing used",
+                    }
 
     async def evaluate(
         self,
-        input_text: str,
-        output_text: str,
-        expected_output: Optional[str] = None,
-        context: Optional[dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> ScoreResult:
+            input_text: str,
+            output_text: str,
+            expected_output: Optional[str] = None,
+            context: Optional[dict[str, Any]] = None,
+            **kwargs: Any,
+            ) -> ScoreResult:
         if not context or not input_text:
             return ScoreResult(
                 score=0.0,
-                passed=False,
-                reasoning="No context or input provided",
-                metadata={},
-            )
+                    passed=False,
+                    reasoning="No context or input provided",
+                    metadata={},
+                    )
 
         # Extract chunks from context
         chunks = context.get("chunks", [context.get("context", "")])
         if not chunks:
             return ScoreResult(
                 score=0.0,
-                passed=False,
-                reasoning="No chunks provided",
-                metadata={},
-            )
+                    passed=False,
+                    reasoning="No chunks provided",
+                    metadata={},
+                    )
 
         # Evaluate each chunk for relevance
         relevant_chunks = 0
@@ -140,21 +142,21 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
 
         return ScoreResult(
             score=precision,
-            passed=passed,
-            reasoning=f"Precision: {precision:.3f} ({relevant_chunks} relevant out of {total_chunks} chunks)",
-            metadata={
+                passed=passed,
+                reasoning=f"Precision: {precision:.3f} ({relevant_chunks} relevant out of {total_chunks} chunks)",
+                metadata={
                 "relevant_chunks": relevant_chunks,
-                "total_chunks": total_chunks,
-                "chunk_results": chunk_results,
-            },
-        )
+                    "total_chunks": total_chunks,
+                    "chunk_results": chunk_results,
+                    },
+                )
 
     def score(
         self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+            prediction: str,
+            ground_truth: str,
+            context: Optional[dict[str, Any]] = None,
+            ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Check if we're already in an async context
@@ -166,21 +168,21 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(
                     asyncio.run,
-                    self.evaluate(
+                        self.evaluate(
                         input_text=ground_truth,
-                        output_text=prediction,
-                        context=context,
-                    ),
-                )
+                            output_text=prediction,
+                            context=context,
+                            ),
+                        )
                 result = future.result()
         except RuntimeError:
             # No running loop, use asyncio.run directly
             result = asyncio.run(
                 self.evaluate(
                     input_text=ground_truth,
-                    output_text=prediction,
-                    context=context,
-                )
+                        output_text=prediction,
+                        context=context,
+                        )
             )
 
         # Extract score from ScoreResult and return as float
@@ -197,7 +199,9 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
     Recall = (Number of relevant chunks retrieved) ÷ (Estimated total relevant chunks)
     """
 
-    def __init__(self, model: Any, relevance_threshold=0.7, **kwargs: Any) -> None:
+    def __init__(
+        self, model: Any, relevance_threshold: float = 0.7, **kwargs: Any
+    ) -> None:
         super().__init__(name="RetrievalRecallScorer", model=model, **kwargs)
         self.relevance_threshold = relevance_threshold
 
@@ -215,7 +219,7 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
         Respond with a JSON object in this exact format:
         {{
             "relevant": true/false,
-            "reasoning": "brief explanation"
+                "reasoning": "brief explanation"
         }}
         """
 
@@ -248,11 +252,11 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
                 "relevant": "yes" in response_lower
                 or "true" in response_lower
                 or "1" in response_lower,
-                "reasoning": "Fallback parsing used",
-            }
+                    "reasoning": "Fallback parsing used",
+                    }
 
     async def _estimate_total_relevant_chunks(
-        self, query: str, retrieved_chunks: list
+        self, query: str, retrieved_chunks: list[str]
     ) -> int:
         """Estimate the total number of relevant chunks available."""
         prompt = f"""
@@ -269,7 +273,7 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
         Respond with a JSON object in this exact format:
         {{
             "estimated_total": <number>,
-            "reasoning": "brief explanation"
+                "reasoning": "brief explanation"
         }}
         """
 
@@ -285,29 +289,29 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
 
     async def evaluate(
         self,
-        input_text: str,
-        output_text: str,
-        expected_output: Optional[str] = None,
-        context: Optional[dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> ScoreResult:
+            input_text: str,
+            output_text: str,
+            expected_output: Optional[str] = None,
+            context: Optional[dict[str, Any]] = None,
+            **kwargs: Any,
+            ) -> ScoreResult:
         if not context or not input_text:
             return ScoreResult(
                 score=0.0,
-                passed=False,
-                reasoning="No context or input provided",
-                metadata={},
-            )
+                    passed=False,
+                    reasoning="No context or input provided",
+                    metadata={},
+                    )
 
         # Extract chunks from context
         chunks = context.get("chunks", [context.get("context", "")])
         if not chunks:
             return ScoreResult(
                 score=0.0,
-                passed=False,
-                reasoning="No chunks provided",
-                metadata={},
-            )
+                    passed=False,
+                    reasoning="No chunks provided",
+                    metadata={},
+                    )
 
         # Evaluate each chunk for relevance
         relevant_chunks = 0
@@ -334,21 +338,21 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
 
         return ScoreResult(
             score=recall,
-            passed=passed,
-            reasoning=f"Recall: {recall:.3f} ({relevant_chunks} relevant retrieved, estimated {estimated_total_relevant} total relevant)",
-            metadata={
+                passed=passed,
+                reasoning=f"Recall: {recall:.3f} ({relevant_chunks} relevant retrieved, estimated {estimated_total_relevant} total relevant)",
+                metadata={
                 "relevant_chunks": relevant_chunks,
-                "estimated_total_relevant": estimated_total_relevant,
-                "chunk_results": chunk_results,
-            },
-        )
+                    "estimated_total_relevant": estimated_total_relevant,
+                    "chunk_results": chunk_results,
+                    },
+                )
 
     def score(
         self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+            prediction: str,
+            ground_truth: str,
+            context: Optional[dict[str, Any]] = None,
+            ) -> Union[float, dict[str, float]]:
         import asyncio
 
         # Check if we're already in an async context
@@ -360,21 +364,21 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
             with concurrent.futures.ThreadPoolExecutor() as executor:
                 future = executor.submit(
                     asyncio.run,
-                    self.evaluate(
+                        self.evaluate(
                         input_text=ground_truth,
-                        output_text=prediction,
-                        context=context,
-                    ),
-                )
+                            output_text=prediction,
+                            context=context,
+                            ),
+                        )
                 result = future.result()
         except RuntimeError:
             # No running loop, use asyncio.run directly
             result = asyncio.run(
                 self.evaluate(
                     input_text=ground_truth,
-                    output_text=prediction,
-                    context=context,
-                )
+                        output_text=prediction,
+                        context=context,
+                        )
             )
 
         # Extract score from ScoreResult and return as float
@@ -389,7 +393,13 @@ class RetrievalF1Scorer(BaseScorer):
     F1 score combining precision and recall for contextual evaluation.
     """
 
-    def __init__(self, precision_scorer: Any, recall_scorer: Any, threshold=0.5, **kwargs: Any) -> None:
+    def __init__(
+        self,
+            precision_scorer: Any,
+            recall_scorer: Any,
+            threshold: float = 0.5,
+            **kwargs: Any,
+            ) -> None:
         super().__init__(name="ContextualF1Scorer", **kwargs)
         self.precision_scorer = precision_scorer
         self.recall_scorer = recall_scorer
@@ -398,10 +408,10 @@ class RetrievalF1Scorer(BaseScorer):
 
     def score(
         self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+            prediction: str,
+            ground_truth: str,
+            context: Optional[dict[str, Any]] = None,
+            ) -> Union[float, dict[str, float]]:
         # Calls the precision and recall scorers, then computes F1
         precision = self.precision_scorer.score(prediction, ground_truth, context)
         recall = self.recall_scorer.score(prediction, ground_truth, context)
@@ -416,12 +426,13 @@ class RetrievalF1Scorer(BaseScorer):
         # Store the full result internally
         self._last_result = ScoreResult(
             score=f1_score,
-            passed=passed,
-            reasoning=f"F1 Score: {f1_score:.3f} (Precision: {precision:.3f}, Recall: {recall:.3f})",
-            metadata={"precision": precision, "recall": recall},
-        )
+                passed=passed,
+                reasoning=f"F1 Score: {f1_score:.3f} (Precision: {precision:.3f}, Recall: {recall:.3f})",
+                metadata={"precision": precision, "recall": recall},
+                )
 
-        # Return dictionary with precision and recall as required by BaseScorer interface
+        # Return dictionary with precision and recall as required by BaseScorer
+        # interface
         return {"f1": f1_score, "precision": precision, "recall": recall}
 
     def get_score_result(self) -> Optional[ScoreResult]:
@@ -434,25 +445,25 @@ class RetrievalRankingScorer(BaseScorer):
     Computes ranking metrics for retrieved context.
     """
 
-    def __init__(self, threshold=0.5, **kwargs: Any) -> None:
+    def __init__(self, threshold: float = 0.5, **kwargs: Any) -> None:
         super().__init__(name="RetrievalRankingScorer", **kwargs)
         self.threshold = threshold
         self._last_result: Optional[ScoreResult] = None
 
     def score(
         self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+            prediction: str,
+            ground_truth: str,
+            context: Optional[dict[str, Any]] = None,
+            ) -> Union[float, dict[str, float]]:
         # Computes ranking scores based on rankings (1,2,3,4,5) and relevance scores
         if not context or "rankings" not in context:
             self._last_result = ScoreResult(
                 score=0.0,
-                passed=False,
-                reasoning="No ranking data provided",
-                metadata={},
-            )
+                    passed=False,
+                    reasoning="No ranking data provided",
+                    metadata={},
+                    )
             return 0.0
 
         rankings = context["rankings"]
@@ -481,9 +492,9 @@ class RetrievalRankingScorer(BaseScorer):
             try:
                 ndcg = ndcg_score(
                     [ranking_scores],
-                    [list(range(1, len(ranking_scores) + 1))],
-                    k=len(ranking_scores),
-                )
+                        [list(range(1, len(ranking_scores) + 1))],
+                        k=len(ranking_scores),
+                        )
             except Exception:
                 ndcg = 0.0
 
@@ -504,24 +515,24 @@ class RetrievalRankingScorer(BaseScorer):
 
             self._last_result = ScoreResult(
                 score=combined_score,
-                passed=passed,
-                reasoning=f"Ranking Score: {combined_score:.3f} (MRR: {mrr:.3f}, NDCG: {ndcg:.3f}, MAP: {map_score:.3f}, Avg: {avg_ranking_score:.3f})",
-                metadata={
+                    passed=passed,
+                    reasoning=f"Ranking Score: {combined_score:.3f} (MRR: {mrr:.3f}, NDCG: {ndcg:.3f}, MAP: {map_score:.3f}, Avg: {avg_ranking_score:.3f})",
+                    metadata={
                     "mrr": mrr,
+                        "ndcg": ndcg,
+                        "map": map_score,
+                        "avg_ranking": avg_ranking_score,
+                        "ranking_scores": ranking_scores,
+                        "original_rankings": rankings,
+                        },
+                    )
+            return {
+                "mrr": mrr,
                     "ndcg": ndcg,
                     "map": map_score,
                     "avg_ranking": avg_ranking_score,
-                    "ranking_scores": ranking_scores,
-                    "original_rankings": rankings,
-                },
-            )
-            return {
-                "mrr": mrr,
-                "ndcg": ndcg,
-                "map": map_score,
-                "avg_ranking": avg_ranking_score,
-                "combined": combined_score,
-            }
+                    "combined": combined_score,
+                    }
         except Exception as e:
             # Fallback to simple ranking score if computation fails
             try:
@@ -538,18 +549,18 @@ class RetrievalRankingScorer(BaseScorer):
 
                 self._last_result = ScoreResult(
                     score=avg_score,
-                    passed=passed,
-                    reasoning=f"Fallback Ranking Score: {avg_score:.3f} (average ranking score only)",
-                    metadata={"avg_ranking": avg_score, "method": "fallback"},
-                )
+                        passed=passed,
+                        reasoning=f"Fallback Ranking Score: {avg_score:.3f} (average ranking score only)",
+                        metadata={"avg_ranking": avg_score, "method": "fallback"},
+                        )
                 return {"avg_ranking": avg_score}
             except Exception:
                 self._last_result = ScoreResult(
                     score=0.0,
-                    passed=False,
-                    reasoning=f"Ranking computation failed: {e!s}",
-                    metadata={},
-                )
+                        passed=False,
+                        reasoning=f"Ranking computation failed: {e!s}",
+                        metadata={},
+                        )
                 return 0.0
 
     def get_score_result(self) -> Optional[ScoreResult]:
@@ -562,7 +573,12 @@ class SemanticSimilarityScorer(BaseScorer):
     Computes semantic similarity between query and retrieved context.
     """
 
-    def __init__(self, threshold=0.7, embedding_model="all-MiniLM-L6-v2", **kwargs: Any) -> None:
+    def __init__(
+        self,
+            threshold: float = 0.7,
+            embedding_model: str = "all-MiniLM-L6-v2",
+            **kwargs: Any,
+            ) -> None:
         super().__init__(name="SemanticSimilarityScorer", **kwargs)
         self.threshold = threshold
         self.embedding_model = embedding_model
@@ -583,7 +599,7 @@ class SemanticSimilarityScorer(BaseScorer):
                 "Using simple similarity computation."
             )
 
-    def _compute_simple_similarity(self, query: str, chunks: list) -> float:
+    def _compute_simple_similarity(self, query: str, chunks: list[str]) -> float:
         """Fallback similarity computation without embeddings."""
         # Simple text-based similarity as fallback
         query_lower = query.lower()
@@ -605,18 +621,18 @@ class SemanticSimilarityScorer(BaseScorer):
 
     def score(
         self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+            prediction: str,
+            ground_truth: str,
+            context: Optional[dict[str, Any]] = None,
+            ) -> Union[float, dict[str, float]]:
         # Embeds the query and all chunks, computes mean semantic similarity
         if not context or not ground_truth:
             self._last_result = ScoreResult(
                 score=0.0,
-                passed=False,
-                reasoning="No context or query provided",
-                metadata={},
-            )
+                    passed=False,
+                    reasoning="No context or query provided",
+                    metadata={},
+                    )
             return 0.0
 
         try:
@@ -632,10 +648,10 @@ class SemanticSimilarityScorer(BaseScorer):
 
                 self._last_result = ScoreResult(
                     score=similarity,
-                    passed=passed,
-                    reasoning=f"Fallback similarity score: {similarity:.3f} (using text-based similarity)",
-                    metadata={"similarity": similarity, "method": "fallback"},
-                )
+                        passed=passed,
+                        reasoning=f"Fallback similarity score: {similarity:.3f} (using text-based similarity)",
+                        metadata={"similarity": similarity, "method": "fallback"},
+                        )
                 return {"similarity": similarity}
 
             # Compute embeddings
@@ -655,23 +671,23 @@ class SemanticSimilarityScorer(BaseScorer):
 
             self._last_result = ScoreResult(
                 score=mean_similarity,
-                passed=passed,
-                reasoning=f"Semantic Similarity Score: {mean_similarity:.3f}",
-                metadata={
+                    passed=passed,
+                    reasoning=f"Semantic Similarity Score: {mean_similarity:.3f}",
+                    metadata={
                     "mean_similarity": mean_similarity,
-                    "similarities": similarities,
-                },
-            )
+                        "similarities": similarities,
+                        },
+                    )
             return {
                 "similarity": mean_similarity,
-            }
+                    }
         except Exception as e:
             self._last_result = ScoreResult(
                 score=0.0,
-                passed=False,
-                reasoning=f"Semantic similarity computation failed: {e!s}",
-                metadata={},
-            )
+                    passed=False,
+                    reasoning=f"Semantic similarity computation failed: {e!s}",
+                    metadata={},
+                    )
             return 0.0
 
     def get_score_result(self) -> Optional[ScoreResult]:
@@ -685,8 +701,11 @@ class RetrievalDiversityScorer(BaseScorer):
     """
 
     def __init__(
-        self, embedding_model="all-MiniLM-L6-v2", threshold: float = 0.3, **kwargs: Any
-    ) -> None:
+        self,
+            embedding_model: str = "all-MiniLM-L6-v2",
+            threshold: float = 0.3,
+            **kwargs: Any,
+            ) -> None:
         super().__init__(name="RetrievalDiversityScorer", **kwargs)
         self.embedding_model = embedding_model
         self.threshold = threshold
@@ -722,7 +741,7 @@ class RetrievalDiversityScorer(BaseScorer):
                 self.model = None
                 self._model_loaded = True  # Prevent retry
 
-    def _compute_pairwise_cosine_distance(self, embeddings: list) -> float:
+    def _compute_pairwise_cosine_distance(self, embeddings: list[list[float]]) -> float:
         """Compute pairwise cosine distances between embeddings."""
         if len(embeddings) < 2:
             return 0.0
@@ -739,7 +758,7 @@ class RetrievalDiversityScorer(BaseScorer):
 
         return np.mean(distances) if distances else 0.0
 
-    def _compute_simple_diversity(self, chunks: list) -> float:
+    def _compute_simple_diversity(self, chunks: list[str]) -> float:
         """Fallback diversity computation without embeddings."""
         if len(chunks) <= 1:
             return 0.0
@@ -772,10 +791,10 @@ class RetrievalDiversityScorer(BaseScorer):
 
     def score(
         self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+            prediction: str,
+            ground_truth: str,
+            context: Optional[dict[str, Any]] = None,
+            ) -> Union[float, dict[str, float]]:
         if not context or "chunks" not in context:
             self._last_result = ScoreResult(
                 score=0.0, passed=False, reasoning="No chunks provided", metadata={}
@@ -787,10 +806,10 @@ class RetrievalDiversityScorer(BaseScorer):
         if len(chunks) <= 1:
             self._last_result = ScoreResult(
                 score=0.0,
-                passed=False,
-                reasoning="Insufficient chunks for diversity calculation",
-                metadata={},
-            )
+                    passed=False,
+                    reasoning="Insufficient chunks for diversity calculation",
+                    metadata={},
+                    )
             return 0.0
 
         try:
@@ -802,10 +821,10 @@ class RetrievalDiversityScorer(BaseScorer):
 
                 self._last_result = ScoreResult(
                     score=diversity_score,
-                    passed=diversity_score > self.threshold,  # Configurable threshold
+                        passed=diversity_score > self.threshold,  # Configurable threshold
                     reasoning=f"Fallback diversity score: {diversity_score:.3f} (using text-based diversity)",
-                    metadata={"diversity": diversity_score, "method": "fallback"},
-                )
+                        metadata={"diversity": diversity_score, "method": "fallback"},
+                        )
                 return {"diversity": diversity_score}
 
             # Compute embeddings for all chunks
@@ -816,22 +835,22 @@ class RetrievalDiversityScorer(BaseScorer):
 
             self._last_result = ScoreResult(
                 score=diversity_score,
-                passed=diversity_score > self.threshold,  # Configurable threshold
+                    passed=diversity_score > self.threshold,  # Configurable threshold
                 reasoning=f"Diversity Score: {diversity_score:.3f} (using cosine distance between embeddings)",
-                metadata={
+                    metadata={
                     "diversity": diversity_score,
-                    "num_chunks": len(chunks),
-                    "method": "cosine_distance",
-                },
-            )
+                        "num_chunks": len(chunks),
+                        "method": "cosine_distance",
+                        },
+                    )
             return {"diversity": diversity_score}
         except Exception as e:
             self._last_result = ScoreResult(
                 score=0.0,
-                passed=False,
-                reasoning=f"Diversity computation failed: {e!s}",
-                metadata={},
-            )
+                    passed=False,
+                    reasoning=f"Diversity computation failed: {e!s}",
+                    metadata={},
+                    )
             return 0.0
 
     def get_score_result(self) -> Optional[ScoreResult]:
@@ -846,11 +865,11 @@ class AggregateRAGScorer(BaseScorer):
 
     def __init__(
         self,
-        scorers: dict[str, Any],
-        weights: Optional[dict[str, float]] = None,
-        threshold: float = 0.5,
-        **kwargs: Any,
-    ) -> None:
+            scorers: dict[str, Any],
+            weights: Optional[dict[str, float]] = None,
+            threshold: float = 0.5,
+            **kwargs: Any,
+            ) -> None:
         super().__init__(name="AggregateRetrievalScorer", **kwargs)
         self.scorers = scorers
         self.weights = weights or dict.fromkeys(scorers.keys(), 1.0)
@@ -859,10 +878,10 @@ class AggregateRAGScorer(BaseScorer):
 
     def score(
         self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, Any]]:
+            prediction: str,
+            ground_truth: str,
+            context: Optional[dict[str, Any]] = None,
+            ) -> Union[float, dict[str, Any]]:
         # Calls each scorer, extracts main score, and computes weighted average
         scores: dict[str, float] = {}
         total_weight = 0.0
@@ -902,10 +921,10 @@ class AggregateRAGScorer(BaseScorer):
 
         self._last_result = ScoreResult(
             score=final_score,
-            passed=passed,
-            reasoning=f"Aggregate Score: {final_score:.3f}",
-            metadata={"individual_scores": scores, "weights": self.weights},
-        )
+                passed=passed,
+                reasoning=f"Aggregate Score: {final_score:.3f}",
+                metadata={"individual_scores": scores, "weights": self.weights},
+                )
         return {"aggregate": final_score, "individual_scores": scores}
 
     def get_score_result(self) -> Optional[ScoreResult]:

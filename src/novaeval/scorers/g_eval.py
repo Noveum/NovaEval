@@ -187,7 +187,7 @@ class GEvalScorer(BaseScorer):
         prediction: str,
         ground_truth: str,
         context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+    ) -> ScoreResult:
         """Synchronous wrapper for the async evaluate method."""
         import asyncio
 
@@ -203,6 +203,7 @@ class GEvalScorer(BaseScorer):
             )
         )
 
+        # Return the full ScoreResult object
         return result
 
     async def evaluate(

@@ -11,9 +11,9 @@ from novaeval.utils.parsing import parse_claims, parse_simple_claims
 
 __all__ = [
     "Config",
-    "call_llm",
-    "get_logger",
-    "parse_claims",
-    "parse_simple_claims",
-    "setup_logging",
-]
+        "call_llm",
+        "get_logger",
+        "parse_claims",
+        "parse_simple_claims",
+        "setup_logging",
+        ]

@@ -2,7 +2,7 @@
 LLM utility functions for NovaEval.
 
 This module contains shared utilities for interacting with language models,
-supporting various model types and interfaces.
+    supporting various model types and interfaces.
 """
 
 from typing import Any
@@ -14,7 +14,7 @@ try:
     _HAS_LANGCHAIN = True
 except ImportError:
     _HAS_LANGCHAIN = False
-    BaseLanguageModel = None
+    BaseLanguageModel = Any  # type: ignore
 
 
 def call_llm(model: Any, prompt: str) -> str:
@@ -35,7 +35,7 @@ def call_llm(model: Any, prompt: str) -> str:
         ValueError: If LangChain LLM doesn't support invoke or generate
         NotImplementedError: If string-based model calling is attempted
     """
-    if _HAS_LANGCHAIN and BaseLanguageModel and isinstance(model, BaseLanguageModel):
+    if _HAS_LANGCHAIN and isinstance(model, BaseLanguageModel):
         # LangChain LLM: use .invoke or .generate
         if hasattr(model, "invoke"):
             return model.invoke(prompt)

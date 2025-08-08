@@ -26,7 +26,7 @@ class BiasDetectionScorer(BaseScorer):
     Bias detection in generated content.
     """
 
-    def __init__(self, model, threshold=0.8, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.8, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="BiasDetectionScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -209,7 +209,10 @@ Now evaluate the provided question and answer for bias.
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+            return {"score": result.score}
+        else:
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 # HALLUCINATION DETECTION SCORERS
@@ -218,7 +221,7 @@ class FactualAccuracyScorer(BaseScorer):
     Verify factual claims against contexts.
     """
 
-    def __init__(self, model, threshold=0.8, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.8, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="FactualAccuracyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -404,7 +407,16 @@ Now evaluate the factual accuracy of the provided answer against the context.
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class ClaimVerificationScorer(BaseScorer):
@@ -412,7 +424,7 @@ class ClaimVerificationScorer(BaseScorer):
     Verify specific claims in generated answers.
     """
 
-    def __init__(self, model, threshold=0.7, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.7, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="ClaimVerificationScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -714,7 +726,16 @@ Now verify the provided claim against the context.
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 # ANSWER COMPLETENESS AND RELEVANCE SCORERS
@@ -723,7 +744,7 @@ class InformationDensityScorer(BaseScorer):
     Information richness evaluation.
     """
 
-    def __init__(self, model, threshold=0.6, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.6, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="InformationDensityScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -815,7 +836,16 @@ class InformationDensityScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class ClarityAndCoherenceScorer(BaseScorer):
@@ -823,7 +853,7 @@ class ClarityAndCoherenceScorer(BaseScorer):
     Answer readability and logic evaluation.
     """
 
-    def __init__(self, model, threshold=0.7, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.7, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="ClarityAndCoherenceScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -915,7 +945,16 @@ class ClarityAndCoherenceScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 # MULTI-CONTEXT INTEGRATION SCORERS
@@ -924,7 +963,7 @@ class ConflictResolutionScorer(BaseScorer):
     Handling contradictory information across contexts.
     """
 
-    def __init__(self, model, threshold=0.7, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.7, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="ConflictResolutionScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -1029,7 +1068,16 @@ class ConflictResolutionScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class ContextPrioritizationScorer(BaseScorer):
@@ -1037,7 +1085,7 @@ class ContextPrioritizationScorer(BaseScorer):
     Appropriate context weighting evaluation.
     """
 
-    def __init__(self, model, threshold=0.6, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.6, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="ContextPrioritizationScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -1132,7 +1180,16 @@ class ContextPrioritizationScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class CitationQualityScorer(BaseScorer):
@@ -1140,7 +1197,7 @@ class CitationQualityScorer(BaseScorer):
     Quality of source references evaluation.
     """
 
-    def __init__(self, model, threshold=0.6, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.6, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="CitationQualityScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -1231,7 +1288,16 @@ class CitationQualityScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 # DOMAIN-SPECIFIC EVALUATION SCORERS
@@ -1240,7 +1306,7 @@ class ToneConsistencyScorer(BaseScorer):
     Appropriate tone for domain evaluation.
     """
 
-    def __init__(self, model, threshold=0.7, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.7, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="ToneConsistencyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -1336,7 +1402,16 @@ class ToneConsistencyScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class TerminologyConsistencyScorer(BaseScorer):
@@ -1344,7 +1419,7 @@ class TerminologyConsistencyScorer(BaseScorer):
     Consistent use of domain terms evaluation.
     """
 
-    def __init__(self, model, threshold=0.7, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.7, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="TerminologyConsistencyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -1435,7 +1510,16 @@ class TerminologyConsistencyScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class ContextFaithfulnessScorerPP(BaseScorer):
@@ -1444,7 +1528,7 @@ class ContextFaithfulnessScorerPP(BaseScorer):
     Analyzes each claim in the answer against the provided context.
     """
 
-    def __init__(self, model, threshold=0.8, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.8, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="ContextFaithfulnessScorerPP", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -1571,7 +1655,16 @@ class ContextFaithfulnessScorerPP(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class ContextGroundednessScorer(BaseScorer):
@@ -1580,7 +1673,7 @@ class ContextGroundednessScorer(BaseScorer):
     Evaluates how well the answer is supported by the given context.
     """
 
-    def __init__(self, model, threshold=0.7, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.7, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="ContextGroundednessScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -1674,7 +1767,16 @@ class ContextGroundednessScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class ContextCompletenessScorer(BaseScorer):
@@ -1683,7 +1785,7 @@ class ContextCompletenessScorer(BaseScorer):
     Checks whether the provided context contains all necessary information.
     """
 
-    def __init__(self, model, threshold=0.6, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.6, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="ContextCompletenessScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -1777,7 +1879,16 @@ class ContextCompletenessScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class ContextConsistencyScorer(BaseScorer):
@@ -1786,7 +1897,7 @@ class ContextConsistencyScorer(BaseScorer):
     Evaluates if the answer is consistent when multiple contexts are provided.
     """
 
-    def __init__(self, model, threshold=0.7, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.7, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="ContextConsistencyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -1890,7 +2001,16 @@ class ContextConsistencyScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class RAGAnswerQualityScorer(BaseScorer):
@@ -1899,7 +2019,7 @@ class RAGAnswerQualityScorer(BaseScorer):
     Evaluates the overall quality of RAG-generated answers.
     """
 
-    def __init__(self, model, threshold=0.7, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.7, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="RAGAnswerQualityScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -1992,7 +2112,16 @@ class RAGAnswerQualityScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class HallucinationDetectionScorer(BaseScorer):
@@ -2000,7 +2129,7 @@ class HallucinationDetectionScorer(BaseScorer):
     Identify factual inconsistencies in generated answers.
     """
 
-    def __init__(self, model, threshold=0.8, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.8, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="HallucinationDetectionScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -2092,7 +2221,16 @@ class HallucinationDetectionScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class SourceAttributionScorer(BaseScorer):
@@ -2100,7 +2238,7 @@ class SourceAttributionScorer(BaseScorer):
     Proper citation and source attribution evaluation.
     """
 
-    def __init__(self, model, threshold=0.6, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.6, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="SourceAttributionScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -2191,7 +2329,16 @@ class SourceAttributionScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class AnswerCompletenessScorer(BaseScorer):
@@ -2199,7 +2346,7 @@ class AnswerCompletenessScorer(BaseScorer):
     Comprehensive answer coverage evaluation.
     """
 
-    def __init__(self, model, threshold=0.7, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.7, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="AnswerCompletenessScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -2291,7 +2438,16 @@ class AnswerCompletenessScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class QuestionAnswerAlignmentScorer(BaseScorer):
@@ -2299,7 +2455,7 @@ class QuestionAnswerAlignmentScorer(BaseScorer):
     Direct question addressing evaluation.
     """
 
-    def __init__(self, model, threshold=0.7, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.7, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="QuestionAnswerAlignmentScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -2390,7 +2546,16 @@ class QuestionAnswerAlignmentScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class CrossContextSynthesisScorer(BaseScorer):
@@ -2398,7 +2563,7 @@ class CrossContextSynthesisScorer(BaseScorer):
     Quality of information synthesis across multiple contexts.
     """
 
-    def __init__(self, model, threshold=0.7, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.7, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="CrossContextSynthesisScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -2503,7 +2668,16 @@ class CrossContextSynthesisScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
 
 
 class TechnicalAccuracyScorer(BaseScorer):
@@ -2511,7 +2685,7 @@ class TechnicalAccuracyScorer(BaseScorer):
     Technical domain accuracy evaluation.
     """
 
-    def __init__(self, model, threshold=0.8, max_score=5.0, **kwargs):
+    def __init__(self, model: Any, threshold: float = 0.8, max_score: float = 5.0, **kwargs: Any) -> None:
         super().__init__(name="TechnicalAccuracyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
@@ -2603,4 +2777,13 @@ class TechnicalAccuracyScorer(BaseScorer):
             )
         )
 
-        return result.score if hasattr(result, "score") else result
+        if hasattr(result, "score"):
+
+
+            return {"score": result.score}
+
+
+        else:
+
+
+            return {"score": result.score if hasattr(result, "score") else 0.0}
