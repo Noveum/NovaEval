@@ -166,10 +166,7 @@ class AgentEvaluator:
         # Process samples directly from the generator to preserve streaming
         # Note: We can't get the total count without consuming the generator,
         # so we'll use tqdm without a total count for streaming behavior
-        samples_list = list(samples_generator)  # Convert to list to get length
-        all_results = []  # Accumulate all results for final save
-
-        for i, sample in enumerate(tqdm(samples_list, desc="Evaluating samples")):
+        for i, sample in enumerate(tqdm(samples_generator, desc="Evaluating samples")):
             # Evaluate the sample
             model = self.models[0] if self.models else None
             if not model:
@@ -179,26 +176,21 @@ class AgentEvaluator:
 
             # Add result to DataFrame
             self._add_result_to_dataframe(sample_result)
-            all_results.append(sample_result)
 
             # Save periodically to avoid memory leaks
             if (i + 1) % save_every == 0:
                 logger.info(f"Saving intermediate results after {i + 1} samples")
-                # For intermediate saves, clear the DataFrame to free memory
+                # For intermediate saves, save to file but keep DataFrame for final save
                 self._save_intermediate_results(file_type, is_final=False)
 
-        # Restore all results for final save
-        if all_results:
-            # Clear and rebuild DataFrame with all results
-            self.results_df = pd.DataFrame(columns=self.results_df.columns)
-            for result in all_results:
-                self._add_result_to_dataframe(result)
-
-        # Save final results
+        # Save final results (flush any remaining data in DataFrame)
         logger.info("Saving final results")
         # Only save final results if there's data in the DataFrame
         if not self.results_df.empty:
             self._save_intermediate_results(file_type, is_final=True)
+
+        # Reload all results into DataFrame for testing/accessibility
+        self._reload_results_to_dataframe(file_type)
 
         # Finalize results (convert JSONL to JSON if needed)
         self.finalize_results(file_type)
@@ -647,6 +639,41 @@ class AgentEvaluator:
         if file_type.lower() == "json":
             self._convert_jsonl_to_json()
         # CSV files are already in final format, no conversion needed
+
+    def _reload_results_to_dataframe(self, file_type: str) -> None:
+        """
+        Reload all results from the saved file into the DataFrame.
+
+        This method is called after processing is complete to ensure the DataFrame
+        contains all results for testing and accessibility purposes.
+
+        Args:
+            file_type: Type of file to reload ('csv' or 'json')
+        """
+        try:
+            if file_type.lower() == "csv":
+                output_file = self.output_dir / "agent_evaluation_results.csv"
+                if output_file.exists():
+                    self.results_df = pd.read_csv(output_file)
+                    logger.info(f"Reloaded {len(self.results_df)} results from CSV")
+            elif file_type.lower() == "json":
+                # Try to read from final JSON file first, then JSONL
+                json_file = self.output_dir / "agent_evaluation_results_final.json"
+                jsonl_file = self.output_dir / "agent_evaluation_results.json"
+
+                if json_file.exists():
+                    with open(json_file, encoding="utf-8") as f:
+                        data = json.load(f)
+                    self.results_df = pd.DataFrame(data)
+                    logger.info(f"Reloaded {len(self.results_df)} results from JSON")
+                elif jsonl_file.exists():
+                    records = []
+                    with open(jsonl_file, encoding="utf-8") as f:
+                        records = [json.loads(line) for line in f if line.strip()]
+                    self.results_df = pd.DataFrame(records)
+                    logger.info(f"Reloaded {len(self.results_df)} results from JSONL")
+        except Exception as e:
+            logger.error(f"Failed to reload results to DataFrame: {e}")
 
     def _convert_jsonl_to_json(self) -> None:
         """
