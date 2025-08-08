@@ -6,6 +6,7 @@ This package contains scoring mechanisms for evaluating AI model outputs.
 
 # Accuracy scorers
 from novaeval.scorers.accuracy import AccuracyScorer, ExactMatchScorer, F1Scorer
+from novaeval.scorers.agent_scorers import AgentScorers
 
 # Base classes
 from novaeval.scorers.base import BaseScorer, ScoreResult
@@ -44,6 +45,7 @@ from novaeval.scorers.rag import (
 
 __all__ = [
     "AccuracyScorer",
+    "AgentScorers",
     "AggregationMethod",
     "AnswerRelevancyScorer",
     "BaseScorer",
