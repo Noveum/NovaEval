@@ -7,11 +7,10 @@ grouping criteria (task, user, agent) with streaming support for memory efficien
 
 import json
 import logging
-import os
-import tempfile
 from pathlib import Path
 from typing import Callable, Optional, Union
 
+import ijson
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -167,22 +166,28 @@ def _aggregate_by_task_streaming(
 
     # Read the file to get column names
     if input_file.suffix.lower() == ".json":
-        with open(input_file) as f:
-            first_line = f.readline().strip()
-            if first_line.startswith("["):
-                # JSON array format
-                df_sample = pd.read_json(input_file, nrows=1)
-            else:
-                # JSONL format
-                df_sample = pd.read_json(input_file, lines=True, nrows=1)
+        # Use ijson to get column names from first item
+        try:
+            with open(input_file, 'rb') as f:
+                parser = ijson.items(f, 'item')
+                first_item = next(parser)
+                if first_item:
+                    # Get all columns from the first item
+                    all_columns = list(first_item.keys())
+                else:
+                    raise ValueError("Empty JSON array")
+        except Exception as e:
+            logger.error(f"Error reading column names from JSON file {input_file}: {e}")
+            raise
     else:
         df_sample = pd.read_csv(input_file, nrows=1)
+        all_columns = list(df_sample.columns)
 
     # Get base columns and scorer columns
     base_columns = ["user_id", "task_id", "turn_id", "agent_name"]
     scorer_columns = [
         col
-        for col in df_sample.columns
+        for col in all_columns
         if col not in base_columns and not col.endswith("_reasoning")
     ]
 
@@ -197,54 +202,29 @@ def _aggregate_by_task_streaming(
         columns_to_read = ["task_id", scorer_col]
 
         if input_file.suffix.lower() == ".json":
-            # Handle JSON files
+            # Handle JSON files with true streaming using ijson
             task_scores_json: dict[str, list[float]] = {}
 
-            with open(input_file) as f:
-                first_char = f.read(1)
-                f.seek(0)
-
-                if first_char == "[":
-                    # JSON array format - convert to JSONL for streaming
-
-                    # Read the JSON array
-                    data = json.load(f)
-
-                    # Create a temporary JSONL file
-                    with tempfile.NamedTemporaryFile(
-                        mode="w", suffix=".jsonl", delete=False
-                    ) as temp_file:
-                        for item in data:
-                            temp_file.write(json.dumps(item) + "\n")
-                        temp_file_path = temp_file.name
-
-                    try:
-                        # Process the temporary JSONL file
-                        for chunk in pd.read_json(
-                            temp_file_path, lines=True, chunksize=chunk_size
-                        ):
-                            for _, row in chunk.iterrows():
-                                task_id = row.get("task_id", "unknown")
-                                score = row.get(scorer_col)
-                                if pd.notna(score) and score is not None:
-                                    if task_id not in task_scores_json:
-                                        task_scores_json[task_id] = []
-                                    task_scores_json[task_id].append(float(score))
-                    finally:
-                        # Clean up temporary file
-                        os.unlink(temp_file_path)
-                else:
-                    # JSONL format
-                    for chunk in pd.read_json(
-                        input_file, lines=True, chunksize=chunk_size
-                    ):
-                        for _, row in chunk.iterrows():
-                            task_id = row.get("task_id", "unknown")
-                            score = row.get(scorer_col)
-                            if pd.notna(score) and score is not None:
+            try:
+                with open(input_file, 'rb') as f:
+                    # Stream through JSON array items
+                    parser = ijson.items(f, 'item')
+                    
+                    for item in parser:
+                        try:
+                            task_id = item.get("task_id", "unknown")
+                            score = item.get(scorer_col)
+                            
+                            if score is not None and not (isinstance(score, float) and pd.isna(score)):
                                 if task_id not in task_scores_json:
                                     task_scores_json[task_id] = []
                                 task_scores_json[task_id].append(float(score))
+                        except (KeyError, ValueError, TypeError) as e:
+                            logger.warning(f"Error processing item in JSON stream: {e}")
+                            continue
+            except Exception as e:
+                logger.error(f"Error reading JSON file {input_file}: {e}")
+                raise
         else:
             # Handle CSV files
             task_scores_csv: dict[str, list[float]] = {}
@@ -359,22 +339,28 @@ def _aggregate_by_user_streaming(
 
     # Read the file to get column names
     if input_file.suffix.lower() == ".json":
-        with open(input_file) as f:
-            first_line = f.readline().strip()
-            if first_line.startswith("["):
-                # JSON array format
-                df_sample = pd.read_json(input_file, nrows=1)
-            else:
-                # JSONL format
-                df_sample = pd.read_json(input_file, lines=True, nrows=1)
+        # Use ijson to get column names from first item
+        try:
+            with open(input_file, 'rb') as f:
+                parser = ijson.items(f, 'item')
+                first_item = next(parser)
+                if first_item:
+                    # Get all columns from the first item
+                    all_columns = list(first_item.keys())
+                else:
+                    raise ValueError("Empty JSON array")
+        except Exception as e:
+            logger.error(f"Error reading column names from JSON file {input_file}: {e}")
+            raise
     else:
         df_sample = pd.read_csv(input_file, nrows=1)
+        all_columns = list(df_sample.columns)
 
     # Get base columns and scorer columns
     base_columns = ["user_id", "task_id", "turn_id", "agent_name"]
     scorer_columns = [
         col
-        for col in df_sample.columns
+        for col in all_columns
         if col not in base_columns and not col.endswith("_reasoning")
     ]
 
@@ -389,54 +375,29 @@ def _aggregate_by_user_streaming(
         columns_to_read = ["user_id", scorer_col]
 
         if input_file.suffix.lower() == ".json":
-            # Handle JSON files
+            # Handle JSON files with true streaming using ijson
             user_scores_json: dict[str, list[float]] = {}
 
-            with open(input_file) as f:
-                first_char = f.read(1)
-                f.seek(0)
-
-                if first_char == "[":
-                    # JSON array format - convert to JSONL for streaming
-
-                    # Read the JSON array
-                    data = json.load(f)
-
-                    # Create a temporary JSONL file
-                    with tempfile.NamedTemporaryFile(
-                        mode="w", suffix=".jsonl", delete=False
-                    ) as temp_file:
-                        for item in data:
-                            temp_file.write(json.dumps(item) + "\n")
-                        temp_file_path = temp_file.name
-
-                    try:
-                        # Process the temporary JSONL file
-                        for chunk in pd.read_json(
-                            temp_file_path, lines=True, chunksize=chunk_size
-                        ):
-                            for _, row in chunk.iterrows():
-                                user_id = row.get("user_id", "unknown")
-                                score = row.get(scorer_col)
-                                if pd.notna(score) and score is not None:
-                                    if user_id not in user_scores_json:
-                                        user_scores_json[user_id] = []
-                                    user_scores_json[user_id].append(float(score))
-                    finally:
-                        # Clean up temporary file
-                        os.unlink(temp_file_path)
-                else:
-                    # JSONL format
-                    for chunk in pd.read_json(
-                        input_file, lines=True, chunksize=chunk_size
-                    ):
-                        for _, row in chunk.iterrows():
-                            user_id = row.get("user_id", "unknown")
-                            score = row.get(scorer_col)
-                            if pd.notna(score) and score is not None:
+            try:
+                with open(input_file, 'rb') as f:
+                    # Stream through JSON array items
+                    parser = ijson.items(f, 'item')
+                    
+                    for item in parser:
+                        try:
+                            user_id = item.get("user_id", "unknown")
+                            score = item.get(scorer_col)
+                            
+                            if score is not None and not (isinstance(score, float) and pd.isna(score)):
                                 if user_id not in user_scores_json:
                                     user_scores_json[user_id] = []
                                 user_scores_json[user_id].append(float(score))
+                        except (KeyError, ValueError, TypeError) as e:
+                            logger.warning(f"Error processing item in JSON stream: {e}")
+                            continue
+            except Exception as e:
+                logger.error(f"Error reading JSON file {input_file}: {e}")
+                raise
         else:
             # Handle CSV files
             user_scores_csv: dict[str, list[float]] = {}
@@ -550,22 +511,28 @@ def _aggregate_by_agent_streaming(
 
     # Read the file to get column names
     if input_file.suffix.lower() == ".json":
-        with open(input_file) as f:
-            first_line = f.readline().strip()
-            if first_line.startswith("["):
-                # JSON array format
-                df_sample = pd.read_json(input_file, nrows=1)
-            else:
-                # JSONL format
-                df_sample = pd.read_json(input_file, lines=True, nrows=1)
+        # Use ijson to get column names from first item
+        try:
+            with open(input_file, 'rb') as f:
+                parser = ijson.items(f, 'item')
+                first_item = next(parser)
+                if first_item:
+                    # Get all columns from the first item
+                    all_columns = list(first_item.keys())
+                else:
+                    raise ValueError("Empty JSON array")
+        except Exception as e:
+            logger.error(f"Error reading column names from JSON file {input_file}: {e}")
+            raise
     else:
         df_sample = pd.read_csv(input_file, nrows=1)
+        all_columns = list(df_sample.columns)
 
     # Get base columns and scorer columns
     base_columns = ["user_id", "task_id", "turn_id", "agent_name"]
     scorer_columns = [
         col
-        for col in df_sample.columns
+        for col in all_columns
         if col not in base_columns and not col.endswith("_reasoning")
     ]
 
@@ -580,54 +547,29 @@ def _aggregate_by_agent_streaming(
         columns_to_read = ["agent_name", scorer_col]
 
         if input_file.suffix.lower() == ".json":
-            # Handle JSON files
+            # Handle JSON files with true streaming using ijson
             agent_scores_json: dict[str, list[float]] = {}
 
-            with open(input_file) as f:
-                first_char = f.read(1)
-                f.seek(0)
-
-                if first_char == "[":
-                    # JSON array format - convert to JSONL for streaming
-
-                    # Read the JSON array
-                    data = json.load(f)
-
-                    # Create a temporary JSONL file
-                    with tempfile.NamedTemporaryFile(
-                        mode="w", suffix=".jsonl", delete=False
-                    ) as temp_file:
-                        for item in data:
-                            temp_file.write(json.dumps(item) + "\n")
-                        temp_file_path = temp_file.name
-
-                    try:
-                        # Process the temporary JSONL file
-                        for chunk in pd.read_json(
-                            temp_file_path, lines=True, chunksize=chunk_size
-                        ):
-                            for _, row in chunk.iterrows():
-                                agent_name = row.get("agent_name", "unknown")
-                                score = row.get(scorer_col)
-                                if pd.notna(score) and score is not None:
-                                    if agent_name not in agent_scores_json:
-                                        agent_scores_json[agent_name] = []
-                                    agent_scores_json[agent_name].append(float(score))
-                    finally:
-                        # Clean up temporary file
-                        os.unlink(temp_file_path)
-                else:
-                    # JSONL format
-                    for chunk in pd.read_json(
-                        input_file, lines=True, chunksize=chunk_size
-                    ):
-                        for _, row in chunk.iterrows():
-                            agent_name = row.get("agent_name", "unknown")
-                            score = row.get(scorer_col)
-                            if pd.notna(score) and score is not None:
+            try:
+                with open(input_file, 'rb') as f:
+                    # Stream through JSON array items
+                    parser = ijson.items(f, 'item')
+                    
+                    for item in parser:
+                        try:
+                            agent_name = item.get("agent_name", "unknown")
+                            score = item.get(scorer_col)
+                            
+                            if score is not None and not (isinstance(score, float) and pd.isna(score)):
                                 if agent_name not in agent_scores_json:
                                     agent_scores_json[agent_name] = []
                                 agent_scores_json[agent_name].append(float(score))
+                        except (KeyError, ValueError, TypeError) as e:
+                            logger.warning(f"Error processing item in JSON stream: {e}")
+                            continue
+            except Exception as e:
+                logger.error(f"Error reading JSON file {input_file}: {e}")
+                raise
         else:
             # Handle CSV files
             agent_scores_csv: dict[str, list[float]] = {}

@@ -245,8 +245,8 @@ class TestAggregators:
         assert output_file.exists()
 
     def test_aggregate_by_task_jsonl_streaming(self, tmp_path):
-        """Test aggregate_by_task with JSONL file in streaming mode."""
-        # Create test JSONL file
+        """Test aggregate_by_task with JSON array file in streaming mode."""
+        # Create test JSON array file
         test_data = [
             {
                 "user_id": "user1",
@@ -259,8 +259,7 @@ class TestAggregators:
 
         input_file = tmp_path / "test_input.json"
         with open(input_file, "w") as f:
-            for item in test_data:
-                f.write(json.dumps(item) + "\n")
+            json.dump(test_data, f)
 
         output_file = tmp_path / "task_aggregation.csv"
 
@@ -599,8 +598,8 @@ class TestAggregators:
         assert "mean_callable_score1" in res.columns
 
     def test_streaming_aggregation_jsonl(self, tmp_path):
-        """Test streaming aggregation with JSONL format."""
-        # Create test JSONL file
+        """Test streaming aggregation with JSON array format."""
+        # Create test JSON array file
         test_data = [
             {
                 "user_id": "user1",
@@ -613,8 +612,7 @@ class TestAggregators:
 
         input_file = tmp_path / "test_input.json"
         with open(input_file, "w") as f:
-            for item in test_data:
-                f.write(json.dumps(item) + "\n")
+            json.dump(test_data, f)
 
         output_file = tmp_path / "task_aggregation.csv"
 
@@ -2098,8 +2096,7 @@ class TestAggregators:
         ]
         jsonl = tmp_path / "in.json"
         with open(jsonl, "w") as f:
-            for r in rows:
-                f.write(json.dumps(r) + "\n")
+            json.dump(rows, f)
 
         out = tmp_path / "task_stream.json"
         aggregate_by_task(
@@ -2110,6 +2107,58 @@ class TestAggregators:
             res = json.load(f)
         # Should contain both a placeholder for missing task_id and 't1' keys
         assert ("unknown" in res or "NaN" in res) and "t1" in res
+
+    def test_aggregate_by_task_json_array_streaming_ijson(self, tmp_path):
+        """Test aggregate_by_task with JSON array file in streaming mode using ijson."""
+        # Create JSON array input
+        data = [
+            {
+                "user_id": "u1",
+                "task_id": "t1",
+                "turn_id": "x",
+                "agent_name": "a1",
+                "score1": 1.0,
+            },
+            {
+                "user_id": "u1",
+                "task_id": "t1",
+                "turn_id": "y",
+                "agent_name": "a1",
+                "score1": 0.0,
+            },
+            {
+                "user_id": "u2",
+                "task_id": "t2",
+                "turn_id": "z",
+                "agent_name": "a2",
+                "score1": 0.5,
+            },
+        ]
+        json_path = tmp_path / "in.json"
+        with open(json_path, "w") as f:
+            json.dump(data, f)
+
+        out = tmp_path / "task_stream_arr.csv"
+        aggregate_by_task(
+            json_path, out, callable_func=[mean_callable], streaming=True, chunk_size=10
+        )
+        assert out.exists()
+        res = pd.read_csv(out)
+        assert "task_id" in res.columns
+        assert "mean_callable_score1" in res.columns
+        
+        # Check that we have 2 tasks
+        assert len(res) == 2
+        
+        # Check that task t1 has mean of 0.5 (1.0 + 0.0) / 2
+        task_t1 = res[res["task_id"] == "t1"]
+        assert len(task_t1) == 1
+        assert task_t1["mean_callable_score1"].iloc[0] == 0.5
+        
+        # Check that task t2 has mean of 0.5
+        task_t2 = res[res["task_id"] == "t2"]
+        assert len(task_t2) == 1
+        assert task_t2["mean_callable_score1"].iloc[0] == 0.5
 
 
 class TestAggregatorsAdditional:
@@ -2131,7 +2180,7 @@ class TestAggregatorsAdditional:
         assert "mean_callable_score1" in res.columns
 
     def test_user_streaming_jsonl_branch(self, tmp_path):
-        # Ensure JSONL streaming branch is executed for user aggregation
+        # Ensure JSON array streaming branch is executed for user aggregation
         rows = [
             {
                 "user_id": "u1",
@@ -2150,8 +2199,7 @@ class TestAggregatorsAdditional:
         ]
         inp = tmp_path / "in.json"
         with open(inp, "w") as f:
-            for r in rows:
-                f.write(json.dumps(r) + "\n")
+            json.dump(rows, f)
         out = tmp_path / "user_jsonl_stream.csv"
         aggregate_by_user(
             inp, out, callable_func=[mean_callable], streaming=True, chunk_size=2
@@ -2161,7 +2209,7 @@ class TestAggregatorsAdditional:
         assert "mean_callable_score1" in res.columns
 
     def test_agent_streaming_jsonl_branch(self, tmp_path):
-        # Ensure JSONL streaming branch is executed for agent aggregation
+        # Ensure JSON array streaming branch is executed for agent aggregation
         rows = [
             {
                 "user_id": "u1",
@@ -2180,8 +2228,7 @@ class TestAggregatorsAdditional:
         ]
         inp = tmp_path / "in.json"
         with open(inp, "w") as f:
-            for r in rows:
-                f.write(json.dumps(r) + "\n")
+            json.dump(rows, f)
         out = tmp_path / "agent_jsonl_stream.csv"
         aggregate_by_agent_name(
             inp, out, callable_func=[mean_callable], streaming=True, chunk_size=2
@@ -2265,3 +2312,107 @@ class TestAggregatorsAdditional:
             data = json.load(f)
         # Should be an empty dict since there are no scorer columns
         assert isinstance(data, dict) and len(data) == 0
+
+    def test_aggregate_by_user_json_array_streaming_ijson(self, tmp_path):
+        """Test aggregate_by_user with JSON array file in streaming mode using ijson."""
+        # Create JSON array input
+        data = [
+            {
+                "user_id": "u1",
+                "task_id": "t1",
+                "turn_id": "x",
+                "agent_name": "a1",
+                "score1": 1.0,
+            },
+            {
+                "user_id": "u1",
+                "task_id": "t2",
+                "turn_id": "y",
+                "agent_name": "a1",
+                "score1": 0.0,
+            },
+            {
+                "user_id": "u2",
+                "task_id": "t3",
+                "turn_id": "z",
+                "agent_name": "a2",
+                "score1": 0.5,
+            },
+        ]
+        json_path = tmp_path / "in.json"
+        with open(json_path, "w") as f:
+            json.dump(data, f)
+
+        out = tmp_path / "user_stream_arr.csv"
+        aggregate_by_user(
+            json_path, out, callable_func=[mean_callable], streaming=True, chunk_size=10
+        )
+        assert out.exists()
+        res = pd.read_csv(out)
+        assert "user_id" in res.columns
+        assert "mean_callable_score1" in res.columns
+        
+        # Check that we have 2 users
+        assert len(res) == 2
+        
+        # Check that user u1 has mean of 0.5 (1.0 + 0.0) / 2
+        user_u1 = res[res["user_id"] == "u1"]
+        assert len(user_u1) == 1
+        assert user_u1["mean_callable_score1"].iloc[0] == 0.5
+        
+        # Check that user u2 has mean of 0.5
+        user_u2 = res[res["user_id"] == "u2"]
+        assert len(user_u2) == 1
+        assert user_u2["mean_callable_score1"].iloc[0] == 0.5
+
+    def test_aggregate_by_agent_json_array_streaming_ijson(self, tmp_path):
+        """Test aggregate_by_agent_name with JSON array file in streaming mode using ijson."""
+        # Create JSON array input
+        data = [
+            {
+                "user_id": "u1",
+                "task_id": "t1",
+                "turn_id": "x",
+                "agent_name": "a1",
+                "score1": 1.0,
+            },
+            {
+                "user_id": "u2",
+                "task_id": "t2",
+                "turn_id": "y",
+                "agent_name": "a1",
+                "score1": 0.0,
+            },
+            {
+                "user_id": "u3",
+                "task_id": "t3",
+                "turn_id": "z",
+                "agent_name": "a2",
+                "score1": 0.5,
+            },
+        ]
+        json_path = tmp_path / "in.json"
+        with open(json_path, "w") as f:
+            json.dump(data, f)
+
+        out = tmp_path / "agent_stream_arr.csv"
+        aggregate_by_agent_name(
+            json_path, out, callable_func=[mean_callable], streaming=True, chunk_size=10
+        )
+        assert out.exists()
+        res = pd.read_csv(out)
+        assert "agent_name" in res.columns
+        assert "mean_callable_score1" in res.columns
+        
+        # Check that we have 2 agents
+        assert len(res) == 2
+        
+        # Check that agent a1 has mean of 0.5 (1.0 + 0.0) / 2
+        agent_a1 = res[res["agent_name"] == "a1"]
+        assert len(agent_a1) == 1
+        assert agent_a1["mean_callable_score1"].iloc[0] == 0.5
+        
+        # Check that agent a2 has mean of 0.5
+        agent_a2 = res[res["agent_name"] == "a2"]
+        assert len(agent_a2) == 1
+        assert agent_a2["mean_callable_score1"].iloc[0] == 0.5
