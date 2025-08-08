@@ -60,18 +60,18 @@ class AgentEvaluator(BaseEvaluator):
         # Initialize with empty dataset for base class compatibility
         # We'll use agent_dataset directly in our methods
         from novaeval.datasets.base import BaseDataset
-        
+
         # Create a dummy dataset for base class compatibility
         class DummyDataset(BaseDataset):
             def __init__(self) -> None:
                 pass
-            
+
             def get_data(self) -> list:
                 return []
-            
+
             def load_data(self) -> list[dict[str, Any]]:
                 return []
-        
+
         super().__init__(
             dataset=DummyDataset(),
             models=models,
@@ -215,26 +215,40 @@ class AgentEvaluator(BaseEvaluator):
         input_file = self.output_dir / f"agent_evaluation_results.{file_type}"
 
         if not input_file.exists():
-            logger.warning(f"Input file {input_file} does not exist. Skipping aggregations.")
+            logger.warning(
+                f"Input file {input_file} does not exist. Skipping aggregations."
+            )
             return
 
         # Run each requested aggregation
         if aggregate_by_task:
             output_file = self.output_dir / f"task_aggregation.{file_type}"
             self._run_single_aggregation(
-                "task", input_file, output_file, aggregator_functions, aggregation_chunk_size
+                "task",
+                input_file,
+                output_file,
+                aggregator_functions,
+                aggregation_chunk_size,
             )
 
         if aggregate_by_user:
             output_file = self.output_dir / f"user_aggregation.{file_type}"
             self._run_single_aggregation(
-                "user", input_file, output_file, aggregator_functions, aggregation_chunk_size
+                "user",
+                input_file,
+                output_file,
+                aggregator_functions,
+                aggregation_chunk_size,
             )
 
         if aggregate_by_agent_name:
             output_file = self.output_dir / f"agent_aggregation.{file_type}"
             self._run_single_aggregation(
-                "agent", input_file, output_file, aggregator_functions, aggregation_chunk_size
+                "agent",
+                input_file,
+                output_file,
+                aggregator_functions,
+                aggregation_chunk_size,
             )
 
     def _run_single_aggregation(
@@ -291,7 +305,9 @@ class AgentEvaluator(BaseEvaluator):
             else:
                 logger.error(f"Unknown aggregation type: {aggregation_type}")
 
-            logger.info(f"{aggregation_type.capitalize()} aggregation completed: {output_file}")
+            logger.info(
+                f"{aggregation_type.capitalize()} aggregation completed: {output_file}"
+            )
 
         except Exception as e:
             logger.error(f"Failed to run {aggregation_type} aggregation: {e}")
@@ -319,7 +335,7 @@ class AgentEvaluator(BaseEvaluator):
             "scores": {},
             "reasoning": {},
         }
-        
+
         # Ensure scores and reasoning are dictionaries
         if not isinstance(sample_result["scores"], dict):
             sample_result["scores"] = {}
@@ -434,7 +450,7 @@ class AgentEvaluator(BaseEvaluator):
 
         # Append to DataFrame
         new_df = pd.DataFrame([new_row])
-        
+
         # If DataFrame is empty, just set it to the new DataFrame
         if self.results_df.empty:
             self.results_df = new_df
@@ -446,10 +462,8 @@ class AgentEvaluator(BaseEvaluator):
             for col in new_df.columns:
                 if col not in self.results_df.columns:
                     self.results_df[col] = ""
-            
-            self.results_df = pd.concat(
-                [self.results_df, new_df], ignore_index=True
-            )
+
+            self.results_df = pd.concat([self.results_df, new_df], ignore_index=True)
 
     def _save_intermediate_results(self, file_type: str) -> None:
         """

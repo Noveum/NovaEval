@@ -239,7 +239,11 @@ def _aggregate_by_task_streaming(
                         task_scores_csv[task_id].append(float(score))
 
         # Combine scores from both sources
-        task_scores = task_scores_json if input_file.suffix.lower() == ".json" else task_scores_csv
+        task_scores = (
+            task_scores_json
+            if input_file.suffix.lower() == ".json"
+            else task_scores_csv
+        )
 
         # Apply each callable to each task's scores
         for task_id, scores in task_scores.items():
@@ -407,7 +411,11 @@ def _aggregate_by_user_streaming(
                         user_scores_csv[user_id].append(float(score))
 
         # Combine scores from both sources
-        user_scores = user_scores_json if input_file.suffix.lower() == ".json" else user_scores_csv
+        user_scores = (
+            user_scores_json
+            if input_file.suffix.lower() == ".json"
+            else user_scores_csv
+        )
 
         # Apply callable to each user's scores
         for user_id, scores in user_scores.items():
@@ -574,7 +582,11 @@ def _aggregate_by_agent_streaming(
                         agent_scores_csv[agent_name].append(float(score))
 
         # Combine scores from both sources
-        agent_scores = agent_scores_json if input_file.suffix.lower() == ".json" else agent_scores_csv
+        agent_scores = (
+            agent_scores_json
+            if input_file.suffix.lower() == ".json"
+            else agent_scores_csv
+        )
 
         # Apply callable to each agent's scores
         for agent_name, scores in agent_scores.items():
