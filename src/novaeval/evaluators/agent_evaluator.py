@@ -1,13 +1,12 @@
 """
-Agent evaluator implementation for NovaEval.
+Agent evaluator for NovaEval.
 
-This module provides the agent evaluator class that orchestrates
-the evaluation process for agent datasets using agent scorers.
+This module provides an evaluator specifically designed for agent evaluation tasks.
 """
 
 import logging
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import pandas as pd
 from tqdm import tqdm
@@ -15,6 +14,7 @@ from tqdm import tqdm
 from novaeval.datasets.agent_dataset import AgentDataset
 from novaeval.evaluators.base import BaseEvaluator
 from novaeval.models.base import BaseModel
+from novaeval.scorers.base import BaseScorer
 from novaeval.utils.logging import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -22,17 +22,17 @@ logger = logging.getLogger(__name__)
 
 class AgentEvaluator(BaseEvaluator):
     """
-    Agent evaluator implementation.
+    Evaluator for agent evaluation tasks.
 
-    This class provides the main evaluation logic for running
-    evaluations on agent datasets using agent scorers.
+    This evaluator is specifically designed to work with agent datasets and
+    scoring functions that evaluate agent performance.
     """
 
     def __init__(
         self,
         agent_dataset: AgentDataset,
         models: list[BaseModel],
-        scoring_functions: list[callable],
+        scoring_functions: list[Callable],
         output_dir: Optional[Union[str, Path]] = None,
         config: Optional[dict[str, Any]] = None,
         stream: bool = False,
@@ -59,8 +59,21 @@ class AgentEvaluator(BaseEvaluator):
 
         # Initialize with empty dataset for base class compatibility
         # We'll use agent_dataset directly in our methods
+        from novaeval.datasets.base import BaseDataset
+        
+        # Create a dummy dataset for base class compatibility
+        class DummyDataset(BaseDataset):
+            def __init__(self) -> None:
+                pass
+            
+            def get_data(self) -> list:
+                return []
+            
+            def load_data(self) -> list[dict[str, Any]]:
+                return []
+        
         super().__init__(
-            dataset=None,  # We'll handle this differently
+            dataset=DummyDataset(),
             models=models,
             scorers=[],  # We'll use scoring_functions instead
             output_dir=output_dir,
@@ -90,7 +103,10 @@ class AgentEvaluator(BaseEvaluator):
 
         for _i, scoring_function in enumerate(self.scoring_functions):
             # Get scorer name from function name
-            scorer_name = scoring_function.__name__.replace("_scorer", "")
+            if hasattr(scoring_function, "__name__"):
+                scorer_name = scoring_function.__name__.replace("_scorer", "")
+            else:
+                scorer_name = f"scorer_{_i}"
             scorer_columns.append(scorer_name)
 
             if self.include_reasoning:
@@ -113,7 +129,7 @@ class AgentEvaluator(BaseEvaluator):
         aggregate_by_task: bool = False,
         aggregate_by_user: bool = False,
         aggregate_by_agent_name: bool = False,
-        aggregator_functions: Optional[list[callable]] = None,
+        aggregator_functions: Optional[list[Callable]] = None,
         aggregation_chunk_size: int = 1000,
     ) -> None:
         """
@@ -138,7 +154,11 @@ class AgentEvaluator(BaseEvaluator):
         # Process samples in batches
         for i, sample in enumerate(tqdm(samples, desc="Evaluating samples")):
             # Evaluate the sample
-            sample_result = self.evaluate_sample(sample)
+            model = self.models[0] if self.models else None
+            if not model:
+                logger.error("No model available for evaluation")
+                continue
+            sample_result = self.evaluate_sample(sample, model, [])
 
             # Add result to DataFrame
             self._add_result_to_dataframe(sample_result)
@@ -171,7 +191,7 @@ class AgentEvaluator(BaseEvaluator):
         aggregate_by_task: bool,
         aggregate_by_user: bool,
         aggregate_by_agent_name: bool,
-        aggregator_functions: Optional[list[callable]],
+        aggregator_functions: Optional[list[Callable]],
         aggregation_chunk_size: int,
     ) -> None:
         """
@@ -187,52 +207,34 @@ class AgentEvaluator(BaseEvaluator):
         """
         from novaeval.evaluators.aggregators import mean_callable
 
-        # Use default aggregator function if none provided
+        # Set default aggregator functions if none provided
         if aggregator_functions is None:
             aggregator_functions = [mean_callable]
 
-        # Determine input file
-        if file_type.lower() == "json":
-            input_file = self.output_dir / "agent_evaluation_results.json"
-        else:
-            input_file = self.output_dir / "agent_evaluation_results.csv"
+        # Determine input file path
+        input_file = self.output_dir / f"agent_evaluation_results.{file_type}"
 
-        logger.info(f"Running aggregations on {input_file}")
+        if not input_file.exists():
+            logger.warning(f"Input file {input_file} does not exist. Skipping aggregations.")
+            return
 
-        # Run task aggregation
+        # Run each requested aggregation
         if aggregate_by_task:
-            logger.info("Running task aggregation")
-            output_file = self.output_dir / "task_aggregation.csv"
+            output_file = self.output_dir / f"task_aggregation.{file_type}"
             self._run_single_aggregation(
-                "task",
-                input_file,
-                output_file,
-                aggregator_functions,
-                aggregation_chunk_size,
+                "task", input_file, output_file, aggregator_functions, aggregation_chunk_size
             )
 
-        # Run user aggregation
         if aggregate_by_user:
-            logger.info("Running user aggregation")
-            output_file = self.output_dir / "user_aggregation.csv"
+            output_file = self.output_dir / f"user_aggregation.{file_type}"
             self._run_single_aggregation(
-                "user",
-                input_file,
-                output_file,
-                aggregator_functions,
-                aggregation_chunk_size,
+                "user", input_file, output_file, aggregator_functions, aggregation_chunk_size
             )
 
-        # Run agent name aggregation
         if aggregate_by_agent_name:
-            logger.info("Running agent name aggregation")
-            output_file = self.output_dir / "agent_aggregation.csv"
+            output_file = self.output_dir / f"agent_aggregation.{file_type}"
             self._run_single_aggregation(
-                "agent_name",
-                input_file,
-                output_file,
-                aggregator_functions,
-                aggregation_chunk_size,
+                "agent", input_file, output_file, aggregator_functions, aggregation_chunk_size
             )
 
     def _run_single_aggregation(
@@ -240,72 +242,101 @@ class AgentEvaluator(BaseEvaluator):
         aggregation_type: str,
         input_file: Path,
         output_file: Path,
-        aggregator_functions: list[callable],
+        aggregator_functions: list[Callable],
         aggregation_chunk_size: int,
     ) -> None:
         """
-        Run a single aggregation with multiple callable functions.
+        Run a single aggregation operation.
 
         Args:
-            aggregation_type: Type of aggregation ('task', 'user', 'agent_name')
-            input_file: Input file path
-            output_file: Output file path
-            aggregator_functions: List of callable functions
-            aggregation_chunk_size: Chunk size for streaming
+            aggregation_type: Type of aggregation ('task', 'user', 'agent')
+            input_file: Path to input file
+            output_file: Path to output file
+            aggregator_functions: List of callable functions for aggregation
+            aggregation_chunk_size: Chunk size for streaming aggregation
         """
-        # Import aggregator functions
         from novaeval.evaluators.aggregators import (
             aggregate_by_agent_name,
             aggregate_by_task,
             aggregate_by_user,
         )
 
-        # Map aggregation types to functions
-        aggregator_map = {
-            "task": aggregate_by_task,
-            "user": aggregate_by_user,
-            "agent_name": aggregate_by_agent_name,
-        }
+        logger.info(f"Running {aggregation_type} aggregation")
 
-        # Call the modified aggregator function
-        aggregator_func = aggregator_map[aggregation_type]
-        aggregator_func(
-            input_file=input_file,
-            output_filename=output_file,
-            callable_func=aggregator_functions,  # Pass list of functions
-            streaming=self.stream,
-            chunk_size=aggregation_chunk_size,
-        )
+        try:
+            if aggregation_type == "task":
+                aggregate_by_task(
+                    input_file=input_file,
+                    output_filename=output_file,
+                    callable_func=aggregator_functions,
+                    streaming=True,
+                    chunk_size=aggregation_chunk_size,
+                )
+            elif aggregation_type == "user":
+                aggregate_by_user(
+                    input_file=input_file,
+                    output_filename=output_file,
+                    callable_func=aggregator_functions,
+                    streaming=True,
+                    chunk_size=aggregation_chunk_size,
+                )
+            elif aggregation_type == "agent":
+                aggregate_by_agent_name(
+                    input_file=input_file,
+                    output_filename=output_file,
+                    callable_func=aggregator_functions,
+                    streaming=True,
+                    chunk_size=aggregation_chunk_size,
+                )
+            else:
+                logger.error(f"Unknown aggregation type: {aggregation_type}")
 
-    def evaluate_sample(self, sample: Any) -> dict[str, Any]:
+            logger.info(f"{aggregation_type.capitalize()} aggregation completed: {output_file}")
+
+        except Exception as e:
+            logger.error(f"Failed to run {aggregation_type} aggregation: {e}")
+
+    def evaluate_sample(
+        self, sample: dict[str, Any], model: BaseModel, scorers: list[BaseScorer]
+    ) -> dict[str, Any]:
         """
-        Evaluate a single sample against the evaluators.
+        Evaluate a single sample using all scoring functions.
 
         Args:
-            sample: The sample to evaluate (AgentData object)
+            sample: The sample to evaluate
+            model: The model to use for evaluation
+            scorers: List of scorers to apply
 
         Returns:
-            Dictionary containing sample evaluation results
+            Dictionary containing evaluation results
         """
-        sample_result = {
-            "user_id": sample.user_id,
-            "task_id": sample.task_id,
-            "turn_id": sample.turn_id,
-            "agent_name": sample.agent_name,
+        # Initialize result structure
+        sample_result: dict[str, Any] = {
+            "user_id": getattr(sample, "user_id", ""),
+            "task_id": getattr(sample, "task_id", ""),
+            "turn_id": getattr(sample, "turn_id", ""),
+            "agent_name": getattr(sample, "agent_name", ""),
             "scores": {},
             "reasoning": {},
-            "error": None,
         }
+        
+        # Ensure scores and reasoning are dictionaries
+        if not isinstance(sample_result["scores"], dict):
+            sample_result["scores"] = {}
+        if not isinstance(sample_result["reasoning"], dict):
+            sample_result["reasoning"] = {}
 
         try:
             # Run each scoring function on the sample
-            model = self.models[0] if self.models else None
             if not model:
                 logger.error("No model available for scoring")
                 return sample_result
 
             for scoring_function in self.scoring_functions:
-                scorer_name = scoring_function.__name__.replace("_scorer", "")
+                if hasattr(scoring_function, "__name__"):
+                    scorer_name = scoring_function.__name__.replace("_scorer", "")
+                else:
+                    scorer_name = "unknown_scorer"
 
                 try:
                     # Call the scoring function directly
@@ -399,92 +430,79 @@ class AgentEvaluator(BaseEvaluator):
         # Ensure all columns exist in the new row
         for col in self.results_df.columns:
             if col not in new_row:
-                new_row[col] = None
+                new_row[col] = ""
 
-        # Append to DataFrame using loc to avoid concatenation warnings
-        if len(self.results_df) == 0:
-            # If DataFrame is empty, create it with the new row
-            self.results_df = pd.DataFrame([new_row])
+        # Append to DataFrame
+        new_df = pd.DataFrame([new_row])
+        
+        # If DataFrame is empty, just set it to the new DataFrame
+        if self.results_df.empty:
+            self.results_df = new_df
         else:
-            # Append using loc
-            self.results_df.loc[len(self.results_df)] = new_row
+            # Ensure all columns exist in both DataFrames
+            for col in self.results_df.columns:
+                if col not in new_df.columns:
+                    new_df[col] = ""
+            for col in new_df.columns:
+                if col not in self.results_df.columns:
+                    self.results_df[col] = ""
+            
+            self.results_df = pd.concat(
+                [self.results_df, new_df], ignore_index=True
+            )
 
     def _save_intermediate_results(self, file_type: str) -> None:
         """
-        Save intermediate results to file.
+        Save intermediate results to disk.
 
         Args:
             file_type: Type of file to save ('csv' or 'json')
         """
+        output_file = self.output_dir / f"agent_evaluation_results.{file_type}"
+
         if file_type.lower() == "json":
             self._convert_to_json()
+            self.results_df.to_json(output_file, orient="records", indent=2)
         else:
-            # Save as CSV
-            csv_file = self.output_dir / "agent_evaluation_results.csv"
-            self.results_df.to_csv(csv_file, index=False)
-            logger.info(f"Results saved to {csv_file}")
+            self.results_df.to_csv(output_file, index=False)
 
-    def save_results(
-        self, results: list[dict[str, Any]], file_type: str = "csv"
-    ) -> None:
+        logger.info(f"Intermediate results saved to {output_file}")
+
+    def save_results(self, results: dict[str, Any]) -> None:
         """
-        Save a list of evaluation results.
+        Save evaluation results to disk.
 
         Args:
-            results: List of evaluation result dictionaries
-            file_type: Type of file to save ('csv' or 'json')
+            results: The results to save
         """
-        # Convert results to DataFrame
-        temp_df = pd.DataFrame(results)
+        # Convert results to DataFrame if needed
+        if not hasattr(self, "results_df") or self.results_df.empty:
+            if isinstance(results, list):
+                self.results_df = pd.DataFrame(results)
+            else:
+                # Handle dict format
+                self.results_df = pd.DataFrame([results])
 
-        # Save based on file type
-        if file_type.lower() == "json":
-            json_file = self.output_dir / "agent_evaluation_results.json"
-            temp_df.to_json(json_file, orient="records", indent=2)
-            logger.info(f"Results saved to {json_file}")
-        else:
-            csv_file = self.output_dir / "agent_evaluation_results.csv"
-            temp_df.to_csv(csv_file, index=False)
-            logger.info(f"Results saved to {csv_file}")
+        output_file = self.output_dir / "agent_evaluation_results.csv"
+
+        self.results_df.to_csv(output_file, index=False)
+        logger.info(f"Results saved to {output_file}")
 
     def _convert_to_json(self) -> None:
-        """
-        Convert the DataFrame to JSON and save it.
-        Uses streaming if the stream flag is set.
-        """
-        json_file = self.output_dir / "agent_evaluation_results.json"
-
-        if self.stream:
-            # Streaming approach for large datasets
-            with open(json_file, "w") as f:
-                f.write("[\n")
-                for i, row in self.results_df.iterrows():
-                    if i > 0:
-                        f.write(",\n")
-                    f.write(row.to_json())
-                f.write("\n]")
-        else:
-            # Non-streaming approach
-            self.results_df.to_json(json_file, orient="records", indent=2)
-
-        logger.info(f"Results saved to {json_file}")
+        """Convert DataFrame to JSON-compatible format."""
+        # Convert any non-serializable types to strings
+        for col in self.results_df.columns:
+            if self.results_df[col].dtype == "object":
+                self.results_df[col] = self.results_df[col].astype(str)
 
     def run(self) -> dict[str, Any]:
         """
-        Run the complete evaluation process (compatibility with BaseEvaluator).
+        Run the evaluation.
 
         Returns:
-            Dictionary containing evaluation results summary
+            Dictionary containing evaluation results
         """
-        # Run the evaluation
-        self.run_all()
-
-        # Return summary information
-        return {
-            "total_samples": len(self.results_df),
-            "scorers_used": len(self.scoring_functions),
-            "models_used": len(self.models),
-            "output_directory": str(self.output_dir),
-            "include_reasoning": self.include_reasoning,
-            "streaming_mode": self.stream,
-        }
+        # This method is required by the base class but not used in agent evaluation
+        # We use run_all() instead for agent evaluation
+        logger.warning("run() method called on AgentEvaluator. Use run_all() instead.")
+        return {"status": "not_implemented", "message": "Use run_all() method instead"}

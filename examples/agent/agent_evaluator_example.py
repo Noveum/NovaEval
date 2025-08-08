@@ -117,7 +117,7 @@ def main():
     # You can also run individual samples
     print("\nExample of evaluating a single sample:")
     sample = next(agent_dataset.get_datapoint())
-    sample_result = evaluator.evaluate_sample(sample)
+    sample_result = evaluator.evaluate_sample(sample, model, [])
     print(f"Sample result: {sample_result}")
 
 

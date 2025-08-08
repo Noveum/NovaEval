@@ -1262,10 +1262,8 @@ class TestAggregators:
 
         output_file = tmp_path / "output.csv"
 
-        # Should raise an error (exact type depends on pandas version)
-        with pytest.raises(
-            (pd.errors.EmptyDataError, pd.errors.ParserError, ValueError)
-        ):
+        # Should raise KeyError for missing task_id column
+        with pytest.raises(KeyError):
             _aggregate_by_task_memory(
                 input_file=input_file,
                 output_filename=output_file,

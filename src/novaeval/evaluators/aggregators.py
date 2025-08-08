@@ -46,7 +46,7 @@ def aggregate_by_task(
 
     # Handle single callable or list of callables
     if callable_func is None:
-        callable_funcs = [mean_callable]
+        callable_funcs: list[Callable[[list[float]], float]] = [mean_callable]
     elif not isinstance(callable_func, list):
         callable_funcs = [callable_func]
     else:
@@ -90,7 +90,7 @@ def aggregate_by_user(
 
     # Handle single callable or list of callables
     if callable_func is None:
-        callable_funcs = [mean_callable]
+        callable_funcs: list[Callable[[list[float]], float]] = [mean_callable]
     elif not isinstance(callable_func, list):
         callable_funcs = [callable_func]
     else:
@@ -134,7 +134,7 @@ def aggregate_by_agent_name(
 
     # Handle single callable or list of callables
     if callable_func is None:
-        callable_funcs = [mean_callable]
+        callable_funcs: list[Callable[[list[float]], float]] = [mean_callable]
     elif not isinstance(callable_func, list):
         callable_funcs = [callable_func]
     else:
@@ -185,7 +185,7 @@ def _aggregate_by_task_streaming(
     ]
 
     # Initialize results dictionary
-    results = {}
+    results: dict[str, dict[str, float]] = {}
 
     # Process each scorer column separately
     for scorer_col in scorer_columns:
@@ -196,7 +196,7 @@ def _aggregate_by_task_streaming(
 
         if input_file.suffix.lower() == ".json":
             # Handle JSON files
-            task_scores = {}
+            task_scores_json: dict[str, list[float]] = {}
 
             with open(input_file) as f:
                 if f.read(1) == "[":
@@ -207,9 +207,9 @@ def _aggregate_by_task_streaming(
                             task_id = row.get("task_id", "unknown")
                             score = row.get(scorer_col)
                             if pd.notna(score) and score is not None:
-                                if task_id not in task_scores:
-                                    task_scores[task_id] = []
-                                task_scores[task_id].append(float(score))
+                                if task_id not in task_scores_json:
+                                    task_scores_json[task_id] = []
+                                task_scores_json[task_id].append(float(score))
                 else:
                     # JSONL format
                     f.seek(0)
@@ -220,12 +220,12 @@ def _aggregate_by_task_streaming(
                             task_id = row.get("task_id", "unknown")
                             score = row.get(scorer_col)
                             if pd.notna(score) and score is not None:
-                                if task_id not in task_scores:
-                                    task_scores[task_id] = []
-                                task_scores[task_id].append(float(score))
+                                if task_id not in task_scores_json:
+                                    task_scores_json[task_id] = []
+                                task_scores_json[task_id].append(float(score))
         else:
             # Handle CSV files
-            task_scores = {}
+            task_scores_csv: dict[str, list[float]] = {}
 
             for chunk in pd.read_csv(
                 input_file, usecols=columns_to_read, chunksize=chunk_size
@@ -234,9 +234,12 @@ def _aggregate_by_task_streaming(
                     task_id = row.get("task_id", "unknown")
                     score = row.get(scorer_col)
                     if pd.notna(score) and score is not None:
-                        if task_id not in task_scores:
-                            task_scores[task_id] = []
-                        task_scores[task_id].append(float(score))
+                        if task_id not in task_scores_csv:
+                            task_scores_csv[task_id] = []
+                        task_scores_csv[task_id].append(float(score))
+
+        # Combine scores from both sources
+        task_scores = task_scores_json if input_file.suffix.lower() == ".json" else task_scores_csv
 
         # Apply each callable to each task's scores
         for task_id, scores in task_scores.items():
@@ -294,7 +297,7 @@ def _aggregate_by_task_memory(
 
     # Group by task_id and aggregate each scorer column with multiple callables
     # Convert pandas Series to list for each group before applying callables
-    results = {}
+    results: dict[str, dict[str, float]] = {}
     for task_id, group in df.groupby("task_id"):
         results[task_id] = {}
         for col in scorer_columns:
@@ -306,13 +309,13 @@ def _aggregate_by_task_memory(
                 results[task_id][column_name] = func(scores)
 
     # Convert to DataFrame
-    results = pd.DataFrame.from_dict(results, orient="index")
+    results_df = pd.DataFrame.from_dict(results, orient="index")
 
     # Save results
     if output_filename.suffix.lower() == ".json":
-        results.to_json(output_filename, orient="index", indent=2)
+        results_df.to_json(output_filename, orient="index", indent=2)
     else:
-        results.reset_index().to_csv(output_filename, index=False)
+        results_df.reset_index().to_csv(output_filename, index=False)
 
     logger.info(
         f"Memory-based aggregation completed. Results saved to {output_filename}"
@@ -350,7 +353,7 @@ def _aggregate_by_user_streaming(
     ]
 
     # Initialize results dictionary
-    results = {}
+    results: dict[str, dict[str, float]] = {}
 
     # Process each scorer column separately
     for scorer_col in scorer_columns:
@@ -361,7 +364,7 @@ def _aggregate_by_user_streaming(
 
         if input_file.suffix.lower() == ".json":
             # Handle JSON files
-            user_scores = {}
+            user_scores_json: dict[str, list[float]] = {}
 
             with open(input_file) as f:
                 if f.read(1) == "[":
@@ -372,9 +375,9 @@ def _aggregate_by_user_streaming(
                             user_id = row.get("user_id", "unknown")
                             score = row.get(scorer_col)
                             if pd.notna(score) and score is not None:
-                                if user_id not in user_scores:
-                                    user_scores[user_id] = []
-                                user_scores[user_id].append(float(score))
+                                if user_id not in user_scores_json:
+                                    user_scores_json[user_id] = []
+                                user_scores_json[user_id].append(float(score))
                 else:
                     # JSONL format
                     f.seek(0)
@@ -385,12 +388,12 @@ def _aggregate_by_user_streaming(
                             user_id = row.get("user_id", "unknown")
                             score = row.get(scorer_col)
                             if pd.notna(score) and score is not None:
-                                if user_id not in user_scores:
-                                    user_scores[user_id] = []
-                                user_scores[user_id].append(float(score))
+                                if user_id not in user_scores_json:
+                                    user_scores_json[user_id] = []
+                                user_scores_json[user_id].append(float(score))
         else:
             # Handle CSV files
-            user_scores = {}
+            user_scores_csv: dict[str, list[float]] = {}
 
             for chunk in pd.read_csv(
                 input_file, usecols=columns_to_read, chunksize=chunk_size
@@ -399,9 +402,12 @@ def _aggregate_by_user_streaming(
                     user_id = row.get("user_id", "unknown")
                     score = row.get(scorer_col)
                     if pd.notna(score) and score is not None:
-                        if user_id not in user_scores:
-                            user_scores[user_id] = []
-                        user_scores[user_id].append(float(score))
+                        if user_id not in user_scores_csv:
+                            user_scores_csv[user_id] = []
+                        user_scores_csv[user_id].append(float(score))
+
+        # Combine scores from both sources
+        user_scores = user_scores_json if input_file.suffix.lower() == ".json" else user_scores_csv
 
         # Apply callable to each user's scores
         for user_id, scores in user_scores.items():
@@ -458,7 +464,7 @@ def _aggregate_by_user_memory(
 
     # Group by user_id and aggregate each scorer column with multiple callables
     # Convert pandas Series to list for each group before applying callables
-    results = {}
+    results: dict[str, dict[str, float]] = {}
     for user_id, group in df.groupby("user_id"):
         results[user_id] = {}
         for col in scorer_columns:
@@ -470,13 +476,13 @@ def _aggregate_by_user_memory(
                 results[user_id][column_name] = func(scores)
 
     # Convert to DataFrame
-    results = pd.DataFrame.from_dict(results, orient="index")
+    results_df = pd.DataFrame.from_dict(results, orient="index")
 
     # Save results
     if output_filename.suffix.lower() == ".json":
-        results.to_json(output_filename, orient="index", indent=2)
+        results_df.to_json(output_filename, orient="index", indent=2)
     else:
-        results.reset_index().to_csv(output_filename, index=False)
+        results_df.reset_index().to_csv(output_filename, index=False)
 
     logger.info(
         f"Memory-based aggregation completed. Results saved to {output_filename}"
@@ -514,7 +520,7 @@ def _aggregate_by_agent_streaming(
     ]
 
     # Initialize results dictionary
-    results = {}
+    results: dict[str, dict[str, float]] = {}
 
     # Process each scorer column separately
     for scorer_col in scorer_columns:
@@ -525,7 +531,7 @@ def _aggregate_by_agent_streaming(
 
         if input_file.suffix.lower() == ".json":
             # Handle JSON files
-            agent_scores = {}
+            agent_scores_json: dict[str, list[float]] = {}
 
             with open(input_file) as f:
                 if f.read(1) == "[":
@@ -536,9 +542,9 @@ def _aggregate_by_agent_streaming(
                             agent_name = row.get("agent_name", "unknown")
                             score = row.get(scorer_col)
                             if pd.notna(score) and score is not None:
-                                if agent_name not in agent_scores:
-                                    agent_scores[agent_name] = []
-                                agent_scores[agent_name].append(float(score))
+                                if agent_name not in agent_scores_json:
+                                    agent_scores_json[agent_name] = []
+                                agent_scores_json[agent_name].append(float(score))
                 else:
                     # JSONL format
                     f.seek(0)
@@ -549,12 +555,12 @@ def _aggregate_by_agent_streaming(
                             agent_name = row.get("agent_name", "unknown")
                             score = row.get(scorer_col)
                             if pd.notna(score) and score is not None:
-                                if agent_name not in agent_scores:
-                                    agent_scores[agent_name] = []
-                                agent_scores[agent_name].append(float(score))
+                                if agent_name not in agent_scores_json:
+                                    agent_scores_json[agent_name] = []
+                                agent_scores_json[agent_name].append(float(score))
         else:
             # Handle CSV files
-            agent_scores = {}
+            agent_scores_csv: dict[str, list[float]] = {}
 
             for chunk in pd.read_csv(
                 input_file, usecols=columns_to_read, chunksize=chunk_size
@@ -563,9 +569,12 @@ def _aggregate_by_agent_streaming(
                     agent_name = row.get("agent_name", "unknown")
                     score = row.get(scorer_col)
                     if pd.notna(score) and score is not None:
-                        if agent_name not in agent_scores:
-                            agent_scores[agent_name] = []
-                        agent_scores[agent_name].append(float(score))
+                        if agent_name not in agent_scores_csv:
+                            agent_scores_csv[agent_name] = []
+                        agent_scores_csv[agent_name].append(float(score))
+
+        # Combine scores from both sources
+        agent_scores = agent_scores_json if input_file.suffix.lower() == ".json" else agent_scores_csv
 
         # Apply callable to each agent's scores
         for agent_name, scores in agent_scores.items():
@@ -622,7 +631,7 @@ def _aggregate_by_agent_memory(
 
     # Group by agent_name and aggregate each scorer column with multiple callables
     # Convert pandas Series to list for each group before applying callables
-    results = {}
+    results: dict[str, dict[str, float]] = {}
     for agent_name, group in df.groupby("agent_name"):
         results[agent_name] = {}
         for col in scorer_columns:
@@ -634,13 +643,13 @@ def _aggregate_by_agent_memory(
                 results[agent_name][column_name] = func(scores)
 
     # Convert to DataFrame
-    results = pd.DataFrame.from_dict(results, orient="index")
+    results_df = pd.DataFrame.from_dict(results, orient="index")
 
     # Save results
     if output_filename.suffix.lower() == ".json":
-        results.to_json(output_filename, orient="index", indent=2)
+        results_df.to_json(output_filename, orient="index", indent=2)
     else:
-        results.reset_index().to_csv(output_filename, index=False)
+        results_df.reset_index().to_csv(output_filename, index=False)
 
     logger.info(
         f"Memory-based aggregation completed. Results saved to {output_filename}"
