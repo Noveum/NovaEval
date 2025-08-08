@@ -127,13 +127,13 @@ class AgentEvaluator:
         """
         logger.info("Starting agent evaluation process")
 
-        # Get all samples from the agent dataset
-        samples = list(self.agent_dataset.get_datapoint())
+        # Get the generator from the agent dataset
+        samples_generator = self.agent_dataset.get_datapoint()
 
-        logger.info(f"Processing {len(samples)} samples")
-
-        # Process samples in batches
-        for i, sample in enumerate(tqdm(samples, desc="Evaluating samples")):
+        # Process samples directly from the generator to preserve streaming
+        # Note: We can't get the total count without consuming the generator,
+        # so we'll use tqdm without a total count for streaming behavior
+        for i, sample in enumerate(tqdm(samples_generator, desc="Evaluating samples")):
             # Evaluate the sample
             model = self.models[0] if self.models else None
             if not model:
