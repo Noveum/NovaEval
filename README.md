@@ -9,12 +9,6 @@
 
 A comprehensive, extensible AI model evaluation framework designed for production use. NovaEval provides a unified interface for evaluating language models across various datasets, metrics, and deployment scenarios.
 
-## 🚧 Development Status
-
-> **⚠️ ACTIVE DEVELOPMENT - NOT PRODUCTION READY**
->
-> NovaEval is currently in active development and **not recommended for production use**. We are actively working on improving stability, adding features, and expanding test coverage. APIs may change without notice.
->
 > **We're looking for contributors!** See the [Contributing](#-contributing) section below for ways to help.
 
 ## 🤝 We Need Your Help!
