@@ -387,7 +387,9 @@ class RetrievalStageEvaluator(BaseScorer):
             # Calculate manual diversity
             manual_diversity = self._calculate_diversity(retrieved_contexts)
 
-            def extract_score(result: Union[float, dict[str, Any], ScoreResult]) -> float:
+            def extract_score(
+                result: Union[float, dict[str, Any], ScoreResult],
+            ) -> float:
                 if isinstance(result, ScoreResult):
                     return result.score
                 elif isinstance(result, dict):
@@ -589,7 +591,9 @@ class RerankingEvaluator(BaseScorer):
                 generated_answer, ground_truth, context_dict
             )
 
-            def extract_score(result: Union[float, dict[str, Any], ScoreResult]) -> float:
+            def extract_score(
+                result: Union[float, dict[str, Any], ScoreResult],
+            ) -> float:
                 if isinstance(result, ScoreResult):
                     return result.score
                 elif isinstance(result, dict):
@@ -1331,7 +1335,9 @@ class RAGPipelineEvaluator:
             detailed_scores["faithfulness"] = faithfulness_result
 
             # Calculate overall scores - extract from JSON results
-            def extract_score(result: Union[float, dict[str, Any], ScoreResult]) -> float:
+            def extract_score(
+                result: Union[float, dict[str, Any], ScoreResult],
+            ) -> float:
                 if isinstance(result, ScoreResult):
                     return result.score
                 elif isinstance(result, dict):

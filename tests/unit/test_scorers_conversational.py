@@ -565,7 +565,8 @@ class TestConversationalScorerIntegration:
 
         scores = scorer.score("Purple is nice", "Weather question", context)
 
-        # Should get low scores across the board - adjusted threshold for very poor conversation
+        # Should get low scores across the board - adjusted threshold for very poor
+        # conversation
         assert scores["overall"] < 0.7  # Poor overall performance (adjusted from 0.5)
         assert all(0.0 <= score <= 1.0 for score in scores.values())
 

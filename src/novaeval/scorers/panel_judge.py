@@ -11,7 +11,7 @@ import statistics
 from enum import Enum
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from novaeval.models.base import BaseModel as LLMModel
 from novaeval.scorers.base import BaseScorer, ScoreResult
@@ -46,7 +46,8 @@ class JudgeConfig(BaseModel):
         default=0.0, description="Temperature for judge's responses"
     )
 
-    @validator("weight")
+    @field_validator("weight")
+    @classmethod
     def validate_weight(cls, v: float) -> float:
         if v < 0.0:
             raise ValueError("Judge weight must be non-negative")

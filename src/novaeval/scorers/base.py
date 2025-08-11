@@ -48,7 +48,7 @@ class BaseScorer(ABC):
         # Statistics tracking
         self.total_scores = 0
         self.score_sum = 0.0
-        self.scores_history: list[Union[float, dict[str, float]]] = []
+        self.scores_history: list[Union[float, dict[str, float], ScoreResult]] = []
 
     @abstractmethod
     def score(
@@ -56,7 +56,7 @@ class BaseScorer(ABC):
         prediction: str,
         ground_truth: str,
         context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+    ) -> Union[float, dict[str, float], ScoreResult]:
         """
         Score a prediction against ground truth.
 
@@ -66,7 +66,7 @@ class BaseScorer(ABC):
             context: Additional context information (e.g., original sample)
 
         Returns:
-            Score value (float) or dictionary of scores
+            Score value (float), dictionary of scores, or ScoreResult object
         """
         pass
 
@@ -75,7 +75,7 @@ class BaseScorer(ABC):
         predictions: list[str],
         ground_truths: list[str],
         contexts: Optional[list[dict[str, Any]]] = None,
-    ) -> list[Union[float, dict[str, float]]]:
+    ) -> list[Union[float, dict[str, float], ScoreResult]]:
         """
         Score multiple predictions in batch.
 
@@ -148,7 +148,9 @@ class BaseScorer(ABC):
         # Convert to numeric values if scores are dicts
         numeric_scores = []
         for score in self.scores_history:
-            if isinstance(score, dict):
+            if isinstance(score, ScoreResult):
+                numeric_scores.append(score.score)
+            elif isinstance(score, dict):
                 # Use the first numeric value or a default key
                 if "score" in score:
                     numeric_scores.append(score["score"])
@@ -165,7 +167,7 @@ class BaseScorer(ABC):
             "std": statistics.stdev(numeric_scores) if len(numeric_scores) > 1 else 0.0,
         }
 
-    def _track_score(self, score: Union[float, dict[str, float]]) -> None:
+    def _track_score(self, score: Union[float, dict[str, float], ScoreResult]) -> None:
         """
         Track a score for statistics.
 
@@ -178,6 +180,8 @@ class BaseScorer(ABC):
         # Update sum for numeric scores
         if isinstance(score, (int, float)):
             self.score_sum += float(score)
+        elif isinstance(score, ScoreResult):
+            self.score_sum += score.score
         elif isinstance(score, dict) and "score" in score:
             self.score_sum += float(score["score"])
         elif isinstance(score, dict):

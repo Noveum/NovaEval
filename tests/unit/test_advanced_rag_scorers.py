@@ -366,42 +366,51 @@ def test_semantic_similarity_scorer():
 def test_retrieval_ranking_scorer_with_rankings():
     """Test RetrievalRankingScorer with specific ranking data to exercise type conversion paths."""
     scorer = RetrievalRankingScorer(threshold=0.5)
-    
+
     # Test with context that includes rankings to exercise the numpy conversion paths
     context = {
         "context": "ML is AI subset",
         "rankings": [1, 2, 3, 4, 5],  # This should trigger the ranking computation
-        "retrieved_contexts": ["ML is AI", "AI is machine learning", "Deep learning", "Neural networks", "Algorithms"]
+        "retrieved_contexts": [
+            "ML is AI",
+            "AI is machine learning",
+            "Deep learning",
+            "Neural networks",
+            "Algorithms",
+        ],
     }
-    
+
     result = scorer.score("Machine learning is AI", "What is ML?", context)
-    
+
     # Verify the result and that numpy types are properly converted
     assert isinstance(result, dict)
-    for key, value in result.items():
+    for _key, value in result.items():
         if isinstance(value, (int, float)):
             # Ensure all numeric values are Python native types, not numpy types
-            assert type(value).__module__ == 'builtins'
+            assert type(value).__module__ == "builtins"
 
 
 @pytest.mark.unit
 def test_semantic_similarity_scorer_with_embeddings():
     """Test SemanticSimilarityScorer to exercise numpy type conversion paths."""
     scorer = SemanticSimilarityScorer(threshold=0.7)
-    
+
     # Test with context that should trigger embedding computation
     context = {
         "context": "ML is AI subset",
-        "retrieved_contexts": ["Machine learning is artificial intelligence", "AI includes ML"]
+        "retrieved_contexts": [
+            "Machine learning is artificial intelligence",
+            "AI includes ML",
+        ],
     }
-    
+
     result = scorer.score("Machine learning is AI", "What is ML?", context)
-    
+
     # Verify the result and that numpy types are properly converted
     assert isinstance(result, dict)
     if "similarity" in result:
         # Ensure similarity value is Python float, not numpy float
-        assert type(result["similarity"]).__module__ == 'builtins'
+        assert type(result["similarity"]).__module__ == "builtins"
 
 
 @pytest.mark.unit

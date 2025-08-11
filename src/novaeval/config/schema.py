@@ -8,7 +8,7 @@ evaluation job configurations used in CI/CD pipelines.
 from enum import Enum
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class ModelProvider(str, Enum):
@@ -111,13 +111,15 @@ class ScorerConfig(BaseModel):
         default_factory=dict, description="Scorer-specific parameters"
     )
 
-    @validator("threshold")
+    @field_validator("threshold")
+    @classmethod
     def validate_threshold(cls, v: float) -> float:
         if not 0.0 <= v <= 1.0:
             raise ValueError("Threshold must be between 0.0 and 1.0")
         return v
 
-    @validator("weight")
+    @field_validator("weight")
+    @classmethod
     def validate_weight(cls, v: float) -> float:
         if v < 0.0:
             raise ValueError("Weight must be non-negative")
@@ -161,7 +163,8 @@ class CIConfig(BaseModel):
         default=True, description="Notify on performance regression"
     )
 
-    @validator("fail_threshold")
+    @field_validator("fail_threshold")
+    @classmethod
     def validate_fail_threshold(cls, v: float) -> float:
         if not 0.0 <= v <= 1.0:
             raise ValueError("Fail threshold must be between 0.0 and 1.0")
@@ -202,19 +205,22 @@ class EvaluationJobConfig(BaseModel):
         default_factory=dict, description="Environment variables"
     )
 
-    @validator("models")
+    @field_validator("models")
+    @classmethod
     def validate_models(cls, v: list[ModelConfig]) -> list[ModelConfig]:
         if not v:
             raise ValueError("At least one model must be specified")
         return v
 
-    @validator("datasets")
+    @field_validator("datasets")
+    @classmethod
     def validate_datasets(cls, v: list[DatasetConfig]) -> list[DatasetConfig]:
         if not v:
             raise ValueError("At least one dataset must be specified")
         return v
 
-    @validator("scorers")
+    @field_validator("scorers")
+    @classmethod
     def validate_scorers(cls, v: list[ScorerConfig]) -> list[ScorerConfig]:
         if not v:
             raise ValueError("At least one scorer must be specified")
