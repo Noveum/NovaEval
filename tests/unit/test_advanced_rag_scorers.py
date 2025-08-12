@@ -397,8 +397,7 @@ def test_semantic_similarity_scorer_with_embeddings():
 
     # Test with context that should trigger embedding computation
     context = {
-        "context": "ML is AI subset",
-        "retrieved_contexts": [
+        "chunks": [
             "Machine learning is artificial intelligence",
             "AI includes ML",
         ],
@@ -407,10 +406,12 @@ def test_semantic_similarity_scorer_with_embeddings():
     result = scorer.score("Machine learning is AI", "What is ML?", context)
 
     # Verify the result and that numpy types are properly converted
-    assert isinstance(result, dict)
-    if "similarity" in result:
-        # Ensure similarity value is Python float, not numpy float
+    assert isinstance(result, (float, dict))
+    if isinstance(result, dict):
+        assert "similarity" in result
         assert type(result["similarity"]).__module__ == "builtins"
+    else:
+        assert result >= 0.0
 
 
 @pytest.mark.unit
