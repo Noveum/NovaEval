@@ -200,6 +200,68 @@ class TestContextualRecallScorerPP:
             assert result.score == 0.5  # 2 found out of 4 estimated
             assert "Recall: 0.500" in result.reasoning
 
+    def test_score_method_with_async_context(self):
+        """Test score method when called from within an async context."""
+        model = Mock()
+        scorer = ContextualRecallScorerPP(model=model)
+        context = {"chunks": ["chunk1", "chunk2"]}
+
+        # Mock the async evaluate method
+        mock_result = ScoreResult(
+            score=0.7, passed=True, reasoning="Test recall", metadata={}
+        )
+
+        with (
+            patch("asyncio.get_running_loop") as mock_get_loop,
+            patch("concurrent.futures.ThreadPoolExecutor") as mock_executor,
+        ):
+            # Simulate being in an async context
+            mock_get_loop.return_value = Mock()
+
+            # Mock the executor and future
+            mock_future = Mock()
+            mock_future.result.return_value = mock_result
+            mock_executor_instance = Mock()
+            mock_executor_instance.submit.return_value = mock_future
+            mock_executor.return_value.__enter__.return_value = mock_executor_instance
+
+            result = scorer.score("prediction", "ground_truth", context)
+
+            assert result == 0.7
+            mock_executor_instance.submit.assert_called_once()
+
+    def test_score_method_no_async_context(self):
+        """Test score method when called outside an async context."""
+        model = Mock()
+        scorer = ContextualRecallScorerPP(model=model)
+        context = {"chunks": ["chunk1", "chunk2"]}
+
+        mock_result = ScoreResult(
+            score=0.8, passed=True, reasoning="Test recall", metadata={}
+        )
+
+        with (
+            patch("asyncio.get_running_loop", side_effect=RuntimeError("No loop")),
+            patch("asyncio.run", return_value=mock_result) as mock_run,
+        ):
+            result = scorer.score("prediction", "ground_truth", context)
+
+            assert result == 0.8
+            mock_run.assert_called_once()
+
+    def test_score_method_result_without_score_attribute(self):
+        """Test score method when result doesn't have score attribute."""
+        model = Mock()
+        scorer = ContextualRecallScorerPP(model=model)
+        context = {"chunks": ["chunk1"]}
+
+        # Mock result without score attribute
+        mock_result = Mock(spec=[])  # Empty spec means no attributes
+
+        with patch("asyncio.run", return_value=mock_result):
+            result = scorer.score("prediction", "ground_truth", context)
+            assert result == 0.0
+
 
 class TestRetrievalF1Scorer:
     def test_init(self):
@@ -505,6 +567,56 @@ class TestRetrievalDiversityScorer:
             assert isinstance(result, dict)
             assert "diversity" in result
 
+    def test_load_model_macos_arm64_detection(self):
+        """Test _load_model method with macOS ARM64 detection."""
+        scorer = RetrievalDiversityScorer()
+
+        with (
+            patch("platform.system", return_value="Darwin"),
+            patch("platform.machine", return_value="arm64"),
+            patch("builtins.print") as mock_print,
+        ):
+            scorer._load_model()
+
+            assert scorer.model is None
+            assert scorer._model_loaded is True
+            mock_print.assert_called_once_with(
+                "Warning: Detected macOS ARM64, using fallback mode to avoid segmentation faults"
+            )
+
+    def test_load_model_already_loaded(self):
+        """Test _load_model when model is already loaded."""
+        scorer = RetrievalDiversityScorer()
+        scorer._model_loaded = True
+        mock_model = Mock()
+        scorer.model = mock_model
+
+        # Test that _load_model doesn't do anything when already loaded
+        original_model = scorer.model
+        scorer._load_model()
+
+        # Should not change anything
+        assert scorer.model == original_model
+        assert scorer._model_loaded is True
+
+    def test_score_with_embeddings_exception(self):
+        """Test score method when embeddings computation fails."""
+        scorer = RetrievalDiversityScorer()
+        context = {"chunks": ["chunk1", "chunk2", "chunk3"]}
+
+        # Mock the model to raise an exception during encoding
+        mock_model = Mock()
+        mock_model.encode.side_effect = Exception("Encoding failed")
+
+        with patch.object(scorer, "_load_model"):
+            scorer.model = mock_model
+
+            result = scorer.score("prediction", "ground_truth", context)
+
+            assert result == 0.0
+            score_result = scorer.get_score_result()
+            assert "Diversity computation failed" in score_result.reasoning
+
 
 class TestAggregateRAGScorer:
     def test_init(self):
@@ -577,7 +689,17 @@ class TestAggregateRAGScorer:
         scorers = {"scorer1": mock_scorer1}
         scorer = AggregateRAGScorer(scorers)
 
-        result = scorer.score("prediction", "ground_truth", {"context": "test"})
+        with patch("builtins.print") as mock_print:
+            result = scorer.score("prediction", "ground_truth", {"context": "test"})
 
-        # Should handle the exception gracefully
-        assert result == 0.0
+            # Should handle the exception gracefully
+            assert result == 0.0
+            mock_print.assert_called_once_with(
+                "Warning: Scorer scorer1 failed: Scorer failed"
+            )
+
+            # Check that the last result was set correctly
+            last_result = scorer.get_score_result()
+            assert last_result.score == 0.0
+            assert last_result.passed is False
+            assert "All scorers failed" in last_result.reasoning
