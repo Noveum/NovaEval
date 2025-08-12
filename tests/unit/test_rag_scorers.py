@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -115,6 +115,75 @@ class TestAnswerRelevancyScorer:
 
         # Mock the embedding model to be None to trigger fallback
         scorer.embedding_model = None
+        scorer._model_loaded = True
+
+        with patch.object(
+            scorer, "_parse_questions", return_value=["What is the capital?"]
+        ):
+            result = scorer.score(
+                prediction="Paris is the capital of France.",
+                ground_truth="What is the capital of France?",
+                context={"context": "Paris is the capital of France."},
+            )
+
+            assert isinstance(result, (float, dict))
+
+
+class TestAnswerRelevancyScorerExtended:
+    """Additional tests to improve coverage for AnswerRelevancyScorer."""
+
+    def test_load_embedding_model_success(self):
+        """Test _load_embedding_model with successful model loading."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Mock successful SentenceTransformer import and instantiation
+        mock_model = Mock()
+        with patch(
+            "sentence_transformers.SentenceTransformer", return_value=mock_model
+        ):
+            scorer._load_embedding_model()
+
+            assert scorer.embedding_model == mock_model
+            assert scorer._model_loaded is True
+
+    @pytest.mark.asyncio
+    async def test_evaluate_with_embedding_model(self):
+        """Test evaluate method using embedding model when available."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Mock the embedding model
+        mock_model = Mock()
+        mock_model.encode.return_value = [[0.1, 0.2], [0.3, 0.4]]
+        scorer.embedding_model = mock_model
+        scorer._model_loaded = True
+
+        # Mock the question generation
+        with patch.object(
+            scorer,
+            "_parse_questions",
+            return_value=["What is the capital?", "Which city is the capital?"],
+        ):
+            result = await scorer.evaluate(
+                input_text="What is the capital of France?",
+                output_text="Paris is the capital of France.",
+                context="Paris is the capital of France.",
+            )
+
+            assert isinstance(result, ScoreResult)
+            assert 0 <= result.score <= 1
+            assert isinstance(result.passed, bool)
+
+    def test_score_method_with_embedding_model(self):
+        """Test the synchronous score method with embedding model."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Mock the embedding model
+        mock_model = Mock()
+        mock_model.encode.return_value = [[0.1, 0.2]]
+        scorer.embedding_model = mock_model
         scorer._model_loaded = True
 
         with patch.object(

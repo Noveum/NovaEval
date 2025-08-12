@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 import pytest
+from test_utils import MockLLM
 
 from src.novaeval.scorers.base import ScoreResult
 from src.novaeval.scorers.basic_rag_scorers import (
@@ -315,7 +316,6 @@ class TestRetrievalF1Scorer:
         scorer.score("prediction", "ground_truth", {"context": "test"})
 
         result = scorer.get_score_result()
-        assert result is not None
         assert result is not None
 
 
@@ -683,6 +683,199 @@ class TestAggregateRAGScorer:
         assert result["aggregate"] == 0.8
 
     def test_score_with_exception(self):
+        mock_scorer1 = Mock()
+        mock_scorer1.score.side_effect = Exception("Scorer failed")
+
+        scorers = {"scorer1": mock_scorer1}
+        scorer = AggregateRAGScorer(scorers)
+
+        with patch("builtins.print") as mock_print:
+            result = scorer.score("prediction", "ground_truth", {"context": "test"})
+
+            # Should handle the exception gracefully
+            assert result == 0.0
+            mock_print.assert_called_once_with(
+                "Warning: Scorer scorer1 failed: Scorer failed"
+            )
+
+            # Check that the last result was set correctly
+            last_result = scorer.get_score_result()
+            assert last_result.score == 0.0
+            assert last_result.passed is False
+            assert "All scorers failed" in last_result.reasoning
+
+
+class TestContextualPrecisionScorerPPExtended:
+    """Additional tests to improve coverage for ContextualPrecisionScorerPP."""
+
+    def test_parse_json_response_fallback_boolean_indicators(self):
+        """Test _parse_json_response with boolean indicators fallback."""
+        mock_llm = MockLLM()
+        scorer = ContextualPrecisionScorerPP(model=mock_llm)
+
+        # Test with "yes" indicator
+        result = scorer._parse_json_response("yes, this is relevant")
+        assert result["relevant"] is True
+        assert "Fallback parsing used" in result["reasoning"]
+
+        # Test with "true" indicator
+        result = scorer._parse_json_response("true, relevant information")
+        assert result["relevant"] is True
+
+        # Test with "1" indicator
+        result = scorer._parse_json_response("1 - this chunk is relevant")
+        assert result["relevant"] is True
+
+        # Test with no indicators
+        result = scorer._parse_json_response("this is not relevant information")
+        assert result["relevant"] is False
+
+    @pytest.mark.asyncio
+    async def test_evaluate_no_chunks(self):
+        """Test evaluate method when no chunks are provided."""
+        mock_llm = MockLLM()
+        scorer = ContextualPrecisionScorerPP(model=mock_llm)
+
+        result = await scorer.evaluate(
+            input_text="test query", output_text="test output", context={"chunks": []}
+        )
+
+        assert result.score == 0.0
+        assert not result.passed
+        assert "No chunks provided" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_evaluate_empty_chunks(self):
+        """Test evaluate method with empty chunks."""
+        mock_llm = MockLLM()
+        scorer = ContextualPrecisionScorerPP(model=mock_llm)
+
+        result = await scorer.evaluate(
+            input_text="test query", output_text="test output", context={"chunks": [""]}
+        )
+
+        assert result.score == 0.0
+        assert not result.passed
+        assert "Precision: 0.000 (0 relevant out of 1 chunks)" in result.reasoning
+
+
+class TestContextualRecallScorerPPExtended:
+    """Additional tests to improve coverage for ContextualRecallScorerPP."""
+
+    def test_parse_json_response_fallback_boolean_indicators(self):
+        """Test _parse_json_response with boolean indicators fallback."""
+        mock_llm = MockLLM()
+        scorer = ContextualRecallScorerPP(model=mock_llm)
+
+        # Test with "yes" indicator
+        result = scorer._parse_json_response("yes, this is relevant")
+        assert result["relevant"] is True
+        assert "Fallback parsing used" in result["reasoning"]
+
+        # Test with "true" indicator
+        result = scorer._parse_json_response("true, relevant information")
+        assert result["relevant"] is True
+
+        # Test with "1" indicator
+        result = scorer._parse_json_response("1 - this chunk is relevant")
+        assert result["relevant"] is True
+
+        # Test with no indicators
+        result = scorer._parse_json_response("this is not relevant information")
+        assert result["relevant"] is False
+
+    @pytest.mark.asyncio
+    async def test_estimate_total_relevant_chunks_fallback(self):
+        """Test _estimate_total_relevant_chunks fallback logic."""
+        mock_llm = MockLLM()
+        scorer = ContextualRecallScorerPP(model=mock_llm)
+
+        # Mock the model to return invalid response
+        with patch.object(scorer, "_call_model", return_value="invalid response"):
+            result = await scorer._estimate_total_relevant_chunks(
+                "test query", ["chunk1", "chunk2"]
+            )
+
+            # Should fallback to length of retrieved chunks
+            assert result == 2
+
+    @pytest.mark.asyncio
+    async def test_evaluate_no_chunks(self):
+        """Test evaluate method when no chunks are provided."""
+        mock_llm = MockLLM()
+        scorer = ContextualRecallScorerPP(model=mock_llm)
+
+        result = await scorer.evaluate(
+            input_text="test query", output_text="test output", context={"chunks": []}
+        )
+
+        assert result.score == 0.0
+        assert not result.passed
+        assert "No chunks provided" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_evaluate_empty_chunks(self):
+        """Test evaluate method with empty chunks."""
+        mock_llm = MockLLM()
+        scorer = ContextualRecallScorerPP(model=mock_llm)
+
+        result = await scorer.evaluate(
+            input_text="test query", output_text="test output", context={"chunks": [""]}
+        )
+
+        assert result.score == 0.0
+        assert not result.passed
+        assert (
+            "Recall: 0.000 (0 relevant retrieved, estimated 1 total relevant)"
+            in result.reasoning
+        )
+
+
+class TestRetrievalDiversityScorerExtended:
+    """Additional tests to improve coverage for RetrievalDiversityScorer."""
+
+    def test_compute_pairwise_cosine_distance_empty_embeddings(self):
+        """Test _compute_pairwise_cosine_distance with empty embeddings."""
+        mock_llm = MockLLM()
+        scorer = RetrievalDiversityScorer(model=mock_llm)
+
+        result = scorer._compute_pairwise_cosine_distance([])
+        assert result == 0.0
+
+    def test_compute_pairwise_cosine_distance_single_embedding(self):
+        """Test _compute_pairwise_cosine_distance with single embedding."""
+        mock_llm = MockLLM()
+        scorer = RetrievalDiversityScorer(model=mock_llm)
+
+        result = scorer._compute_pairwise_cosine_distance([[1.0, 0.0]])
+        assert result == 0.0
+
+    def test_score_with_embeddings_exception_handling(self):
+        """Test score method exception handling in embeddings path."""
+        mock_llm = MockLLM()
+        scorer = RetrievalDiversityScorer(model=mock_llm)
+
+        # Mock the model to raise an exception during encoding
+        mock_model = Mock()
+        mock_model.encode.side_effect = Exception("Encoding failed")
+
+        with patch.object(scorer, "_load_model"):
+            scorer.model = mock_model
+
+            result = scorer.score(
+                "prediction", "ground_truth", {"chunks": ["chunk1", "chunk2"]}
+            )
+
+            assert result == 0.0
+            score_result = scorer.get_score_result()
+            assert "Diversity computation failed" in score_result.reasoning
+
+
+class TestAggregateRAGScorerExtended:
+    """Additional tests to improve coverage for AggregateRAGScorer."""
+
+    def test_score_with_exception_handling(self):
+        """Test score method exception handling."""
         mock_scorer1 = Mock()
         mock_scorer1.score.side_effect = Exception("Scorer failed")
 
