@@ -18,6 +18,8 @@ from src.novaeval.scorers.basic_rag_scorers import (
     SemanticSimilarityScorer,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class TestAsyncLLMScorer:
     def test_init(self):
@@ -320,15 +322,25 @@ class TestSemanticSimilarityScorer:
     def test_load_model_import_error(self):
         scorer = SemanticSimilarityScorer()
 
-        # Mock the import to raise ImportError
+        # Mock the import to raise ImportError by patching the module import
+        original_import = __builtins__["__import__"]
+
+        def mock_import(name, *args, **kwargs):
+            if name == "sentence_transformers":
+                raise ImportError("No module named 'sentence_transformers'")
+            return original_import(name, *args, **kwargs)
+
         with (
-            patch("builtins.__import__", side_effect=ImportError),
+            patch("builtins.__import__", side_effect=mock_import),
             patch("builtins.print") as mock_print,
         ):
             scorer._load_model()
 
             assert scorer.model is None
-            mock_print.assert_called_once()
+            mock_print.assert_called_once_with(
+                "Warning: sentence_transformers not installed. "
+                "Using simple similarity computation."
+            )
 
     def test_compute_simple_similarity(self):
         scorer = SemanticSimilarityScorer()

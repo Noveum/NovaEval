@@ -9,14 +9,16 @@ This module contains fundamental scorers for RAG evaluation including:
 """
 
 import re
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics import average_precision_score, ndcg_score
 
 from novaeval.scorers.base import BaseScorer, ScoreResult
 from novaeval.utils.llm import call_llm
+
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer  # noqa: TC004
 
 
 class AsyncLLMScorer(BaseScorer):

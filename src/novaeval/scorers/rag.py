@@ -11,14 +11,16 @@ This module implements various metrics for evaluating RAG systems including:
 """
 
 import asyncio
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 from novaeval.models.base import BaseModel as LLMModel
 from novaeval.scorers.base import BaseScorer, ScoreResult
 from novaeval.utils.parsing import parse_claims
+
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
 
 
 class AnswerRelevancyScorer(BaseScorer):
@@ -39,7 +41,27 @@ class AnswerRelevancyScorer(BaseScorer):
         super().__init__(name="AnswerRelevancyScorer", **kwargs)
         self.threshold = threshold
         self.model = model
-        self.embedding_model = SentenceTransformer(embedding_model)
+        self.embedding_model_name = embedding_model
+        self.embedding_model: Optional[SentenceTransformer] = None
+        self._model_loaded = False
+
+    def _load_embedding_model(self) -> None:
+        """Load the sentence transformer model with error handling."""
+        if not self._model_loaded:
+            try:
+                from sentence_transformers import SentenceTransformer
+
+                self.embedding_model = SentenceTransformer(self.embedding_model_name)
+            except ImportError:
+                self.embedding_model = None
+                print(
+                    "Warning: sentence_transformers not installed. "
+                    "Answer relevancy scoring will use fallback method."
+                )
+            except Exception as e:
+                self.embedding_model = None
+                print(f"Warning: Could not load SentenceTransformer model: {e}")
+            self._model_loaded = True
 
     def score(
         self,
@@ -104,17 +126,34 @@ class AnswerRelevancyScorer(BaseScorer):
 
             # Calculate semantic similarity between original question and generated
             # questions
-            original_embedding = self.embedding_model.encode([input_text])
-            generated_embeddings = self.embedding_model.encode(generated_questions)
+            self._load_embedding_model()
 
-            # Calculate cosine similarities
-            similarities = []
-            for gen_embedding in generated_embeddings:
-                similarity = np.dot(original_embedding[0], gen_embedding) / (
-                    np.linalg.norm(original_embedding[0])
-                    * np.linalg.norm(gen_embedding)
-                )
-                similarities.append(similarity)
+            if self.embedding_model is None:
+                # Fallback to simple text similarity if embedding model is not available
+                similarities = []
+                input_words = set(input_text.lower().split())
+                for gen_question in generated_questions:
+                    gen_words = set(gen_question.lower().split())
+                    if input_words and gen_words:
+                        overlap = len(input_words.intersection(gen_words))
+                        union = len(input_words.union(gen_words))
+                        similarity = overlap / union if union > 0 else 0.0
+                    else:
+                        similarity = 0.0
+                    similarities.append(similarity)
+            else:
+                # Use embedding model for semantic similarity
+                original_embedding = self.embedding_model.encode([input_text])
+                generated_embeddings = self.embedding_model.encode(generated_questions)
+
+                # Calculate cosine similarities
+                similarities = []
+                for gen_embedding in generated_embeddings:
+                    similarity = np.dot(original_embedding[0], gen_embedding) / (
+                        np.linalg.norm(original_embedding[0])
+                        * np.linalg.norm(gen_embedding)
+                    )
+                    similarities.append(similarity)
 
             # Use mean similarity as the relevancy score
             relevancy_score = float(np.mean(similarities))
