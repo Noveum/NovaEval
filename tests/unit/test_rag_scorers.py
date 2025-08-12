@@ -1,4 +1,5 @@
 import asyncio
+from unittest.mock import patch
 
 import pytest
 
@@ -13,6 +14,119 @@ from novaeval.scorers.rag import (
     FaithfulnessScorer,
     RAGASScorer,
 )
+
+
+class TestAnswerRelevancyScorer:
+    """Test class for AnswerRelevancyScorer to improve coverage."""
+
+    def test_load_embedding_model_import_error(self):
+        """Test _load_embedding_model with ImportError."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        with (
+            patch(
+                "builtins.__import__",
+                side_effect=ImportError("No module named 'sentence_transformers'"),
+            ),
+            patch("builtins.print") as mock_print,
+        ):
+            scorer._load_embedding_model()
+
+            assert scorer.embedding_model is None
+            assert scorer._model_loaded is True
+            mock_print.assert_called_once_with(
+                "Warning: sentence_transformers not installed. "
+                "Answer relevancy scoring will use fallback method."
+            )
+
+    def test_load_embedding_model_exception(self):
+        """Test _load_embedding_model with general Exception."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        with (
+            patch(
+                "sentence_transformers.SentenceTransformer",
+                side_effect=Exception("Model loading failed"),
+            ),
+            patch("builtins.print") as mock_print,
+        ):
+            scorer._load_embedding_model()
+
+            assert scorer.embedding_model is None
+            assert scorer._model_loaded is True
+            mock_print.assert_called_once_with(
+                "Warning: Could not load SentenceTransformer model: Model loading failed"
+            )
+
+    @pytest.mark.asyncio
+    async def test_evaluate_with_fallback_similarity(self):
+        """Test evaluate method using fallback text similarity when embedding model is None."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Force embedding model to be None
+        scorer.embedding_model = None
+        scorer._model_loaded = True
+
+        # Mock the question generation to return predictable results
+        with patch.object(
+            scorer,
+            "_parse_questions",
+            return_value=["What is the capital?", "Which city is the capital?"],
+        ):
+            result = await scorer.evaluate(
+                input_text="What is the capital of France?",
+                output_text="Paris is the capital of France.",
+                context="Paris is the capital of France.",
+            )
+
+            assert isinstance(result, ScoreResult)
+            assert 0 <= result.score <= 1
+            assert isinstance(result.passed, bool)
+            assert "Answer Relevancy" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_evaluate_fallback_similarity_edge_cases(self):
+        """Test fallback similarity with edge cases like empty words."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Force embedding model to be None
+        scorer.embedding_model = None
+        scorer._model_loaded = True
+
+        # Test with empty generated questions
+        with patch.object(scorer, "_parse_questions", return_value=[""]):
+            result = await scorer.evaluate(
+                input_text="What is the capital?",
+                output_text="Paris",
+                context="Paris is the capital",
+            )
+
+            assert isinstance(result, ScoreResult)
+            assert result.score >= 0
+
+    def test_score_method_sync(self):
+        """Test the synchronous score method."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Mock the embedding model to be None to trigger fallback
+        scorer.embedding_model = None
+        scorer._model_loaded = True
+
+        with patch.object(
+            scorer, "_parse_questions", return_value=["What is the capital?"]
+        ):
+            result = scorer.score(
+                prediction="Paris is the capital of France.",
+                ground_truth="What is the capital of France?",
+                context={"context": "Paris is the capital of France."},
+            )
+
+            assert isinstance(result, (float, dict))
 
 
 @pytest.mark.asyncio
