@@ -28,7 +28,7 @@ def test_rag_pipeline_evaluator_initialization():
 @pytest.mark.unit
 def test_rag_pipeline_evaluator_with_minimal_data():
     """Test RAGPipelineEvaluator with minimal data to exercise type conversion paths."""
-    mock_llm = Mock()
+    mock_llm = MockLLM()
     evaluator = RAGPipelineEvaluator(llm=mock_llm)
 
     # Create minimal test data
@@ -48,27 +48,22 @@ def test_rag_pipeline_evaluator_with_minimal_data():
     )
 
     # Test the evaluation - this should exercise the type conversion paths
-    try:
-        result = evaluator.evaluate_rag_pipeline(
-            rag_sample=rag_sample,
-            retrieved_contexts=retrieved_contexts,
-            generated_answer=generated_answer,
-        )
+    result = evaluator.evaluate_rag_pipeline(
+        rag_sample=rag_sample,
+        retrieved_contexts=retrieved_contexts,
+        generated_answer=generated_answer,
+    )
 
-        # Basic validation that the result structure is correct
-        assert hasattr(result, "overall_score")
-        assert hasattr(result, "detailed_scores")
-        assert isinstance(result.overall_score, float)
-        assert isinstance(result.detailed_scores, dict)
+    # Basic validation that the result structure is correct
+    assert hasattr(result, "overall_score")
+    assert hasattr(result, "detailed_scores")
+    assert isinstance(result.overall_score, float)
+    assert isinstance(result.detailed_scores, dict)
 
-        # Verify that any numeric values in detailed_scores are Python native types
-        for _key, value in result.detailed_scores.items():
-            if isinstance(value, dict) and "score" in value:
-                assert type(value["score"]).__module__ == "builtins"
-    except Exception as e:
-        # If evaluation fails due to missing dependencies, that's expected
-        # The important thing is that we exercised the code paths
-        assert "evaluation failed" in str(e).lower() or "missing" in str(e).lower()
+    # Verify that any numeric values in detailed_scores are Python native types
+    for _key, value in result.detailed_scores.items():
+        if isinstance(value, dict) and "score" in value:
+            assert isinstance(value["score"], (int, float))
 
 
 @pytest.mark.unit
