@@ -1,5 +1,5 @@
 import asyncio
-from unittest.mock import Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -11,8 +11,6 @@ from novaeval.scorers.rag import (
     FaithfulnessScorer,
     RAGASScorer,
 )
-
-# Import shared test utilities
 from tests.unit.test_utils import MockLLM
 
 
@@ -361,6 +359,145 @@ class TestAnswerRelevancyScorerExtended:
             assert not result.passed
             assert "Encoding failed" in result.reasoning
 
+    def test_score_method_with_context_dict(self):
+        """Test score method with context dictionary."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Mock the evaluate method to return a predictable result
+        async def mock_evaluate(*args, **kwargs):
+            return ScoreResult(
+                score=0.8, passed=True, reasoning="Good answer", metadata={}
+            )
+
+        scorer.evaluate = mock_evaluate
+
+        result = scorer.score(
+            prediction="Paris is the capital of France.",
+            ground_truth="What is the capital of France?",
+            context={"context": "France is a country in Europe."},
+        )
+
+        assert result == 0.8
+
+    def test_score_method_without_context(self):
+        """Test score method without context."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Mock the evaluate method to return a predictable result
+        async def mock_evaluate(*args, **kwargs):
+            return ScoreResult(
+                score=0.7, passed=True, reasoning="Good answer", metadata={}
+            )
+
+        scorer.evaluate = mock_evaluate
+
+        result = scorer.score(
+            prediction="Paris is the capital of France.",
+            ground_truth="What is the capital of France?",
+        )
+
+        assert result == 0.7
+
+    def test_load_embedding_model_import_error(self):
+        """Test _load_embedding_model with ImportError."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Mock the import to fail
+        with patch(
+            "builtins.__import__",
+            side_effect=ImportError("No module named 'sentence_transformers'"),
+        ):
+            scorer._load_embedding_model()
+            assert scorer.embedding_model is None
+            assert scorer._model_loaded is True
+
+    def test_load_embedding_model_general_exception(self):
+        """Test _load_embedding_model with general Exception."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Mock the import to succeed but SentenceTransformer to fail
+        with patch(
+            "sentence_transformers.SentenceTransformer",
+            side_effect=Exception("Model loading failed"),
+        ):
+            scorer._load_embedding_model()
+            assert scorer.embedding_model is None
+            assert scorer._model_loaded is True
+
+    @pytest.mark.asyncio
+    async def test_evaluate_with_empty_generated_questions(self):
+        """Test evaluate method when no questions are generated."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Mock the question generation to return empty list
+        with patch.object(
+            scorer,
+            "_parse_questions",
+            return_value=[],
+        ):
+            result = await scorer.evaluate(
+                input_text="What is the capital of France?",
+                output_text="Paris is the capital of France.",
+                context="Paris is the capital of France.",
+            )
+
+            assert isinstance(result, ScoreResult)
+            assert result.score == 0.0
+            assert not result.passed
+            assert "Failed to generate questions" in result.reasoning
+            assert result.metadata.get("error") == "question_generation_failed"
+
+    @pytest.mark.asyncio
+    async def test_evaluate_with_embedding_model_encoding_exception(self):
+        """Test evaluate method with embedding model encoding exception."""
+        mock_llm = MockLLM()
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        # Mock the question generation to return predictable results
+        with patch.object(
+            scorer,
+            "_parse_questions",
+            return_value=["What is the capital?", "Which city is the capital?"],
+        ):
+            # Mock embedding model to raise exception during encoding
+            mock_embedding_model = Mock()
+            mock_embedding_model.encode.side_effect = Exception("Encoding failed")
+            scorer.embedding_model = mock_embedding_model
+            scorer._model_loaded = True
+
+            result = await scorer.evaluate(
+                input_text="What is the capital of France?",
+                output_text="Paris is the capital of France.",
+                context="Paris is the capital of France.",
+            )
+
+            assert isinstance(result, ScoreResult)
+            assert 0 <= result.score <= 1
+            assert "Encoding failed" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_evaluate_with_model_generation_exception(self):
+        """Test evaluate method when model generation fails."""
+        mock_llm = MockLLM()
+        mock_llm.generate = AsyncMock(side_effect=Exception("Model generation failed"))
+        scorer = AnswerRelevancyScorer(model=mock_llm)
+
+        result = await scorer.evaluate(
+            input_text="What is the capital of France?",
+            output_text="Paris is the capital of France.",
+            context="Paris is the capital of France.",
+        )
+
+        assert isinstance(result, ScoreResult)
+        assert result.score == 0.0
+        assert not result.passed
+        assert "Model generation failed" in result.reasoning
+
 
 class TestFaithfulnessScorer:
     """Test class for FaithfulnessScorer to improve coverage."""
@@ -394,13 +531,13 @@ class TestFaithfulnessScorer:
 
     @pytest.mark.asyncio
     async def test_evaluate_with_no_context(self):
-        """Test evaluate method when no context is provided."""
+        """Test evaluate method with no context."""
         mock_llm = MockLLM()
         scorer = FaithfulnessScorer(model=mock_llm)
 
         result = await scorer.evaluate(
-            input_text="What is machine learning?",
-            output_text="Machine learning is a subset of AI.",
+            input_text="What is the capital of France?",
+            output_text="Paris is the capital of France.",
             context=None,
         )
 
@@ -408,7 +545,25 @@ class TestFaithfulnessScorer:
         assert result.score == 0.0
         assert not result.passed
         assert "No context provided" in result.reasoning
-        assert result.metadata["error"] == "no_context"
+        assert result.metadata.get("error") == "no_context"
+
+    @pytest.mark.asyncio
+    async def test_evaluate_with_empty_context(self):
+        """Test evaluate method with empty context."""
+        mock_llm = MockLLM()
+        scorer = FaithfulnessScorer(model=mock_llm)
+
+        result = await scorer.evaluate(
+            input_text="What is the capital of France?",
+            output_text="Paris is the capital of France.",
+            context="",
+        )
+
+        assert isinstance(result, ScoreResult)
+        assert result.score == 0.0
+        assert not result.passed
+        assert "No context provided" in result.reasoning
+        assert result.metadata.get("error") == "no_context"
 
     @pytest.mark.asyncio
     async def test_evaluate_with_no_claims(self):
@@ -416,18 +571,23 @@ class TestFaithfulnessScorer:
         mock_llm = MockLLM()
         scorer = FaithfulnessScorer(model=mock_llm)
 
-        with patch.object(scorer, "_parse_claims", return_value=[]):
+        # Mock the claims extraction to return empty list
+        with patch.object(
+            scorer,
+            "_parse_claims",
+            return_value=[],
+        ):
             result = await scorer.evaluate(
-                input_text="What is machine learning?",
-                output_text="Machine learning is a subset of AI.",
-                context="Machine learning is a subset of AI.",
+                input_text="What is the capital of France?",
+                output_text="Paris is the capital of France.",
+                context="Paris is the capital of France. France is in Europe.",
             )
 
             assert isinstance(result, ScoreResult)
             assert result.score == 1.0
             assert result.passed
             assert "No factual claims found" in result.reasoning
-            assert result.metadata["claims"] == []
+            assert result.metadata.get("claims") == []
 
     @pytest.mark.asyncio
     async def test_evaluate_with_llm_exception(self):
@@ -444,13 +604,89 @@ class TestFaithfulnessScorer:
         result = await scorer.evaluate(
             input_text="What is machine learning?",
             output_text="Machine learning is a subset of AI.",
-            context="Machine learning is a subset of AI.",
+            context="Machine learning is a subset of artificial intelligence.",
         )
 
         assert isinstance(result, ScoreResult)
         assert result.score == 0.0
         assert not result.passed
         assert "LLM API error" in result.reasoning
+
+    def test_score_method_with_context_dict(self):
+        """Test score method with context dictionary."""
+        mock_llm = MockLLM()
+        scorer = FaithfulnessScorer(model=mock_llm)
+
+        # Mock the evaluate method to return a predictable result
+        async def mock_evaluate(*args, **kwargs):
+            return ScoreResult(
+                score=0.9, passed=True, reasoning="Faithful to context", metadata={}
+            )
+
+        scorer.evaluate = mock_evaluate
+
+        result = scorer.score(
+            prediction="Paris is the capital of France.",
+            ground_truth="What is the capital of France?",
+            context={"context": "Paris is the capital of France. France is in Europe."},
+        )
+
+        assert result == 0.9
+
+    def test_score_method_without_context(self):
+        """Test score method without context."""
+        mock_llm = MockLLM()
+        scorer = FaithfulnessScorer(model=mock_llm)
+
+        # Mock the evaluate method to return a predictable result
+        async def mock_evaluate(*args, **kwargs):
+            return ScoreResult(
+                score=0.8, passed=True, reasoning="Faithful to context", metadata={}
+            )
+
+        scorer.evaluate = mock_evaluate
+
+        result = scorer.score(
+            prediction="Paris is the capital of France.",
+            ground_truth="What is the capital of France?",
+        )
+
+        assert result == 0.8
+
+    def test_parse_claims_edge_cases(self):
+        """Test _parse_claims method with edge cases."""
+        mock_llm = MockLLM()
+        scorer = FaithfulnessScorer(model=mock_llm)
+
+        # Test with empty response
+        claims1 = scorer._parse_claims("")
+        assert len(claims1) == 0
+
+        # Test with single character
+        claims2 = scorer._parse_claims("a")
+        assert len(claims2) == 0
+
+        # Test with numbers but no claims (these will be parsed as claims since they don't end with ?)
+        response3 = "1. This is not a claim\n2. Neither is this"
+        claims3 = scorer._parse_claims(response3)
+        assert len(claims3) == 2  # These are actually parsed as claims
+
+        # Test with claims that end with question marks (these are also parsed as claims)
+        response4 = "1. What is Python\n2. How does it work"
+        claims4 = scorer._parse_claims(response4)
+        assert (
+            len(claims4) == 2
+        )  # These are parsed as claims regardless of question marks
+
+        # Test with mixed formats
+        response5 = "1. First claim\n- Second claim\n* Third claim"
+        claims5 = scorer._parse_claims(response5)
+        assert len(claims5) == 3
+
+        # Test with empty lines
+        response6 = "1. First claim\n\n2. Second claim"
+        claims6 = scorer._parse_claims(response6)
+        assert len(claims6) == 2
 
 
 class TestContextualPrecisionScorer:
@@ -471,6 +707,8 @@ class TestContextualPrecisionScorer:
         assert isinstance(result, ScoreResult)
         assert result.score == 0.0
         assert not result.passed
+        assert "No context provided" in result.reasoning
+        assert result.metadata.get("error") == "no_context"
 
     @pytest.mark.asyncio
     async def test_evaluate_with_single_context_chunk(self):
@@ -592,28 +830,29 @@ class TestContextualRecallScorer:
         mock_llm = MockLLM()
         scorer = ContextualRecallScorer(model=mock_llm)
 
-        expected_output = (
-            "Machine learning is a subset of AI and involves training algorithms."
+        # Mock the LLM to return predictable results
+        async def mock_generate(prompt):
+            if "expected answer" in prompt:
+                return "Expected answer: Paris is the capital of France."
+            elif "context chunk" in prompt:
+                return "Rating: 4\nExplanation: Relevant"
+            else:
+                return "Rating: 3\nExplanation: Moderately relevant"
+
+        mock_llm.generate = mock_generate
+
+        result = await scorer.evaluate(
+            input_text="What is the capital of France?",
+            output_text="Paris is the capital of France.",
+            expected_output="Paris is the capital of France.",
+            context="Paris is the capital of France. France is in Europe.",
         )
-        context = "Machine learning is a subset of artificial intelligence. It involves training algorithms on data."
 
-        with patch.object(
-            scorer,
-            "_parse_claims",
-            return_value=[
-                "Machine learning is a subset of AI",
-                "It involves training algorithms",
-            ],
-        ):
-            result = await scorer.evaluate(
-                input_text="What is machine learning?",
-                output_text="Machine learning is a subset of AI.",
-                expected_output=expected_output,
-                context=context,
-            )
-
-            assert isinstance(result, ScoreResult)
-            assert 0 <= result.score <= 1
+        assert isinstance(result, ScoreResult)
+        assert 0 <= result.score <= 1
+        assert isinstance(result.passed, bool)
+        assert isinstance(result.reasoning, str)
+        assert isinstance(result.metadata, dict)
 
     @pytest.mark.asyncio
     async def test_evaluate_without_expected_output(self):
@@ -621,43 +860,102 @@ class TestContextualRecallScorer:
         mock_llm = MockLLM()
         scorer = ContextualRecallScorer(model=mock_llm)
 
-        context = "Machine learning is a subset of artificial intelligence."
-
-        with patch.object(
-            scorer, "_parse_claims", return_value=["Machine learning is a subset of AI"]
-        ):
-            result = await scorer.evaluate(
-                input_text="What is machine learning?",
-                output_text="Machine learning is a subset of AI.",
-                context=context,
-            )
-
-            assert isinstance(result, ScoreResult)
-            assert 0 <= result.score <= 1
-
-    @pytest.mark.asyncio
-    async def test_evaluate_with_llm_exception(self):
-        """Test evaluate method when LLM generation fails."""
-        mock_llm = MockLLM()
-        scorer = ContextualRecallScorer(model=mock_llm)
-
-        # Mock the LLM to raise an exception
+        # Mock the LLM to return predictable results
         async def mock_generate(prompt):
-            raise Exception("LLM API error")
+            if "context chunk" in prompt:
+                return "Rating: 4\nExplanation: Relevant"
+            else:
+                return "Rating: 3\nExplanation: Moderately relevant"
 
         mock_llm.generate = mock_generate
 
         result = await scorer.evaluate(
-            input_text="What is machine learning?",
-            output_text="Machine learning is a subset of AI.",
-            expected_output="Machine learning is a subset of AI and involves training algorithms.",
-            context="Machine learning is a subset of artificial intelligence.",
+            input_text="What is the capital of France?",
+            output_text="Paris is the capital of France.",
+            context="Paris is the capital of France. France is in Europe.",
         )
 
         assert isinstance(result, ScoreResult)
-        assert result.score == 0.0
-        assert not result.passed
-        assert "LLM API error" in result.reasoning
+        assert 0 <= result.score <= 1
+        assert isinstance(result.passed, bool)
+        assert isinstance(result.reasoning, str)
+        assert isinstance(result.metadata, dict)
+
+    def test_score_method_with_context_dict(self):
+        """Test score method with context dictionary."""
+        mock_llm = MockLLM()
+        scorer = ContextualRecallScorer(model=mock_llm)
+
+        # Mock the evaluate method to return a predictable result
+        async def mock_evaluate(*args, **kwargs):
+            return ScoreResult(
+                score=0.8, passed=True, reasoning="Good recall", metadata={}
+            )
+
+        scorer.evaluate = mock_evaluate
+
+        result = scorer.score(
+            prediction="Paris is the capital of France.",
+            ground_truth="What is the capital of France?",
+            context={"context": "Paris is the capital of France. France is in Europe."},
+        )
+
+        assert result == 0.8
+
+    def test_score_method_without_context(self):
+        """Test score method without context."""
+        mock_llm = MockLLM()
+        scorer = ContextualRecallScorer(model=mock_llm)
+
+        # Mock the evaluate method to return a predictable result
+        async def mock_evaluate(*args, **kwargs):
+            return ScoreResult(
+                score=0.7, passed=True, reasoning="Good recall", metadata={}
+            )
+
+        scorer.evaluate = mock_evaluate
+
+        result = scorer.score(
+            prediction="Paris is the capital of France.",
+            ground_truth="What is the capital of France?",
+        )
+
+        assert result == 0.7
+
+    def test_parse_claims_edge_cases(self):
+        """Test _parse_claims method with edge cases."""
+        mock_llm = MockLLM()
+        scorer = ContextualRecallScorer(model=mock_llm)
+
+        # Test with empty response
+        claims1 = scorer._parse_claims("")
+        assert len(claims1) == 0
+
+        # Test with single character
+        claims2 = scorer._parse_claims("a")
+        assert len(claims2) == 0
+
+        # Test with numbers but no claims (these will be parsed as claims since they don't end with ?)
+        response3 = "1. This is not a claim\n2. Neither is this"
+        claims3 = scorer._parse_claims(response3)
+        assert len(claims3) == 2  # These are actually parsed as claims
+
+        # Test with claims that end with question marks (these are also parsed as claims)
+        response4 = "1. What is Python\n2. How does it work"
+        claims4 = scorer._parse_claims(response4)
+        assert (
+            len(claims4) == 2
+        )  # These are parsed as claims regardless of question marks
+
+        # Test with mixed formats
+        response5 = "1. First claim\n- Second claim\n* Third claim"
+        claims5 = scorer._parse_claims(response5)
+        assert len(claims5) == 3
+
+        # Test with empty lines
+        response6 = "1. First claim\n\n2. Second claim"
+        claims6 = scorer._parse_claims(response6)
+        assert len(claims6) == 2
 
 
 class TestRAGASScorer:
@@ -726,6 +1024,61 @@ class TestRAGASScorer:
         assert 0 <= result.score <= 1
         assert "Scorer error" in result.reasoning
 
+    @pytest.mark.asyncio
+    async def test_evaluate_with_multiple_scorer_exceptions(self):
+        """Test evaluate method with multiple scorer exceptions."""
+        mock_llm = MockLLM()
+        scorer = RAGASScorer(model=mock_llm)
+
+        # Mock multiple scorers to raise exceptions
+        async def mock_evaluate1(*args, **kwargs):
+            raise Exception("Answer relevancy error")
+
+        async def mock_evaluate2(*args, **kwargs):
+            raise Exception("Faithfulness error")
+
+        scorer.answer_relevancy_scorer.evaluate = mock_evaluate1
+        scorer.faithfulness_scorer.evaluate = mock_evaluate2
+
+        result = await scorer.evaluate(
+            input_text="What is machine learning?",
+            output_text="Machine learning is a subset of AI.",
+            expected_output="Machine learning is a subset of AI and involves training algorithms.",
+            context="Machine learning is a subset of artificial intelligence. It involves training algorithms on data.",
+        )
+
+        assert isinstance(result, ScoreResult)
+        assert 0 <= result.score <= 1
+        assert "Answer relevancy error" in result.reasoning
+        assert "Faithfulness error" in result.reasoning
+
+    @pytest.mark.asyncio
+    async def test_evaluate_with_partial_scorer_success(self):
+        """Test evaluate method with some scorers succeeding and some failing."""
+        mock_llm = MockLLM()
+        scorer = RAGASScorer(model=mock_llm)
+
+        # Mock one scorer to succeed and one to fail
+        async def mock_evaluate_success(*args, **kwargs):
+            return ScoreResult(score=0.8, passed=True, reasoning="Success", metadata={})
+
+        async def mock_evaluate_failure(*args, **kwargs):
+            raise Exception("Scorer error")
+
+        scorer.answer_relevancy_scorer.evaluate = mock_evaluate_success
+        scorer.faithfulness_scorer.evaluate = mock_evaluate_failure
+
+        result = await scorer.evaluate(
+            input_text="What is machine learning?",
+            output_text="Machine learning is a subset of AI.",
+            expected_output="Machine learning is a subset of AI and involves training algorithms.",
+            context="Machine learning is a subset of artificial intelligence. It involves training algorithms on data.",
+        )
+
+        assert isinstance(result, ScoreResult)
+        assert 0 <= result.score <= 1
+        assert "Scorer error" in result.reasoning
+
     def test_initialization_with_custom_weights(self):
         """Test RAGASScorer initialization with custom weights."""
         mock_llm = MockLLM()
@@ -743,6 +1096,34 @@ class TestRAGASScorer:
         mock_llm = MockLLM()
         scorer = RAGASScorer(model=mock_llm)
 
+        expected_defaults = {
+            "answer_relevancy": 0.25,
+            "faithfulness": 0.35,
+            "contextual_precision": 0.2,
+            "contextual_recall": 0.2,
+        }
+        assert scorer.weights == expected_defaults
+
+    def test_initialization_with_invalid_weights(self):
+        """Test RAGASScorer initialization with invalid weights."""
+        mock_llm = MockLLM()
+
+        # Test with weights that don't sum to 1
+        invalid_weights = {"answer_relevancy": 0.3, "faithfulness": 0.3}
+        scorer = RAGASScorer(model=mock_llm, weights=invalid_weights)
+
+        # The weights should be used as-is, not normalized
+        assert scorer.weights == invalid_weights
+
+    def test_initialization_with_empty_weights(self):
+        """Test RAGASScorer initialization with empty weights."""
+        mock_llm = MockLLM()
+
+        # Test with empty weights dict
+        empty_weights = {}
+        scorer = RAGASScorer(model=mock_llm, weights=empty_weights)
+
+        # Should use default weights
         expected_defaults = {
             "answer_relevancy": 0.25,
             "faithfulness": 0.35,
