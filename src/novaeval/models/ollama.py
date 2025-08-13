@@ -14,9 +14,8 @@ from typing import Any
 
 try:
     from ollama import Client  # type: ignore
-except Exception:  # pragma: no cover - import failure surfaced at runtime
+except ImportError:  # pragma: no cover - import failure surfaced at runtime
     Client = None  # type: ignore
-
 from novaeval.models.base import BaseModel
 
 
