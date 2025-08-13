@@ -11,19 +11,21 @@ Run:
   OLLAMA_BASE_URL=https://host:11434 OLLAMA_API_KEY=sk_... \
   python examples/ollama_evaluation.py
 """
+
 from __future__ import annotations
 
 import os
-from typing import Dict
 import time
 
 from novaeval.models.ollama import OllamaModel
 
 
 def main() -> None:
-    base_url = os.getenv("OLLAMA_BASE_URL") or os.getenv("OLLAMA_HOST", "http://34.121.64.12:8004")
+    base_url = os.getenv("OLLAMA_BASE_URL") or os.getenv(
+        "OLLAMA_HOST", "http://34.121.64.12:8004"
+    )
     api_key = os.getenv("OLLAMA_API_KEY", "bruh")
-    headers: Dict[str, str] = {}
+    headers: dict[str, str] = {}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
@@ -63,4 +65,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main() 
+    main()

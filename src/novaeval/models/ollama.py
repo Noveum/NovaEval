@@ -10,11 +10,11 @@ from __future__ import annotations
 import json
 import os
 import time
-from typing import Any, Optional, Union, Dict
+from typing import Any
 
 try:
     from ollama import Client  # type: ignore
-except Exception as e:  # pragma: no cover - import failure surfaced at runtime
+except Exception:  # pragma: no cover - import failure surfaced at runtime
     Client = None  # type: ignore
 
 from novaeval.models.base import BaseModel
@@ -39,16 +39,14 @@ class OllamaModel(BaseModel):
     def __init__(
         self,
         model_name: str = "llama3",
-        base_url: Optional[str] = None,
-        headers: Optional[Dict[str, str]] = None,
-        gpu_cost_per_sec: Optional[float] = None,
+        base_url: str | None = None,
+        headers: dict[str, str] | None = None,
+        gpu_cost_per_sec: float | None = None,
         pull_on_init: bool = True,
         **kwargs: Any,
     ):
         effective_host = (
-            base_url
-            or os.getenv("OLLAMA_HOST")
-            or "http://localhost:11434"
+            base_url or os.getenv("OLLAMA_HOST") or "http://localhost:11434"
         )
 
         super().__init__(
@@ -83,7 +81,9 @@ class OllamaModel(BaseModel):
                 except TypeError:
                     _ = pull_result  # consume non-iterable result
             except Exception as e:  # do not block initialization
-                self._handle_error(e, f"Failed to pull model '{self.model_name}' on init")
+                self._handle_error(
+                    e, f"Failed to pull model '{self.model_name}' on init"
+                )
 
     # -------------------------- Helper methods ---------------------------
     @staticmethod
@@ -101,14 +101,14 @@ class OllamaModel(BaseModel):
 
         try:
             # Fallback: mapping access
-            return (
-                response.get("message", {}).get("content", "")  # type: ignore[union-attr]
-            )
+            return response.get("message", {}).get(
+                "content", ""
+            )  # type: ignore[union-attr]
         except Exception:
             return ""
 
     @staticmethod
-    def _extract_metric(response_or_chunk: Any, key: str) -> Optional[int]:
+    def _extract_metric(response_or_chunk: Any, key: str) -> int | None:
         # Try attribute access first, then mapping
         try:
             val = getattr(response_or_chunk, key, None)
@@ -128,9 +128,9 @@ class OllamaModel(BaseModel):
     def _build_options(
         base_options: dict[str, Any],
         *,
-        max_tokens: Optional[int],
-        temperature: Optional[float],
-        stop: Optional[Union[str, list[str]]],
+        max_tokens: int | None,
+        temperature: float | None,
+        stop: str | list[str] | None,
         extra_kwargs: dict[str, Any],
     ) -> dict[str, Any]:
         # Start with provided options, then map NovaEval params
@@ -184,7 +184,7 @@ class OllamaModel(BaseModel):
         return options
 
     @staticmethod
-    def _build_messages_from_prompt(prompt: Optional[str]) -> list[dict[str, str]]:
+    def _build_messages_from_prompt(prompt: str | None) -> list[dict[str, str]]:
         return [{"role": "user", "content": prompt or ""}]
 
     # NEW: extract "thinking" field from responses/chunks
@@ -229,11 +229,11 @@ class OllamaModel(BaseModel):
     # -------------------------- Core API ---------------------------
     def generate(
         self,
-        prompt: Optional[str] = None,
-        max_tokens: Optional[int] = None,
-        temperature: Optional[float] = None,
-        stop: Optional[Union[str, list[str]]] = None,
-        messages: Optional[list[dict[str, Any]]] = None,
+        prompt: str | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        stop: str | list[str] | None = None,
+        messages: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> str:
         if prompt is None and messages is None:
@@ -372,11 +372,11 @@ class OllamaModel(BaseModel):
 
     def generate_with_thought(
         self,
-        prompt: Optional[str] = None,
-        max_tokens: Optional[int] = None,
-        temperature: Optional[float] = None,
-        stop: Optional[Union[str, list[str]]] = None,
-        messages: Optional[list[dict[str, Any]]] = None,
+        prompt: str | None = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        stop: str | list[str] | None = None,
+        messages: list[dict[str, Any]] | None = None,
         **kwargs: Any,
     ) -> tuple[str, str]:
         """Like `generate`, but also returns the model's internal thinking text.
@@ -509,15 +509,17 @@ class OllamaModel(BaseModel):
             return generated_text, thinking_text
 
         except Exception as e:
-            self._handle_error(e, "Failed to generate text with thought via Ollama chat API.")
+            self._handle_error(
+                e, "Failed to generate text with thought via Ollama chat API."
+            )
             raise
 
     def generate_batch(
         self,
         prompts: list[str],
-        max_tokens: Optional[int] = None,
-        temperature: Optional[float] = None,
-        stop: Optional[Union[str, list[str]]] = None,
+        max_tokens: int | None = None,
+        temperature: float | None = None,
+        stop: str | list[str] | None = None,
         **kwargs: Any,
     ) -> list[str]:
         # Ollama Python library does not support native batch chat; process sequentially
@@ -545,8 +547,8 @@ class OllamaModel(BaseModel):
         prompt: str,
         response: str = "",
         *,
-        elapsed_seconds: Optional[float] = None,
-        total_duration_ns: Optional[int] = None,
+        elapsed_seconds: float | None = None,
+        total_duration_ns: int | None = None,
     ) -> float:
         """
         Estimate cost based on GPU wall-clock time if `gpu_cost_per_sec` is provided.
@@ -593,4 +595,4 @@ class OllamaModel(BaseModel):
                 "gpu_cost_per_sec": self.gpu_cost_per_sec,
             }
         )
-        return info 
+        return info

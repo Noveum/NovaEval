@@ -314,9 +314,9 @@ class MultiPatternAccuracyScorer(BaseScorer):
             r"^([A-D])\.?\s*$",
             r"^([A-D])[\.\:]",
             r"\b([A-D])\b",
-            r"([A-D])\s*$"
+            r"([A-D])\s*$",
         ]
-        
+
         self.choices = choices
         self.case_sensitive = case_sensitive
 
@@ -342,16 +342,16 @@ class MultiPatternAccuracyScorer(BaseScorer):
 
         # Extract all possible answers using different patterns
         extracted_answers = self._extract_all_answers(prediction, context)
-        
+
         # Normalize ground truth
         normalized_truth = self._normalize_answer(ground_truth)
-        
+
         # Check if any extracted answer matches
         for answer in extracted_answers:
             normalized_answer = self._normalize_answer(answer)
             if normalized_answer == normalized_truth:
                 return 1.0
-            
+
             # For MMLU-style questions, also check if letter maps to choice text
             if context and "choices" in context and "answer_index" in context:
                 converted_answer = self._convert_letter_to_choice(answer, context)
@@ -376,19 +376,16 @@ class MultiPatternAccuracyScorer(BaseScorer):
             List of all extracted answers
         """
         answers = []
-        
+
         for pattern in self.patterns:
             matches = re.finditer(pattern, prediction, re.IGNORECASE | re.MULTILINE)
             for match in matches:
                 # Extract the captured group, fallback to full match if no groups
-                if match.groups():
-                    answer = match.group(1)
-                else:
-                    answer = match.group(0)
-                
+                answer = match.group(1) if match.groups() else match.group(0)
+
                 if answer and answer.strip():
                     answers.append(answer.strip())
-        
+
         # Remove duplicates while preserving order
         seen = set()
         unique_answers = []
@@ -396,7 +393,7 @@ class MultiPatternAccuracyScorer(BaseScorer):
             if answer not in seen:
                 seen.add(answer)
                 unique_answers.append(answer)
-        
+
         return unique_answers
 
     def _convert_letter_to_choice(
