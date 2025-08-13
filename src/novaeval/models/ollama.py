@@ -578,12 +578,10 @@ class OllamaModel(BaseModel):
             )
             # If we get any response back, assume OK
             txt = self._extract_content_from_response(resp)
-            return txt is not None
+            return bool(txt is not None)
         except Exception as e:
             self._handle_error(e, "Ollama connection validation failed")
-            raise
-            # return False
-
+            return False
     def get_info(self) -> dict[str, Any]:
         info = super().get_info()
         info.update(
