@@ -22,13 +22,12 @@ from novaeval.models.ollama import OllamaModel
 
 def main() -> None:
     base_url = os.getenv("OLLAMA_BASE_URL") or os.getenv(
-        "OLLAMA_HOST", "http://34.121.64.12:8004"
+        "OLLAMA_HOST", "http://localhost:11434"
     )
-    api_key = os.getenv("OLLAMA_API_KEY", "bruh")
+    api_key = os.getenv("OLLAMA_API_KEY", "")
     headers: dict[str, str] = {}
-    if api_key:
+    if api_key.strip():
         headers["Authorization"] = f"Bearer {api_key}"
-
     model = OllamaModel(
         model_name=os.getenv("OLLAMA_MODEL", "gpt-oss:20b"),
         base_url=base_url,
