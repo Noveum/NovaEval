@@ -8,6 +8,7 @@ from novaeval.models.anthropic import AnthropicModel
 from novaeval.models.azure_openai import AzureOpenAIModel
 from novaeval.models.base import BaseModel
 from novaeval.models.gemini import GeminiModel
+from novaeval.models.ollama import OllamaModel
 from novaeval.models.openai import OpenAIModel
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "AzureOpenAIModel",
     "BaseModel",
     "GeminiModel",
+    "OllamaModel",
     "OpenAIModel",
 ]

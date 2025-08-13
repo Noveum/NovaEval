@@ -285,7 +285,7 @@ class OllamaModel(BaseModel):
                 start_time = time.time()
                 content_parts: list[str] = []
                 last_chunk: Any = None
-                for chunk in self.client.chat(**params, stream=True):
+                for chunk in self.client.chat(**params):
                     last_chunk = chunk
                     piece = self._extract_content_from_response(chunk)
                     if piece:
@@ -427,7 +427,7 @@ class OllamaModel(BaseModel):
                 content_parts: list[str] = []
                 last_chunk: Any = None
                 thinking_text: str = ""
-                for chunk in self.client.chat(**params, stream=True):
+                for chunk in self.client.chat(**params):
                     last_chunk = chunk
                     piece = self._extract_content_from_response(chunk)
                     if piece:
@@ -582,6 +582,7 @@ class OllamaModel(BaseModel):
         except Exception as e:
             self._handle_error(e, "Ollama connection validation failed")
             return False
+
     def get_info(self) -> dict[str, Any]:
         info = super().get_info()
         info.update(

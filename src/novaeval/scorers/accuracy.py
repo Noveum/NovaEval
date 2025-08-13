@@ -397,19 +397,34 @@ class MultiPatternAccuracyScorer(BaseScorer):
         return unique_answers
 
     def _convert_letter_to_choice(
-        self, extracted_answer: str, context: dict[str, Any]
+        self, extracted_answer: str, context: Optional[dict[str, Any]] = None
     ) -> Optional[str]:
         """
         Convert letter answer (A, B, C, D) to full choice text.
 
         Args:
             extracted_answer: Extracted letter answer
-            context: Context containing choices
+            context: Optional context containing choices. If None or lacks "choices",
+                    falls back to self.choices
 
         Returns:
             Full choice text or None if conversion fails
         """
-        if not extracted_answer or "choices" not in context:
+        if not extracted_answer:
+            return None
+
+        # Get choices from context or fall back to self.choices
+        choices = None
+        if context and "choices" in context:
+            choices = context["choices"]
+        elif self.choices:
+            choices = self.choices
+
+        if not choices:
+            return None
+
+        # Validate that choices is a sequence
+        if not hasattr(choices, "__len__") or not hasattr(choices, "__getitem__"):
             return None
 
         # Map letters to indices
@@ -417,7 +432,6 @@ class MultiPatternAccuracyScorer(BaseScorer):
         letter = extracted_answer.strip().upper()
 
         if letter in letter_to_index:
-            choices = context["choices"]
             index = letter_to_index[letter]
             if 0 <= index < len(choices):
                 return choices[index]

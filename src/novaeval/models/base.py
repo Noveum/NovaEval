@@ -189,6 +189,7 @@ class BaseModel(ABC):
             error: The exception that occurred
             context: Additional context about the error
         """
+        print(f"Error: {error!s}")
         error_msg = f"{context}: {error!s}" if context else str(error)
         self.errors.append(error_msg)
 
