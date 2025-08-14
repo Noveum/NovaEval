@@ -8,14 +8,16 @@ Environment variables (optional):
 - OLLAMA_MODEL:     Model name to use (default: gpt-oss:20b)
 - OLLAMA_GPU_COST_PER_SEC: Optional cost per GPU-second for cost estimation
 """
+
 from __future__ import annotations
 
 import os
-from typing import Dict, Any
+import time
 from datetime import datetime
 from pathlib import Path
+from typing import Any
+
 import pandas as pd
-import time
 
 from novaeval import Evaluator
 from novaeval.datasets import MMLUDataset
@@ -165,19 +167,19 @@ class OllamaEvaluator(Evaluator):
     def save_results(self, results: dict[str, Any]) -> None:
         """
         Save evaluation results to disk, appending to existing files if they exist.
-        
+
         Args:
             results: The results to save
         """
         import json
-        
+
         # Handle JSON results with merging
         results_file = self.output_dir / "results.json"
         if results_file.exists():
             # Load existing results and merge samples
-            with open(results_file, "r") as f:
+            with open(results_file) as f:
                 existing_results = json.load(f)
-            
+
             # Merge samples from all models
             for model_name, model_results in results["model_results"].items():
                 if model_name in existing_results["model_results"]:
@@ -187,7 +189,9 @@ class OllamaEvaluator(Evaluator):
                     )
                     # Update scores and errors
                     if "scores" in model_results:
-                        existing_results["model_results"][model_name]["scores"] = model_results["scores"]
+                        existing_results["model_results"][model_name]["scores"] = (
+                            model_results["scores"]
+                        )
                     if "errors" in model_results:
                         existing_results["model_results"][model_name]["errors"].extend(
                             model_results.get("errors", [])
@@ -195,11 +199,11 @@ class OllamaEvaluator(Evaluator):
                 else:
                     # Add new model results
                     existing_results["model_results"][model_name] = model_results
-            
+
             # Update metadata with latest values
             existing_results["metadata"].update(results["metadata"])
             existing_results["summary"] = results.get("summary", {})
-            
+
             # Save merged results
             with open(results_file, "w") as f:
                 json.dump(existing_results, f, indent=2, default=str)
@@ -216,7 +220,7 @@ class OllamaEvaluator(Evaluator):
     def _save_csv_results_append(self, results: dict[str, Any]) -> None:
         """
         Save results in CSV format, appending to existing file if it exists.
-        
+
         Args:
             results: The results to save
         """
@@ -239,13 +243,17 @@ class OllamaEvaluator(Evaluator):
         if rows:
             df = pd.DataFrame(rows)
             csv_file = self.output_dir / "detailed_results.csv"
-            
+
             # Check if file exists to determine if we need header
             file_exists = csv_file.exists()
-            
+
             # Append to CSV (with header only if file doesn't exist)
-            df.to_csv(csv_file, mode='a' if file_exists else 'w', 
-                     header=not file_exists, index=False)
+            df.to_csv(
+                csv_file,
+                mode="a" if file_exists else "w",
+                header=not file_exists,
+                index=False,
+            )
 
 
 def main() -> None:
@@ -267,9 +275,11 @@ def main() -> None:
     base_run_dir.mkdir(parents=True, exist_ok=True)
 
     # Resolve Ollama connection details from environment
-    base_url = os.getenv("OLLAMA_BASE_URL") or os.getenv("OLLAMA_HOST", DEFAULT_OLLAMA_HOST)
+    base_url = os.getenv("OLLAMA_BASE_URL") or os.getenv(
+        "OLLAMA_HOST", DEFAULT_OLLAMA_HOST
+    )
     api_key = os.getenv("OLLAMA_API_KEY")
-    headers: Dict[str, str] = {}
+    headers: dict[str, str] = {}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
 
@@ -291,7 +301,9 @@ def main() -> None:
             model_name=model_name,
             base_url=base_url,
             headers=headers,
-            gpu_cost_per_sec=float(os.getenv("OLLAMA_GPU_COST_PER_SEC", str(DEFAULT_GPU_COST_PER_SEC))),
+            gpu_cost_per_sec=float(
+                os.getenv("OLLAMA_GPU_COST_PER_SEC", str(DEFAULT_GPU_COST_PER_SEC))
+            ),
             temperature=0.0,
             default_think=think_value,
             default_max_tokens=MAX_TOKENS,
@@ -330,10 +342,14 @@ def main() -> None:
 
             # Run evaluation
             results = evaluator.run()
-            subset_durations[subset] = float(results.get("metadata", {}).get("duration", 0.0))
+            subset_durations[subset] = float(
+                results.get("metadata", {}).get("duration", 0.0)
+            )
 
             # Collect per-sample rows with subset column
-            for model_name_key, model_results in results.get("model_results", {}).items():
+            for model_name_key, model_results in results.get(
+                "model_results", {}
+            ).items():
                 for sample in model_results.get("samples", []):
                     row = {
                         "subset": subset,
@@ -364,8 +380,12 @@ def main() -> None:
                 df_subset = df[df["subset"] == subset]
                 if df_subset.empty:
                     continue
-                mean_series = df_subset[score_cols].mean(numeric_only=True) if score_cols else pd.Series()
-                mean_row = {col: "" for col in df.columns}
+                mean_series = (
+                    df_subset[score_cols].mean(numeric_only=True)
+                    if score_cols
+                    else pd.Series()
+                )
+                mean_row = dict.fromkeys(df.columns, "")
                 mean_row["subset"] = subset
                 mean_row["sample_id"] = "MEAN"
                 mean_row["run_duration_sec"] = subset_durations.get(subset, 0.0)
@@ -384,4 +404,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main() 
+    main()

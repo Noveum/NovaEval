@@ -1,5 +1,18 @@
 from __future__ import annotations
 
+import os
+import time
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+
+from novaeval import Evaluator
+from novaeval.datasets import MMLUDataset
+from novaeval.models import OpenAIModel
+from novaeval.scorers import AccuracyScorer
+
 """
 MMLU evaluation example for NovaEval using OpenAI models.
 
@@ -13,19 +26,6 @@ Notes:
   but without think modes. It enforces a global max_tokens override to match the
   Ollama example's behavior.
 """
-
-import os
-import time
-from typing import Any, Dict, List
-from datetime import datetime
-from pathlib import Path
-
-import pandas as pd
-
-from novaeval import Evaluator
-from novaeval.datasets import MMLUDataset
-from novaeval.models import OpenAIModel
-from novaeval.scorers import AccuracyScorer
 
 # Configuration defaults and subsets (mirrors ollama_mmlu_evaluation.py)
 SUBSETS = [
@@ -41,11 +41,11 @@ SUBSETS = [
     "high_school_statistics",
 ]
 
-NUM_SAMPLES =50
+NUM_SAMPLES = 50
 DEFAULT_MAX_TOKENS = 5000
 
 # Handle a list of model names; hardcoded length 1 for now
-MODEL_NAMES: List[str] = [
+MODEL_NAMES: list[str] = [
     "o3",
 ]
 
@@ -120,7 +120,7 @@ class OpenAIMMLUEvaluator(Evaluator):
                     )
                     sample_result["scores"][scorer.name] = score
                 except Exception as e:  # keep going even if a scorer fails
-                    
+
                     sample_result["error"] = str(e)
                     raise e
 
@@ -139,19 +139,19 @@ class OpenAIMMLUEvaluator(Evaluator):
     def save_results(self, results: dict[str, Any]) -> None:
         """
         Save evaluation results to disk, appending to existing files if they exist.
-        
+
         Args:
             results: The results to save
         """
         import json
-        
+
         # Handle JSON results with merging
         results_file = self.output_dir / "results.json"
         if results_file.exists():
             # Load existing results and merge samples
-            with open(results_file, "r") as f:
+            with open(results_file) as f:
                 existing_results = json.load(f)
-            
+
             # Merge samples from all models
             for model_name, model_results in results["model_results"].items():
                 if model_name in existing_results["model_results"]:
@@ -161,7 +161,9 @@ class OpenAIMMLUEvaluator(Evaluator):
                     )
                     # Update scores and errors
                     if "scores" in model_results:
-                        existing_results["model_results"][model_name]["scores"] = model_results["scores"]
+                        existing_results["model_results"][model_name]["scores"] = (
+                            model_results["scores"]
+                        )
                     if "errors" in model_results:
                         existing_results["model_results"][model_name]["errors"].extend(
                             model_results.get("errors", [])
@@ -169,11 +171,11 @@ class OpenAIMMLUEvaluator(Evaluator):
                 else:
                     # Add new model results
                     existing_results["model_results"][model_name] = model_results
-            
+
             # Update metadata with latest values
             existing_results["metadata"].update(results["metadata"])
             existing_results["summary"] = results.get("summary", {})
-            
+
             # Save merged results
             with open(results_file, "w") as f:
                 json.dump(existing_results, f, indent=2, default=str)
@@ -190,7 +192,7 @@ class OpenAIMMLUEvaluator(Evaluator):
     def _save_csv_results_append(self, results: dict[str, Any]) -> None:
         """
         Save results in CSV format, appending to existing file if it exists.
-        
+
         Args:
             results: The results to save
         """
@@ -213,13 +215,17 @@ class OpenAIMMLUEvaluator(Evaluator):
         if rows:
             df = pd.DataFrame(rows)
             csv_file = self.output_dir / "detailed_results.csv"
-            
+
             # Check if file exists to determine if we need header
             file_exists = csv_file.exists()
-            
+
             # Append to CSV (with header only if file doesn't exist)
-            df.to_csv(csv_file, mode='a' if file_exists else 'w', 
-                     header=not file_exists, index=False)
+            df.to_csv(
+                csv_file,
+                mode="a" if file_exists else "w",
+                header=not file_exists,
+                index=False,
+            )
 
 
 def main() -> None:
@@ -245,7 +251,7 @@ def main() -> None:
         print("Initializing OpenAI model...")
         print(f"Using model '{model_name}'")
         print(f"⚠️  Using max_tokens={MAX_TOKENS}")
-        print(f"⚠️  Using timeout=600 seconds (10 minutes) for o3 model")
+        print("⚠️  Using timeout=600 seconds (10 minutes) for o3 model")
         model = ConfiguredOpenAIModel(
             model_name=model_name,
             temperature=0.0,
@@ -281,10 +287,14 @@ def main() -> None:
 
             # Run evaluation
             results = evaluator.run()
-            subset_durations[subset] = float(results.get("metadata", {}).get("duration", 0.0))
+            subset_durations[subset] = float(
+                results.get("metadata", {}).get("duration", 0.0)
+            )
 
             # Collect per-sample rows with subset column
-            for model_name_key, model_results in results.get("model_results", {}).items():
+            for model_name_key, model_results in results.get(
+                "model_results", {}
+            ).items():
                 for sample in model_results.get("samples", []):
                     row: dict[str, Any] = {
                         "subset": subset,
@@ -317,8 +327,12 @@ def main() -> None:
                 df_subset = df[df["subset"] == subset]
                 if df_subset.empty:
                     continue
-                mean_series = df_subset[score_cols].mean(numeric_only=True) if score_cols else pd.Series()
-                mean_row = {col: "" for col in df.columns}
+                mean_series = (
+                    df_subset[score_cols].mean(numeric_only=True)
+                    if score_cols
+                    else pd.Series()
+                )
+                mean_row = dict.fromkeys(df.columns, "")
                 mean_row["subset"] = subset
                 mean_row["sample_id"] = "MEAN"
                 mean_row["run_duration_sec"] = subset_durations.get(subset, 0.0)
@@ -329,7 +343,7 @@ def main() -> None:
             if mean_rows:
                 df = pd.concat([df, pd.DataFrame(mean_rows)], ignore_index=True)
 
-            csv_path = base_run_dir / f"unspecified.csv"
+            csv_path = base_run_dir / "unspecified.csv"
             df.to_csv(csv_path, index=False)
             print(f"Saved CSV for model '{model_name}' to: {csv_path}")
 
@@ -337,4 +351,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main() 
+    main()
