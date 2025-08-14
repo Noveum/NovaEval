@@ -642,3 +642,271 @@ class TestEvaluator:
                 args, kwargs = mock_tqdm.call_args
                 assert kwargs.get("total") == 3
                 assert kwargs.get("desc") == "Evaluating test_model"
+
+    def test_init_with_force_overwrite(self):
+        """Test initialization with force_overwrite parameter."""
+        dataset = MockDataset()
+        models = [MockModel()]
+        scorers = [MockScorer()]
+
+        # Test default value
+        evaluator = Evaluator(dataset, models, scorers)
+        assert evaluator.force_overwrite is False
+
+        # Test explicit True value
+        evaluator = Evaluator(dataset, models, scorers, force_overwrite=True)
+        assert evaluator.force_overwrite is True
+
+    @patch("novaeval.evaluators.standard.setup_logging")
+    def test_save_results_json_append(self, mock_setup_logging):
+        """Test that JSON results are properly merged when appending."""
+        dataset = MockDataset()
+        models = [MockModel()]
+        scorers = [MockScorer()]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evaluator = Evaluator(dataset, models, scorers, output_dir=temp_dir)
+
+            # Create initial results
+            initial_results = {
+                "model_results": {
+                    "test_model": {
+                        "samples": [
+                            {
+                                "sample_id": "1",
+                                "prediction": "pred1",
+                                "scores": {"accuracy": 0.8},
+                            }
+                        ],
+                        "scores": {"accuracy": {"mean": 0.8, "count": 1}},
+                        "errors": [],
+                    }
+                },
+                "metadata": {"start_time": 1000, "end_time": 1100},
+                "summary": {"total_samples": 1},
+            }
+
+            # Save initial results
+            evaluator.save_results(initial_results)
+
+            # Create new results to append
+            new_results = {
+                "model_results": {
+                    "test_model": {
+                        "samples": [
+                            {
+                                "sample_id": "2",
+                                "prediction": "pred2",
+                                "scores": {"accuracy": 0.9},
+                            }
+                        ],
+                        "scores": {"accuracy": {"mean": 0.85, "count": 2}},
+                        "errors": [],
+                    }
+                },
+                "metadata": {"start_time": 2000, "end_time": 2100},
+                "summary": {"total_samples": 2},
+            }
+
+            # Save new results (should append)
+            evaluator.save_results(new_results)
+
+            # Check that results were merged
+            json_file = Path(temp_dir) / "results.json"
+            assert json_file.exists()
+
+            with open(json_file) as f:
+                saved_data = json.load(f)
+
+            # Should have both samples
+            assert len(saved_data["model_results"]["test_model"]["samples"]) == 2
+            assert (
+                saved_data["model_results"]["test_model"]["samples"][0]["sample_id"]
+                == "1"
+            )
+            assert (
+                saved_data["model_results"]["test_model"]["samples"][1]["sample_id"]
+                == "2"
+            )
+
+    @patch("novaeval.evaluators.standard.setup_logging")
+    def test_save_results_csv_append(self, mock_setup_logging):
+        """Test that CSV results are properly appended when structures match."""
+        dataset = MockDataset()
+        models = [MockModel()]
+        scorers = [MockScorer()]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evaluator = Evaluator(dataset, models, scorers, output_dir=temp_dir)
+
+            # Create initial results
+            initial_results = {
+                "model_results": {
+                    "test_model": {
+                        "samples": [
+                            {
+                                "sample_id": "1",
+                                "input": "test 1",
+                                "expected": "result 1",
+                                "prediction": "pred1",
+                                "scores": {"accuracy": 0.8},
+                            }
+                        ]
+                    }
+                }
+            }
+
+            # Save initial results
+            evaluator._save_csv_results(initial_results)
+
+            # Create new results with same structure
+            new_results = {
+                "model_results": {
+                    "test_model": {
+                        "samples": [
+                            {
+                                "sample_id": "2",
+                                "input": "test 2",
+                                "expected": "result 2",
+                                "prediction": "pred2",
+                                "scores": {"accuracy": 0.9},
+                            }
+                        ]
+                    }
+                }
+            }
+
+            # Save new results (should append)
+            evaluator._save_csv_results(new_results)
+
+            # Check that CSV was appended
+            csv_file = Path(temp_dir) / "detailed_results.csv"
+            assert csv_file.exists()
+
+            df = pd.read_csv(csv_file)
+            assert len(df) == 2
+            assert str(df.iloc[0]["sample_id"]) == "1"
+            assert str(df.iloc[1]["sample_id"]) == "2"
+
+    @patch("novaeval.evaluators.standard.setup_logging")
+    def test_save_results_csv_append_structure_mismatch(self, mock_setup_logging):
+        """Test that CSV append fails when structures don't match."""
+        dataset = MockDataset()
+        models = [MockModel()]
+        scorers = [MockScorer()]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evaluator = Evaluator(dataset, models, scorers, output_dir=temp_dir)
+
+            # Create initial results
+            initial_results = {
+                "model_results": {
+                    "test_model": {
+                        "samples": [
+                            {
+                                "sample_id": "1",
+                                "input": "test 1",
+                                "expected": "result 1",
+                                "prediction": "pred1",
+                                "scores": {"accuracy": 0.8},
+                            }
+                        ]
+                    }
+                }
+            }
+
+            # Save initial results
+            evaluator._save_csv_results(initial_results)
+
+            # Create new results with different structure (different column names)
+            new_results = {
+                "model_results": {
+                    "test_model": {
+                        "samples": [
+                            {
+                                "sample_id": "2",
+                                "input": "test 2",
+                                "expected": "result 2",
+                                "prediction": "pred2",
+                                "scores": {
+                                    "different_scorer": 0.9
+                                },  # Different scorer name
+                            }
+                        ]
+                    }
+                }
+            }
+
+            # Save new results should fail due to structure mismatch
+            with pytest.raises(ValueError, match="CSV structures don't match"):
+                evaluator._save_csv_results(new_results)
+
+    @patch("novaeval.evaluators.standard.setup_logging")
+    def test_save_results_force_overwrite(self, mock_setup_logging):
+        """Test that force_overwrite bypasses append logic."""
+        dataset = MockDataset()
+        models = [MockModel()]
+        scorers = [MockScorer()]
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            evaluator = Evaluator(
+                dataset, models, scorers, output_dir=temp_dir, force_overwrite=True
+            )
+
+            # Create initial results
+            initial_results = {
+                "model_results": {
+                    "test_model": {
+                        "samples": [
+                            {
+                                "sample_id": "1",
+                                "input": "test 1",
+                                "expected": "result 1",
+                                "prediction": "pred1",
+                                "scores": {"accuracy": 0.8},
+                            }
+                        ]
+                    }
+                },
+                "metadata": {"start_time": 1000},
+                "summary": {"total_samples": 1},
+            }
+
+            # Save initial results
+            evaluator.save_results(initial_results)
+
+            # Create new results
+            new_results = {
+                "model_results": {
+                    "test_model": {
+                        "samples": [
+                            {
+                                "sample_id": "2",
+                                "input": "test 2",
+                                "expected": "result 2",
+                                "prediction": "pred2",
+                                "scores": {"accuracy": 0.9},
+                            }
+                        ]
+                    }
+                },
+                "metadata": {"start_time": 2000},
+                "summary": {"total_samples": 1},
+            }
+
+            # Save new results with force_overwrite (should overwrite, not append)
+            evaluator.save_results(new_results)
+
+            # Check that only new results exist (overwritten)
+            json_file = Path(temp_dir) / "results.json"
+            assert json_file.exists()
+
+            with open(json_file) as f:
+                saved_data = json.load(f)
+
+            # Should only have the new sample
+            assert len(saved_data["model_results"]["test_model"]["samples"]) == 1
+            assert (
+                saved_data["model_results"]["test_model"]["samples"][0]["sample_id"]
+                == "2"
+            )

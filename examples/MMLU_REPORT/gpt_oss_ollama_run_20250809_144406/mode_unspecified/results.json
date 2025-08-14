@@ -1,0 +1,886 @@
+{
+  "metadata": {
+    "start_time": 1754735422.936539,
+    "dataset": {
+      "name": "mmlu_high_school_statistics",
+      "split": "test",
+      "num_samples": 50,
+      "seed": 42,
+      "type": "MMLUDataset",
+      "subset": "high_school_statistics",
+      "few_shot": 0,
+      "total_subjects": 57,
+      "description": "Massive Multitask Language Understanding benchmark"
+    },
+    "models": [
+      {
+        "name": "ollama_gpt-oss:20b_think_unspecified",
+        "model_name": "gpt-oss:20b",
+        "type": "ThinkOllamaModel",
+        "provider": "ollama",
+        "total_requests": 450,
+        "total_tokens": 375749,
+        "total_cost": 17223.973654338024,
+        "error_count": 0,
+        "host": "http://34.121.64.12:8001",
+        "supports_batch": false,
+        "pricing": [
+          0.0,
+          0.0
+        ],
+        "gpu_cost_per_sec": 1.0
+      }
+    ],
+    "scorers": [
+      {
+        "name": "accuracy",
+        "description": "Classification accuracy scorer",
+        "type": "AccuracyScorer",
+        "total_scores": 0,
+        "average_score": 0.0,
+        "config": {
+          "extract_answer": true,
+          "answer_pattern": null,
+          "choices": null
+        }
+      }
+    ],
+    "config": {},
+    "end_time": 1754735796.3695135,
+    "duration": 373.4329745769501
+  },
+  "model_results": {
+    "ollama_gpt-oss:20b_think_unspecified": {
+      "samples": [
+        {
+          "sample_id": "high_school_statistics_79",
+          "input": "Question: Which of the following is not true with regard to contingency tables for chi-square tests for independence?\nA. The categories are not numerical for either variable.\nB. Observed frequencies should be whole numbers.\nC. Expected frequencies should be whole numbers.\nD. Expected frequencies in each cell should be at least 5, and to achieve this, one sometimes combines categories for one or the other or both of the variables.\nAnswer:",
+          "expected": "Expected frequencies should be whole numbers.",
+          "prediction": "C. Expected frequencies should be whole numbers.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735432.5658362,
+            "estimated_cost_usd": 3.6291109320009127,
+            "thinking_tokens": 264
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_36",
+          "input": "Question: A large city was interested in annexing part of the surrounding county. In a survey conducted by the local newspaper, 58 percent of respondents said they were against the annexation. During the actual vote, not all eligible voters voted, but 56 percent of the respondents voted against the annexation. Which of the following best describes the difference in the percentages obtained from the newspaper poll and the vote itself?\nA. It is an example of nonresponse bias, the systematic tendency of individuals with particular characteristics to refuse to answer a survey question.\nB. It is the systematic difference between a statistic and parameter caused by the nonrandom selection of surveyed persons.\nC. It is the difference between the same statistics computed from two different samples.\nD. It is the difference between the statistic and the truth due to use of a random sample.\nAnswer:",
+          "expected": "It is the difference between the same statistics computed from two different samples.",
+          "prediction": "C. It is the difference between the same statistics computed from two different samples.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735443.7160823,
+            "estimated_cost_usd": 18.37289923299977,
+            "thinking_tokens": 969
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_146",
+          "input": "Question: The Hardcore Construction Company has two offices, one in Atlanta and one in New Orleans. Fifteen engineers work in the Atlanta office, and 14 engineers work in the New Orleans office. The business manager decided to use a 2-sample t-test to compare the mean salaries of engineers in the two offices. Because there were only 15 engineers in one office and 14 engineers in the other, he used the salaries of all the engineers in the computation. Is the 2-sample t-test an appropriate inferential technique in this situation?\nA. Yes, because he is comparing the means of two small groups.\nB. Yes. Both Atlanta and New Orleans are large cities, so the salaries are comparable.\nC. Yes. Because Atlanta and New Orleans are about 500 miles apart, the two groups of engineers can be assumed to be independent.\nD. No, because the entire population information was used from both offices. Because no samples were taken, a t-test should not be used.\nAnswer:",
+          "expected": "No, because the entire population information was used from both offices. Because no samples were taken, a t-test should not be used.",
+          "prediction": "**Answer: D.**  \n\nBecause the manager used the salaries of **all** engineers in each office (the entire population of interest), there is no sampling variability to estimate. The 2\u2011sample t\u2011test is a tool for inferential statistics when you have a *sample* drawn from a larger population. With the complete data already available, you can directly compute the mean difference (and, if desired, the exact probability of observing such a difference under a chosen model) without employing a t\u2011test. Thus the t\u2011test is not an appropriate inferential technique in this situation.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735451.2944767,
+            "estimated_cost_usd": 40.66710998800045,
+            "thinking_tokens": 468
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_30",
+          "input": "Question: The president of an online music streaming service whose customers pay a fee wants to gather additional information about customers who have joined in the past 12 months. The company plans to send out an e-mail survey to a sample of current customers with a link that gives participants a month of streaming service for free once the survey has been completed. They know that musical tastes vary by geographical region. Which of the following sample plans would produce the most representative sample of its customers?\nA. Choose all of the customers who joined in the last month.\nB. Make a list of all the customers who joined in the last 12 months and choose a random sample of customers on this list.\nC. From the list of all customers who joined in the last 12 months, classify customers by the state in which they live, then choose 10 customers from each state.\nD. From the list of all customers who joined in the last 12 months, classify customers by the state in which they live, then choose 3% of the customers from each state.\nAnswer:",
+          "expected": "From the list of all customers who joined in the last 12 months, classify customers by the state in which they live, then choose 3% of the customers from each state.",
+          "prediction": "The best plan is to use a **proportional stratified sample** that reflects the geographic distribution of the customer base.  \nThus the correct choice is **D** \u2013 \u201cFrom the list of all customers who joined in the last 12 months, classify customers by the state in which they live, then choose 3% of the customers from each state.\u201d",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735455.6973648,
+            "estimated_cost_usd": 67.4075317780007,
+            "thinking_tokens": 269
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_133",
+          "input": "Question: Which of the following is NOT true of the \u03c72 probability distribution function?\nA. The area under the \u03c72 curve is 1.\nB. \u03c72 is defined only for nonnegative values of the variable.\nC. For small degrees of freedom, the curve displays strong right-skewness.\nD. For the same \u03b1, as the number of degrees of freedom increases, the critical value for the rejection region decreases.\nAnswer:",
+          "expected": "For the same \u03b1, as the number of degrees of freedom increases, the critical value for the rejection region decreases.",
+          "prediction": "**Answer: D**\n\nThe critical value for a given significance level \u03b1 actually **increases** as the degrees of freedom increase, because the chi\u2011square distribution shifts to the right. All the other statements are true.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735460.5081384,
+            "estimated_cost_usd": 91.36885843699929,
+            "thinking_tokens": 304
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_45",
+          "input": "Question: In a high school of 1650 students, 132 have personal investments in the stock market. To estimate the total stock investment by students in this school, two plans are proposed. Plan I would sample 30 students at random, find a confidence interval estimate of their average investment, and then multiply both ends of this interval by 1650 to get an interval estimate of the total investment. Plan II would sample 30 students at random from among the 132 who have investments in the market, find a confidence interval estimate of their average investment, and then multiply both ends of this interval by 132 to get an interval estimate of the total investment. Which is the better plan for estimating the total stock market investment by students in this school?\nA. Plan I\nB. Plan II\nC. Both plans use random samples and so will produce equivalent results.\nD. Neither plan will give an accurate estimate.\nAnswer:",
+          "expected": "Plan II",
+          "prediction": "**Answer: B \u2013 Plan\u202fII is the better plan.**\n\n**Why?**\n\nThe goal is to estimate the *total* stock\u2011investment of the 1,650 students.  \nOnly 132 of those students actually have investments; the other 1,518 have an investment of $0. Thus the total sum of investments in the whole school is the same as the sum of investments of the 132 investors.\n\n---\n\n### Plan\u202fI  \n- Randomly samples 30 students from the entire 1,650.  \n- Computes the sample mean \\( \\bar{Y}_I \\) of the *whole* population (which includes many zeros).  \n- Estimates the total as \\( \\hat{T}_I = 1650\\,\\bar{Y}_I \\).\n\nBecause the sample mean is taken from a population that contains a large proportion of zeros, the sample variance of \\( \\bar{Y}_I \\) is relatively large. Consequently, the confidence interval for \\( \\hat{T}_I \\) is wide.\n\n---\n\n### Plan\u202fII  \n- Randomly samples 30 students *only from the 132 investors*.  \n- Computes the sample mean \\( \\bar{Y}_{II} \\) of the investors (there are no zeros in this sub\u2011sample).  \n- Estimates the total as \\( \\hat{T}_{II}=132\\,\\bar{Y}_{II} \\).\n\nSince the sub\u2011population has no zero observations, its variance is smaller. The standard error of \\( \\bar{Y}_{II} \\) is therefore smaller, and after multiplying by 132 the resulting confidence interval for the total is narrower than that obtained with Plan\u202fI.\n\n---\n\n### Variance comparison (illustrative)\n\n\\[\n\\operatorname{Var}(\\hat{T}_I)=1650^2\\,\\frac{\\sigma_Y^2(1-30/1650)}{30},\\qquad\n\\operatorname{Var}(\\hat{T}_{II})=132^2\\,\\frac{\\sigma_{\\text{inv}}^2(1-30/132)}{30},\n\\]\n\nwhere \\(\\sigma_Y^2\\) is the variance of investment for the whole school and \\(\\sigma_{\\text{inv}}^2\\) is the variance among investors.  \nBecause zeros inflate \\(\\sigma_Y^2\\) relative to \\(\\sigma_{\\text{inv}}^2\\), \\(\\operatorname{Var}(\\hat{T}_{II})\\) is usually much smaller than \\(\\operatorname{Var}(\\hat{T}_I)\\).\n\n---\n\nTherefore Plan\u202fII provides a more precise (narrower confidence interval) and thus a better estimate of the total stock\u2011market investment of the school\u2019s students.  \n\n**Correct choice: B.**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735495.157721,
+            "estimated_cost_usd": 127.7791665980003,
+            "thinking_tokens": 1673
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_73",
+          "input": "Question: Which of the following is notrequired in a binomial setting?\nA. Each trial is considered either a success or a failure.\nB. Each trial is independent.\nC. The value of the random variable of interest is the number of trials until the first success occurs.\nD. There is a fixed number of trials.\nAnswer:",
+          "expected": "The value of the random variable of interest is the number of trials until the first success occurs.",
+          "prediction": "The binomial distribution counts the number of **successes** in a fixed number of independent trials, each of which is a success/failure.  \nThe statement that the random variable is \u201cthe number of trials until the first success\u201d describes a **geometric** situation, not a binomial one.\n\n**Answer: C.**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735498.599119,
+            "estimated_cost_usd": 152.4799677339979,
+            "thinking_tokens": 178
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_126",
+          "input": "Question: The mean daily demand for bread at a popular bakery is 2,500 loaves, with a standard deviation of 225 loaves. Every morning the bakery bakes 3,000 loaves. What is the probability that today it will run out of bread? Assume that the mean daily demand for bread at this bakery is normally distributed.\nA. 0.8333\nB. 0.1667\nC. 0.9869\nD. 0.0132\nAnswer:",
+          "expected": "0.0132",
+          "prediction": "The bakery will run out of bread if the daily demand exceeds the 3,000 loaves baked.\n\nThe daily demand \\(D\\) is normally distributed:\n\n\\[\nD \\sim N(\\mu = 2500,\\;\\sigma = 225)\n\\]\n\nWe need \\(P(D > 3000)\\).\n\n1. **Standardize the value 3000**\n\n\\[\nz = \\frac{3000 - \\mu}{\\sigma}\n  = \\frac{3000 - 2500}{225}\n  = \\frac{500}{225}\n  \\approx 2.22\n\\]\n\n2. **Find the tail probability**\n\nFor a standard normal variable \\(Z\\),\n\n\\[\nP(D > 3000) = P(Z > 2.22)\n\\]\n\nUsing the standard normal table (or a calculator):\n\n\\[\n\\Phi(2.22) \\approx 0.9869\n\\]\n\nHence\n\n\\[\nP(Z > 2.22) = 1 - \\Phi(2.22) \\approx 1 - 0.9869 = 0.0131\n\\]\n\nRounded to four decimal places: **0.0132**.\n\nSo the probability that the bakery will run out of bread is\n\n\\[\n\\boxed{0.0132}\n\\]\n\n**Answer: D. 0.0132**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735505.050361,
+            "estimated_cost_usd": 174.75507302299593,
+            "thinking_tokens": 90
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_52",
+          "input": "Question: A medical research team tests for tumor reduction in a sample of patients using three different dosages of an experimental cancer drug. Which of the following is true?\nA. There are three explanatory variables and one response variable.\nB. There is one explanatory variable with three levels of response.\nC. Tumor reduction is the only explanatory variable, but there are three response variables corresponding to the different dosages.\nD. There are three levels of a single explanatory variable.\nAnswer:",
+          "expected": "There are three levels of a single explanatory variable.",
+          "prediction": "The experimental design involves a single independent factor \u2013 the **dosage** of the drug \u2013 that is varied at three different levels (e.g., low, medium, high). The outcome measured is **tumor reduction**, which is the sole response variable.  \n\nThus, the correct statement is:\n\n**D. There are three levels of a single explanatory variable.**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735508.531754,
+            "estimated_cost_usd": 194.884722478997,
+            "thinking_tokens": 199
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_174",
+          "input": "Question: Given that the sample has a standard deviation of zero, which of the following is a true statement?\nA. The standard deviation of the population is also zero.\nB. The sample mean and sample median are equal.\nC. The sample may have outliers.\nD. The population has a symmetric distribution.\nAnswer:",
+          "expected": "The sample mean and sample median are equal.",
+          "prediction": "**Answer: B.**  \nIf the sample standard deviation is zero, every observation in the sample is identical. Consequently, the sample mean equals that common value and the sample median also equals it, so the mean and median are equal. The other statements do not necessarily follow from a sample SD of zero.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735512.6278412,
+            "estimated_cost_usd": 160.88018834599643,
+            "thinking_tokens": 241
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_156",
+          "input": "Question: The sampling distribution of the sample mean is close to the normal distribution\nA. only if both the original population has a normal distribution and n is large.\nB. if the standard deviation of the original population is known.\nC. if n is large, no matter what the distribution of the original population.\nD. no matter what the value of n or what the distribution of the original population.\nAnswer:",
+          "expected": "if n is large, no matter what the distribution of the original population.",
+          "prediction": "The correct choice is **C. if\u202fn\u202fis large, no matter what the distribution of the original population.**  \n\n- **A** is incorrect because the sample mean is normally distributed for any \\(n\\) when the population itself is normal, but it doesn\u2019t require both normality and a large \\(n\\).\n- **B** is irrelevant; knowledge of the population standard deviation does not affect the shape of the sampling distribution.\n- **D** is false because the normal approximation only becomes accurate when \\(n\\) is sufficiently large (assuming finite variance).",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735517.1325066,
+            "estimated_cost_usd": 132.06133626899828,
+            "thinking_tokens": 216
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_177",
+          "input": "Question: The Department of Health plans to test the lead level in a specific park. Because a high lead level is harmful to children, the park will be closed if the lead level exceeds the allowed limit. The department randomly selects several locations in the park, gets soil samples from those locations, and tests the samples for their lead levels. Which of the following decisions would result from the type I error?\nA. Closing the park when the lead levels are within the allowed limit\nB. Keeping the park open when the lead levels are in excess of the allowed limit\nC. Closing the park when the lead levels are in excess of the allowed limit\nD. Keeping the park open when the lead levels are within the allowed limit\nAnswer:",
+          "expected": "Closing the park when the lead levels are within the allowed limit",
+          "prediction": "A. Closing the park when the lead levels are within the allowed limit.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735519.5900779,
+            "estimated_cost_usd": 97.23375800999929,
+            "thinking_tokens": 155
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_89",
+          "input": "Question: An assembly line machine is supposed to turn out ball bearings with a diameter of 1.25 centimeters. Each morning the first 30 bearings produced are pulled and measured. If their mean diameter is under 1.23 centimeters or over 1.27 centimeters, the machinery is stopped and an engineer is called to make adjustments before production is resumed. The quality control procedure may be viewed as a hypothesis test with the null hypothesis H0: \u03bc = 1.25 and the alternative hypothesis Ha: \u03bc \u2260 1.25. The engineer is asked to make adjustments when the null hypothesis is rejected. In test terminology, what would a Type II error result in?\nA. A warranted halt in production to adjust the machinery\nB. An unnecessary stoppage of the production process\nC. Continued production of wrong size ball bearings\nD. Continued production of proper size ball bearings\nAnswer:",
+          "expected": "Continued production of wrong size ball bearings",
+          "prediction": "**Answer: C. Continued production of wrong\u2011size ball bearings**\n\nA Type\u202fII error occurs when the null hypothesis is **not rejected** even though the alternative is true.  \nHere the null is \u201cthe true mean diameter is 1.25\u202fcm.\u201d The alternative is \u201cthe mean diameter is not 1.25\u202fcm.\u201d  \n\nIf the machine is actually off\u2011spec (e.g., producing bearings that are too small or too large) but the test fails to flag this (the sample mean falls within 1.23\u20131.27\u202fcm), production is continued. Thus, the process keeps making bearings that are **incorrectly sized**.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735524.6008255,
+            "estimated_cost_usd": 65.22420087799765,
+            "thinking_tokens": 198
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_209",
+          "input": "Question: A correlation of 0.6 indicates that the percentage of variation in y that is explained by the variation in x is how many times the percentage indicated by a correlation of 0.3?\nA. 2\nB. 3\nC. 4\nD. 6\nAnswer:",
+          "expected": "4",
+          "prediction": "The proportion of the variance in \\(y\\) that can be explained by \\(x\\) is given by the coefficient of determination:\n\n\\[\nR^2 = r^2\n\\]\n\nFor the two correlations:\n\n- \\(r = 0.6 \\Rightarrow R^2 = 0.6^2 = 0.36\\) (36\u202f% of the variation in \\(y\\) is explained)\n- \\(r = 0.3 \\Rightarrow R^2 = 0.3^2 = 0.09\\) (9\u202f% of the variation in \\(y\\) is explained)\n\nNow compare the two percentages:\n\n\\[\n\\frac{0.36}{0.09} = 4\n\\]\n\nThus the 0.6 correlation explains **four times** as much variation in \\(y\\) as the 0.3 correlation.\n\n**Answer: C. 4**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735529.520771,
+            "estimated_cost_usd": 64.62079835299664,
+            "thinking_tokens": 120
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_66",
+          "input": "Question: Suppose you did 10 independent tests of the form H0: \u03bc = 25 versus Ha: \u03bc < 25, each at the \u03b1 = 0.05 significance level. What is the probability of committing a Type I error and incorrectly rejecting a true H0 with at least one of the 10 tests?\nA. 0.05\nB. 0.40\nC. 0.50\nD. 0.60\nAnswer:",
+          "expected": "0.40",
+          "prediction": "The probability of a Type\u202fI error on a single test is \\(\\alpha = 0.05\\).  \nFor independent tests the chance of **no** error on a test is \\(1-0.05 = 0.95\\).\n\nFor 10 tests the probability of no error at all is  \n\n\\[\nP(\\text{no error in 10 tests}) = 0.95^{10}.\n\\]\n\nThus the probability of at least one Type\u202fI error is\n\n\\[\nP(\\text{at least one error}) = 1 - 0.95^{10}.\n\\]\n\nCalculating:\n\n\\[\n0.95^{10} \\approx e^{10\\ln 0.95} = e^{-0.51293} \\approx 0.598.\n\\]\n\nSo\n\n\\[\n1 - 0.598 \\approx 0.402.\n\\]\n\nRounded to two decimal places, this is about **0.40**.\n\n**Answer: B. 0.40**.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735535.256652,
+            "estimated_cost_usd": 64.2298461759965,
+            "thinking_tokens": 117
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_13",
+          "input": "Question: Changing from a 90% confidence interval estimate for a population proportion to a 99% confidence interval estimate, with all other things being equal,\nA. increases the interval size by 9%.\nB. decreases the interval size by 9%.\nC. increases the interval size by 57%.\nD. decreases the interval size by 57%.\nAnswer:",
+          "expected": "increases the interval size by 57%.",
+          "prediction": "The width of a confidence interval for a proportion is proportional to the critical value \\(z_{\\alpha/2}\\):\n\n\\[\n\\text{Width} \\;=\\; 2\\,z_{\\alpha/2}\\sqrt{\\frac{\\hat p(1-\\hat p)}{n}}.\n\\]\n\n- For a 90\u202f% CI: \\(z_{0.05}=1.645\\).\n- For a 99\u202f% CI: \\(z_{0.005}=2.576\\).\n\nThe factor by which the width changes is\n\n\\[\n\\frac{2.576}{1.645}\\approx 1.566.\n\\]\n\nThus the interval becomes about \\(1.566\\) times larger, i.e. larger by roughly \\(56.6\\%\\).\n\n**Answer: C. increases the interval size by 57%.**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735540.9907236,
+            "estimated_cost_usd": 71.15511417899688,
+            "thinking_tokens": 170
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_84",
+          "input": "Question: A researcher planning a survey of school principals in a particular state has lists of the school principals employed in each of the 125 school districts. The procedure is to obtain a random sample of principals from each of the districts rather than grouping all the lists together and obtaining a sample from the entire group. Which of the following is a correct conclusion?\nA. This is a simple random sample obtained in an easier and less costly manner than procedures involving sampling from the entire population of principals.\nB. This is a cluster sample in which the population was divided into heterogeneous groups called clusters.\nC. This is an example of systematic sampling, which gives a reasonable sample as long as the original order of the list is not related to the variables under consideration.\nD. This is a stratified sample, which may give comparative information that a simple random sample wouldn't give.\nAnswer:",
+          "expected": "This is a stratified sample, which may give comparative information that a simple random sample wouldn't give.",
+          "prediction": "The procedure described is **stratified sampling**.  \nThe population is divided into 125 strata (the school districts), and a random sample of principals is taken from each stratum. This approach can provide comparative information across the districts that a simple random sample of the entire population would not offer.  \n\n**Correct answer: D.**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735544.881902,
+            "estimated_cost_usd": 75.34483603499757,
+            "thinking_tokens": 229
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_5",
+          "input": "Question: The principal of a school is interested in estimating the average income per family of her students. She selects a random sample of students and collects information about their family income. A 95 percent confidence interval computed from this data for the mean income per family is ($35,095, $45,005). Which of the following provides the best interpretation of this confidence interval?\nA. 95 percent of the students in her school are from families whose income is between $35,095 and $45,005.\nB. There is a 95% probability that the families of all the students in this school have an income of between $35,095 and $45,005.\nC. If we were to take another sample of the same size and compute a 95 percent confidence interval, we would have a 95% chance of getting the interval ($35,095, $45,005).\nD. There is a 95% probability that the mean income per family in the school is between $35,095 and $45,005.\nAnswer:",
+          "expected": "There is a 95% probability that the mean income per family in the school is between $35,095 and $45,005.",
+          "prediction": "**Answer: D** \u2013 \u201cThere is a 95\u202f% probability that the mean income per family in the school is between $35,095 and $45,005.\u201d\n\nIn frequentist terminology the proper phrasing is that we are *95\u202f% confident* that the true population mean falls within the interval. The other options either refer to percentages of students, or misstate the meaning of the confidence interval.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735550.0019832,
+            "estimated_cost_usd": 78.93261148300007,
+            "thinking_tokens": 261
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_202",
+          "input": "Question: The financial aid office at a state university conducts a study to determine the total student costs per semester. All students are charged $4500 for tuition. The mean cost for books is $350 with a standard deviation of $65. The mean outlay for room and board is $2800 with a standard deviation of $380. The mean personal expenditure is $675 with a standard deviation of $125. Assuming independence among categories, what is the standard deviation of the total student costs?\nA. $24\nB. $91\nC. $190\nD. $405\nAnswer:",
+          "expected": "$405",
+          "prediction": "To find the standard deviation of the **total** cost, we add the variances of the independent cost components (the tuition is a fixed amount, so it adds no variability).\n\n\\[\n\\begin{aligned}\n\\text{Var(total)} &= \\text{Var(book)} + \\text{Var(room+board)} + \\text{Var(personal)} \\\\\n&= 65^2 + 380^2 + 125^2 \\\\\n&= 4\\,225 + 144\\,400 + 15\\,625 \\\\\n&= 164\\,250.\n\\end{aligned}\n\\]\n\nThe standard deviation is the square root of the variance:\n\n\\[\n\\sigma_{\\text{total}} = \\sqrt{164\\,250} \\approx 405.\n\\]\n\nSo the standard deviation of the total student costs per semester is about **$405**.\n\n**Answer: D. $405**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735559.4236374,
+            "estimated_cost_usd": 85.00029981899934,
+            "thinking_tokens": 375
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_168",
+          "input": "Question: A manufacturer of motor oil is interested in testing the effects of a newly developed additive on the lifespan of an engine. Twenty-five different engine types are selected at random and each one is tested using oil with the additive and oil without the additive. What type of analysis will yield the most useful information?\nA. Matched pairs comparison of population proportions\nB. Matched pairs comparison of population means\nC. Independent samples comparison of population proportions\nD. Independent samples comparison of population means\nAnswer:",
+          "expected": "Matched pairs comparison of population means",
+          "prediction": "The experiments are **paired**: each engine type is tested twice (with and without the additive).  \nBecause the response of interest \u2013 engine lifespan \u2013 is a continuous variable, the appropriate test is a matched\u2011pairs (paired\u2011sample) comparison of means.\n\n**Correct choice: B. Matched pairs comparison of population means**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735562.8059738,
+            "estimated_cost_usd": 85.35570022499815,
+            "thinking_tokens": 183
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_21",
+          "input": "Question: Which of these explains why t should be used instead of z for inference procedures for means.\nA. The Central Limit Theorem applies to proportions but not means.\nB. We use z for proportions because proportions are approximately normal. Means are not.\nC. We use z for proportions because the sampling distribution of sample proportions is approximately normal, but that is not the case for the sampling distribution of sample means.\nD. When using the sample standard deviation to estimate the population standard deviation, more variability is introduced into the sampling distribution of the statistic.\nAnswer:",
+          "expected": "When using the sample standard deviation to estimate the population standard deviation, more variability is introduced into the sampling distribution of the statistic.",
+          "prediction": "**Answer: D**  \n\nBecause when we don\u2019t know the population standard deviation \\(\\sigma\\) and we replace it with the sample standard deviation \\(s\\), we add extra uncertainty to the estimate. This extra variability inflates the variability of the sampling distribution of \\(\\bar X\\), and the appropriate distribution to use for inference on the mean is the **Student\u2019s \\(t\\)** distribution (with \\(n-1\\) degrees of freedom) rather than the standard normal \\(z\\).",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735567.3057635,
+            "estimated_cost_usd": 87.5334276249996,
+            "thinking_tokens": 258
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_124",
+          "input": "Question: A soft drink dispenser can be adjusted to deliver any fixed number of ounces. If the machine is operating with a standard deviation in delivery equal to 0.3 ounce, what should be the mean setting so that a 12-ounce cup will overflow less than 1% of the time? Assume a normal distribution for ounces delivered.\nA. 12 - 0.99(0.3) ounces\nB. 12 - 2.326(0.3) ounces\nC. 12 - 2.576(0.3) ounces\nD. 12 + 2.326(0.3) ounces\nAnswer:",
+          "expected": "12 - 2.326(0.3) ounces",
+          "prediction": "To keep the chance of over\u2011filling below \\(1\\%\\) we need\n\n\\[\nP(X>12) < 0.01,\n\\]\n\nwhere \\(X\\sim N(\\mu ,\\,0.3)\\).\n\nThis is equivalent to\n\n\\[\nP\\!\\left(\\frac{X-\\mu}{0.3} > \\frac{12-\\mu}{0.3}\\right) < 0.01\n\\quad\\Longrightarrow\\quad\n1-\\Phi\\!\\left(\\frac{12-\\mu}{0.3}\\right) < 0.01.\n\\]\n\nThus\n\n\\[\n\\Phi\\!\\left(\\frac{12-\\mu}{0.3}\\right) > 0.99\n\\quad\\Longrightarrow\\quad\n\\frac{12-\\mu}{0.3} > z_{0.99}\\approx 2.326.\n\\]\n\nSolve for \\(\\mu\\):\n\n\\[\n12-\\mu > 0.3(2.326)=0.6978\n\\;\\;\\Longrightarrow\\;\\;\n\\mu < 12-0.6978 \\approx 11.30.\n\\]\n\nSo the mean setting should be\n\n\\[\n\\boxed{12-2.326(0.3)\\text{ ounces}}.\n\\]\n\nAnswer **B**.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735575.1924722,
+            "estimated_cost_usd": 92.20861505100038,
+            "thinking_tokens": 155
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_204",
+          "input": "Question: Suppose X and Y are random variables with E(X) = 312, var(X) = 6, E(X) = 307, and var(Y) = 8. What are the expected value and variance of the random variable X + Y?\nA. E(X + Y) = 619, var(X + Y) = 7\nB. E(X + Y) = 619, var(X + Y) = 10\nC. E(X + Y) = 619, var(X + Y) = 14\nD. There is insufficient information to answer this question.\nAnswer:",
+          "expected": "There is insufficient information to answer this question.",
+          "prediction": "**Answer: C.**  \n\n\\[\nE(X+Y)=E(X)+E(Y)=312+307=619\n\\]\n\nFor the variance we need the covariance term:\n\n\\[\n\\operatorname{Var}(X+Y)=\\operatorname{Var}(X)+\\operatorname{Var}(Y)+2\\operatorname{Cov}(X,Y)\n\\]\n\nBecause no information is given about the relationship between \\(X\\) and \\(Y\\) we normally assume that they are **independent** (or at least uncorrelated).  \nWith independence, \\(\\operatorname{Cov}(X,Y)=0\\), so\n\n\\[\n\\operatorname{Var}(X+Y)=6+8=14 .\n\\]\n\nThus the expected value is \\(619\\) and the variance is \\(14\\).  \n\n(If independence were not assumed, the variance could not be determined from the given data.)",
+          "scores": {
+            "accuracy": 0.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735582.5115254,
+            "estimated_cost_usd": 91.16769731100067,
+            "thinking_tokens": 297
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_171",
+          "input": "Question: A town has one high school, which buses students from urban, suburban, and rural communities. Which of the following samples is recommended in studying attitudes toward tracking of students in honors, regular, and below-grade classes?\nA. Convenience sample\nB. Simple random sample (SRS)\nC. Stratified sample\nD. Systematic sample\nAnswer:",
+          "expected": "Stratified sample",
+          "prediction": "C. Stratified sample",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735584.4064977,
+            "estimated_cost_usd": 90.93890782900053,
+            "thinking_tokens": 135
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_186",
+          "input": "Question: A medicine is known to produce side effects in one in five patients taking it. Suppose a doctor prescribes the medicine to four unrelated patients. What is the probability that none of the patients will develop side effects?\nA. 0.8\nB. 0.4096\nC. 0.25\nD. 0.2\nAnswer:",
+          "expected": "0.4096",
+          "prediction": "The probability that a single patient does **not** develop side effects is  \n\n\\[\n1-\\frac{1}{5}= \\frac{4}{5}=0.8.\n\\]\n\nAssuming independence among the four patients, the probability that **all four** avoid side effects is\n\n\\[\n(0.8)^4 = 0.8 \\times 0.8 \\times 0.8 \\times 0.8 = 0.4096.\n\\]\n\nSo the correct choice is **B. 0.4096**.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735587.070327,
+            "estimated_cost_usd": 88.24700518399914,
+            "thinking_tokens": 39
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_42",
+          "input": "Question: As reported on CNN, in a May 1999 national poll 43% of high school students expressed fear about going to school. Which of the following best describes what is meant by the poll having a margin of error of 5%?\nA. It is likely that the true proportion of high school students afraid to go to school is between 38% and 48%.\nB. Five percent of the students refused to participate in the poll.\nC. Between 38% and 48% of those surveyed expressed fear about going to school.\nD. There is a 0.05 probability that the 43% result is in error.\nAnswer:",
+          "expected": "It is likely that the true proportion of high school students afraid to go to school is between 38% and 48%.",
+          "prediction": "**Answer: A.**  \nThe margin of error of 5\u202f% means that the true proportion of all high\u2011school students who fear going to school is likely to lie within \u00b15\u202f% of the reported 43\u202f% \u2013 i.e., between about 38\u202f% and 48\u202f%.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735589.1168816,
+            "estimated_cost_usd": 77.07404660499742,
+            "thinking_tokens": 78
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_115",
+          "input": "Question: In the jury pool available for this week, 30 percent of potential jurors are women. A particular trial requires that, out of a jury of 12, at least three are women. If a jury of 12 is to be selected at random from the pool, what is the probability it meets the requirements of this trial?\nA. 0.168\nB. 0.843\nC. 0.915\nD. The answer cannot be determined without knowing the size of the jury pool.\nAnswer:",
+          "expected": "The answer cannot be determined without knowing the size of the jury pool.",
+          "prediction": "**Answer: D.**  \n\nThe exact probability depends on the actual size of the jury pool. Without knowing how many potential jurors are in the pool (and hence how many women it contains), we cannot compute the precise probability that a randomly chosen 12\u2011person jury will contain at least three women. In a large pool the binomial approximation \\(1-\\left(P(0)+P(1)+P(2)\\right)\\) would give about \\(0.75\\), but the true value could differ if the pool is small. Therefore the answer cannot be determined without additional information about the pool size.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735628.0279977,
+            "estimated_cost_usd": 99.4553325459965,
+            "thinking_tokens": 1813
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_2",
+          "input": "Question: All of the following statements are true for all discrete random variables except for which one?\nA. The possible outcomes must all be numerical.\nB. The possible outcomes must be mutually exclusive.\nC. The mean (expected value) always equals the sum of the products obtained by multiplying each value by its corresponding probability.\nD. Approximately 95% of the outcomes will be within two standard deviations of the mean.\nAnswer:",
+          "expected": "Approximately 95% of the outcomes will be within two standard deviations of the mean.",
+          "prediction": "The statement that is **not** universally true for all discrete random variables is:\n\n**D. Approximately 95% of the outcomes will be within two standard deviations of the mean.**\n\n- The Empirical Rule (\u224895% within two SDs) applies to *approximately normal* distributions, but a discrete random variable can have any shape (e.g., a Bernoulli or a highly skewed distribution) where this rule does not hold. The other statements (A, B, and C) are general properties of discrete random variables.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735635.5025456,
+            "estimated_cost_usd": 129.01097906899668,
+            "thinking_tokens": 503
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_106",
+          "input": "Question: An experiment is to be conducted to determine whether taking fish oil capsules or garlic capsules has more of an effect on cholesterol levels. In past studies it was noted that daily exercise intensity (low, moderate, high) is associated with cholesterol level, but average sleep length (< 5, 5 - 8, > 8 hours) is not associated with cholesterol level. This experiment should be done\nA. by blocking on exercise intensity\nB. by blocking on sleep length\nC. by blocking on cholesterol level\nD. by blocking on capsule type\nAnswer:",
+          "expected": "by blocking on exercise intensity",
+          "prediction": "The appropriate factor to block on is the one that is known to affect the outcome\u2014daily exercise intensity. Blocking on sleep length would add no benefit because it is not related to cholesterol, and blocking on cholesterol or capsule type would not make sense.  \n**Answer: A. by blocking on exercise intensity**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735638.982762,
+            "estimated_cost_usd": 161.1663994929986,
+            "thinking_tokens": 208
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_155",
+          "input": "Question: The midterm scores for a statistics course were approximately normally distributed with a mean of 52 points and a standard deviation of 4 points. The final exam scores were approximately normally distributed with a mean of 112 points and a standard deviation of 10 points. One student had a score of 58 points on the midterm. If she had the same standardized score (z-score) on the final exam, what must her score have been?\nA. 15 points\nB. 58 points\nC. 118 points\nD. 127 points\nAnswer:",
+          "expected": "127 points",
+          "prediction": "The midterm z\u2011score is\n\n\\[\nz=\\frac{58-52}{4}=\\frac{6}{4}=1.5.\n\\]\n\nFor the final exam we want the same z\u2011score:\n\n\\[\nz=\\frac{x-112}{10}=1.5 \\;\\Longrightarrow\\; x-112 = 1.5 \\times 10 = 15 \\;\\Longrightarrow\\; x = 112+15 = 127.\n\\]\n\n**Answer: D. 127 points**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735642.0562189,
+            "estimated_cost_usd": 200.1247882719981,
+            "thinking_tokens": 55
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_208",
+          "input": "Question: A student organization at a university is interested in estimating the proportion of students in favor of showing movies biweekly instead of monthly. How many students should be sampled to get a 90 percent confidence interval with a width of at most 0.08?\nA. 27\nB. 64\nC. 106\nD. 423\nAnswer:",
+          "expected": "423",
+          "prediction": "The sample size for a proportion with a desired confidence level and margin of error is\n\n\\[\nn \\;=\\;\\frac{z_{\\alpha/2}^{2}\\,p(1-p)}{E^{2}},\n\\]\n\nwhere  \n\n* \\(z_{\\alpha/2}\\) is the critical value for the chosen confidence level,  \n* \\(p\\) is the expected proportion (unknown, so use \\(p=0.5\\) for the worst\u2011case),  \n* \\(E\\) is the half\u2013width of the confidence interval.\n\n---\n\n### 1.  Determine the numbers\n\n* Confidence level 90\u202f% \u2192 \\(z_{0.05}=1.645\\).  \n* Desired total width = 0.08 \u2192 half\u2011width \\(E = 0.04\\).  \n* Worst\u2011case \\(p=0.5\\) (gives the largest required \\(n\\)).\n\n### 2.  Plug into the formula\n\n\\[\n\\begin{aligned}\nn &= \\frac{(1.645)^2 \\times 0.5(1-0.5)}{0.04^2}  \\\\\n  &= \\frac{(2.706025) \\times 0.25}{0.0016} \\\\\n  &= \\frac{0.67650625}{0.0016} \\\\\n  &= 422.816.\n\\end{aligned}\n\\]\n\nBecause we cannot sample a fraction of a student, round **up** to the next whole number:\n\n\\[\nn = 423.\n\\]\n\n---\n\n\\[\n\\boxed{423}\n\\]\n\n**Answer: D.**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735650.5560253,
+            "estimated_cost_usd": 177.0846236840007,
+            "thinking_tokens": 151
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_3",
+          "input": "Question: Which of the following is a true statement about hypothesis testing?\nA. If there is sufficient evidence to reject a null hypothesis at the 10% level, then there is sufficient evidence to reject it at the 5% level.\nB. Whether to use a one- or a two-sided test is typically decided after the data are gathered.\nC. If a hypothesis test is conducted at the 1% level, there is a 1% chance of rejecting the null hypothesis.\nD. The power of a test concerns its ability to detect an alternative hypothesis.\nAnswer:",
+          "expected": "The power of a test concerns its ability to detect an alternative hypothesis.",
+          "prediction": "D. The power of a test concerns its ability to detect an alternative hypothesis.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735656.0839446,
+            "estimated_cost_usd": 146.56892902600157,
+            "thinking_tokens": 372
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_15",
+          "input": "Question: If all the other variables remain constant, which of the following will increase the power of a hypothesis test? I.Increasing the sample size. II.Increasing the significance level. III.Increasing the probability of a Type II error.\nA. I only\nB. II only\nC. III only\nD. I and II\nAnswer:",
+          "expected": "I and II",
+          "prediction": "**Answer: D \u2013 I and II**\n\n**Why?**\n\n- **Power** of a test = \\(1-\\beta\\) (the probability of correctly rejecting a false null hypothesis).\n- **(I) Increasing the sample size**: With more data the sampling distribution becomes tighter, making it easier to detect a true effect \u2192 \\( \\beta\\) decreases, so power increases.\n- **(II) Increasing the significance level (\\(\\alpha\\))**: A higher \\(\\alpha\\) widens the critical region, giving the test a higher chance of rejecting \\(H_0\\) when it is false \u2192 \\( \\beta\\) decreases, so power increases.\n- **(III) Increasing the probability of a Type\u202fII error (\\(\\beta\\))**: This directly **decreases** power, because power = \\(1-\\beta\\).\n\nThus only (I) and (II) increase the power of the hypothesis test.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735660.180443,
+            "estimated_cost_usd": 115.85794074899968,
+            "thinking_tokens": 85
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_109",
+          "input": "Question: A high school sent a survey to a randomly selected sample of 75 of last year's graduating class. 27 of those selected did not return the survey. The best plan of action would be to:\nA. Use the surveys that were returned and change the sample size to 48 for the analysis.\nB. Use the surveys that were returned and leave the sample size at 75 for the analysis.\nC. Randomly select 27 additional class members and send the survey to them.\nD. Follow up with those that did not return the survey to encourage them to respond.\nAnswer:",
+          "expected": "Follow up with those that did not return the survey to encourage them to respond.",
+          "prediction": "D",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735664.4809618,
+            "estimated_cost_usd": 85.30858485900171,
+            "thinking_tokens": 311
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_44",
+          "input": "Question: In one study half of a class were instructed to watch exactly 1 hour of television per day, the other half were told to watch 5 hours per day, and then their class grades were compared. In a second study students in a class responded to a questionnaire asking about their television usage and their class grades.\nA. The first study was an experiment without a control group, while the second was an observational study.\nB. The first study was an observational study, while the second was a controlled experiment.\nC. Both studies were controlled experiments.\nD. Both studies were observational studies.\nAnswer:",
+          "expected": "The first study was an experiment without a control group, while the second was an observational study.",
+          "prediction": "A. The first study was an experiment without a control group, while the second was an observational study.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735672.058326,
+            "estimated_cost_usd": 84.30413426800078,
+            "thinking_tokens": 607
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_198",
+          "input": "Question: A significance test of the hypothesis H0: p= 0.3 against the alternative HA: p> 0.3 found a value of = 0.35 for a random sample of size 95. What is the P-value of this test?\nA. 1.06\nB. 0.1446\nC. 0.2275\nD. 0.8554\nAnswer:",
+          "expected": "0.1446",
+          "prediction": "**Answer: B. 0.1446**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735675.7444746,
+            "estimated_cost_usd": 83.3235936730016,
+            "thinking_tokens": 149
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_162",
+          "input": "Question: Alfred and Ben don't know each other but are each considering asking the lovely Charlene to the school prom. The probability that at least one of them will ask her is 0.72. The probability that they both ask her is 0.18. The probability that Alfred asks her is 0.6. What is the probability that Ben asks Charlene to the prom?\nA. 0.78\nB. 0.3\nC. 0.24\nD. 0.48\nAnswer:",
+          "expected": "0.3",
+          "prediction": "Let\n\n* \\(A\\) = \u201cAlfred asks Charlene\u201d  \n* \\(B\\) = \u201cBen asks Charlene\u201d\n\nGiven  \n\n- \\(P(A)=0.6\\)  \n- \\(P(A\\cap B)=0.18\\)  \n- \\(P(A\\cup B)=0.72\\)\n\nUse the inclusion\u2013exclusion formula:\n\n\\[\nP(A\\cup B)=P(A)+P(B)-P(A\\cap B).\n\\]\n\nPlugging in the known values:\n\n\\[\n0.72 = 0.6 + P(B) - 0.18.\n\\]\n\nSolve for \\(P(B)\\):\n\n\\[\nP(B) = 0.72 - 0.6 + 0.18 = 0.30.\n\\]\n\nSo the probability that Ben asks Charlene is **0.30**.\n\n**Answer: B. 0.3**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735681.4786577,
+            "estimated_cost_usd": 83.41217359400252,
+            "thinking_tokens": 101
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_123",
+          "input": "Question: A school board of a large school district is proposing a new dress code for students. Some students feel that this dress code unfairly targets female students. To see if there is a difference between boys and girls in their opposition to the new dress code, they conduct a poll of 60 randomly selected male and 70 randomly selected female high school students in the district. They find that 66 females oppose the dress code and 50 males oppose the dress code. Which of the following explains why a two-proportion z-test is not appropriate?\nA. The sample sizes are different.\nB. The sample sizes are too large.\nC. The number of successes and the number of failures for the two groups are not all large enough.\nD. The shapes of the population distributions are not known.\nAnswer:",
+          "expected": "The number of successes and the number of failures for the two groups are not all large enough.",
+          "prediction": "**Answer: C.**  \n\nFor a two\u2011proportion z\u2011test the usual normal approximation requires that both \\(n p\\) and \\(n(1-p)\\) be at least about 10 for each group.  \n\n- Females: \\(n=70,\\; \\hat p=66/70=0.943\\) \u2192 \\(np=66\\) (ok) but \\(n(1-p)=4\\) (not \u226510).  \n- Males: \\(n=60,\\; \\hat p=50/60=0.833\\) \u2192 \\(np=50\\) and \\(n(1-p)=10\\) (just meets the rule).\n\nBecause the number of failures for the female group (4) is less than 10, the normal approximation underlying the two\u2011proportion z\u2011test is not justified. The other options (different sample sizes, large sample sizes, unknown population shapes) are not reasons for the test\u2019s inappropriateness.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735687.41959,
+            "estimated_cost_usd": 83.98563875699983,
+            "thinking_tokens": 161
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_64",
+          "input": "Question: There are two games involving flipping a fair coin. In the first game you win a prize if you can throw between 45% and 55% heads. In the second game you win if you can throw more than 80% heads. For each game would you rather flip the coin 30 times or 300 times?\nA. 30 times for each game\nB. 300 times for each game\nC. 30 times for the first game and 300 times for the second\nD. 300 times for the first game and 30 times for the second\nAnswer:",
+          "expected": "300 times for the first game and 30 times for the second",
+          "prediction": "**Answer: D.**\n\n- **Game\u202f1 (45\u202f%\u201355\u202f% heads)**  \n  *30 flips*:\u2003\\(P\\approx41\\%\\)  \n  *300 flips*:\u2003\\(P\\approx93\\%\\)  \n  \u2013 So you\u2019d rather flip **300 times**.\n\n- **Game\u202f2 (more than 80\u202f% heads)**  \n  *30 flips*:\u2003\\(P\\approx0.016\\%\\)  \n  *300 flips*:\u2003\\(P\\) is essentially\u202f0 (about \\(10^{-25}\\) or smaller).  \n  \u2013 So you\u2019d rather flip **30 times**.\n\nThus you should play the first game with 300 flips and the second game with 30 flips \u2013 option **D**.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735720.5944126,
+            "estimated_cost_usd": 111.06523681199906,
+            "thinking_tokens": 1515
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_47",
+          "input": "Question: The regression analysis of question 20 indicated that \"R-sq = 98.1%.\" Which of the following is (are) true? I. There is a strong positive linear relationship between the explanatory and response variables. II. There is a strong negative linear relationship between the explanatory and response variables. III. About 98% of the variation in the response variable can be explained by the regression on the explanatory variable.\nA. I and III only\nB. I or II only\nC. I or II (but not both) and III\nD. II and III only\nAnswer:",
+          "expected": "I or II (but not both) and III",
+          "prediction": "**Answer: C \u2013 \u201cI or II (but not both) and III\u201d**\n\n**Explanation**\n\n- **R\u00b2\u202f=\u202f0.981 (or\u202f98.1\u202f%)** tells us that the regression model explains about 98\u202f% of the variability in the response variable \u2013 statement **III** is definitely true.  \n- The coefficient of determination (R\u00b2) is the square of the correlation coefficient; it **does not provide any information about the sign** of the correlation.  \n  Hence we cannot say for certain whether the relationship is positive **(statement\u202fI)** or negative **(statement\u202fII)** \u2013 one of them could be true, but not both, and we cannot assert either one with certainty.  \n- Therefore the only statements that are necessarily true are that the linear relationship is strong (in magnitude) and that about 98\u202f% of the variation is explained, which corresponds to option **C**.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735740.663139,
+            "estimated_cost_usd": 156.40013523800008,
+            "thinking_tokens": 1362
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_134",
+          "input": "Question: The relation between the selling price of a car (in $1,000) and its age (in years) is estimated from a random sample of cars of a specific model. The relation is given by the following formula: Selling price = 15.9 \u2013 0.983 (age) Which of the following can we conclude from this equation?\nA. For every year the car gets older, the selling price goes down by approximately 9.83 percent.\nB. A new car costs on the average $9,830.\nC. For every year the car gets older, the selling price drops by approximately $1,590.\nD. For every year the car gets older, the selling price drops by approximately $983.\nAnswer:",
+          "expected": "For every year the car gets older, the selling price drops by approximately $983.",
+          "prediction": "The regression equation is written in **thousands of dollars**:\n\n\\[\n\\text{Selling price (in } \\$1{,}000) = 15.9 - 0.983\\;(\\text{age in years})\n\\]\n\n* **Intercept** \\(15.9\\) means that a car of age\u202f0\u202fyears (a new car) is predicted to have a price of \\(15.9 \\times 1{,}000 = \\$15{,}900\\).  \n* **Slope** \\(-0.983\\) is the change in the price (in thousands of dollars) for each additional year of age.  \n  Thus, for each year the car ages, the price is expected to drop by \\(0.983 \\times 1{,}000 = \\$983\\).\n\nSo among the choices:\n\n- **A** talks about a percentage change; the slope is an absolute dollar amount, not a percentage.  \n- **B** gives the wrong intercept value (\\$9,830 instead of \\$15,900).  \n- **C** gives the wrong dollar amount (\\$1,590 instead of \\$983).  \n- **D** correctly states the dollar amount per year.\n\n**Answer: D. For every year the car gets older, the selling price drops by approximately $983.**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735747.4227111,
+            "estimated_cost_usd": 201.09995156199875,
+            "thinking_tokens": 151
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_99",
+          "input": "Question: To study the effect of music on piecework output at a clothing manufacturer, two experimental treatments are planned: day-long classical music for one group versus day-long light rock music for another. Which one of the following groups would serve best as a control for this study?\nA. A third group for which no music is played\nB. A third group that randomly hears either classical or light rock music each day\nC. A third group that hears day-long R & B music\nD. A third group that hears classical music every morning and light rock every afternoon\nAnswer:",
+          "expected": "A third group for which no music is played",
+          "prediction": "The most appropriate control is the group that **receives no music at all**.  \nBy comparing the two music\u2011treatment groups to a no\u2011music group, you can isolate the effect of music itself on piecework output.\n\n**Answer: A.**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735752.7470253,
+            "estimated_cost_usd": 243.41839324299872,
+            "thinking_tokens": 354
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_130",
+          "input": "Question: The registrar\u2019s office at a university has noticed that a large number of students fail to report a change of address. The registrar decides to take a random sample of 150 students from the current directory of students and determine the number of students with the correct addresses on record. He then uses this information to construct a 95 percent confidence interval. Which of the following statements must be true?\nA. The true proportion of students at this university with the correct address on record is within the confidence interval constructed.\nB. Ninety-five percent of students at this university have the correct address on record.\nC. The true proportion of students at this university with the correct addresses on record is within the confidence interval 95 percent of the time.\nD. The sample proportion of students at this university with the correct address on record is within the confidence interval.\nAnswer:",
+          "expected": "The sample proportion of students at this university with the correct address on record is within the confidence interval.",
+          "prediction": "C.  The 95\u202f% confidence interval is constructed so that, in the long run, about 95\u202f% of such intervals (obtained from repeated random samples of 150 students) would contain the true proportion of students with the correct address on record.",
+          "scores": {
+            "accuracy": 0.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735763.9068274,
+            "estimated_cost_usd": 238.22070761599753,
+            "thinking_tokens": 891
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_10",
+          "input": "Question: Which of these statements correctly explains bias?\nA. It describes a process that creates estimates that are too high on average or too low on average.\nB. It describes a process that results in a sample that does not represent the population.\nC. It describes a lack of randomization in the sampling process.\nD. It describes a sample that is not representative of the population.\nAnswer:",
+          "expected": "It describes a process that creates estimates that are too high on average or too low on average.",
+          "prediction": "A. It describes a process that creates estimates that are too high on average or too low on average.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735766.9801106,
+            "estimated_cost_usd": 199.532356908996,
+            "thinking_tokens": 215
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_170",
+          "input": "Question: A filling machine puts an average of four ounces of coffee in jars, with a standard deviation of 0.25 ounces. Forty jars filled by this machine are selected at random. What is the probability that the mean amount per jar filled in the sampled jars is less than 3.9 ounces?\nA. 0.0057\nB. 0.0225\nC. 0.025\nD. 0.05\nAnswer:",
+          "expected": "0.0057",
+          "prediction": "The sample mean \\(\\bar{X}\\) of the 40 jars has\n\n\\[\n\\mu_{\\bar X}=4,\\qquad \\sigma_{\\bar X}=\\frac{\\sigma}{\\sqrt{n}}\n            =\\frac{0.25}{\\sqrt{40}}\\approx 0.0395.\n\\]\n\nWe need\n\n\\[\nP(\\bar X<3.9)=P\\!\\left(Z<\\frac{3.9-4}{0.0395}\\right)\n           =P(Z<-2.53).\n\\]\n\nFrom the standard normal table \\(P(Z<-2.53)\\approx 0.0057\\).\n\n\\[\n\\boxed{0.0057}\n\\]\n\n(Answer A.)",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735772.0999775,
+            "estimated_cost_usd": 158.29387475199837,
+            "thinking_tokens": 115
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_9",
+          "input": "Question: To study the effect of alcohol on reaction time, subjects were randomly selected and given three beers to consume. Their reaction time to a simple stimulus was measured before and after drinking the alcohol. Which of the following is a correct statement?\nA. This study was an observational study.\nB. Lack of blocking makes this a poorly designed study.\nC. The placebo effect is irrelevant in this type of study.\nD. This study was an experiment in which the subjects were used as their own controls.\nAnswer:",
+          "expected": "This study was an experiment in which the subjects were used as their own controls.",
+          "prediction": "The correct statement is:\n\n**D. This study was an experiment in which the subjects were used as their own controls.**\n\n**Explanation**\n\n- The researchers *intervened* by giving the participants alcohol, which makes the study an **experiment** rather than an observational study (so A is incorrect).\n- The design is a **within\u2011subject (pre\u2013post) design**, where each participant\u2019s reaction time before drinking is compared to his/her own reaction time after drinking. Thus, each subject serves as his/her own control (D is correct).\n- Blocking is not required in this simple pre\u2011post design, and the absence of blocking does not automatically make the study poorly designed (B is incorrect).\n- A placebo effect is not directly relevant here, because the study lacks a placebo/control group and is focused on the within\u2011subject change due to alcohol (C is incorrect).",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735777.3209767,
+            "estimated_cost_usd": 117.54639341299844,
+            "thinking_tokens": 197
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_12",
+          "input": "Question: The longevity of people living in a certain locality has a standard deviation of 14 years. What is the mean longevity if 30% of the people live longer than 75 years? Assume a normal distribution for life spans.\nA. 75 - 0.30(14)\nB. 75 + 0.30(14)\nC. 75 - 0.4756(14)\nD. 75 - 0.5244(14)\nAnswer:",
+          "expected": "75 - 0.5244(14)",
+          "prediction": "Because 30\u202f% of the population lives longer than 75\u202fyears, the 70\u202f% point of the normal distribution is at 75\u202fyears.\n\nLet \\(X\\sim N(\\mu,\\,\\sigma^2)\\) with \\(\\sigma = 14\\).\n\n\\[\nP(X>75)=0.30 \\;\\;\\Longrightarrow\\;\\; P(X\\le 75)=0.70\n\\]\n\nStandardising,\n\n\\[\nP\\!\\left(Z \\le \\frac{75-\\mu}{14}\\right)=0.70\n\\]\n\nThe 70th percentile of the standard normal distribution is\n\n\\[\nz_{0.70}=0.5244.\n\\]\n\nThus\n\n\\[\n\\frac{75-\\mu}{14}=0.5244 \\quad\\Longrightarrow\\quad\n\\mu = 75 - 0.5244 \\times 14.\n\\]\n\nSo the mean longevity is given by option **D**:\n\n\\[\n\\boxed{75 - 0.5244(14)}.\n\\]",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735783.2616563,
+            "estimated_cost_usd": 93.55314957900191,
+            "thinking_tokens": 103
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_38",
+          "input": "Question: Which of the following is the primary difference between an experiment and an observational study?\nA. Experiments are only conducted on human subjects; observational studies can be conducted on nonhuman subjects.\nB. In an experiment, the researcher manipulates some variable to observe its effect on a response variable; in an observational study, he or she simply observes and records the observations.\nC. Experiments must use randomized treatment and control groups; observational studies also use treatment and control groups, but they do not need to be randomized.\nD. Experiments must be double-blind; observational studies do not need to be.\nAnswer:",
+          "expected": "Experiments are only conducted on human subjects; observational studies can be conducted on nonhuman subjects.",
+          "prediction": "**Answer: B** \u2013 In an experiment the researcher actively manipulates an independent variable to see its effect on a response variable, whereas in an observational study the researcher simply observes and records what occurs without intervening.",
+          "scores": {
+            "accuracy": 0.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735786.2307734,
+            "estimated_cost_usd": 86.53296254100133,
+            "thinking_tokens": 172
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_138",
+          "input": "Question: To survey the opinions of the students at your high school, a researcher plans to select every twenty-fifth student entering the school in the morning. Assuming there are no absences, will this result in a simple random sample of students attending your school?\nA. Yes, because every student has the same chance of being selected.\nB. Yes, but only if there is a single entrance to the school.\nC. Yes, because the 24 out of every 25 students who are not selected will form a control group.\nD. No, because not every sample of the intended size has an equal chance of being selected.\nAnswer:",
+          "expected": "No, because not every sample of the intended size has an equal chance of being selected.",
+          "prediction": "**Answer: D. No, because not every sample of the intended size has an equal chance of being selected.**\n\nA systematic scheme such as \u201cevery 25th student\u201d is not a simple random sample. In a simple random sample each possible subset of the specified size must be equally likely, and each individual must have the same probability of inclusion. Systematic sampling selects one specific pattern from the population, so many different subsets are impossible or unlikely, and the probability of inclusion can depend on the order in which students enter the school. Hence it does not satisfy the definition of a simple random sample.",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735791.0434,
+            "estimated_cost_usd": 80.7362500470008,
+            "thinking_tokens": 238
+          },
+          "error": null
+        },
+        {
+          "sample_id": "high_school_statistics_140",
+          "input": "Question: An automobile service station performs oil changes and tire replacements, as well as other services. Sixty percent of its customers request an oil change, 30 percent request tire replacements, and 10 percent request both. A customer requests an oil change. What is the probability this customer does not request tire replacements?\nA. 0.42\nB. 0.5\nC. 0.7\nD. 0.833\nAnswer:",
+          "expected": "0.833",
+          "prediction": "Let\n\n- \\(O\\) = customer requests an oil change  \n- \\(T\\) = customer requests a tire replacement  \n\nGiven:  \n\\(P(O)=0.60,\\; P(T)=0.30,\\; P(O\\cap T)=0.10\\).\n\nWe need  \n\\[\nP(\\text{not }T \\mid O)=\\frac{P(O\\cap \\text{not }T)}{P(O)}.\n\\]\n\nFirst compute \\(P(O\\cap \\text{not }T)\\):\n\\[\nP(O\\cap \\text{not }T)=P(O)-P(O\\cap T)=0.60-0.10=0.50.\n\\]\n\nNow the conditional probability:\n\\[\nP(\\text{not }T \\mid O)=\\frac{0.50}{0.60}=\\frac{5}{6}\\approx 0.833.\n\\]\n\nThus the probability that a customer who requests an oil change **does not** request a tire replacement is **0.833**.\n\n**Answer: D. 0.833**",
+          "scores": {
+            "accuracy": 1.0
+          },
+          "metadata": {
+            "model_name": "ollama_gpt-oss:20b_think_unspecified",
+            "timestamp": 1754735796.3686404,
+            "estimated_cost_usd": 75.26489888400101,
+            "thinking_tokens": 81
+          },
+          "error": null
+        }
+      ],
+      "scores": {
+        "accuracy": {
+          "mean": 0.94,
+          "count": 50,
+          "min": 0.0,
+          "max": 1.0,
+          "std": 0.23989793748209526
+        }
+      },
+      "errors": []
+    }
+  },
+  "summary": {
+    "total_models": 1,
+    "total_samples": 50,
+    "total_errors": 0,
+    "total_scorers": 1,
+    "best_model": {
+      "accuracy": {
+        "model": "ollama_gpt-oss:20b_think_unspecified",
+        "score": 0.94
+      }
+    },
+    "overall_accuracy": {
+      "mean": 0.94,
+      "count": 1,
+      "min": 0.94,
+      "max": 0.94
+    }
+  }
+}

@@ -42,6 +42,7 @@ class Evaluator(BaseEvaluator):
         config: Optional[dict[str, Any]] = None,
         max_workers: int = 4,
         batch_size: int = 1,
+        force_overwrite: bool = False,
     ):
         """
         Initialize the standard evaluator.
@@ -54,10 +55,12 @@ class Evaluator(BaseEvaluator):
             config: Additional configuration options
             max_workers: Maximum number of worker threads
             batch_size: Batch size for processing samples
+            force_overwrite: If True, overwrite existing files. If False, try to append.
         """
         super().__init__(dataset, models, scorers, output_dir, config)
         self.max_workers = max_workers
         self.batch_size = batch_size
+        self.force_overwrite = force_overwrite
         # TODO: Implement ReportGenerator
         # self.report_generator = ReportGenerator(self.output_dir)
 
@@ -396,10 +399,44 @@ class Evaluator(BaseEvaluator):
         Args:
             results: The results to save
         """
-        # Save JSON results
+        # Save JSON results with merging
         results_file = self.output_dir / "results.json"
-        with open(results_file, "w") as f:
-            json.dump(results, f, indent=2, default=str)
+        if results_file.exists() and not self.force_overwrite:
+            # Load existing results and merge samples
+            with open(results_file) as f:
+                existing_results = json.load(f)
+
+            # Merge samples from all models
+            for model_name, model_results in results["model_results"].items():
+                if model_name in existing_results["model_results"]:
+                    # Append new samples to existing model results
+                    existing_results["model_results"][model_name]["samples"].extend(
+                        model_results.get("samples", [])
+                    )
+                    # Update scores and errors
+                    if "scores" in model_results:
+                        existing_results["model_results"][model_name]["scores"] = (
+                            model_results["scores"]
+                        )
+                    if "errors" in model_results:
+                        existing_results["model_results"][model_name]["errors"].extend(
+                            model_results.get("errors", [])
+                        )
+                else:
+                    # Add new model results
+                    existing_results["model_results"][model_name] = model_results
+
+            # Update metadata with latest values
+            existing_results["metadata"].update(results["metadata"])
+            existing_results["summary"] = results.get("summary", {})
+
+            # Save merged results
+            with open(results_file, "w") as f:
+                json.dump(existing_results, f, indent=2, default=str)
+        else:
+            # First write - save normally
+            with open(results_file, "w") as f:
+                json.dump(results, f, indent=2, default=str)
 
         # Save CSV results for easy analysis
         self._save_csv_results(results)
@@ -432,7 +469,24 @@ class Evaluator(BaseEvaluator):
         if rows:
             df = pd.DataFrame(rows)
             csv_file = self.output_dir / "detailed_results.csv"
-            df.to_csv(csv_file, index=False)
+
+            if csv_file.exists() and not self.force_overwrite:
+                # Check if CSV structures match before appending
+                df_existing = pd.read_csv(csv_file)
+
+                # Validate that ALL columns match exactly
+                if list(df.columns) != list(df_existing.columns):
+                    raise ValueError(
+                        "CSV structures don't match, please try changing the dir name. "
+                        f"Expected columns: {list(df_existing.columns)}, "
+                        f"Got columns: {list(df.columns)}"
+                    )
+
+                # Append to existing CSV
+                df.to_csv(csv_file, mode="a", header=False, index=False)
+            else:
+                # Create new CSV file
+                df.to_csv(csv_file, index=False)
 
     @classmethod
     def from_config(cls, config_path: Union[str, Path]) -> "Evaluator":
