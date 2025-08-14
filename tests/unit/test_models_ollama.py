@@ -325,8 +325,6 @@ class TestOllamaModel:
             assert call_args["options"]["temperature"] == 0.7
             assert call_args["options"]["stop"] == ["<END>"]
 
-
-
     def test_generate_non_streaming(self):
         """Test non-streaming generation."""
         with patch("novaeval.models.ollama.Client") as mock_client:
@@ -415,8 +413,6 @@ class TestOllamaModel:
 
             assert response == "generated response"
             assert thinking == "test thought"
-
-
 
     def test_generate_with_thought_non_streaming(self):
         """Test non-streaming with thought."""
@@ -642,8 +638,6 @@ class TestOllamaModel:
             assert len(model.errors) == 1
             assert "Failed to generate text via Ollama chat API" in model.errors[0]
 
-
-
     def test_generate_with_thought_error(self):
         """Test thought generation errors."""
         with patch("novaeval.models.ollama.Client") as mock_client:
@@ -833,8 +827,6 @@ class TestOllamaModel:
                 host="http://test-host:8080", headers={"Custom": "Header"}
             )
 
-
-
     def test_non_streaming_response_handling(self):
         """Test non-streaming response processing."""
         with patch("novaeval.models.ollama.Client") as mock_client:
@@ -924,16 +916,6 @@ class TestOllamaModel:
         thinking = OllamaModel._extract_thinking_from_response(mock_response)
         assert thinking == ""
 
-
-
-
-
-
-
-
-
-
-
     def test_estimate_cost_negative_duration(self):
         """Test cost estimation with negative duration."""
         model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
@@ -994,8 +976,6 @@ class TestOllamaModel:
             response = model.generate("test prompt")
 
             assert response == ""  # Should handle malformed response gracefully
-
-
 
     def test_generate_with_thought_malformed_response(self):
         """Test thought generation with malformed response."""
@@ -1211,10 +1191,6 @@ class TestOllamaModel:
         mock_response = MessageGetExceptionObject()
         thinking = OllamaModel._extract_thinking_from_response(mock_response)
         assert thinking == ""
-
-
-
-
 
     def test_extract_thinking_from_response_non_string_values(self):
         """Test thinking extraction with non-string values."""
