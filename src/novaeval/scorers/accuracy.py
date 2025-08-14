@@ -273,6 +273,187 @@ class AccuracyScorer(BaseScorer):
         return answer.strip().lower()
 
 
+class MultiPatternAccuracyScorer(BaseScorer):
+    """
+    Multi-pattern accuracy scorer that tries multiple regex patterns.
+
+    Attempts to extract answers using various patterns and returns 1.0
+    if any extracted answer matches the expected output.
+    """
+
+    def __init__(
+        self,
+        patterns: Optional[list[str]] = None,
+        choices: Optional[list[str]] = None,
+        case_sensitive: bool = False,
+        **kwargs: Any,
+    ):
+        """
+        Initialize the multi-pattern accuracy scorer.
+
+        Args:
+            patterns: List of regex patterns to try for answer extraction
+            choices: List of valid choices for multiple choice questions
+            case_sensitive: Whether to perform case-sensitive comparison
+            **kwargs: Additional parameters
+        """
+        super().__init__(
+            name="multi_pattern_accuracy",
+            description="Multi-pattern answer extraction and matching scorer",
+            patterns=patterns,
+            choices=choices,
+            case_sensitive=case_sensitive,
+            **kwargs,
+        )
+
+        # Default patterns for common answer formats
+        self.patterns = patterns or [
+            r"(?:Answer|answer):\s*([A-Za-z0-9]+)",
+            r"(?:the\s+(?:correct\s+)?answer\s+is\s+)([A-D])",
+            r"\*\*([A-D])\.\s*[^*]*\*\*",
+            r"^([A-D])\.?\s*$",
+            r"^([A-D])[\.\:]",
+            r"\b([A-D])\b",
+            r"([A-D])\s*$",
+        ]
+
+        self.choices = choices
+        self.case_sensitive = case_sensitive
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> float:
+        """
+        Score prediction using multiple regex patterns.
+
+        Args:
+            prediction: Model's prediction
+            ground_truth: Expected output
+            context: Additional context (may contain choices)
+
+        Returns:
+            1.0 if any extracted answer matches, 0.0 otherwise
+        """
+        if not self.validate_inputs(prediction, ground_truth, context):
+            return 0.0
+
+        # Extract all possible answers using different patterns
+        extracted_answers = self._extract_all_answers(prediction, context)
+
+        # Normalize ground truth
+        normalized_truth = self._normalize_answer(ground_truth)
+
+        # Check if any extracted answer matches
+        for answer in extracted_answers:
+            normalized_answer = self._normalize_answer(answer)
+            if normalized_answer == normalized_truth:
+                return 1.0
+
+            # For MMLU-style questions, also check if letter maps to choice text
+            if context and "choices" in context and "answer_index" in context:
+                converted_answer = self._convert_letter_to_choice(answer, context)
+                if converted_answer:
+                    normalized_converted = self._normalize_answer(converted_answer)
+                    if normalized_converted == normalized_truth:
+                        return 1.0
+
+        return 0.0
+
+    def _extract_all_answers(
+        self, prediction: str, context: Optional[dict[str, Any]] = None
+    ) -> list[str]:
+        """
+        Extract all possible answers using multiple regex patterns.
+
+        Args:
+            prediction: Model's prediction
+            context: Additional context
+
+        Returns:
+            List of all extracted answers
+        """
+        answers = []
+
+        for pattern in self.patterns:
+            matches = re.finditer(pattern, prediction, re.IGNORECASE | re.MULTILINE)
+            for match in matches:
+                # Extract the captured group, fallback to full match if no groups
+                answer = match.group(1) if match.groups() else match.group(0)
+
+                if answer and answer.strip():
+                    answers.append(answer.strip())
+
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_answers = []
+        for answer in answers:
+            if answer not in seen:
+                seen.add(answer)
+                unique_answers.append(answer)
+
+        return unique_answers
+
+    def _convert_letter_to_choice(
+        self, extracted_answer: str, context: Optional[dict[str, Any]] = None
+    ) -> Optional[str]:
+        """
+        Convert letter answer (A, B, C, D) to full choice text.
+
+        Args:
+            extracted_answer: Extracted letter answer
+            context: Optional context containing choices. If None or lacks "choices",
+                    falls back to self.choices
+
+        Returns:
+            Full choice text or None if conversion fails
+        """
+        if not extracted_answer:
+            return None
+
+        # Get choices from context or fall back to self.choices
+        choices = None
+        if context and "choices" in context:
+            choices = context["choices"]
+        elif self.choices:
+            choices = self.choices
+
+        if not choices:
+            return None
+
+        # Validate that choices is a sequence
+        if not hasattr(choices, "__len__") or not hasattr(choices, "__getitem__"):
+            return None
+
+        # Map letters to indices
+        letter_to_index = {"A": 0, "B": 1, "C": 2, "D": 3}
+        letter = extracted_answer.strip().upper()
+
+        if letter in letter_to_index:
+            index = letter_to_index[letter]
+            if 0 <= index < len(choices):
+                return choices[index]
+
+        return None
+
+    def _normalize_answer(self, answer: str) -> str:
+        """
+        Normalize answer for comparison.
+
+        Args:
+            answer: Answer to normalize
+
+        Returns:
+            Normalized answer
+        """
+        normalized = answer.strip()
+        if not self.case_sensitive:
+            normalized = normalized.lower()
+        return normalized
+
+
 class F1Scorer(BaseScorer):
     """
     F1 score for token-level evaluation.
