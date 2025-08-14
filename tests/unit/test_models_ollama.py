@@ -325,30 +325,7 @@ class TestOllamaModel:
             assert call_args["options"]["temperature"] == 0.7
             assert call_args["options"]["stop"] == ["<END>"]
 
-    def test_generate_streaming(self):
-        """Test streaming generation."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            mock_chunks = [
-                Mock(
-                    message=Mock(content="chunk1"),
-                    total_duration=1000000000,
-                    prompt_eval_count=10,
-                    eval_count=20,
-                ),
-                Mock(
-                    message=Mock(content="chunk2"),
-                    total_duration=2000000000,
-                    prompt_eval_count=10,
-                    eval_count=30,
-                ),
-            ]
-            mock_client.return_value.chat.return_value = iter(mock_chunks)
 
-            model = OllamaModel(pull_on_init=False)
-            response = model.generate("test prompt", stream=True)
-
-            assert response == "chunk1chunk2"
-            assert model.total_requests == 1
 
     def test_generate_non_streaming(self):
         """Test non-streaming generation."""
@@ -361,7 +338,7 @@ class TestOllamaModel:
             mock_client.return_value.chat.return_value = mock_response
 
             model = OllamaModel(pull_on_init=False)
-            response = model.generate("test prompt", stream=False)
+            response = model.generate("test prompt")
 
             assert response == "generated response"
 
@@ -439,32 +416,7 @@ class TestOllamaModel:
             assert response == "generated response"
             assert thinking == "test thought"
 
-    def test_generate_with_thought_streaming(self):
-        """Test streaming with thought."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            mock_chunks = [
-                Mock(
-                    message=Mock(content="chunk1"),
-                    thinking="thought1",
-                    total_duration=1000000000,
-                    prompt_eval_count=10,
-                    eval_count=20,
-                ),
-                Mock(
-                    message=Mock(content="chunk2"),
-                    thinking="thought2",
-                    total_duration=2000000000,
-                    prompt_eval_count=10,
-                    eval_count=30,
-                ),
-            ]
-            mock_client.return_value.chat.return_value = iter(mock_chunks)
 
-            model = OllamaModel(pull_on_init=False)
-            response, thinking = model.generate_with_thought("test prompt", stream=True)
-
-            assert response == "chunk1chunk2"
-            assert thinking == "thought2"  # Should keep latest
 
     def test_generate_with_thought_non_streaming(self):
         """Test non-streaming with thought."""
@@ -690,15 +642,7 @@ class TestOllamaModel:
             assert len(model.errors) == 1
             assert "Failed to generate text via Ollama chat API" in model.errors[0]
 
-    def test_generate_streaming_error(self):
-        """Test streaming errors."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            mock_client.return_value.chat.side_effect = Exception("Streaming Error")
 
-            model = OllamaModel(pull_on_init=False)
-
-            with pytest.raises(Exception, match="Streaming Error"):
-                model.generate("test prompt", stream=True)
 
     def test_generate_with_thought_error(self):
         """Test thought generation errors."""
@@ -889,35 +833,7 @@ class TestOllamaModel:
                 host="http://test-host:8080", headers={"Custom": "Header"}
             )
 
-    def test_streaming_response_handling(self):
-        """Test streaming response processing."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            mock_chunks = [
-                Mock(
-                    message=Mock(content="part1"),
-                    total_duration=1000000000,
-                    prompt_eval_count=10,
-                    eval_count=20,
-                ),
-                Mock(
-                    message=Mock(content="part2"),
-                    total_duration=2000000000,
-                    prompt_eval_count=10,
-                    eval_count=30,
-                ),
-                Mock(
-                    message=Mock(content="part3"),
-                    total_duration=3000000000,
-                    prompt_eval_count=10,
-                    eval_count=40,
-                ),
-            ]
-            mock_client.return_value.chat.return_value = iter(mock_chunks)
 
-            model = OllamaModel(pull_on_init=False)
-            response = model.generate("test prompt", stream=True)
-
-            assert response == "part1part2part3"
 
     def test_non_streaming_response_handling(self):
         """Test non-streaming response processing."""
@@ -930,7 +846,7 @@ class TestOllamaModel:
             mock_client.return_value.chat.return_value = mock_response
 
             model = OllamaModel(pull_on_init=False)
-            response = model.generate("test prompt", stream=False)
+            response = model.generate("test prompt")
 
             assert response == "complete response"
 
@@ -1008,90 +924,15 @@ class TestOllamaModel:
         thinking = OllamaModel._extract_thinking_from_response(mock_response)
         assert thinking == ""
 
-    def test_generate_streaming_empty_chunks(self):
-        """Test streaming generation with empty content chunks."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            mock_chunks = [
-                Mock(
-                    message=Mock(content=""),
-                    total_duration=1000000000,
-                    prompt_eval_count=10,
-                    eval_count=20,
-                ),
-                Mock(
-                    message=Mock(content="chunk2"),
-                    total_duration=2000000000,
-                    prompt_eval_count=10,
-                    eval_count=30,
-                ),
-            ]
-            mock_client.return_value.chat.return_value = iter(mock_chunks)
 
-            model = OllamaModel(pull_on_init=False)
-            response = model.generate("test prompt", stream=True)
 
-            assert response == "chunk2"  # Empty chunks should be filtered out
 
-    def test_generate_streaming_missing_metrics(self):
-        """Test streaming generation with missing metrics."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            mock_chunks = [
-                Mock(message=Mock(content="chunk1")),  # No metrics
-                Mock(message=Mock(content="chunk2")),  # No metrics
-            ]
-            mock_client.return_value.chat.return_value = iter(mock_chunks)
 
-            model = OllamaModel(pull_on_init=False)
-            response = model.generate("test prompt", stream=True)
 
-            assert response == "chunk1chunk2"
-            # Should fall back to count_tokens method
 
-    def test_generate_with_thought_streaming_missing_metrics(self):
-        """Test thought generation streaming with missing metrics."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            mock_chunks = [
-                Mock(message=Mock(content="chunk1")),  # No metrics
-                Mock(message=Mock(content="chunk2")),  # No metrics
-            ]
-            mock_client.return_value.chat.return_value = iter(mock_chunks)
 
-            model = OllamaModel(pull_on_init=False)
-            response, thinking = model.generate_with_thought("test prompt", stream=True)
 
-            assert response == "chunk1chunk2"
-            assert thinking == ""
 
-    def test_generate_with_thought_streaming_thinking_changes(self):
-        """Test thought generation streaming when thinking changes."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            mock_chunks = [
-                Mock(message=Mock(content="chunk1"), thinking="thought1"),
-                Mock(message=Mock(content="chunk2"), thinking="thought2"),
-                Mock(message=Mock(content="chunk3"), thinking="thought3"),
-            ]
-            mock_client.return_value.chat.return_value = iter(mock_chunks)
-
-            model = OllamaModel(pull_on_init=False)
-            response, thinking = model.generate_with_thought("test prompt", stream=True)
-
-            assert response == "chunk1chunk2chunk3"
-            assert thinking == "thought3"  # Should keep latest
-
-    def test_generate_with_thought_streaming_no_thinking(self):
-        """Test thought generation streaming with no thinking field."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            mock_chunks = [
-                Mock(message=Mock(content="chunk1")),  # No thinking
-                Mock(message=Mock(content="chunk2")),  # No thinking
-            ]
-            mock_client.return_value.chat.return_value = iter(mock_chunks)
-
-            model = OllamaModel(pull_on_init=False)
-            response, thinking = model.generate_with_thought("test prompt", stream=True)
-
-            assert response == "chunk1chunk2"
-            assert thinking == ""
 
     def test_estimate_cost_negative_duration(self):
         """Test cost estimation with negative duration."""
@@ -1154,20 +995,7 @@ class TestOllamaModel:
 
             assert response == ""  # Should handle malformed response gracefully
 
-    def test_generate_streaming_with_malformed_chunks(self):
-        """Test streaming generation with malformed chunks."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            mock_chunks = [
-                {"other_field": "value"},  # No message field
-                {"message": {"other_field": "value"}},  # No content field
-                {"message": {"content": "valid"}},  # Valid chunk
-            ]
-            mock_client.return_value.chat.return_value = iter(mock_chunks)
 
-            model = OllamaModel(pull_on_init=False)
-            response = model.generate("test prompt", stream=True)
-
-            assert response == "valid"  # Only valid chunks should be included
 
     def test_generate_with_thought_malformed_response(self):
         """Test thought generation with malformed response."""
@@ -1384,53 +1212,9 @@ class TestOllamaModel:
         thinking = OllamaModel._extract_thinking_from_response(mock_response)
         assert thinking == ""
 
-    def test_generate_streaming_exception_in_loop(self):
-        """Test streaming generation with exceptions during chunk processing."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            # Create a mock chunk that raises an exception during content extraction
-            mock_chunk = Mock()
-            mock_chunk.message.content = "chunk1"
-            mock_chunk.total_duration = 1000000000
-            mock_chunk.prompt_eval_count = 10
-            mock_chunk.eval_count = 20
 
-            # Mock the streaming response to raise an exception during iteration
-            mock_client.return_value.chat.return_value = iter([mock_chunk])
 
-            # Mock the _extract_content_from_response method to raise an exception
-            with patch.object(
-                OllamaModel,
-                "_extract_content_from_response",
-                side_effect=Exception("Content extraction error"),
-            ):
-                model = OllamaModel(pull_on_init=False)
 
-                with pytest.raises(Exception, match="Content extraction error"):
-                    model.generate("test prompt", stream=True)
-
-    def test_generate_with_thought_streaming_exception_in_loop(self):
-        """Test thought generation streaming with exceptions during chunk processing."""
-        with patch("novaeval.models.ollama.Client") as mock_client:
-            # Create a mock chunk that raises an exception during content extraction
-            mock_chunk = Mock()
-            mock_chunk.message.content = "chunk1"
-            mock_chunk.total_duration = 1000000000
-            mock_chunk.prompt_eval_count = 10
-            mock_chunk.eval_count = 20
-
-            # Mock the streaming response to raise an exception during iteration
-            mock_client.return_value.chat.return_value = iter([mock_chunk])
-
-            # Mock the _extract_content_from_response method to raise an exception
-            with patch.object(
-                OllamaModel,
-                "_extract_content_from_response",
-                side_effect=Exception("Content extraction error"),
-            ):
-                model = OllamaModel(pull_on_init=False)
-
-                with pytest.raises(Exception, match="Content extraction error"):
-                    model.generate_with_thought("test prompt", stream=True)
 
     def test_extract_thinking_from_response_non_string_values(self):
         """Test thinking extraction with non-string values."""
