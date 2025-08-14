@@ -4,8 +4,12 @@ Base model class for NovaEval.
 This module defines the abstract base class for all model implementations.
 """
 
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Union
+
+# Create module-level logger
+logger = logging.getLogger(__name__)
 
 
 class BaseModel(ABC):
@@ -189,7 +193,7 @@ class BaseModel(ABC):
             error: The exception that occurred
             context: Additional context about the error
         """
-        print(f"Error: {error!s}")
+        logger.error("Error: %s", error)
         error_msg = f"{context}: {error!s}" if context else str(error)
         self.errors.append(error_msg)
 

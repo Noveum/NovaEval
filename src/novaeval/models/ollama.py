@@ -243,7 +243,6 @@ class OllamaModel(BaseModel):
             messages = self._build_messages_from_prompt(prompt)
 
         # Extract top-level chat params
-        stream: bool = bool(kwargs.pop("stream", False))
         format_param = kwargs.pop("format", None)
         keep_alive = kwargs.pop("keep_alive", None)
 
@@ -267,7 +266,7 @@ class OllamaModel(BaseModel):
             "model": self.model_name,
             "messages": messages,
             "options": options if options else None,
-            "stream": stream,
+            "stream": False,
         }
         if format_param is not None:
             params["format"] = format_param
@@ -281,54 +280,6 @@ class OllamaModel(BaseModel):
 
         try:
             # Execute request
-            if stream:
-                start_time = time.time()
-                content_parts: list[str] = []
-                last_chunk: Any = None
-                for chunk in self.client.chat(**params):
-                    last_chunk = chunk
-                    piece = self._extract_content_from_response(chunk)
-                    if piece:
-                        content_parts.append(piece)
-                generated_text = "".join(content_parts)
-
-                # Metrics
-                total_duration_ns = self._extract_metric(last_chunk, "total_duration")
-                prompt_eval_count = self._extract_metric(
-                    last_chunk, "prompt_eval_count"
-                )
-                eval_count = self._extract_metric(last_chunk, "eval_count")
-
-                # Fallback to wall-clock if missing
-                if total_duration_ns is not None and total_duration_ns >= 0:
-                    elapsed_seconds = total_duration_ns / 1e9
-                else:
-                    elapsed_seconds = max(0.0, time.time() - start_time)
-
-                # Token usage fallback if metrics unavailable
-                if prompt_eval_count is None:
-                    prompt_for_tracking = json.dumps(messages)
-                    prompt_eval_count = self.count_tokens(prompt_for_tracking)
-                if eval_count is None:
-                    eval_count = self.count_tokens(generated_text)
-
-                tokens_used = int(prompt_eval_count) + int(eval_count)
-                cost = self.estimate_cost(
-                    json.dumps(messages),
-                    generated_text,
-                    elapsed_seconds=elapsed_seconds,
-                    total_duration_ns=total_duration_ns,
-                )
-
-                self._track_request(
-                    prompt=json.dumps(messages),
-                    response=generated_text,
-                    tokens_used=tokens_used,
-                    cost=cost,
-                )
-                return generated_text
-
-            # Non-streaming
             start_time = time.time()
             response = self.client.chat(**params)
             generated_text = self._extract_content_from_response(response)
@@ -388,7 +339,6 @@ class OllamaModel(BaseModel):
         if messages is None:
             messages = self._build_messages_from_prompt(prompt)
 
-        stream: bool = bool(kwargs.pop("stream", False))
         format_param = kwargs.pop("format", None)
         keep_alive = kwargs.pop("keep_alive", None)
 
@@ -410,7 +360,7 @@ class OllamaModel(BaseModel):
             "model": self.model_name,
             "messages": messages,
             "options": options if options else None,
-            "stream": stream,
+            "stream": False,
         }
         if format_param is not None:
             params["format"] = format_param
@@ -422,55 +372,6 @@ class OllamaModel(BaseModel):
         params = {k: v for k, v in params.items() if v is not None}
 
         try:
-            if stream:
-                start_time = time.time()
-                content_parts: list[str] = []
-                last_chunk: Any = None
-                thinking_text: str = ""
-                for chunk in self.client.chat(**params):
-                    last_chunk = chunk
-                    piece = self._extract_content_from_response(chunk)
-                    if piece:
-                        content_parts.append(piece)
-                    maybe_thought = self._extract_thinking_from_response(chunk)
-                    if maybe_thought:
-                        thinking_text = maybe_thought  # keep latest if it changes
-                generated_text = "".join(content_parts)
-
-                total_duration_ns = self._extract_metric(last_chunk, "total_duration")
-                prompt_eval_count = self._extract_metric(
-                    last_chunk, "prompt_eval_count"
-                )
-                eval_count = self._extract_metric(last_chunk, "eval_count")
-
-                if total_duration_ns is not None and total_duration_ns >= 0:
-                    elapsed_seconds = total_duration_ns / 1e9
-                else:
-                    elapsed_seconds = max(0.0, time.time() - start_time)
-
-                if prompt_eval_count is None:
-                    prompt_for_tracking = json.dumps(messages)
-                    prompt_eval_count = self.count_tokens(prompt_for_tracking)
-                if eval_count is None:
-                    eval_count = self.count_tokens(generated_text)
-
-                tokens_used = int(prompt_eval_count) + int(eval_count)
-                cost = self.estimate_cost(
-                    json.dumps(messages),
-                    generated_text,
-                    elapsed_seconds=elapsed_seconds,
-                    total_duration_ns=total_duration_ns,
-                )
-
-                self._track_request(
-                    prompt=json.dumps(messages),
-                    response=generated_text,
-                    tokens_used=tokens_used,
-                    cost=cost,
-                )
-                return generated_text, thinking_text
-
-            # Non-streaming
             start_time = time.time()
             response = self.client.chat(**params)
             generated_text = self._extract_content_from_response(response)

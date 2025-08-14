@@ -2,12 +2,16 @@
 Unit tests for accuracy scorers.
 """
 
+import pytest
+
 from novaeval.scorers.accuracy import (
     AccuracyScorer,
     ExactMatchScorer,
     F1Scorer,
     MultiPatternAccuracyScorer,
 )
+
+pytestmark = pytest.mark.unit
 
 
 class TestExactMatchScorer:

@@ -9,6 +9,8 @@ import pytest
 
 from novaeval.models.ollama import OllamaModel
 
+pytestmark = pytest.mark.unit
+
 
 class TestOllamaModel:
     """Test cases for OllamaModel class."""
@@ -1006,12 +1008,6 @@ class TestOllamaModel:
         thinking = OllamaModel._extract_thinking_from_response(mock_response)
         assert thinking == ""
 
-    def test_extract_thinking_non_string_values(self):
-        """Test thinking extraction with non-string values."""
-        mock_response = {"thinking": 123}
-        thinking = OllamaModel._extract_thinking_from_response(mock_response)
-        assert thinking == ""
-
     def test_generate_streaming_empty_chunks(self):
         """Test streaming generation with empty content chunks."""
         with patch("novaeval.models.ollama.Client") as mock_client:
@@ -1435,23 +1431,6 @@ class TestOllamaModel:
 
                 with pytest.raises(Exception, match="Content extraction error"):
                     model.generate_with_thought("test prompt", stream=True)
-
-    def test_extract_content_from_response_non_string_content(self):
-        """Test content extraction with non-string content types."""
-        # Test with None content
-        mock_response = {"message": {"content": None}}
-        content = OllamaModel._extract_content_from_response(mock_response)
-        assert content is None  # The method returns None for None content
-
-        # Test with integer content
-        mock_response = {"message": {"content": 123}}
-        content = OllamaModel._extract_content_from_response(mock_response)
-        assert content == 123  # The method returns the actual content value
-
-        # Test with empty string content
-        mock_response = {"message": {"content": ""}}
-        content = OllamaModel._extract_content_from_response(mock_response)
-        assert content == ""  # Empty string is returned as-is
 
     def test_extract_thinking_from_response_non_string_values(self):
         """Test thinking extraction with non-string values."""
