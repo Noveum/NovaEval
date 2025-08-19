@@ -7,9 +7,25 @@ This module defines the abstract base class for all model implementations.
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Union
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Create module-level logger
 logger = logging.getLogger(__name__)
+
+try:
+    from noveum_trace import trace_llm
+
+    NOVEUM_TRACE_AVAILABLE = True
+except ImportError:
+    NOVEUM_TRACE_AVAILABLE = False
+
+    # Create a no-op decorator if noveum_trace is not available
+    def trace_llm(func):
+        return func
 
 
 class BaseModel(ABC):
@@ -49,7 +65,27 @@ class BaseModel(ABC):
         self.total_cost = 0.0
         self.errors: list[str] = []
 
+        if os.getenv("NOVEUM_API_KEY"):
+            # if ENABLE_TRACING is set to true or unset, we trace, we stop tracing only if set to False
+            # for starting tracing, we do this - get the variables from the env
+            enable_tracing = os.getenv("ENABLE_TRACING", "true").lower()
+            if enable_tracing != "false":
+                try:
+                    import noveum_trace
+
+                    noveum_trace.init(
+                        api_key=os.getenv("NOVEUM_API_KEY"),
+                        project=os.getenv("NOVEUM_PROJECT", "example-project"),
+                        environment=os.getenv("NOVEUM_ENVIRONMENT", "development"),
+                    )
+                    logger.info("Noveum tracing initialized successfully")
+                except ImportError:
+                    logger.warning("noveum_trace not available, tracing disabled")
+                except Exception as e:
+                    logger.error(f"Failed to initialize Noveum tracing: {e}")
+
     @abstractmethod
+    @trace_llm
     def generate(
         self,
         prompt: str,

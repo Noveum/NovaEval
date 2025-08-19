@@ -13,6 +13,7 @@ import re
 from typing import Any, Optional, Union
 
 from openai import AzureOpenAI
+from noveum_trace import trace_llm
 
 from novaeval.models.base import BaseModel
 
@@ -155,6 +156,7 @@ class AzureOpenAIModel(BaseModel):
         except Exception as e:
             raise ValueError(f"Failed to initialize Azure OpenAI client: {e!s}")
 
+    @trace_llm
     def generate(
         self,
         prompt: Optional[str] = None,

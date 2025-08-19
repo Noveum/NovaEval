@@ -9,6 +9,7 @@ import time
 from typing import Any, Optional, Union
 
 from openai import OpenAI
+from noveum_trace import trace_llm
 
 try:
     import tiktoken
@@ -81,6 +82,7 @@ class OpenAIModel(BaseModel):
             timeout=timeout,
         )
 
+    @trace_llm
     def generate(
         self,
         prompt: str,

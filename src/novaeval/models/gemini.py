@@ -16,6 +16,7 @@ from typing import Any, Optional, Union
 
 from google import genai
 from google.genai import types
+from noveum_trace import trace_llm
 
 from novaeval.models.base import BaseModel
 
@@ -163,6 +164,7 @@ class GeminiModel(BaseModel):
         self.max_retries = max_retries
         self.timeout = timeout
 
+    @trace_llm
     def generate(
         self,
         prompt: str,

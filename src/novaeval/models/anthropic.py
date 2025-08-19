@@ -9,6 +9,7 @@ import time
 from typing import Any, Optional, Union
 
 import anthropic
+from noveum_trace import trace_llm
 
 from novaeval.models.base import BaseModel
 
@@ -70,6 +71,7 @@ class AnthropicModel(BaseModel):
             timeout=timeout,
         )
 
+    @trace_llm
     def generate(
         self,
         prompt: str,

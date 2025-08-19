@@ -12,6 +12,9 @@ import os
 import time
 from typing import Any
 
+import requests
+from noveum_trace import trace_llm
+
 try:
     from ollama import Client  # type: ignore
 except ImportError:  # pragma: no cover - import failure surfaced at runtime
@@ -226,6 +229,7 @@ class OllamaModel(BaseModel):
         return ""
 
     # -------------------------- Core API ---------------------------
+    @trace_llm
     def generate(
         self,
         prompt: str | None = None,
