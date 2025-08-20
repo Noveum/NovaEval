@@ -53,6 +53,7 @@ dependencies = [
     "requests>=2.31.0",
     "google-genai>=0.1.0",
     "ijson>=3.4.0",
+    "noveum-trace>=0.3.5",
 ]
 
 [project.optional-dependencies]
@@ -112,6 +113,7 @@ all = [
     "isort>=5.12.0",
     "ruff>=0.1.0",
     "mypy>=1.6.0",
+    "typing_extensions>=4.7.0",
     "pre-commit>=3.5.0",
     "bandit>=1.7.5",
     "safety>=2.3.0",
