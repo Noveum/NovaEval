@@ -12,7 +12,6 @@ import os
 import time
 from typing import Any
 
-import requests
 from noveum_trace import trace_llm
 
 try:

@@ -8,7 +8,6 @@ to perform inference over multiple queries.
 
 import os
 import sys
-from typing import List
 
 # Add the src directory to the path so we can import novaeval
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))

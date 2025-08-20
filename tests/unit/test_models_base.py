@@ -3,8 +3,7 @@ Unit tests for base model functionality.
 """
 
 import os
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from novaeval.models.base import BaseModel
 
@@ -239,7 +238,7 @@ class TestBaseModelTracing:
         mock_import.return_value = mock_noveum_trace
 
         # Create a model instance which should trigger tracing initialization
-        model = ConcreteModel()
+        _model = ConcreteModel()
 
         # Verify that noveum_trace.init was called with correct parameters
         mock_noveum_trace.init.assert_called_once_with(
@@ -256,7 +255,7 @@ class TestBaseModelTracing:
         mock_noveum_trace.init.return_value = None
         mock_import.return_value = mock_noveum_trace
 
-        model = ConcreteModel()
+        _model = ConcreteModel()
 
         # Verify that noveum_trace.init was called
         mock_noveum_trace.init.assert_called_once()
@@ -270,7 +269,7 @@ class TestBaseModelTracing:
         mock_noveum_trace = MagicMock()
         mock_import.return_value = mock_noveum_trace
 
-        model = ConcreteModel()
+        _model = ConcreteModel()
 
         # Verify that noveum_trace.init was NOT called
         mock_noveum_trace.init.assert_not_called()
@@ -289,7 +288,7 @@ class TestBaseModelTracing:
         mock_noveum_trace.init.return_value = None
         mock_import.return_value = mock_noveum_trace
 
-        model = ConcreteModel()
+        _model = ConcreteModel()
 
         # Verify that noveum_trace.init was called (default behavior)
         mock_noveum_trace.init.assert_called_once()
@@ -308,7 +307,7 @@ class TestBaseModelTracing:
         mock_noveum_trace.init.return_value = None
         mock_import.return_value = mock_noveum_trace
 
-        model = ConcreteModel()
+        _model = ConcreteModel()
 
         # Verify that noveum_trace.init was called
         mock_noveum_trace.init.assert_called_once()
@@ -326,7 +325,7 @@ class TestBaseModelTracing:
         mock_noveum_trace = MagicMock()
         mock_import.return_value = mock_noveum_trace
 
-        model = ConcreteModel()
+        _model = ConcreteModel()
 
         # Verify that noveum_trace.init was NOT called
         mock_noveum_trace.init.assert_not_called()
@@ -339,7 +338,7 @@ class TestBaseModelTracing:
         mock_noveum_trace.init.return_value = None
         mock_import.return_value = mock_noveum_trace
 
-        model = ConcreteModel()
+        _model = ConcreteModel()
 
         # Verify that noveum_trace.init was called with the actual values used
         # We need to check what was actually called rather than assuming defaults
@@ -357,7 +356,7 @@ class TestBaseModelTracing:
         mock_import.side_effect = ImportError("noveum_trace not available")
 
         # Should not raise an exception
-        model = ConcreteModel()
+        _model = ConcreteModel()
 
         # Verify that warning was logged
         mock_logger.warning.assert_called_with(
@@ -374,7 +373,7 @@ class TestBaseModelTracing:
         mock_import.return_value = mock_noveum_trace
 
         # Should not raise an exception
-        model = ConcreteModel()
+        _model = ConcreteModel()
 
         # Verify that error was logged
         mock_logger.error.assert_called_with(
@@ -390,7 +389,7 @@ class TestBaseModelTracing:
         mock_noveum_trace.init.return_value = None
         mock_import.return_value = mock_noveum_trace
 
-        model = ConcreteModel()
+        _model = ConcreteModel()
 
         # Verify that success was logged
         mock_logger.info.assert_called_with("Noveum tracing initialized successfully")
@@ -402,7 +401,7 @@ class TestBaseModelTracing:
             del os.environ["NOVEUM_API_KEY"]
 
         # Should not raise any exceptions
-        model = ConcreteModel()
+        _model = ConcreteModel()
 
         # No tracing should be attempted
 

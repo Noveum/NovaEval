@@ -12,8 +12,8 @@ import os
 import re
 from typing import Any, Optional, Union
 
-from openai import AzureOpenAI
 from noveum_trace import trace_llm
+from openai import AzureOpenAI
 
 from novaeval.models.base import BaseModel
 

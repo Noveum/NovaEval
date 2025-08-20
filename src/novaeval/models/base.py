@@ -5,9 +5,10 @@ This module defines the abstract base class for all model implementations.
 """
 
 import logging
-from abc import ABC, abstractmethod
-from typing import Any, Optional, Union
 import os
+from abc import ABC, abstractmethod
+from typing import Any, Callable, Optional, Union
+
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -16,16 +17,26 @@ load_dotenv()
 # Create module-level logger
 logger = logging.getLogger(__name__)
 
+NOVEUM_TRACE_AVAILABLE = False
+
+
+def _trace_llm_noop(func: Optional[Callable] = None) -> Any:
+    # runtime no-op that behaves like the real decorator factory
+    if func is None:
+
+        def deco(f: Callable) -> Callable:
+            return f
+
+        return deco
+    return func
+
+
 try:
-    from noveum_trace import trace_llm
+    from noveum_trace import trace_llm  # types come from stub
 
     NOVEUM_TRACE_AVAILABLE = True
 except ImportError:
-    NOVEUM_TRACE_AVAILABLE = False
-
-    # Create a no-op decorator if noveum_trace is not available
-    def trace_llm(func):
-        return func
+    trace_llm = _trace_llm_noop  # type: ignore[assignment]
 
 
 class BaseModel(ABC):

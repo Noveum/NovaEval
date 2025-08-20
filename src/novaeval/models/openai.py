@@ -8,8 +8,8 @@ import os
 import time
 from typing import Any, Optional, Union
 
-from openai import OpenAI
 from noveum_trace import trace_llm
+from openai import OpenAI
 
 try:
     import tiktoken
