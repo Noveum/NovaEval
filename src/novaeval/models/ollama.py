@@ -12,13 +12,11 @@ import os
 import time
 from typing import Any
 
-from noveum_trace import trace_llm
-
 try:
     from ollama import Client  # type: ignore
 except ImportError:  # pragma: no cover - import failure surfaced at runtime
     Client = None  # type: ignore
-from novaeval.models.base import BaseModel
+from novaeval.models.base import BaseModel, trace_llm
 
 
 class OllamaModel(BaseModel):

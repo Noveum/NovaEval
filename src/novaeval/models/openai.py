@@ -8,7 +8,6 @@ import os
 import time
 from typing import Any, Optional, Union
 
-from noveum_trace import trace_llm
 from openai import OpenAI
 
 try:
@@ -18,7 +17,7 @@ try:
 except ImportError:
     TIKTOKEN_AVAILABLE = False
 
-from novaeval.models.base import BaseModel
+from novaeval.models.base import BaseModel, trace_llm
 
 
 class OpenAIModel(BaseModel):

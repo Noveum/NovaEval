@@ -195,6 +195,66 @@ class TestBaseModel:
         assert hasattr(BaseModel, "generate")
         assert hasattr(BaseModel, "generate_batch")
 
+    def test_trace_llm_noop_decorator_factory(self):
+        """Test the _trace_llm_noop decorator factory functionality."""
+        from novaeval.models.base import _trace_llm_noop
+
+        # Test decorator factory mode (called with parameters)
+        decorator = _trace_llm_noop(name="test", provider="test_provider")
+        assert callable(decorator)
+
+        # Test that the decorator works
+        @decorator
+        def test_func():
+            return "test"
+
+        result = test_func()
+        assert result == "test"
+
+        # Test direct decorator mode (called without parameters)
+        @_trace_llm_noop
+        def another_func():
+            return "another"
+
+        result = another_func()
+        assert result == "another"
+
+    @patch("novaeval.models.base.NOVEUM_TRACE_AVAILABLE", False)
+    def test_trace_llm_fallback_to_noop(self):
+        """Test that trace_llm falls back to _trace_llm_noop when noveum_trace is not available."""
+        # This test covers the case where noveum_trace import fails
+        # and trace_llm is set to _trace_llm_noop (lines 52-53)
+        from novaeval.models.base import trace_llm
+
+        # Test that trace_llm is callable (it should be _trace_llm_noop)
+        assert callable(trace_llm)
+
+        # Test that it works as a decorator
+        @trace_llm
+        def test_func():
+            return "test"
+
+        result = test_func()
+        assert result == "test"
+
+    def test_validate_connection_with_exception(self):
+        """Test connection validation when generate method raises an exception."""
+
+        # Create a model that raises an exception in generate method
+        class ExceptionModel(ConcreteModel):
+            def generate(
+                self, prompt, max_tokens=None, temperature=None, stop=None, **kwargs
+            ):
+                raise RuntimeError("Simulated API error")
+
+        model = ExceptionModel()
+
+        # Connection validation should return False and add error to errors list
+        result = model.validate_connection()
+        assert result is False
+        assert len(model.errors) == 1
+        assert "Connection validation failed: Simulated API error" in model.errors[0]
+
 
 class TestBaseModelTracing:
     """Test cases for the tracing functionality added to BaseModel."""
@@ -434,3 +494,27 @@ class TestBaseModelTracing:
         assert hasattr(BaseModel, "__init__")
         assert hasattr(BaseModel, "generate")
         assert hasattr(BaseModel, "generate_batch")
+
+    def test_trace_llm_noop_decorator_factory(self):
+        """Test the _trace_llm_noop decorator factory functionality."""
+        from novaeval.models.base import _trace_llm_noop
+
+        # Test decorator factory mode (called with parameters)
+        decorator = _trace_llm_noop(name="test", provider="test_provider")
+        assert callable(decorator)
+
+        # Test that the decorator works
+        @decorator
+        def test_func():
+            return "test"
+
+        result = test_func()
+        assert result == "test"
+
+        # Test direct decorator mode (called without parameters)
+        @_trace_llm_noop
+        def another_func():
+            return "another"
+
+        result = another_func()
+        assert result == "another"

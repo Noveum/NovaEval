@@ -9,9 +9,8 @@ import time
 from typing import Any, Optional, Union
 
 import anthropic
-from noveum_trace import trace_llm
 
-from novaeval.models.base import BaseModel
+from novaeval.models.base import BaseModel, trace_llm
 
 
 class AnthropicModel(BaseModel):

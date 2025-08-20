@@ -12,10 +12,9 @@ import os
 import re
 from typing import Any, Optional, Union
 
-from noveum_trace import trace_llm
 from openai import AzureOpenAI
 
-from novaeval.models.base import BaseModel
+from novaeval.models.base import BaseModel, trace_llm
 
 # ---------------------------------------------------------------------------
 # Pricing (BASE TIER + TIERED for context window models)
