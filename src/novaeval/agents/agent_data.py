@@ -49,8 +49,10 @@ class AgentData(BaseModel):
     parameters_passed: Union[dict[str, Any], str] = {}  # JSON-like dict
     tool_call_results: Optional[Union[list[ToolResult], str]] = None
 
-    retrieval_query: Optional[str] = None
-    retrieved_context: Optional[str] = None
+    retrieval_query: Optional[list[str]] = None  # list of queries, made to Vector DB
+    retrieved_context: Optional[list[list[str]]] = (
+        None  # List of responses received from Vector DB for each query, (generally KNN is used, so len will be K)
+    )
 
     exit_status: Optional[str] = None
     agent_exit: Union[bool, str] = False

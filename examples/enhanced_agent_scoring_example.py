@@ -10,8 +10,9 @@ and supports:
 
 import os
 
-from novaeval.agents import AgentData, AgentScorers, ToolCall, ToolSchema
+from novaeval.agents import AgentData, ToolCall, ToolSchema
 from novaeval.models.openai import OpenAIModel
+from novaeval.scorers.agent_scorers import AgentScorers
 
 
 def custom_tool_efficiency_scorer(agent_data: AgentData, _model) -> dict:

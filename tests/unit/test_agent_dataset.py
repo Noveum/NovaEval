@@ -45,8 +45,8 @@ def minimal_agent_data_dict():
                 "error_message": None,
             }
         ],
-        "retrieval_query": "query1",
-        "retrieved_context": "context1",
+        "retrieval_query": ["query1"],
+        "retrieved_context": [["context1"]],
         "exit_status": "completed",
         "agent_exit": True,
         "metadata": "meta1",
@@ -67,6 +67,8 @@ def minimal_agent_data_csv_row():
                 "parameters_passed",
                 "tool_call_results",
                 "expected_tool_call",
+                "retrieval_query",
+                "retrieved_context",
             ]
         },
         "trace": json.dumps(d["trace"]),
@@ -75,6 +77,8 @@ def minimal_agent_data_csv_row():
         "parameters_passed": json.dumps(d["parameters_passed"]),
         "tool_call_results": json.dumps(d["tool_call_results"]),
         "expected_tool_call": json.dumps(d["expected_tool_call"]),
+        "retrieval_query": json.dumps(d["retrieval_query"]),
+        "retrieved_context": json.dumps(d["retrieved_context"]),
     }
 
 
@@ -431,6 +435,8 @@ def test_agentdataset_field_type_detection():
         "tools_available",
         "tool_calls",
         "tool_call_results",
+        "retrieval_query",
+        "retrieved_context",
     }
     expected_dict_fields = {"parameters_passed"}
     assert ds._list_fields == expected_list_fields

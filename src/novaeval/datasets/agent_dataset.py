@@ -289,6 +289,37 @@ class AgentDataset:
         # Default: return as is
         return value
 
+    def _validate_retrieval_fields(self, data_kwargs: dict[str, Any]) -> None:
+        """
+        Validate that retrieval_query and retrieved_context have matching lengths.
+
+        Args:
+            data_kwargs: Dictionary containing the parsed field values
+
+        Raises:
+            ValueError: If the lengths don't match
+        """
+        retrieval_query = data_kwargs.get("retrieval_query")
+        retrieved_context = data_kwargs.get("retrieved_context")
+
+        # Skip validation if either field is None
+        if retrieval_query is None or retrieved_context is None:
+            return
+
+        # Check if both are lists
+        if not isinstance(retrieval_query, list) or not isinstance(
+            retrieved_context, list
+        ):
+            return
+
+        # Check if lengths match
+        if len(retrieval_query) != len(retrieved_context):
+            raise ValueError(
+                f"Length mismatch: retrieval_query has {len(retrieval_query)} queries "
+                f"but retrieved_context has {len(retrieved_context)} context lists. "
+                f"They must have the same length."
+            )
+
     def ingest_from_csv(
         self,
         file_path: str,
@@ -307,8 +338,8 @@ class AgentDataset:
         tool_calls: Optional[str] = None,
         parameters_passed: Optional[str] = None,
         tool_call_results: Optional[str] = None,
-        retrieval_query: Optional[str] = None,
-        retrieved_context: Optional[str] = None,
+        retrieval_query: Optional[list[str]] = None,
+        retrieved_context: Optional[list[list[str]]] = None,
         exit_status: Optional[str] = None,
         agent_exit: Optional[str] = None,
         metadata: Optional[str] = None,
@@ -351,6 +382,7 @@ class AgentDataset:
                         )
                         value = row.get(col, None)
                         data_kwargs[field] = self._parse_field(field, value)
+                    self._validate_retrieval_fields(data_kwargs)  # Call validation here
                     self.data.append(AgentData(**data_kwargs))
 
                 # Clear chunk from memory
@@ -385,8 +417,8 @@ class AgentDataset:
         tool_calls: Optional[str] = None,
         parameters_passed: Optional[str] = None,
         tool_call_results: Optional[str] = None,
-        retrieval_query: Optional[str] = None,
-        retrieved_context: Optional[str] = None,
+        retrieval_query: Optional[list[str]] = None,
+        retrieved_context: Optional[list[list[str]]] = None,
         exit_status: Optional[str] = None,
         agent_exit: Optional[str] = None,
         metadata: Optional[str] = None,
@@ -435,6 +467,7 @@ class AgentDataset:
                 key = field_map[field] if field_map[field] is not None else field
                 value = item.get(key, None)
                 data_kwargs[field] = self._parse_field(field, value)
+            self._validate_retrieval_fields(data_kwargs)  # Call validation here
             self.data.append(AgentData(**data_kwargs))
 
     def export_to_csv(self, file_path: str) -> None:
