@@ -2,6 +2,7 @@
 Unit tests for RAG (Retrieval-Augmented Generation) scorers.
 """
 
+from unittest.mock import patch
 
 import pytest
 
@@ -40,10 +41,44 @@ class MockLLMModel:
             return "Mock response"
 
 
+class MockSentenceTransformer:
+    """Mock SentenceTransformer for testing."""
+
+    def __init__(self, model_name: str):
+        self.model_name = model_name
+
+    def encode(self, texts, **kwargs):
+        """Mock encode method that returns predictable embeddings."""
+        import numpy as np
+
+        # Return deterministic embeddings based on text content
+        # This ensures consistent test results without actual model inference
+        embeddings = []
+        for text in texts:
+            # Create a simple hash-based embedding for consistency
+            hash_val = hash(text) % 1000
+            np.random.seed(hash_val)
+            embedding = np.random.rand(384)  # Standard embedding size
+            # Normalize the embedding
+            embedding = embedding / np.linalg.norm(embedding)
+            embeddings.append(embedding)
+
+        if len(texts) == 1:
+            return np.array(embeddings)
+        return np.array(embeddings)
+
+
+@pytest.fixture
+def mock_sentence_transformer():
+    """Fixture to mock SentenceTransformer."""
+    with patch("novaeval.scorers.rag.SentenceTransformer", MockSentenceTransformer):
+        yield MockSentenceTransformer("all-MiniLM-L6-v2")
+
+
 class TestAnswerRelevancyScorer:
     """Test cases for AnswerRelevancyScorer class."""
 
-    def test_init_default(self):
+    def test_init_default(self, mock_sentence_transformer):
         """Test initialization with default parameters."""
         mock_model = MockLLMModel()
         scorer = AnswerRelevancyScorer(mock_model, name="answer_relevancy")
@@ -52,7 +87,7 @@ class TestAnswerRelevancyScorer:
         assert scorer.model == mock_model
         assert scorer.embedding_model is not None
 
-    def test_init_with_custom_params(self):
+    def test_init_with_custom_params(self, mock_sentence_transformer):
         """Test initialization with custom parameters."""
         mock_model = MockLLMModel()
         scorer = AnswerRelevancyScorer(
@@ -66,7 +101,7 @@ class TestAnswerRelevancyScorer:
         assert scorer.embedding_model is not None
 
     @pytest.mark.asyncio
-    async def test_evaluate_success(self):
+    async def test_evaluate_success(self, mock_sentence_transformer):
         """Test successful evaluation."""
         mock_model = MockLLMModel()
         scorer = AnswerRelevancyScorer(mock_model, name="answer_relevancy")
@@ -82,7 +117,7 @@ class TestAnswerRelevancyScorer:
         assert "generated_questions" in result.metadata
 
     @pytest.mark.asyncio
-    async def test_evaluate_with_context(self):
+    async def test_evaluate_with_context(self, mock_sentence_transformer):
         """Test evaluation with context."""
         mock_model = MockLLMModel()
         scorer = AnswerRelevancyScorer(mock_model, name="answer_relevancy")
@@ -97,7 +132,7 @@ class TestAnswerRelevancyScorer:
         assert 0.0 <= result.score <= 1.0
 
     @pytest.mark.asyncio
-    async def test_evaluate_multiple_queries(self):
+    async def test_evaluate_multiple_queries(self, mock_sentence_transformer):
         """Test evaluation of multiple queries."""
         mock_model = MockLLMModel()
         scorer = AnswerRelevancyScorer(mock_model, name="answer_relevancy")
@@ -113,7 +148,9 @@ class TestAnswerRelevancyScorer:
         assert all(isinstance(score, float) for score in scores)
 
     @pytest.mark.asyncio
-    async def test_evaluate_multiple_queries_length_mismatch(self):
+    async def test_evaluate_multiple_queries_length_mismatch(
+        self, mock_sentence_transformer
+    ):
         """Test evaluation with mismatched query and context lengths."""
         mock_model = MockLLMModel()
         scorer = AnswerRelevancyScorer(mock_model, name="answer_relevancy")
@@ -127,7 +164,7 @@ class TestAnswerRelevancyScorer:
             )
 
     @pytest.mark.asyncio
-    async def test_evaluate_single_query_with_contexts(self):
+    async def test_evaluate_single_query_with_contexts(self, mock_sentence_transformer):
         """Test evaluation of single query with multiple contexts."""
         mock_model = MockLLMModel()
         scorer = AnswerRelevancyScorer(mock_model, name="answer_relevancy")
@@ -142,7 +179,9 @@ class TestAnswerRelevancyScorer:
         assert 0.0 <= score <= 1.0
 
     @pytest.mark.asyncio
-    async def test_evaluate_single_query_with_contexts_empty(self):
+    async def test_evaluate_single_query_with_contexts_empty(
+        self, mock_sentence_transformer
+    ):
         """Test evaluation with empty contexts."""
         mock_model = MockLLMModel()
         scorer = AnswerRelevancyScorer(mock_model, name="answer_relevancy")
@@ -153,7 +192,7 @@ class TestAnswerRelevancyScorer:
 
         assert score == 0.0
 
-    def test_score_sync_wrapper(self):
+    def test_score_sync_wrapper(self, mock_sentence_transformer):
         """Test synchronous score wrapper."""
         mock_model = MockLLMModel()
         scorer = AnswerRelevancyScorer(mock_model, name="answer_relevancy")
@@ -167,7 +206,7 @@ class TestAnswerRelevancyScorer:
         assert isinstance(score, float)
         assert 0.0 <= score <= 1.0
 
-    def test_parse_questions(self):
+    def test_parse_questions(self, mock_sentence_transformer):
         """Test parsing of generated questions."""
         mock_model = MockLLMModel()
         scorer = AnswerRelevancyScorer(mock_model, name="answer_relevancy")
@@ -178,7 +217,7 @@ class TestAnswerRelevancyScorer:
         assert len(questions) == 3
         assert all(q.endswith("?") for q in questions)
 
-    def test_parse_questions_with_bullets(self):
+    def test_parse_questions_with_bullets(self, mock_sentence_transformer):
         """Test parsing questions with bullet points."""
         mock_model = MockLLMModel()
         scorer = AnswerRelevancyScorer(mock_model, name="answer_relevancy")
