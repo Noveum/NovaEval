@@ -2675,13 +2675,13 @@ def test_agentdataset_init_modern_union_syntax(monkeypatch):
 def test_validate_retrieval_fields_matching_lengths():
     """Test that _validate_retrieval_fields passes when lengths match."""
     ds = AgentDataset()
-    
+
     # Test with matching lengths
     data_kwargs = {
         "retrieval_query": ["query1", "query2"],
-        "retrieved_context": [["context1"], ["context2"]]
+        "retrieved_context": [["context1"], ["context2"]],
     }
-    
+
     # Should not raise any exception
     ds._validate_retrieval_fields(data_kwargs)
 
@@ -2690,14 +2690,17 @@ def test_validate_retrieval_fields_matching_lengths():
 def test_validate_retrieval_fields_mismatched_lengths():
     """Test that _validate_retrieval_fields raises ValueError when lengths don't match."""
     ds = AgentDataset()
-    
+
     # Test with mismatched lengths
     data_kwargs = {
         "retrieval_query": ["query1", "query2"],
-        "retrieved_context": [["context1"]]  # Only one context for two queries
+        "retrieved_context": [["context1"]],  # Only one context for two queries
     }
-    
-    with pytest.raises(ValueError, match="Length mismatch: retrieval_query has 2 queries but retrieved_context has 1 context lists"):
+
+    with pytest.raises(
+        ValueError,
+        match="Length mismatch: retrieval_query has 2 queries but retrieved_context has 1 context lists",
+    ):
         ds._validate_retrieval_fields(data_kwargs)
 
 
@@ -2705,22 +2708,16 @@ def test_validate_retrieval_fields_mismatched_lengths():
 def test_validate_retrieval_fields_none_values():
     """Test that _validate_retrieval_fields skips validation when fields are None."""
     ds = AgentDataset()
-    
+
     # Test with None values
-    data_kwargs = {
-        "retrieval_query": None,
-        "retrieved_context": ["context1"]
-    }
-    
+    data_kwargs = {"retrieval_query": None, "retrieved_context": ["context1"]}
+
     # Should not raise any exception
     ds._validate_retrieval_fields(data_kwargs)
-    
+
     # Test with both None
-    data_kwargs = {
-        "retrieval_query": None,
-        "retrieved_context": None
-    }
-    
+    data_kwargs = {"retrieval_query": None, "retrieved_context": None}
+
     # Should not raise any exception
     ds._validate_retrieval_fields(data_kwargs)
 
@@ -2729,22 +2726,19 @@ def test_validate_retrieval_fields_none_values():
 def test_validate_retrieval_fields_non_list_values():
     """Test that _validate_retrieval_fields skips validation when fields are not lists."""
     ds = AgentDataset()
-    
+
     # Test with non-list values
-    data_kwargs = {
-        "retrieval_query": "not a list",
-        "retrieved_context": ["context1"]
-    }
-    
+    data_kwargs = {"retrieval_query": "not a list", "retrieved_context": ["context1"]}
+
     # Should not raise any exception
     ds._validate_retrieval_fields(data_kwargs)
-    
+
     # Test with both non-list
     data_kwargs = {
         "retrieval_query": "not a list",
-        "retrieved_context": "also not a list"
+        "retrieved_context": "also not a list",
     }
-    
+
     # Should not raise any exception
     ds._validate_retrieval_fields(data_kwargs)
 
@@ -2753,13 +2747,10 @@ def test_validate_retrieval_fields_non_list_values():
 def test_validate_retrieval_fields_empty_lists():
     """Test that _validate_retrieval_fields passes with empty lists."""
     ds = AgentDataset()
-    
+
     # Test with empty lists
-    data_kwargs = {
-        "retrieval_query": [],
-        "retrieved_context": []
-    }
-    
+    data_kwargs = {"retrieval_query": [], "retrieved_context": []}
+
     # Should not raise any exception
     ds._validate_retrieval_fields(data_kwargs)
 
@@ -2773,16 +2764,16 @@ user1,task1,agent1,"[""query1"", ""query2""]","[[""context1""], [""context2""]]"
 user2,task2,agent2,"[""query3""]","[[""context3""]]"
 user3,task3,agent3,"[""query4"", ""query5""]","[[""context4""], [""context5""]]"
 """
-    
+
     csv_file = tmp_path / "retrieval_test.csv"
     with open(csv_file, "w", encoding="utf-8", newline="") as f:
         f.write(csv_data)
-    
+
     ds = AgentDataset()
-    
+
     # All rows should work fine since they have matching lengths
     ds.ingest_from_csv(str(csv_file))
-    
+
     # Should have 3 valid rows
     assert len(ds.data) == 3
     assert ds.data[0].user_id == "user1"
@@ -2800,26 +2791,26 @@ def test_ingest_from_json_with_retrieval_validation(tmp_path):
             "task_id": "task1",
             "agent_name": "agent1",
             "retrieval_query": ["query1", "query2"],
-            "retrieved_context": [["context1"], ["context2"]]
+            "retrieved_context": [["context1"], ["context2"]],
         },
         {
             "user_id": "user2",
             "task_id": "task2",
             "agent_name": "agent2",
             "retrieval_query": ["query3"],
-            "retrieved_context": [["context3"]]
-        }
+            "retrieved_context": [["context3"]],
+        },
     ]
-    
+
     json_file = tmp_path / "retrieval_test.json"
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump(json_data, f)
-    
+
     ds = AgentDataset()
-    
+
     # Both rows should work fine since they have matching lengths
     ds.ingest_from_json(str(json_file))
-    
+
     # Should have 2 valid rows
     assert len(ds.data) == 2
     assert ds.data[0].user_id == "user1"
@@ -2836,18 +2827,21 @@ def test_ingest_from_json_with_retrieval_validation_error(tmp_path):
             "task_id": "task1",
             "agent_name": "agent1",
             "retrieval_query": ["query1", "query2"],
-            "retrieved_context": [["context1"]]  # Mismatched lengths
+            "retrieved_context": [["context1"]],  # Mismatched lengths
         }
     ]
-    
+
     json_file = tmp_path / "retrieval_error_test.json"
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump(json_data, f)
-    
+
     ds = AgentDataset()
-    
+
     # Should raise validation error
-    with pytest.raises(ValueError, match="Length mismatch: retrieval_query has 2 queries but retrieved_context has 1 context lists"):
+    with pytest.raises(
+        ValueError,
+        match="Length mismatch: retrieval_query has 2 queries but retrieved_context has 1 context lists",
+    ):
         ds.ingest_from_json(str(json_file))
 
 
@@ -2859,13 +2853,13 @@ def test_ingest_from_csv_retrieval_field_mapping(tmp_path):
 user1,task1,agent1,"[""query1""]","[[""context1""]]"
 user2,task2,agent2,"[""query2"", ""query3""]","[[""context2""], [""context3""]]"
 """
-    
+
     csv_file = tmp_path / "retrieval_mapping_test.csv"
     with open(csv_file, "w", encoding="utf-8", newline="") as f:
         f.write(csv_data)
-    
+
     ds = AgentDataset()
-    
+
     # Use field mapping for retrieval fields
     ds.ingest_from_csv(
         str(csv_file),
@@ -2873,9 +2867,9 @@ user2,task2,agent2,"[""query2"", ""query3""]","[[""context2""], [""context3""]]"
         task_id="custom_task",
         agent_name="custom_agent",
         retrieval_query="custom_query",
-        retrieved_context="custom_context"
+        retrieved_context="custom_context",
     )
-    
+
     assert len(ds.data) == 2
     assert ds.data[0].user_id == "user1"
     assert ds.data[0].retrieval_query == ["query1"]
@@ -2895,23 +2889,23 @@ def test_ingest_from_json_retrieval_field_mapping(tmp_path):
             "custom_task": "task1",
             "custom_agent": "agent1",
             "custom_query": ["query1"],
-            "custom_context": [["context1"]]
+            "custom_context": [["context1"]],
         },
         {
             "custom_user": "user2",
             "custom_task": "task2",
             "custom_agent": "agent2",
             "custom_query": ["query2", "query3"],
-            "custom_context": [["context2"], ["context3"]]
-        }
+            "custom_context": [["context2"], ["context3"]],
+        },
     ]
-    
+
     json_file = tmp_path / "retrieval_mapping_test.json"
     with open(json_file, "w", encoding="utf-8") as f:
         json.dump(json_data, f)
-    
+
     ds = AgentDataset()
-    
+
     # Use field mapping for retrieval fields
     ds.ingest_from_json(
         str(json_file),
@@ -2919,9 +2913,9 @@ def test_ingest_from_json_retrieval_field_mapping(tmp_path):
         task_id="custom_task",
         agent_name="custom_agent",
         retrieval_query="custom_query",
-        retrieved_context="custom_context"
+        retrieved_context="custom_context",
     )
-    
+
     assert len(ds.data) == 2
     assert ds.data[0].user_id == "user1"
     assert ds.data[0].retrieval_query == ["query1"]
@@ -2935,22 +2929,19 @@ def test_ingest_from_json_retrieval_field_mapping(tmp_path):
 def test_validate_retrieval_fields_mixed_types():
     """Test validation with mixed types in retrieval fields."""
     ds = AgentDataset()
-    
+
     # Test with one list and one non-list
     data_kwargs = {
         "retrieval_query": ["query1", "query2"],
-        "retrieved_context": "not a list"
+        "retrieved_context": "not a list",
     }
-    
+
     # Should not raise any exception (skips validation)
     ds._validate_retrieval_fields(data_kwargs)
-    
+
     # Test with one list and one None
-    data_kwargs = {
-        "retrieval_query": ["query1", "query2"],
-        "retrieved_context": None
-    }
-    
+    data_kwargs = {"retrieval_query": ["query1", "query2"], "retrieved_context": None}
+
     # Should not raise any exception (skips validation)
     ds._validate_retrieval_fields(data_kwargs)
 
@@ -2959,13 +2950,10 @@ def test_validate_retrieval_fields_mixed_types():
 def test_validate_retrieval_fields_single_item_lists():
     """Test validation with single item lists."""
     ds = AgentDataset()
-    
+
     # Test with single item lists
-    data_kwargs = {
-        "retrieval_query": ["query1"],
-        "retrieved_context": [["context1"]]
-    }
-    
+    data_kwargs = {"retrieval_query": ["query1"], "retrieved_context": [["context1"]]}
+
     # Should not raise any exception
     ds._validate_retrieval_fields(data_kwargs)
 
@@ -2974,24 +2962,24 @@ def test_validate_retrieval_fields_single_item_lists():
 def test_validate_retrieval_fields_large_lists():
     """Test validation with larger lists."""
     ds = AgentDataset()
-    
+
     # Test with larger lists
     queries = [f"query{i}" for i in range(10)]
     contexts = [[f"context{i}"] for i in range(10)]
-    
-    data_kwargs = {
-        "retrieval_query": queries,
-        "retrieved_context": contexts
-    }
-    
+
+    data_kwargs = {"retrieval_query": queries, "retrieved_context": contexts}
+
     # Should not raise any exception
     ds._validate_retrieval_fields(data_kwargs)
-    
+
     # Test with mismatched larger lists
     data_kwargs = {
         "retrieval_query": queries,
-        "retrieved_context": contexts[:-1]  # One less context
+        "retrieved_context": contexts[:-1],  # One less context
     }
-    
-    with pytest.raises(ValueError, match="Length mismatch: retrieval_query has 10 queries but retrieved_context has 9 context lists"):
+
+    with pytest.raises(
+        ValueError,
+        match="Length mismatch: retrieval_query has 10 queries but retrieved_context has 9 context lists",
+    ):
         ds._validate_retrieval_fields(data_kwargs)
