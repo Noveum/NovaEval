@@ -102,6 +102,7 @@ def main():
                 error_message=None,
             ),
         ],
+        retrieval_query=["Calculate 20 + 22 and store the result"],
         retrieved_context=[
             [
                 "Mathematical operations: Addition combines numbers. Memory storage helps retain important results."
