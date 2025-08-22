@@ -1029,12 +1029,18 @@ class RAGASScorer(BaseScorer):
         }
 
         # Initialize individual scorers
-        self.answer_relevancy_scorer = AnswerRelevancyScorer(model, threshold=0.7)
-        self.faithfulness_scorer = FaithfulnessScorer(model, threshold=0.8)
-        self.contextual_precision_scorer = ContextualPrecisionScorer(
-            model, threshold=0.7
+        self.answer_relevancy_scorer = AnswerRelevancyScorer(
+            model, name="answer_relevancy", threshold=0.7
         )
-        self.contextual_recall_scorer = ContextualRecallScorer(model, threshold=0.7)
+        self.faithfulness_scorer = FaithfulnessScorer(
+            model, name="faithfulness", threshold=0.8
+        )
+        self.contextual_precision_scorer = ContextualPrecisionScorer(
+            model, name="contextual_precision", threshold=0.7
+        )
+        self.contextual_recall_scorer = ContextualRecallScorer(
+            model, name="contextual_recall", threshold=0.7
+        )
 
     async def evaluate(
         self,
