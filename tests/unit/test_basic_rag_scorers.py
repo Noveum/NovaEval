@@ -56,10 +56,10 @@ class TestContextualPrecisionScorerPP:
         model = Mock()
         scorer = ContextualPrecisionScorerPP(model=model)
 
-        # Mock the _call_model method to return a JSON response
-        with patch.object(scorer, "_call_model", return_value='{"relevant": true}'):
+        # Mock the _call_model method to return a numerical response
+        with patch.object(scorer, "_call_model", return_value="Rating: 8"):
             result = await scorer._evaluate_chunk_relevance("query", "chunk")
-            assert result is True
+            assert result is True  # 8 >= 7 (0.7 * 10)
 
     @pytest.mark.asyncio
     async def test_evaluate_chunk_relevance_exception(self):
@@ -104,6 +104,38 @@ class TestContextualPrecisionScorerPP:
         result = scorer._parse_json_response(response)
         assert result["relevant"] is False
         assert result["reasoning"] == "Fallback parsing used"
+
+    def test_parse_numerical_response_rating_format(self):
+        model = Mock()
+        scorer = ContextualPrecisionScorerPP(model=model)
+
+        response = "Rating: 7"
+        result = scorer._parse_numerical_response(response)
+        assert result == 7.0
+
+    def test_parse_numerical_response_standalone_number(self):
+        model = Mock()
+        scorer = ContextualPrecisionScorerPP(model=model)
+
+        response = "The relevance score is 9"
+        result = scorer._parse_numerical_response(response)
+        assert result == 9.0
+
+    def test_parse_numerical_response_json_format(self):
+        model = Mock()
+        scorer = ContextualPrecisionScorerPP(model=model)
+
+        response = '{"rating": 6}'
+        result = scorer._parse_numerical_response(response)
+        assert result == 6.0
+
+    def test_parse_numerical_response_fallback(self):
+        model = Mock()
+        scorer = ContextualPrecisionScorerPP(model=model)
+
+        response = "This is not a numerical response"
+        result = scorer._parse_numerical_response(response)
+        assert result == 5.0  # Default fallback value
 
     @pytest.mark.asyncio
     async def test_evaluate_no_context(self):

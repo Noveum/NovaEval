@@ -15,6 +15,7 @@ import numpy as np
 from sklearn.metrics import average_precision_score, ndcg_score
 
 from novaeval.scorers.base import BaseScorer, ScoreResult
+from novaeval.scorers.rag_prompts import RAGPrompts
 from novaeval.utils.llm import call_llm
 
 if TYPE_CHECKING:
@@ -52,27 +53,18 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
         self.relevance_threshold = relevance_threshold
 
     async def _evaluate_chunk_relevance(self, query: str, chunk: str) -> bool:
-        """Evaluate if a single chunk is relevant to the query."""
-        prompt = f"""
-        Evaluate if the following chunk is relevant to the query.
-
-        Query: {query}
-        Chunk: {chunk}
-
-        Determine if this chunk is relevant to answering the query.
-        A chunk is relevant if it contains information that helps answer the query.
-
-        Respond with a JSON object in this exact format:
-        {{
-            "relevant": true/false,
-                "reasoning": "brief explanation"
-        }}
-        """
+        """Evaluate if a single chunk is relevant to the query using 0-10 numerical scoring."""
+        prompt = RAGPrompts.get_numerical_chunk_relevance_0_10(query, chunk)
 
         try:
             response = await self._call_model(prompt)
-            result = self._parse_json_response(response)
-            return result.get("relevant", False)
+            numerical_score = self._parse_numerical_response(response)
+
+            # Convert numerical score to boolean using threshold
+            # Convert 0-1 threshold to 0-10 scale (e.g., 0.7 threshold = 7.0 score)
+            threshold_score = self.relevance_threshold * 10
+            return numerical_score >= threshold_score
+
         except Exception:
             return False
 
@@ -100,6 +92,46 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
                 or "1" in response_lower,
                 "reasoning": "Fallback parsing used",
             }
+
+    def _parse_numerical_response(self, response: str) -> float:
+        """Parse numerical response from LLM and extract 0-10 score."""
+        try:
+            # Try to extract numerical score from response
+            import re
+
+            # Look for "Rating: X" pattern
+            rating_match = re.search(r"Rating:\s*(\d+)", response, re.IGNORECASE)
+            if rating_match:
+                score_int = int(rating_match.group(1))
+                return max(0, min(10, score_int))  # Ensure score is between 0-10
+
+            # Look for standalone numbers
+            numbers = re.findall(r"\b(\d+)\b", response)
+            if numbers:
+                score_int = int(numbers[0])
+                return max(0, min(10, score_int))  # Ensure score is between 0-10
+
+            # Fallback: try to extract from JSON if present
+            try:
+                import json
+
+                result = json.loads(response)
+                if "rating" in result:
+                    score_float = float(result["rating"])
+                    return max(0, min(10, score_float))
+                elif "score" in result:
+                    score_float = float(result["score"])
+                    return max(0, min(10, score_float))
+            except (ValueError, KeyError, TypeError):
+                pass
+
+            # Final fallback: default to 5 (moderate relevance)
+            # self.logger.warning(f"Could not parse numerical score from response: {response}")
+            return 5.0
+
+        except Exception:
+            # self.logger.warning(f"Error parsing numerical response: {e}")
+            return 5.0  # Default to moderate relevance
 
     async def evaluate(
         self,
@@ -208,27 +240,18 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
         self.relevance_threshold = relevance_threshold
 
     async def _evaluate_chunk_relevance(self, query: str, chunk: str) -> bool:
-        """Evaluate if a single chunk is relevant to the query."""
-        prompt = f"""
-        Evaluate if the following chunk is relevant to the query.
-
-        Query: {query}
-        Chunk: {chunk}
-
-        Determine if this chunk is relevant to answering the query.
-        A chunk is relevant if it contains information that helps answer the query.
-
-        Respond with a JSON object in this exact format:
-        {{
-            "relevant": true/false,
-                "reasoning": "brief explanation"
-        }}
-        """
+        """Evaluate if a single chunk is relevant to the query using 0-10 numerical scoring."""
+        prompt = RAGPrompts.get_numerical_chunk_relevance_0_10(query, chunk)
 
         try:
             response = await self._call_model(prompt)
-            result = self._parse_json_response(response)
-            return result.get("relevant", False)
+            numerical_score = self._parse_numerical_response(response)
+
+            # Convert numerical score to boolean using threshold
+            # Convert 0-1 threshold to 0-10 scale (e.g., 0.7 threshold = 7.0 score)
+            threshold_score = self.relevance_threshold * 10
+            return numerical_score >= threshold_score
+
         except Exception:
             return False
 
@@ -261,23 +284,7 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
         self, query: str, retrieved_chunks: list[str]
     ) -> int:
         """Estimate the total number of relevant chunks available."""
-        prompt = f"""
-        Based on the query and the retrieved chunks, estimate how many relevant chunks might exist in total.
-
-        Query: {query}
-        Retrieved Chunks: {len(retrieved_chunks)} chunks
-
-        Consider:
-        1. The complexity of the query
-        2. The number of retrieved chunks
-        3. Whether the query likely requires more information than what's retrieved
-
-        Respond with a JSON object in this exact format:
-        {{
-            "estimated_total": <number>,
-                "reasoning": "brief explanation"
-        }}
-        """
+        prompt = RAGPrompts.get_estimate_total_relevant(query, len(retrieved_chunks))
 
         try:
             response = await self._call_model(prompt)
@@ -288,6 +295,46 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
             )  # At least as many as retrieved
         except Exception:
             return len(retrieved_chunks)  # Default fallback
+
+    def _parse_numerical_response(self, response: str) -> float:
+        """Parse numerical response from LLM and extract 0-10 score."""
+        try:
+            # Try to extract numerical score from response
+            import re
+
+            # Look for "Rating: X" pattern
+            rating_match = re.search(r"Rating:\s*(\d+)", response, re.IGNORECASE)
+            if rating_match:
+                score_int = int(rating_match.group(1))
+                return max(0, min(10, score_int))  # Ensure score is between 0-10
+
+            # Look for standalone numbers
+            numbers = re.findall(r"\b(\d+)\b", response)
+            if numbers:
+                score_int = int(numbers[0])
+                return max(0, min(10, score_int))  # Ensure score is between 0-10
+
+            # Fallback: try to extract from JSON if present
+            try:
+                import json
+
+                result = json.loads(response)
+                if "rating" in result:
+                    score_float = float(result["rating"])
+                    return max(0, min(10, score_float))
+                elif "score" in result:
+                    score_float = float(result["score"])
+                    return max(0, min(10, score_float))
+            except (ValueError, KeyError, TypeError):
+                pass
+
+            # Final fallback: default to 5 (moderate relevance)
+            # self.logger.warning(f"Could not parse numerical score from response: {response}")
+            return 5.0
+
+        except Exception:
+            # self.logger.warning(f"Error parsing numerical response: {e}")
+            return 5.0  # Default to moderate relevance
 
     async def evaluate(
         self,

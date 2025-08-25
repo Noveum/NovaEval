@@ -17,6 +17,7 @@ import numpy as np
 
 from novaeval.models.base import BaseModel as LLMModel
 from novaeval.scorers.base import BaseScorer, ScoreResult
+from novaeval.scorers.rag_prompts import RAGPrompts
 from novaeval.utils.parsing import parse_claims
 
 if TYPE_CHECKING:
@@ -436,25 +437,9 @@ class ContextualPrecisionScorer(BaseScorer):
             relevance_scores = []
 
             for _i, chunk in enumerate(context_chunks):
-                relevance_prompt = f"""
-                Question: {input_text}
-
-                Context chunk: {chunk}
-
-                Is this context chunk relevant for answering the question?
-                Rate the relevance on a scale of 1-5 where:
-                1 = Not relevant at all
-                2 = Slightly relevant
-                3 = Moderately relevant
-                4 = Highly relevant
-                5 = Extremely relevant
-
-                Provide your rating and a brief explanation.
-
-                Format:
-                Rating: [1-5]
-                Explanation: [Brief explanation]
-                """
+                relevance_prompt = RAGPrompts.get_numerical_chunk_relevance_1_5(
+                    input_text, chunk
+                )
 
                 relevance_response = await self.model.generate(relevance_prompt)  # type: ignore
                 score = self._parse_relevance_score(relevance_response)
