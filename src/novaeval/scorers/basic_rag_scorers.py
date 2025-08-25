@@ -39,6 +39,44 @@ class AsyncLLMScorer(BaseScorer):
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, call_llm, self.model, prompt)
 
+    def _parse_numerical_response(self, response: str) -> float:
+        """Parse numerical response from LLM and extract 0-10 score."""
+        try:
+            # Try to extract numerical score from response
+            import re
+
+            # Look for "Rating: X" pattern
+            rating_match = re.search(r"Rating:\s*(\d+)", response, re.IGNORECASE)
+            if rating_match:
+                score_int = int(rating_match.group(1))
+                return max(0, min(10, score_int))  # Ensure score is between 0-10
+
+            # Look for standalone numbers
+            numbers = re.findall(r"\b(\d+)\b", response)
+            if numbers:
+                score_int = int(numbers[0])
+                return max(0, min(10, score_int))  # Ensure score is between 0-10
+
+            # Fallback: try to extract from JSON if present
+            try:
+                import json
+
+                result = json.loads(response)
+                if "rating" in result:
+                    score_float = float(result["rating"])
+                    return max(0, min(10, score_float))
+                elif "score" in result:
+                    score_float = float(result["score"])
+                    return max(0, min(10, score_float))
+            except (ValueError, KeyError, TypeError):
+                pass
+
+            # Final fallback: default to 5 (moderate relevance)
+            return 5.0
+
+        except Exception:
+            return 5.0  # Default to moderate relevance
+
 
 class ContextualPrecisionScorerPP(AsyncLLMScorer):
     """
@@ -92,46 +130,6 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
                 or "1" in response_lower,
                 "reasoning": "Fallback parsing used",
             }
-
-    def _parse_numerical_response(self, response: str) -> float:
-        """Parse numerical response from LLM and extract 0-10 score."""
-        try:
-            # Try to extract numerical score from response
-            import re
-
-            # Look for "Rating: X" pattern
-            rating_match = re.search(r"Rating:\s*(\d+)", response, re.IGNORECASE)
-            if rating_match:
-                score_int = int(rating_match.group(1))
-                return max(0, min(10, score_int))  # Ensure score is between 0-10
-
-            # Look for standalone numbers
-            numbers = re.findall(r"\b(\d+)\b", response)
-            if numbers:
-                score_int = int(numbers[0])
-                return max(0, min(10, score_int))  # Ensure score is between 0-10
-
-            # Fallback: try to extract from JSON if present
-            try:
-                import json
-
-                result = json.loads(response)
-                if "rating" in result:
-                    score_float = float(result["rating"])
-                    return max(0, min(10, score_float))
-                elif "score" in result:
-                    score_float = float(result["score"])
-                    return max(0, min(10, score_float))
-            except (ValueError, KeyError, TypeError):
-                pass
-
-            # Final fallback: default to 5 (moderate relevance)
-            # self.logger.warning(f"Could not parse numerical score from response: {response}")
-            return 5.0
-
-        except Exception:
-            # self.logger.warning(f"Error parsing numerical response: {e}")
-            return 5.0  # Default to moderate relevance
 
     async def evaluate(
         self,
@@ -295,46 +293,6 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
             )  # At least as many as retrieved
         except Exception:
             return len(retrieved_chunks)  # Default fallback
-
-    def _parse_numerical_response(self, response: str) -> float:
-        """Parse numerical response from LLM and extract 0-10 score."""
-        try:
-            # Try to extract numerical score from response
-            import re
-
-            # Look for "Rating: X" pattern
-            rating_match = re.search(r"Rating:\s*(\d+)", response, re.IGNORECASE)
-            if rating_match:
-                score_int = int(rating_match.group(1))
-                return max(0, min(10, score_int))  # Ensure score is between 0-10
-
-            # Look for standalone numbers
-            numbers = re.findall(r"\b(\d+)\b", response)
-            if numbers:
-                score_int = int(numbers[0])
-                return max(0, min(10, score_int))  # Ensure score is between 0-10
-
-            # Fallback: try to extract from JSON if present
-            try:
-                import json
-
-                result = json.loads(response)
-                if "rating" in result:
-                    score_float = float(result["rating"])
-                    return max(0, min(10, score_float))
-                elif "score" in result:
-                    score_float = float(result["score"])
-                    return max(0, min(10, score_float))
-            except (ValueError, KeyError, TypeError):
-                pass
-
-            # Final fallback: default to 5 (moderate relevance)
-            # self.logger.warning(f"Could not parse numerical score from response: {response}")
-            return 5.0
-
-        except Exception:
-            # self.logger.warning(f"Error parsing numerical response: {e}")
-            return 5.0  # Default to moderate relevance
 
     async def evaluate(
         self,
