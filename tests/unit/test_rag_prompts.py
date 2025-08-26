@@ -2,12 +2,7 @@
 Tests for centralized RAG prompts.
 """
 
-from src.novaeval.scorers.rag_prompts import (
-    RAGPrompts,
-    get_estimate_total_relevant_prompt,
-    get_numerical_chunk_relevance_prompt_0_10,
-    get_numerical_chunk_relevance_prompt_1_5,
-)
+from src.novaeval.scorers.rag_prompts import RAGPrompts
 
 
 class TestRAGPrompts:
@@ -60,74 +55,74 @@ class TestRAGPrompts:
 
         assert result == "Hello Alice, you are 25 years old."
 
+    def test_bias_detection_evaluation_prompt(self):
+        """Test bias detection evaluation prompt formatting."""
+        input_text = "What are good careers?"
+        output_text = "Men should consider engineering, women should consider nursing."
 
-class TestBackwardCompatibility:
-    """Test backward compatibility functions."""
-
-    def test_get_numerical_chunk_relevance_prompt_1_5(self):
-        """Test backward compatibility function for 1-5 scale relevance."""
-        question = "What is ML?"
-        chunk = "ML stands for machine learning."
-
-        prompt = get_numerical_chunk_relevance_prompt_1_5(question, chunk)
-
-        assert "Question: What is ML?" in prompt
-        assert "Context chunk: ML stands for machine learning." in prompt
-        assert "1 = Not relevant at all" in prompt
-
-    def test_get_numerical_chunk_relevance_prompt_0_10(self):
-        """Test backward compatibility function for 0-10 scale relevance."""
-        question = "What is DL?"
-        chunk = "DL stands for deep learning."
-
-        prompt = get_numerical_chunk_relevance_prompt_0_10(question, chunk)
-
-        assert "Question: What is DL?" in prompt
-        assert "Context chunk: DL stands for deep learning." in prompt
-        assert "0: Completely irrelevant" in prompt
-
-    def test_get_estimate_total_relevant_prompt(self):
-        """Test backward compatibility function for total relevant estimation."""
-        query = "What is NLP?"
-        num_retrieved = 3
-
-        prompt = get_estimate_total_relevant_prompt(query, num_retrieved)
-
-        assert "Query: What is NLP?" in prompt
-        assert "Retrieved Chunks: 3 chunks" in prompt
-        assert "estimated_total" in prompt
-
-
-class TestPromptConsistency:
-    """Test that prompts are consistent and well-formatted."""
-
-    def test_all_prompts_have_required_elements(self):
-        """Test that all prompts contain required formatting elements."""
-        # Test numerical relevance prompt
-        prompt = RAGPrompts.get_numerical_chunk_relevance_1_5("test", "test")
-        assert "Rating:" in prompt
-        assert "Explanation:" in prompt
-
-        # Test estimation prompt
-        prompt = RAGPrompts.get_estimate_total_relevant("test", 1)
-        assert "JSON" in prompt
-        assert "estimated_total" in prompt
-
-    def test_prompt_formatting_consistency(self):
-        """Test that prompt formatting is consistent across different inputs."""
-        # Test numerical relevance prompt with different inputs
-        prompt1 = RAGPrompts.get_numerical_chunk_relevance_1_5("", "")
-        prompt2 = RAGPrompts.get_numerical_chunk_relevance_1_5("test", "test")
-
-        # Both should have the same structure
-        assert "Question:" in prompt1
-        assert "Question:" in prompt2
-        assert "Context chunk:" in prompt1
-        assert "Context chunk:" in prompt2
-
-        # Test with special characters
-        prompt = RAGPrompts.get_numerical_chunk_relevance_1_5(
-            "test? test!", "test\n\ttest"
+        prompt = RAGPrompts.get_bias_detection_evaluation(
+            input_text=input_text, output_text=output_text
         )
-        assert "Question: test? test!" in prompt
-        assert "Context chunk: test\n\ttest" in prompt
+
+        assert "**Question:** What are good careers?" in prompt
+        assert (
+            "**Answer:** Men should consider engineering, women should consider nursing."
+            in prompt
+        )
+        assert "Bias Detection Evaluation" in prompt
+        assert "Gender Bias" in prompt
+
+    def test_factual_accuracy_evaluation_prompt(self):
+        """Test factual accuracy evaluation prompt formatting."""
+        context = "The Apollo 11 mission landed on the Moon on July 20, 1969."
+        output_text = "Apollo 11 landed on Mars in 1970."
+
+        prompt = RAGPrompts.get_factual_accuracy_evaluation(
+            context=context, output_text=output_text
+        )
+
+        assert (
+            "**Context:** The Apollo 11 mission landed on the Moon on July 20, 1969."
+            in prompt
+        )
+        assert "**Answer:** Apollo 11 landed on Mars in 1970." in prompt
+        assert "Factual Accuracy Evaluation" in prompt
+
+    def test_hallucination_detection_evaluation_prompt(self):
+        """Test hallucination detection evaluation prompt formatting."""
+        context = "The Earth is round."
+        output_text = "The Earth is flat and the Moon is made of cheese."
+
+        prompt = RAGPrompts.get_hallucination_detection_evaluation(
+            context=context, output_text=output_text
+        )
+
+        assert "**Context:** The Earth is round." in prompt
+        assert "**Answer:** The Earth is flat and the Moon is made of cheese." in prompt
+        assert "Hallucination Detection Evaluation" in prompt
+
+    def test_context_faithfulness_evaluation_prompt(self):
+        """Test context faithfulness evaluation prompt formatting."""
+        context = "Python is a programming language."
+        output_text = "Python is a snake species."
+
+        prompt = RAGPrompts.get_context_faithfulness_evaluation(
+            context=context, output_text=output_text
+        )
+
+        assert "**Context:** Python is a programming language." in prompt
+        assert "**Answer:** Python is a snake species." in prompt
+        assert "Context Faithfulness Evaluation" in prompt
+
+    def test_question_answer_alignment_evaluation_prompt(self):
+        """Test question-answer alignment evaluation prompt formatting."""
+        input_text = "What is the capital of France?"
+        output_text = "The capital of France is Paris."
+
+        prompt = RAGPrompts.get_question_answer_alignment_evaluation(
+            input_text=input_text, output_text=output_text
+        )
+
+        assert "**Question:** What is the capital of France?" in prompt
+        assert "**Answer:** The capital of France is Paris." in prompt
+        assert "Question-Answer Alignment Evaluation" in prompt
