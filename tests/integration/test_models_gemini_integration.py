@@ -51,13 +51,8 @@ class TestGeminiModelIntegration:
                 ), "Basic generation should work even if validate_connection fails"
             except Exception as gen_error:
                 # If both validate_connection and generate fail due to API issues,
-                # this is acceptable for integration tests
-                # Log the error but don't fail the test
-                print(
-                    f"Both validate_connection and generate failed due to API issues: {gen_error}"
-                )
-                # The test passes in this case since it's an API issue, not a code issue
-                pass
+                # mark the test as expected to fail rather than producing a false positive
+                pytest.xfail(f"External API unavailable: {gen_error}")
 
     @requires_api_key
     @integration_test

@@ -341,7 +341,7 @@ Now extract all specific claims from the provided answer.
 You are an expert fact-checker evaluating whether a specific claim can be verified or supported by the provided context. Your goal is to assess the verifiability and support level of individual claims.
 
 ## Input
-**Context:** {context or "No context provided"}
+**Context:** {context}
 **Claim:** {claim}
 
 ## Evaluation Criteria
@@ -839,7 +839,9 @@ Now evaluate the technical accuracy of the provided answer.
     def get_claim_verification_evaluation(cls, context: str, claim: str) -> str:
         """Get formatted claim verification evaluation prompt."""
         return cls.format_prompt(
-            cls.CLAIM_VERIFICATION_EVALUATION, context=context, claim=claim
+            cls.CLAIM_VERIFICATION_EVALUATION,
+            context=context or "No context provided",
+            claim=claim,
         )
 
     # Information density methods
