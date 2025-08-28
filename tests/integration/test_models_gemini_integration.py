@@ -29,14 +29,24 @@ class TestGeminiModelIntegration:
 
     @requires_api_key
     @integration_test
+    @smoke_test
     def test_model_initialization_with_real_api(self, gemini_api_key):
-        """Test model initialization with real API key."""
+        """Test successful model initialization with valid API keys."""
         model = GeminiModel(model_name="gemini-2.5-flash", api_key=gemini_api_key)
 
         assert model.name == "gemini_gemini-2.5-flash"
         assert model.model_name == "gemini-2.5-flash"
         assert model.client is not None
+        assert model.get_provider() == "gemini"
+        assert model.api_key == gemini_api_key
 
+        # Verify statistics tracking is initialized properly
+        assert model.total_requests == 0
+        assert model.total_tokens == 0
+        assert model.total_cost == 0.0
+        assert len(model.errors) == 0
+
+        # Verify the model can make a simple API call
         # Note: validate_connection() might fail due to API rate limits or temporary issues
         # So we'll test the basic functionality instead
         try:
@@ -44,15 +54,10 @@ class TestGeminiModelIntegration:
             assert is_connected is True
         except Exception:
             # If validate_connection fails, test basic generation instead
-            try:
-                response = model.generate(prompt="What is 2+2?", max_tokens=50)
-                assert (
-                    len(response) > 0
-                ), "Basic generation should work even if validate_connection fails"
-            except Exception as gen_error:
-                # If both validate_connection and generate fail due to API issues,
-                # mark the test as expected to fail rather than producing a false positive
-                pytest.xfail(f"External API unavailable: {gen_error}")
+            response = model.generate(prompt="What is 2+2?", max_tokens=50)
+            assert (
+                len(response) > 0
+            ), "Basic generation should work even if validate_connection fails"
 
     @requires_api_key
     @integration_test
