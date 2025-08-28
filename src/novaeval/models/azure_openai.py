@@ -14,7 +14,7 @@ from typing import Any, Optional, Union
 
 from openai import AzureOpenAI
 
-from novaeval.models.base import BaseModel
+from novaeval.models.base import BaseModel, trace_llm
 
 # ---------------------------------------------------------------------------
 # Pricing (BASE TIER + TIERED for context window models)
@@ -155,6 +155,7 @@ class AzureOpenAIModel(BaseModel):
         except Exception as e:
             raise ValueError(f"Failed to initialize Azure OpenAI client: {e!s}")
 
+    @trace_llm
     def generate(
         self,
         prompt: Optional[str] = None,

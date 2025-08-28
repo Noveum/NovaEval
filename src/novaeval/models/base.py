@@ -4,12 +4,57 @@ Base model class for NovaEval.
 This module defines the abstract base class for all model implementations.
 """
 
+import functools
 import logging
+import os
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
+
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Create module-level logger
 logger = logging.getLogger(__name__)
+
+NOVEUM_TRACE_AVAILABLE = False
+
+
+# Fallback implementation that mimics trace_llm decorator signature but doesn't use tracing params
+# The noqa: ARG001 directives are justified here because this function maintains interface compatibility
+# with the real trace_llm decorator while providing a no-op implementation when tracing is unavailable
+def _trace_llm_noop(
+    func: Optional[Callable] = None,
+    *,
+    name: Optional[str] = None,  # noqa: ARG001
+    provider: Optional[str] = None,  # noqa: ARG001
+    capture_prompts: bool = True,  # noqa: ARG001
+    capture_completions: bool = True,  # noqa: ARG001
+    capture_tokens: bool = True,  # noqa: ARG001
+    estimate_costs: bool = True,  # noqa: ARG001
+    redact_pii: bool = False,  # noqa: ARG001
+    metadata: Optional[dict[str, Any]] = None,  # noqa: ARG001
+    tags: Optional[dict[str, str]] = None,  # noqa: ARG001
+    **kwargs: Any,  # noqa: ARG001
+) -> Any:
+    # runtime no-op that behaves like the real decorator factory
+    if func is None:
+        # Called as @trace_llm(...) - return a decorator
+        def deco(f: Callable) -> Callable:
+            return functools.wraps(f)(lambda *args, **kwargs: f(*args, **kwargs))
+
+        return deco
+    # Called as @trace_llm - return the function unchanged
+    return func
+
+
+try:
+    from noveum_trace import trace_llm  # types come from stub
+
+    NOVEUM_TRACE_AVAILABLE = True
+except ImportError:
+    trace_llm = _trace_llm_noop  # type: ignore[assignment]
 
 
 class BaseModel(ABC):
@@ -49,7 +94,27 @@ class BaseModel(ABC):
         self.total_cost = 0.0
         self.errors: list[str] = []
 
+        if os.getenv("NOVEUM_API_KEY"):
+            # if ENABLE_TRACING is set to true or unset, we trace, we stop tracing only if set to False
+            # for starting tracing, we do this - get the variables from the env
+            enable_tracing = os.getenv("ENABLE_TRACING", "true").lower()
+            if enable_tracing != "false":
+                try:
+                    import noveum_trace
+
+                    noveum_trace.init(
+                        api_key=os.getenv("NOVEUM_API_KEY"),
+                        project=os.getenv("NOVEUM_PROJECT", "example-project"),
+                        environment=os.getenv("NOVEUM_ENVIRONMENT", "development"),
+                    )
+                    logger.info("Noveum tracing initialized successfully")
+                except ImportError:
+                    logger.warning("noveum_trace not available, tracing disabled")
+                except Exception as e:
+                    logger.error(f"Failed to initialize Noveum tracing: {e}")
+
     @abstractmethod
+    @trace_llm
     def generate(
         self,
         prompt: str,

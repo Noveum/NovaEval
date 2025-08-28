@@ -16,7 +16,7 @@ try:
     from ollama import Client  # type: ignore
 except ImportError:  # pragma: no cover - import failure surfaced at runtime
     Client = None  # type: ignore
-from novaeval.models.base import BaseModel
+from novaeval.models.base import BaseModel, trace_llm
 
 
 class OllamaModel(BaseModel):
@@ -226,6 +226,7 @@ class OllamaModel(BaseModel):
         return ""
 
     # -------------------------- Core API ---------------------------
+    @trace_llm
     def generate(
         self,
         prompt: str | None = None,

@@ -10,7 +10,7 @@ from typing import Any, Optional, Union
 
 import anthropic
 
-from novaeval.models.base import BaseModel
+from novaeval.models.base import BaseModel, trace_llm
 
 
 class AnthropicModel(BaseModel):
@@ -70,6 +70,7 @@ class AnthropicModel(BaseModel):
             timeout=timeout,
         )
 
+    @trace_llm
     def generate(
         self,
         prompt: str,
