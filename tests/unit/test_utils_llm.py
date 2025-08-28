@@ -10,6 +10,8 @@ import pytest
 
 from src.novaeval.utils.llm import call_llm
 
+pytestmark = pytest.mark.unit
+
 
 class TestCallLLM:
     """Test the call_llm function with different model types."""

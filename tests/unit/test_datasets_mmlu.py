@@ -10,6 +10,8 @@ import pytest
 
 from src.novaeval.datasets.mmlu import MMLUDataset
 
+pytestmark = pytest.mark.unit
+
 
 class TestMMLUDatasetInit:
     """Test MMLU dataset initialization."""

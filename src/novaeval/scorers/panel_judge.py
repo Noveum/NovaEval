@@ -146,14 +146,7 @@ class PanelOfJudgesScorer(BaseScorer):
                         f"{self.judges[i].name or f'Judge_{i}'}: {result!s}"
                     )
                 else:
-                    # Check if the result is an exception returned by
-                    # _evaluate_with_judge
-                    if isinstance(result, Exception):
-                        failed_judges.append(
-                            f"{self.judges[i].name or f'Judge_{i}'}: {result!s}"
-                        )
-                    else:
-                        valid_results.append((self.judges[i], result))
+                    valid_results.append((self.judges[i], result))
 
             if not valid_results:
                 return ScoreResult(
