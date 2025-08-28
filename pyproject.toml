@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "novaeval"
-version = "0.5.0"
+version = "0.5.1"
 description = "A comprehensive, open-source LLM evaluation framework for testing and benchmarking AI models"
 readme = "README.md"
 license = {file = "LICENSE"}
