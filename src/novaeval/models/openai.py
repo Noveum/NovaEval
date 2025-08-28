@@ -17,7 +17,7 @@ try:
 except ImportError:
     TIKTOKEN_AVAILABLE = False
 
-from novaeval.models.base import BaseModel
+from novaeval.models.base import BaseModel, trace_llm
 
 
 class OpenAIModel(BaseModel):
@@ -81,6 +81,7 @@ class OpenAIModel(BaseModel):
             timeout=timeout,
         )
 
+    @trace_llm
     def generate(
         self,
         prompt: str,
