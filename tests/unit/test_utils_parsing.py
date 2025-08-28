@@ -4,7 +4,11 @@ Tests for parsing utility functions.
 This module tests the parsing utilities used for LLM response processing.
 """
 
+import pytest
+
 from src.novaeval.utils.parsing import parse_claims, parse_simple_claims
+
+pytestmark = pytest.mark.unit
 
 
 class TestParseClaims:

@@ -338,38 +338,45 @@ class PanelOfJudgesScorer(BaseScorer):
                 input_text, prediction, ground_truth, context
             )
 
-            # Set judge-specific temperature if different from default
-            original_temp = getattr(judge.model, "temperature", None)
-            if hasattr(judge.model, "temperature"):
-                judge.model.temperature = judge.temperature
-
-            # Get evaluation from judge (synchronous call)
+            # Get evaluation from judge (synchronous call) with temperature parameter
             if hasattr(judge.model, "generate_sync"):
-                response = judge.model.generate_sync(evaluation_prompt)
+                response = judge.model.generate_sync(
+                    evaluation_prompt, temperature=judge.temperature
+                )
             else:
                 # Fallback to async method if sync method not available
                 import asyncio
 
                 # Check if generate returns a coroutine
                 if asyncio.iscoroutinefunction(judge.model.generate):
-                    response = asyncio.run(judge.model.generate(evaluation_prompt))
+                    response = asyncio.run(
+                        judge.model.generate(
+                            evaluation_prompt, temperature=judge.temperature
+                        )
+                    )
                 else:
-                    response = judge.model.generate(evaluation_prompt)
+                    response = judge.model.generate(
+                        evaluation_prompt, temperature=judge.temperature
+                    )
 
-            # Restore original temperature
-            if original_temp is not None and hasattr(judge.model, "temperature"):
-                judge.model.temperature = original_temp
-
-            # Parse JSON response
+            # Try direct parse, then non-greedy JSON block, then fenced JSON
             import json
             import re
 
-            # Extract JSON from response
-            json_match = re.search(r"\{.*\}", response, re.DOTALL)
-            if not json_match:
-                raise ValueError("No JSON found in judge response")
-
-            result = json.loads(json_match.group())
+            resp = response.strip()
+            try:
+                result = json.loads(resp)
+            except Exception:
+                fenced = re.search(
+                    r"```(?:json)?\s*(\{.*?\})\s*```", resp, re.DOTALL | re.IGNORECASE
+                )
+                block = fenced.group(1) if fenced else None
+                if block is None:
+                    m = re.search(r"\{.*?\}", resp, re.DOTALL)
+                    block = m.group(0) if m else None
+                if not block:
+                    raise ValueError("No JSON found in judge response")
+                result = json.loads(block)
 
             # Validate required fields
             if "score" not in result or "reasoning" not in result:
@@ -511,28 +518,27 @@ class PanelOfJudgesScorer(BaseScorer):
         """Evaluate with a single judge."""
 
         try:
-            # Set judge-specific temperature if different from default
-            original_temp = getattr(judge.model, "temperature", None)
-            if hasattr(judge.model, "temperature"):
-                judge.model.temperature = judge.temperature
+            # Get evaluation from judge with temperature parameter
+            response = await judge.model.generate(prompt, temperature=judge.temperature)  # type: ignore
 
-            # Get evaluation from judge
-            response = await judge.model.generate(prompt)  # type: ignore
-
-            # Restore original temperature
-            if original_temp is not None and hasattr(judge.model, "temperature"):
-                judge.model.temperature = original_temp
-
-            # Parse JSON response
+            # Try direct parse, then non-greedy JSON block, then fenced JSON
             import json
             import re
 
-            # Extract JSON from response
-            json_match = re.search(r"\{.*\}", response, re.DOTALL)
-            if not json_match:
-                raise ValueError("No JSON found in judge response")
-
-            result = json.loads(json_match.group())
+            resp = response.strip()
+            try:
+                result = json.loads(resp)
+            except Exception:
+                fenced = re.search(
+                    r"```(?:json)?\s*(\{.*?\})\s*```", resp, re.DOTALL | re.IGNORECASE
+                )
+                block = fenced.group(1) if fenced else None
+                if block is None:
+                    m = re.search(r"\{.*?\}", resp, re.DOTALL)
+                    block = m.group(0) if m else None
+                if not block:
+                    raise ValueError("No JSON found in judge response")
+                result = json.loads(block)
 
             # Validate required fields
             if "score" not in result or "reasoning" not in result:
