@@ -17,7 +17,7 @@ from typing import Any, Optional, Union
 from google import genai
 from google.genai import types
 
-from novaeval.models.base import BaseModel
+from novaeval.models.base import BaseModel, trace_llm
 
 # ---------------------------------------------------------------------------
 # Pricing (BASE TIER ONLY, cache ignored)
@@ -163,6 +163,7 @@ class GeminiModel(BaseModel):
         self.max_retries = max_retries
         self.timeout = timeout
 
+    @trace_llm
     def generate(
         self,
         prompt: str,

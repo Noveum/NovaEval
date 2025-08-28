@@ -9,12 +9,6 @@
 
 A comprehensive, extensible AI model evaluation framework designed for production use. NovaEval provides a unified interface for evaluating language models across various datasets, metrics, and deployment scenarios.
 
-## 🚧 Development Status
-
-> **⚠️ ACTIVE DEVELOPMENT - NOT PRODUCTION READY**
->
-> NovaEval is currently in active development and **not recommended for production use**. We are actively working on improving stability, adding features, and expanding test coverage. APIs may change without notice.
->
 > **We're looking for contributors!** See the [Contributing](#-contributing) section below for ways to help.
 
 ## 🤝 We Need Your Help!
@@ -277,26 +271,276 @@ src/novaeval/
 - **Noveum AI Gateway**: Integration with Noveum's model gateway
 - **Custom**: Extensible interface for any API-based model
 
-## 📏 Built-in Scorers
+## 📏 Built-in Scorers & Metrics
 
-### Accuracy-Based
-- **ExactMatch**: Exact string matching
-- **Accuracy**: Classification accuracy
-- **F1Score**: F1 score for classification tasks
+NovaEval provides a comprehensive suite of scorers organized by evaluation domain. All scorers implement the `BaseScorer` interface and support both synchronous and asynchronous evaluation.
 
-### Semantic-Based
-- **SemanticSimilarity**: Embedding-based similarity scoring
-- **BERTScore**: BERT-based semantic evaluation
-- **RougeScore**: ROUGE metrics for text generation
+### 🎯 Accuracy & Classification Metrics
 
-### Code-Specific
-- **CodeExecution**: Execute and validate code outputs
-- **SyntaxChecker**: Validate code syntax
-- **TestCoverage**: Code coverage analysis
+#### **ExactMatchScorer**
+- **Purpose**: Performs exact string matching between prediction and ground truth
+- **Features**:
+  - Case-sensitive/insensitive matching options
+  - Whitespace normalization and stripping
+  - Perfect for classification tasks with exact expected outputs
+- **Use Cases**: Multiple choice questions, command validation, exact answer matching
+- **Configuration**: `case_sensitive`, `strip_whitespace`, `normalize_whitespace`
 
-### Custom
-- **LLMJudge**: Use another LLM as a judge
-- **HumanEval**: Integration with human evaluation workflows
+#### **AccuracyScorer**
+- **Purpose**: Advanced classification accuracy with answer extraction capabilities
+- **Features**:
+  - Intelligent answer extraction from model responses using multiple regex patterns
+  - Support for MMLU-style multiple choice questions (A, B, C, D)
+  - Letter-to-choice text conversion
+  - Robust parsing of various answer formats
+- **Use Cases**: MMLU evaluations, multiple choice tests, classification benchmarks
+- **Configuration**: `extract_answer`, `answer_pattern`, `choices`
+
+#### **F1Scorer**
+- **Purpose**: Token-level F1 score for partial matching scenarios
+- **Features**:
+  - Calculates precision, recall, and F1 score
+  - Configurable tokenization (word-level or character-level)
+  - Case-sensitive/insensitive options
+- **Use Cases**: Question answering, text summarization, partial credit evaluation
+- **Returns**: Dictionary with `precision`, `recall`, `f1`, and `score` values
+
+### 💬 Conversational AI Metrics
+
+#### **KnowledgeRetentionScorer**
+- **Purpose**: Evaluates if the LLM retains information provided by users throughout conversations
+- **Features**:
+  - Sophisticated knowledge extraction from conversation history
+  - Sliding window approach for relevant context (configurable window size)
+  - Detects when LLM asks for previously provided information
+  - Tracks knowledge items with confidence scores
+- **Use Cases**: Chatbots, virtual assistants, multi-turn conversations
+- **Requirements**: LLM model for knowledge extraction, conversation context
+
+#### **ConversationRelevancyScorer**
+- **Purpose**: Measures response relevance to recent conversation context
+- **Features**:
+  - Sliding window context analysis
+  - LLM-based relevance assessment (1-5 scale)
+  - Context coherence evaluation
+  - Conversation flow maintenance tracking
+- **Use Cases**: Dialogue systems, context-aware assistants
+- **Configuration**: `window_size` for context scope
+
+#### **ConversationCompletenessScorer**
+- **Purpose**: Assesses whether user intentions and requests are fully addressed
+- **Features**:
+  - Extracts user intentions from conversation history
+  - Evaluates fulfillment level of each intention
+  - Comprehensive coverage analysis
+  - Outcome-based evaluation
+- **Use Cases**: Customer service bots, task-oriented dialogue systems
+
+#### **RoleAdherenceScorer**
+- **Purpose**: Evaluates consistency with assigned persona or role
+- **Features**:
+  - Role consistency tracking throughout conversations
+  - Character maintenance assessment
+  - Persona adherence evaluation
+  - Customizable role expectations
+- **Use Cases**: Character-based chatbots, role-playing AI, specialized assistants
+- **Configuration**: `expected_role` parameter
+
+#### **ConversationalMetricsScorer**
+- **Purpose**: Comprehensive conversational evaluation combining multiple metrics
+- **Features**:
+  - Combines knowledge retention, relevancy, completeness, and role adherence
+  - Configurable metric inclusion/exclusion
+  - Weighted aggregation of individual scores
+  - Detailed per-metric breakdown
+- **Use Cases**: Holistic conversation quality assessment
+- **Configuration**: Enable/disable individual metrics, window sizes, role expectations
+
+### 🔍 RAG (Retrieval-Augmented Generation) Metrics
+
+#### **AnswerRelevancyScorer**
+- **Purpose**: Evaluates how relevant answers are to given questions
+- **Features**:
+  - Generates questions from answers using LLM
+  - Semantic similarity comparison using embeddings (SentenceTransformers)
+  - Multiple question generation for robust evaluation
+  - Cosine similarity scoring
+- **Use Cases**: RAG systems, Q&A applications, knowledge bases
+- **Configuration**: `threshold`, `embedding_model`
+
+#### **FaithfulnessScorer**
+- **Purpose**: Measures if responses are faithful to provided context without hallucinations
+- **Features**:
+  - Extracts factual claims from responses
+  - Verifies each claim against source context
+  - Three-tier verification: SUPPORTED/PARTIALLY_SUPPORTED/NOT_SUPPORTED
+  - Detailed claim-by-claim analysis
+- **Use Cases**: RAG faithfulness, fact-checking, source attribution
+- **Configuration**: `threshold` for pass/fail determination
+
+#### **ContextualPrecisionScorer**
+- **Purpose**: Evaluates precision of retrieved context relevance
+- **Features**:
+  - Splits context into chunks for granular analysis
+  - Relevance scoring per chunk (1-5 scale)
+  - Intelligent context segmentation
+  - Average relevance calculation
+- **Use Cases**: Retrieval system evaluation, context quality assessment
+- **Requirements**: Context must be provided for evaluation
+
+#### **ContextualRecallScorer**
+- **Purpose**: Measures if all necessary information for answering is present in context
+- **Features**:
+  - Extracts key information from expected outputs
+  - Checks presence of each key fact in provided context
+  - Three-tier presence detection: PRESENT/PARTIALLY_PRESENT/NOT_PRESENT
+  - Comprehensive information coverage analysis
+- **Use Cases**: Retrieval completeness, context sufficiency evaluation
+- **Requirements**: Both context and expected output required
+
+#### **RAGASScorer**
+- **Purpose**: Composite RAGAS methodology combining multiple RAG metrics
+- **Features**:
+  - Integrates Answer Relevancy, Faithfulness, Contextual Precision, and Contextual Recall
+  - Configurable weighted aggregation
+  - Parallel execution of individual metrics
+  - Comprehensive RAG pipeline evaluation
+- **Use Cases**: Complete RAG system assessment, benchmark evaluation
+- **Configuration**: Custom weights for each metric component
+
+### 🤖 LLM-as-Judge Metrics
+
+#### **GEvalScorer**
+- **Purpose**: Uses LLMs with chain-of-thought reasoning for custom evaluation criteria
+- **Features**:
+  - Based on G-Eval research paper methodology
+  - Configurable evaluation criteria and steps
+  - Chain-of-thought reasoning support
+  - Multiple evaluation iterations for consistency
+  - Custom score ranges and thresholds
+- **Use Cases**: Custom evaluation criteria, human-aligned assessment, complex judgments
+- **Configuration**: `criteria`, `use_cot`, `num_iterations`, `threshold`
+
+#### **CommonGEvalCriteria** (Predefined Criteria)
+- **Correctness**: Factual accuracy and completeness assessment
+- **Relevance**: Topic adherence and query alignment evaluation
+- **Coherence**: Logical flow and structural consistency analysis
+- **Helpfulness**: Practical value and actionability assessment
+
+#### **PanelOfJudgesScorer**
+- **Purpose**: Multi-LLM evaluation with diverse perspectives and aggregation
+- **Features**:
+  - Multiple LLM judges with individual weights and specialties
+  - Configurable aggregation methods (mean, median, weighted, consensus, etc.)
+  - Consensus requirement and threshold controls
+  - Parallel judge evaluation for efficiency
+  - Detailed individual and aggregate reasoning
+- **Use Cases**: High-stakes evaluation, bias reduction, robust assessment
+- **Configuration**: Judge models, weights, specialties, aggregation method
+
+#### **SpecializedPanelScorer** (Panel Configurations)
+- **Diverse Panel**: Different models with varied specialties (accuracy, clarity, completeness)
+- **Consensus Panel**: High-consensus requirement for agreement-based decisions
+- **Weighted Expert Panel**: Domain experts with expertise-based weighting
+
+### 🎭 Agent Evaluation Metrics
+
+#### **Tool Relevancy Scoring**
+- **Purpose**: Evaluates appropriateness of tool calls given available tools
+- **Features**: Compares selected tools against available tool catalog
+- **Use Cases**: Agent tool selection assessment, action planning evaluation
+
+#### **Tool Correctness Scoring**
+- **Purpose**: Compares actual tool calls against expected tool calls
+- **Features**: Detailed tool call comparison and correctness assessment
+- **Use Cases**: Agent behavior validation, expected action verification
+
+#### **Parameter Correctness Scoring**
+- **Purpose**: Evaluates correctness of parameters passed to tool calls
+- **Features**: Parameter validation against tool call results and expectations
+- **Use Cases**: Tool usage quality, parameter selection accuracy
+
+#### **Task Progression Scoring**
+- **Purpose**: Measures agent progress toward assigned tasks
+- **Features**: Analyzes task completion status and advancement quality
+- **Use Cases**: Agent effectiveness measurement, task completion tracking
+
+#### **Context Relevancy Scoring**
+- **Purpose**: Assesses response appropriateness given agent's role and task
+- **Features**: Role-task-response alignment evaluation
+- **Use Cases**: Agent behavior consistency, contextual appropriateness
+
+#### **Role Adherence Scoring**
+- **Purpose**: Evaluates consistency with assigned agent role across actions
+- **Features**: Comprehensive role consistency across tool calls and responses
+- **Use Cases**: Agent persona maintenance, role-based behavior validation
+
+#### **Goal Achievement Scoring**
+- **Purpose**: Measures overall goal accomplishment using complete interaction traces
+- **Features**: End-to-end goal evaluation with G-Eval methodology
+- **Use Cases**: Agent effectiveness assessment, outcome-based evaluation
+
+#### **Conversation Coherence Scoring**
+- **Purpose**: Evaluates logical flow and context maintenance in agent conversations
+- **Features**: Conversational coherence and context tracking analysis
+- **Use Cases**: Agent dialogue quality, conversation flow assessment
+
+#### **AgentScorers** (Convenience Class)
+- **Purpose**: Unified interface for all agent evaluation metrics
+- **Features**: Single class providing access to all agent scorers with consistent LLM model
+- **Methods**: Individual scoring methods plus `score_all()` for comprehensive evaluation
+
+### 🔧 Advanced Features
+
+#### **BaseScorer Interface**
+All scorers inherit from `BaseScorer` providing:
+- **Statistics Tracking**: Automatic score history and statistics
+- **Batch Processing**: Efficient batch scoring capabilities
+- **Input Validation**: Robust input validation and error handling
+- **Configuration Support**: Flexible configuration from dictionaries
+- **Metadata Reporting**: Detailed scoring metadata and information
+
+#### **ScoreResult Model**
+Comprehensive scoring results include:
+- **Numerical Score**: Primary evaluation score
+- **Pass/Fail Status**: Threshold-based binary result
+- **Detailed Reasoning**: Human-readable evaluation explanation
+- **Rich Metadata**: Additional context and scoring details
+
+### 📊 Usage Examples
+
+```python
+# Basic accuracy scoring
+scorer = AccuracyScorer(extract_answer=True)
+score = scorer.score("The answer is B", "B")
+
+# Advanced conversational evaluation
+conv_scorer = ConversationalMetricsScorer(
+    model=your_llm_model,
+    include_knowledge_retention=True,
+    include_relevancy=True,
+    window_size=10
+)
+result = await conv_scorer.evaluate(input_text, output_text, context=conv_context)
+
+# RAG system evaluation
+ragas = RAGASScorer(
+    model=your_llm_model,
+    weights={"faithfulness": 0.4, "answer_relevancy": 0.3, "contextual_precision": 0.3}
+)
+result = await ragas.evaluate(question, answer, context=retrieved_context)
+
+# Panel-based evaluation
+panel = SpecializedPanelScorer.create_diverse_panel(
+    models=[model1, model2, model3],
+    evaluation_criteria="overall quality and helpfulness"
+)
+result = await panel.evaluate(input_text, output_text)
+
+# Agent evaluation
+agent_scorers = AgentScorers(model=your_llm_model)
+all_scores = agent_scorers.score_all(agent_data)
+```
 
 ## 🚀 Deployment
 

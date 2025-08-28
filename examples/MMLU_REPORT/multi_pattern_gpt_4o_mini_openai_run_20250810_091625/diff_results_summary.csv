@@ -1,0 +1,11 @@
+subset,num_differences,total_difference
+abstract_algebra,6,6.0
+college_chemistry,12,12.0
+college_mathematics,16,16.0
+college_physics,3,3.0
+conceptual_physics,1,1.0
+elementary_mathematics,1,1.0
+high_school_chemistry,9,9.0
+high_school_mathematics,6,6.0
+high_school_physics,7,7.0
+high_school_statistics,6,6.0

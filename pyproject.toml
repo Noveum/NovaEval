@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "novaeval"
-version = "0.4.0"
+version = "0.5.1"
 description = "A comprehensive, open-source LLM evaluation framework for testing and benchmarking AI models"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -52,6 +52,9 @@ dependencies = [
     "click>=8.1.0",
     "requests>=2.31.0",
     "google-genai>=0.1.0",
+    "ijson>=3.4.0",
+    "noveum-trace>=0.3.5",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -65,6 +68,7 @@ dev = [
     "isort>=5.12.0",
     "ruff>=0.1.0",
     "mypy>=1.6.0",
+    "typing_extensions>=4.7.0",
     "pre-commit>=3.5.0",
     "bandit>=1.7.5",
     "safety>=2.3.0",
@@ -110,6 +114,7 @@ all = [
     "isort>=5.12.0",
     "ruff>=0.1.0",
     "mypy>=1.6.0",
+    "typing_extensions>=4.7.0",
     "pre-commit>=3.5.0",
     "bandit>=1.7.5",
     "safety>=2.3.0",
@@ -236,6 +241,7 @@ ignore = [
 # MyPy configuration
 [tool.mypy]
 python_version = "3.9"
+mypy_path = "stubs"
 check_untyped_defs = true
 disallow_any_generics = false  # Allow generic types without parameters for now
 disallow_incomplete_defs = true
