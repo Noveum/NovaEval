@@ -124,6 +124,81 @@ class AnswerRelevancyScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
+    async def evaluate_multiple_queries(
+        self,
+        queries: list[str],
+        contexts: list[list[str]],
+        output_text: str,
+        expected_output: Optional[str] = None,
+        **kwargs: Any,
+    ) -> list[float]:
+        """
+        Evaluate answer relevancy for multiple queries and their associated contexts.
+
+        Args:
+            queries: List of retrieval queries
+            contexts: List of context lists, where contexts[i] contains contexts for queries[i]
+            output_text: The generated answer text
+            expected_output: Expected output for comparison
+
+        Returns:
+            List of relevancy scores, one per query
+        """
+        if len(queries) != len(contexts):
+            raise ValueError(
+                f"Length mismatch: {len(queries)} queries but {len(contexts)} context lists"
+            )
+
+        scores = []
+
+        for _i, (query, context_list) in enumerate(zip(queries, contexts)):
+            # For each query, evaluate all its contexts in a single LLM call
+            query_score = await self._evaluate_single_query_with_contexts(
+                query, context_list, output_text, expected_output, **kwargs
+            )
+            scores.append(query_score)
+
+        return scores
+
+    async def _evaluate_single_query_with_contexts(
+        self,
+        query: str,
+        contexts: list[str],
+        output_text: str,
+        expected_output: Optional[str] = None,
+        **kwargs: Any,
+    ) -> float:
+        """
+        Evaluate answer relevancy for a single query with multiple contexts, returning average score.
+
+        Args:
+            query: Single retrieval query
+            contexts: List of contexts for this query
+            output_text: Generated answer text
+            expected_output: Expected output for comparison
+
+        Returns:
+            Average relevancy score for this query across all contexts
+        """
+        if not contexts:
+            return 0.0
+
+        # Create a combined prompt for all contexts
+        context_text = "\n\n".join(
+            [f"Context {i+1}: {ctx}" for i, ctx in enumerate(contexts)]
+        )
+
+        # Use the existing evaluate method with combined context
+        result = await self.evaluate(
+            input_text=query,
+            output_text=output_text,
+            expected_output=expected_output,
+            context=context_text,
+            **kwargs,
+        )
+
+        return result.score
+
     def score(
         self,
         prediction: str,
@@ -294,6 +369,81 @@ class FaithfulnessScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
+    async def evaluate_multiple_queries(
+        self,
+        queries: list[str],
+        contexts: list[list[str]],
+        output_text: str,
+        expected_output: Optional[str] = None,
+        **kwargs: Any,
+    ) -> list[float]:
+        """
+        Evaluate faithfulness for multiple queries and their associated contexts.
+
+        Args:
+            queries: List of retrieval queries
+            contexts: List of context lists, where contexts[i] contains contexts for queries[i]
+            output_text: The generated answer text
+            expected_output: Expected output for comparison
+
+        Returns:
+            List of faithfulness scores, one per query
+        """
+        if len(queries) != len(contexts):
+            raise ValueError(
+                f"Length mismatch: {len(queries)} queries but {len(contexts)} context lists"
+            )
+
+        scores = []
+
+        for _i, (query, context_list) in enumerate(zip(queries, contexts)):
+            # For each query, evaluate all its contexts in a single LLM call
+            query_score = await self._evaluate_single_query_with_contexts(
+                query, context_list, output_text, expected_output, **kwargs
+            )
+            scores.append(query_score)
+
+        return scores
+
+    async def _evaluate_single_query_with_contexts(
+        self,
+        query: str,
+        contexts: list[str],
+        output_text: str,
+        expected_output: Optional[str] = None,
+        **kwargs: Any,
+    ) -> float:
+        """
+        Evaluate faithfulness for a single query with multiple contexts, returning average score.
+
+        Args:
+            query: Single retrieval query
+            contexts: List of contexts for this query
+            output_text: Generated answer text
+            expected_output: Expected output for comparison
+
+        Returns:
+            Average faithfulness score for this query across all contexts
+        """
+        if not contexts:
+            return 0.0
+
+        # Create a combined prompt for all contexts
+        context_text = "\n\n".join(
+            [f"Context {i+1}: {ctx}" for i, ctx in enumerate(contexts)]
+        )
+
+        # Use the existing evaluate method with combined context
+        result = await self.evaluate(
+            input_text=query,
+            output_text=output_text,
+            expected_output=expected_output,
+            context=context_text,
+            **kwargs,
+        )
+
+        return result.score
+
     def score(
         self,
         prediction: str,
@@ -453,6 +603,81 @@ class ContextualPrecisionScorer(BaseScorer):
                 reasoning=f"Contextual precision evaluation failed: {e!s}",
                 metadata={"error": str(e)},
             )
+
+    async def evaluate_multiple_queries(
+        self,
+        queries: list[str],
+        contexts: list[list[str]],
+        output_text: str,
+        expected_output: Optional[str] = None,
+        **kwargs: Any,
+    ) -> list[float]:
+        """
+        Evaluate contextual precision for multiple queries and their associated contexts.
+
+        Args:
+            queries: List of retrieval queries
+            contexts: List of context lists, where contexts[i] contains contexts for queries[i]
+            output_text: The generated answer text
+            expected_output: Expected output for comparison
+
+        Returns:
+            List of precision scores, one per query
+        """
+        if len(queries) != len(contexts):
+            raise ValueError(
+                f"Length mismatch: {len(queries)} queries but {len(contexts)} context lists"
+            )
+
+        scores = []
+
+        for _i, (query, context_list) in enumerate(zip(queries, contexts)):
+            # For each query, evaluate all its contexts in a single LLM call
+            query_score = await self._evaluate_single_query_with_contexts(
+                query, context_list, output_text, expected_output, **kwargs
+            )
+            scores.append(query_score)
+
+        return scores
+
+    async def _evaluate_single_query_with_contexts(
+        self,
+        query: str,
+        contexts: list[str],
+        output_text: str,
+        expected_output: Optional[str] = None,
+        **kwargs: Any,
+    ) -> float:
+        """
+        Evaluate contextual precision for a single query with multiple contexts, returning average score.
+
+        Args:
+            query: Single retrieval query
+            contexts: List of contexts for this query
+            output_text: Generated answer text
+            expected_output: Expected output for comparison
+
+        Returns:
+            Average precision score for this query across all contexts
+        """
+        if not contexts:
+            return 0.0
+
+        # Create a combined prompt for all contexts
+        context_text = "\n\n".join(
+            [f"Context {i+1}: {ctx}" for i, ctx in enumerate(contexts)]
+        )
+
+        # Use the existing evaluate method with combined context
+        result = await self.evaluate(
+            input_text=query,
+            output_text=output_text,
+            expected_output=expected_output,
+            context=context_text,
+            **kwargs,
+        )
+
+        return result.score
 
     def score(
         self,
@@ -640,6 +865,81 @@ class ContextualRecallScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
+    async def evaluate_multiple_queries(
+        self,
+        queries: list[str],
+        contexts: list[list[str]],
+        output_text: str,
+        expected_output: Optional[str] = None,
+        **kwargs: Any,
+    ) -> list[float]:
+        """
+        Evaluate contextual recall for multiple queries and their associated contexts.
+
+        Args:
+            queries: List of retrieval queries
+            contexts: List of context lists, where contexts[i] contains contexts for queries[i]
+            output_text: The generated answer text
+            expected_output: Expected output for comparison
+
+        Returns:
+            List of recall scores, one per query
+        """
+        if len(queries) != len(contexts):
+            raise ValueError(
+                f"Length mismatch: {len(queries)} queries but {len(contexts)} context lists"
+            )
+
+        scores = []
+
+        for _i, (query, context_list) in enumerate(zip(queries, contexts)):
+            # For each query, evaluate all its contexts in a single LLM call
+            query_score = await self._evaluate_single_query_with_contexts(
+                query, context_list, output_text, expected_output, **kwargs
+            )
+            scores.append(query_score)
+
+        return scores
+
+    async def _evaluate_single_query_with_contexts(
+        self,
+        query: str,
+        contexts: list[str],
+        output_text: str,
+        expected_output: Optional[str] = None,
+        **kwargs: Any,
+    ) -> float:
+        """
+        Evaluate contextual recall for a single query with multiple contexts, returning average score.
+
+        Args:
+            query: Single retrieval query
+            contexts: List of contexts for this query
+            output_text: Generated answer text
+            expected_output: Expected output for comparison
+
+        Returns:
+            Average recall score for this query across all contexts
+        """
+        if not contexts:
+            return 0.0
+
+        # Create a combined prompt for all contexts
+        context_text = "\n\n".join(
+            [f"Context {i+1}: {ctx}" for i, ctx in enumerate(contexts)]
+        )
+
+        # Use the existing evaluate method with combined context
+        result = await self.evaluate(
+            input_text=query,
+            output_text=output_text,
+            expected_output=expected_output,
+            context=context_text,
+            **kwargs,
+        )
+
+        return result.score
+
     def score(
         self,
         prediction: str,
@@ -715,7 +1015,8 @@ class RAGASScorer(BaseScorer):
         weights: Optional[dict[str, float]] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(**kwargs)
+        name = kwargs.pop("name", "ragas_scorer")
+        super().__init__(name=name, **kwargs)
         self.threshold = threshold
         self.model = model
 
@@ -728,12 +1029,18 @@ class RAGASScorer(BaseScorer):
         }
 
         # Initialize individual scorers
-        self.answer_relevancy_scorer = AnswerRelevancyScorer(model, threshold=0.7)
-        self.faithfulness_scorer = FaithfulnessScorer(model, threshold=0.8)
-        self.contextual_precision_scorer = ContextualPrecisionScorer(
-            model, threshold=0.7
+        self.answer_relevancy_scorer = AnswerRelevancyScorer(
+            model, name="answer_relevancy", threshold=0.7
         )
-        self.contextual_recall_scorer = ContextualRecallScorer(model, threshold=0.7)
+        self.faithfulness_scorer = FaithfulnessScorer(
+            model, name="faithfulness", threshold=0.8
+        )
+        self.contextual_precision_scorer = ContextualPrecisionScorer(
+            model, name="contextual_precision", threshold=0.7
+        )
+        self.contextual_recall_scorer = ContextualRecallScorer(
+            model, name="contextual_recall", threshold=0.7
+        )
 
     async def evaluate(
         self,
@@ -826,3 +1133,101 @@ class RAGASScorer(BaseScorer):
                 reasoning=f"RAGAS evaluation failed: {e!s}",
                 metadata={"error": str(e)},
             )
+
+    async def evaluate_multiple_queries(
+        self,
+        queries: list[str],
+        contexts: list[list[str]],
+        output_text: str,
+        expected_output: Optional[str] = None,
+        **kwargs: Any,
+    ) -> list[float]:
+        """
+        Evaluate RAG performance for multiple queries and their associated contexts.
+
+        Args:
+            queries: List of retrieval queries
+            contexts: List of context lists, where contexts[i] contains contexts for queries[i]
+            output_text: The generated answer text
+            expected_output: Expected output for comparison
+
+        Returns:
+            List of scores, one per query
+        """
+        if len(queries) != len(contexts):
+            raise ValueError(
+                f"Length mismatch: {len(queries)} queries but {len(contexts)} context lists"
+            )
+
+        scores = []
+
+        for _i, (query, context_list) in enumerate(zip(queries, contexts)):
+            # For each query, evaluate all its contexts in a single LLM call
+            query_score = await self._evaluate_single_query_with_contexts(
+                query, context_list, output_text, expected_output, **kwargs
+            )
+            scores.append(query_score)
+
+        return scores
+
+    async def _evaluate_single_query_with_contexts(
+        self,
+        query: str,
+        contexts: list[str],
+        output_text: str,
+        expected_output: Optional[str] = None,
+        **kwargs: Any,
+    ) -> float:
+        """
+        Evaluate a single query with multiple contexts, returning average score.
+
+        Args:
+            query: Single retrieval query
+            contexts: List of contexts for this query
+            output_text: Generated answer text
+            expected_output: Expected output for comparison
+
+        Returns:
+            Average score for this query across all contexts
+        """
+        if not contexts:
+            return 0.0
+
+        # Create a combined prompt for all contexts
+        context_text = "\n\n".join(
+            [f"Context {i+1}: {ctx}" for i, ctx in enumerate(contexts)]
+        )
+
+        # Use the existing evaluate method with combined context
+        result = await self.evaluate(
+            input_text=query,
+            output_text=output_text,
+            expected_output=expected_output,
+            context=context_text,
+            **kwargs,
+        )
+
+        return result.score
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+        import asyncio
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+
+        # Run async evaluation
+        result = asyncio.run(
+            self.evaluate(
+                input_text=ground_truth,  # Use ground_truth as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score

@@ -50,8 +50,8 @@ def test_agent_data_complete():
         ],
         parameters_passed={"x": 1, "y": 2},
         tool_call_results=[ToolResult(call_id="call1", result=3, success=True)],
-        retrieval_query="What is 1+2?",
-        retrieved_context="Math context",
+        retrieval_query=["What is 1+2?"],
+        retrieved_context=[["Math context"]],
         exit_status="completed",
         agent_exit=True,
         metadata="metadata string",
@@ -64,7 +64,7 @@ def test_agent_data_complete():
     assert agent.expected_tool_call.tool_name == "calculator"
     assert agent.agent_name == "EvalBot"
     assert len(agent.tools_available) == 1
-    assert agent.retrieved_context == "Math context"
+    assert agent.retrieved_context == [["Math context"]]
     assert agent.exit_status == "completed"
     assert agent.agent_exit is True
 
@@ -308,9 +308,9 @@ def test_agent_data_retrieval_fields_edge_cases():
     agent = AgentData(retrieval_query=None, retrieved_context=None)
     assert agent.retrieval_query is None
     assert agent.retrieved_context is None
-    agent = AgentData(retrieval_query="q", retrieved_context="ctx")
-    assert agent.retrieval_query == "q"
-    assert agent.retrieved_context == "ctx"
+    agent = AgentData(retrieval_query=["q"], retrieved_context=[["ctx"]])
+    assert agent.retrieval_query == ["q"]
+    assert agent.retrieved_context == [["ctx"]]
 
 
 @pytest.mark.unit

@@ -45,8 +45,8 @@ def minimal_agent_data_dict():
                 "error_message": None,
             }
         ],
-        "retrieval_query": "query1",
-        "retrieved_context": "context1",
+        "retrieval_query": ["query1"],
+        "retrieved_context": [["context1"]],
         "exit_status": "completed",
         "agent_exit": True,
         "metadata": "meta1",
@@ -67,6 +67,8 @@ def minimal_agent_data_csv_row():
                 "parameters_passed",
                 "tool_call_results",
                 "expected_tool_call",
+                "retrieval_query",
+                "retrieved_context",
             ]
         },
         "trace": json.dumps(d["trace"]),
@@ -75,6 +77,8 @@ def minimal_agent_data_csv_row():
         "parameters_passed": json.dumps(d["parameters_passed"]),
         "tool_call_results": json.dumps(d["tool_call_results"]),
         "expected_tool_call": json.dumps(d["expected_tool_call"]),
+        "retrieval_query": json.dumps(d["retrieval_query"]),
+        "retrieved_context": json.dumps(d["retrieved_context"]),
     }
 
 
@@ -431,6 +435,8 @@ def test_agentdataset_field_type_detection():
         "tools_available",
         "tool_calls",
         "tool_call_results",
+        "retrieval_query",
+        "retrieved_context",
     }
     expected_dict_fields = {"parameters_passed"}
     assert ds._list_fields == expected_list_fields
@@ -2663,3 +2669,317 @@ def test_agentdataset_init_modern_union_syntax(monkeypatch):
     assert hasattr(ds, "_union_with_str_fields")
 
     monkeypatch.setattr(agent_data_mod.AgentData, "model_fields", orig_model_fields)
+
+
+@pytest.mark.unit
+def test_validate_retrieval_fields_matching_lengths():
+    """Test that _validate_retrieval_fields passes when lengths match."""
+    ds = AgentDataset()
+
+    # Test with matching lengths
+    data_kwargs = {
+        "retrieval_query": ["query1", "query2"],
+        "retrieved_context": [["context1"], ["context2"]],
+    }
+
+    # Should not raise any exception
+    ds._validate_retrieval_fields(data_kwargs)
+
+
+@pytest.mark.unit
+def test_validate_retrieval_fields_mismatched_lengths():
+    """Test that _validate_retrieval_fields raises ValueError when lengths don't match."""
+    ds = AgentDataset()
+
+    # Test with mismatched lengths
+    data_kwargs = {
+        "retrieval_query": ["query1", "query2"],
+        "retrieved_context": [["context1"]],  # Only one context for two queries
+    }
+
+    with pytest.raises(
+        ValueError,
+        match="Length mismatch: retrieval_query has 2 queries but retrieved_context has 1 context lists",
+    ):
+        ds._validate_retrieval_fields(data_kwargs)
+
+
+@pytest.mark.unit
+def test_validate_retrieval_fields_none_values():
+    """Test that _validate_retrieval_fields skips validation when fields are None."""
+    ds = AgentDataset()
+
+    # Test with None values
+    data_kwargs = {"retrieval_query": None, "retrieved_context": ["context1"]}
+
+    # Should not raise any exception
+    ds._validate_retrieval_fields(data_kwargs)
+
+    # Test with both None
+    data_kwargs = {"retrieval_query": None, "retrieved_context": None}
+
+    # Should not raise any exception
+    ds._validate_retrieval_fields(data_kwargs)
+
+
+@pytest.mark.unit
+def test_validate_retrieval_fields_non_list_values():
+    """Test that _validate_retrieval_fields skips validation when fields are not lists."""
+    ds = AgentDataset()
+
+    # Test with non-list values
+    data_kwargs = {"retrieval_query": "not a list", "retrieved_context": ["context1"]}
+
+    # Should not raise any exception
+    ds._validate_retrieval_fields(data_kwargs)
+
+    # Test with both non-list
+    data_kwargs = {
+        "retrieval_query": "not a list",
+        "retrieved_context": "also not a list",
+    }
+
+    # Should not raise any exception
+    ds._validate_retrieval_fields(data_kwargs)
+
+
+@pytest.mark.unit
+def test_validate_retrieval_fields_empty_lists():
+    """Test that _validate_retrieval_fields passes with empty lists."""
+    ds = AgentDataset()
+
+    # Test with empty lists
+    data_kwargs = {"retrieval_query": [], "retrieved_context": []}
+
+    # Should not raise any exception
+    ds._validate_retrieval_fields(data_kwargs)
+
+
+@pytest.mark.unit
+def test_ingest_from_csv_with_retrieval_validation(tmp_path):
+    """Test that CSV ingestion calls validation for retrieval fields."""
+    # Create CSV data with retrieval fields - all rows have matching lengths
+    csv_data = """user_id,task_id,agent_name,retrieval_query,retrieved_context
+user1,task1,agent1,"[""query1"", ""query2""]","[[""context1""], [""context2""]]"
+user2,task2,agent2,"[""query3""]","[[""context3""]]"
+user3,task3,agent3,"[""query4"", ""query5""]","[[""context4""], [""context5""]]"
+"""
+
+    csv_file = tmp_path / "retrieval_test.csv"
+    with open(csv_file, "w", encoding="utf-8", newline="") as f:
+        f.write(csv_data)
+
+    ds = AgentDataset()
+
+    # All rows should work fine since they have matching lengths
+    ds.ingest_from_csv(str(csv_file))
+
+    # Should have 3 valid rows
+    assert len(ds.data) == 3
+    assert ds.data[0].user_id == "user1"
+    assert ds.data[1].user_id == "user2"
+    assert ds.data[2].user_id == "user3"
+
+
+@pytest.mark.unit
+def test_ingest_from_json_with_retrieval_validation(tmp_path):
+    """Test that JSON ingestion calls validation for retrieval fields."""
+    # Create JSON data with retrieval fields
+    json_data = [
+        {
+            "user_id": "user1",
+            "task_id": "task1",
+            "agent_name": "agent1",
+            "retrieval_query": ["query1", "query2"],
+            "retrieved_context": [["context1"], ["context2"]],
+        },
+        {
+            "user_id": "user2",
+            "task_id": "task2",
+            "agent_name": "agent2",
+            "retrieval_query": ["query3"],
+            "retrieved_context": [["context3"]],
+        },
+    ]
+
+    json_file = tmp_path / "retrieval_test.json"
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump(json_data, f)
+
+    ds = AgentDataset()
+
+    # Both rows should work fine since they have matching lengths
+    ds.ingest_from_json(str(json_file))
+
+    # Should have 2 valid rows
+    assert len(ds.data) == 2
+    assert ds.data[0].user_id == "user1"
+    assert ds.data[1].user_id == "user2"
+
+
+@pytest.mark.unit
+def test_ingest_from_json_with_retrieval_validation_error(tmp_path):
+    """Test that JSON ingestion raises validation error for mismatched retrieval fields."""
+    # Create JSON data with mismatched retrieval fields
+    json_data = [
+        {
+            "user_id": "user1",
+            "task_id": "task1",
+            "agent_name": "agent1",
+            "retrieval_query": ["query1", "query2"],
+            "retrieved_context": [["context1"]],  # Mismatched lengths
+        }
+    ]
+
+    json_file = tmp_path / "retrieval_error_test.json"
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump(json_data, f)
+
+    ds = AgentDataset()
+
+    # Should raise validation error
+    with pytest.raises(
+        ValueError,
+        match="Length mismatch: retrieval_query has 2 queries but retrieved_context has 1 context lists",
+    ):
+        ds.ingest_from_json(str(json_file))
+
+
+@pytest.mark.unit
+def test_ingest_from_csv_retrieval_field_mapping(tmp_path):
+    """Test that CSV ingestion with field mapping works for retrieval fields."""
+    # Create CSV with custom column names for retrieval fields
+    csv_data = """custom_user,custom_task,custom_agent,custom_query,custom_context
+user1,task1,agent1,"[""query1""]","[[""context1""]]"
+user2,task2,agent2,"[""query2"", ""query3""]","[[""context2""], [""context3""]]"
+"""
+
+    csv_file = tmp_path / "retrieval_mapping_test.csv"
+    with open(csv_file, "w", encoding="utf-8", newline="") as f:
+        f.write(csv_data)
+
+    ds = AgentDataset()
+
+    # Use field mapping for retrieval fields
+    ds.ingest_from_csv(
+        str(csv_file),
+        user_id="custom_user",
+        task_id="custom_task",
+        agent_name="custom_agent",
+        retrieval_query="custom_query",
+        retrieved_context="custom_context",
+    )
+
+    assert len(ds.data) == 2
+    assert ds.data[0].user_id == "user1"
+    assert ds.data[0].retrieval_query == ["query1"]
+    assert ds.data[0].retrieved_context == [["context1"]]
+    assert ds.data[1].user_id == "user2"
+    assert ds.data[1].retrieval_query == ["query2", "query3"]
+    assert ds.data[1].retrieved_context == [["context2"], ["context3"]]
+
+
+@pytest.mark.unit
+def test_ingest_from_json_retrieval_field_mapping(tmp_path):
+    """Test that JSON ingestion with field mapping works for retrieval fields."""
+    # Create JSON with custom field names for retrieval fields
+    json_data = [
+        {
+            "custom_user": "user1",
+            "custom_task": "task1",
+            "custom_agent": "agent1",
+            "custom_query": ["query1"],
+            "custom_context": [["context1"]],
+        },
+        {
+            "custom_user": "user2",
+            "custom_task": "task2",
+            "custom_agent": "agent2",
+            "custom_query": ["query2", "query3"],
+            "custom_context": [["context2"], ["context3"]],
+        },
+    ]
+
+    json_file = tmp_path / "retrieval_mapping_test.json"
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump(json_data, f)
+
+    ds = AgentDataset()
+
+    # Use field mapping for retrieval fields
+    ds.ingest_from_json(
+        str(json_file),
+        user_id="custom_user",
+        task_id="custom_task",
+        agent_name="custom_agent",
+        retrieval_query="custom_query",
+        retrieved_context="custom_context",
+    )
+
+    assert len(ds.data) == 2
+    assert ds.data[0].user_id == "user1"
+    assert ds.data[0].retrieval_query == ["query1"]
+    assert ds.data[0].retrieved_context == [["context1"]]
+    assert ds.data[1].user_id == "user2"
+    assert ds.data[1].retrieval_query == ["query2", "query3"]
+    assert ds.data[1].retrieved_context == [["context2"], ["context3"]]
+
+
+@pytest.mark.unit
+def test_validate_retrieval_fields_mixed_types():
+    """Test validation with mixed types in retrieval fields."""
+    ds = AgentDataset()
+
+    # Test with one list and one non-list
+    data_kwargs = {
+        "retrieval_query": ["query1", "query2"],
+        "retrieved_context": "not a list",
+    }
+
+    # Should not raise any exception (skips validation)
+    ds._validate_retrieval_fields(data_kwargs)
+
+    # Test with one list and one None
+    data_kwargs = {"retrieval_query": ["query1", "query2"], "retrieved_context": None}
+
+    # Should not raise any exception (skips validation)
+    ds._validate_retrieval_fields(data_kwargs)
+
+
+@pytest.mark.unit
+def test_validate_retrieval_fields_single_item_lists():
+    """Test validation with single item lists."""
+    ds = AgentDataset()
+
+    # Test with single item lists
+    data_kwargs = {"retrieval_query": ["query1"], "retrieved_context": [["context1"]]}
+
+    # Should not raise any exception
+    ds._validate_retrieval_fields(data_kwargs)
+
+
+@pytest.mark.unit
+def test_validate_retrieval_fields_large_lists():
+    """Test validation with larger lists."""
+    ds = AgentDataset()
+
+    # Test with larger lists
+    queries = [f"query{i}" for i in range(10)]
+    contexts = [[f"context{i}"] for i in range(10)]
+
+    data_kwargs = {"retrieval_query": queries, "retrieved_context": contexts}
+
+    # Should not raise any exception
+    ds._validate_retrieval_fields(data_kwargs)
+
+    # Test with mismatched larger lists
+    data_kwargs = {
+        "retrieval_query": queries,
+        "retrieved_context": contexts[:-1],  # One less context
+    }
+
+    with pytest.raises(
+        ValueError,
+        match="Length mismatch: retrieval_query has 10 queries but retrieved_context has 9 context lists",
+    ):
+        ds._validate_retrieval_fields(data_kwargs)

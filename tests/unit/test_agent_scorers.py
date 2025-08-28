@@ -82,7 +82,6 @@ def sample_agent_data():
         tool_call_results=[
             ToolResult(call_id="call_001", result=42, success=True, error_message=None)
         ],
-        retrieved_context="Math context",
         trace=[
             {"type": "user_input", "content": "Calculate 20 + 22"},
             {"type": "tool_call", "tool": "calculator", "result": 42},
@@ -90,6 +89,8 @@ def sample_agent_data():
         exit_status="completed",
         agent_exit=True,
         metadata="Test metadata",
+        retrieval_query=["search for information"],
+        retrieved_context=[["Retrieved relevant information"]],
     )
 
 
@@ -924,7 +925,7 @@ def test_context_relevancy_scorer_missing_fields():
         user_id="user123",
         task_id="task456",
         turn_id="turn789",
-        retrieval_query="search query",
+        retrieval_query=["search query"],
     )
 
     mock_model = MockLLMModel()
@@ -947,8 +948,8 @@ def test_context_relevancy_scorer_success():
         agent_task="Search for information",
         agent_role="assistant",
         agent_response="I found relevant information",
-        retrieval_query="search for information",
-        retrieved_context="Retrieved relevant information",
+        retrieval_query=["search for information"],
+        retrieved_context=[["Retrieved relevant information"]],
     )
 
     mock_model = MockLLMModel('{"score": 8.0, "reasoning": "Context is relevant"}')
@@ -1085,8 +1086,8 @@ def test_agent_scorers_class_successful_scoring():
         agent_task="Task",
         system_prompt="You are a helpful assistant.",
         trace=[{"step": 1}],
-        retrieval_query="query",
-        retrieved_context="context",
+        retrieval_query=["search for information"],
+        retrieved_context=[["Retrieved relevant information"]],
     )
 
     # Test all scoring methods
@@ -1932,7 +1933,7 @@ def string_union_agent_data():
         tool_calls="string_tool_calls",
         parameters_passed="string_parameters",
         tool_call_results="string_results",
-        retrieved_context="Math context",
+        retrieved_context=[["context"]],
         trace="string_trace_representation",
         exit_status="completed",
         agent_exit="true",  # String representation of boolean

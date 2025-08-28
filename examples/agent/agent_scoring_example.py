@@ -75,7 +75,11 @@ def main():
         tool_call_results=[
             ToolResult(call_id="call_001", result=42, success=True, error_message=None)
         ],
-        retrieved_context="Mathematical operations: Addition is the process of combining two or more numbers to get their sum.",
+        retrieved_context=[
+            [
+                "Mathematical operations: Addition is the process of combining two or more numbers to get their sum."
+            ]
+        ],
         agent_exit=True,  # Agent has completed the task
         metadata="Sample evaluation data",
     )
@@ -258,7 +262,11 @@ def example_with_different_model():
     # Create minimal agent data for context scoring
     agent_data = AgentData(
         agent_task="Write a Python function to sort a list",
-        retrieved_context="Python's sorted() function returns a new sorted list from the items in an iterable.",
+        retrieved_context=[
+            [
+                "Python's sorted() function returns a new sorted list from the items in an iterable."
+            ]
+        ],
         agent_exit=True,  # Agent has completed this simple task
     )
 
