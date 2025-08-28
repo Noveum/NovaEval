@@ -265,9 +265,10 @@ class PanelOfJudgesScorer(BaseScorer):
                 len(self.judges), 4
             )  # Limit max workers to prevent memory issues
 
-            with concurrent.futures.ThreadPoolExecutor(
+            executor = concurrent.futures.ThreadPoolExecutor(
                 max_workers=max_workers, thread_name_prefix="PanelJudge"
-            ) as executor:
+            )
+            try:
                 # Submit all judge evaluations as concurrent tasks
                 future_to_judge = {}
 
@@ -282,32 +283,37 @@ class PanelOfJudgesScorer(BaseScorer):
                     )
                     future_to_judge[future] = judge
 
-                # Collect results with timeout to prevent hanging
+                # Use wait() to enforce overall timeout
+                done, not_done = concurrent.futures.wait(
+                    future_to_judge.keys(),
+                    timeout=30,
+                    return_when=concurrent.futures.ALL_COMPLETED,
+                )
+
+                # Collect results from completed futures
                 judge_results = []
-                try:
-                    for future in concurrent.futures.as_completed(
-                        future_to_judge, timeout=30
-                    ):
-                        judge = future_to_judge[future]
-                        try:
-                            result = future.result(timeout=10)  # Individual timeout
-                            judge_results.append((judge, result))
-                        except (concurrent.futures.TimeoutError, Exception) as e:
-                            # Handle individual judge failures
-                            judge_results.append(
-                                (
-                                    judge,
-                                    {"score": 0.0, "reasoning": f"Judge failed: {e}"},
-                                )
-                            )
-                except concurrent.futures.TimeoutError:
-                    # Handle overall timeout
-                    for future in future_to_judge:
-                        if not future.done():
-                            judge = future_to_judge[future]
-                            judge_results.append(
-                                (judge, {"score": 0.0, "reasoning": "Judge timed out"})
-                            )
+                for future in done:
+                    judge = future_to_judge[future]
+                    try:
+                        result = future.result()
+                        judge_results.append((judge, result))
+                    except Exception as e:
+                        # Handle individual judge failures
+                        judge_results.append(
+                            (judge, {"score": 0.0, "reasoning": f"Judge failed: {e}"})
+                        )
+
+                # Handle timed out/canceled futures
+                for future in not_done:
+                    judge = future_to_judge[future]
+                    future.cancel()  # Cancel the future
+                    judge_results.append(
+                        (judge, {"score": 0.0, "reasoning": "Judge timed out"})
+                    )
+
+            finally:
+                # Shutdown executor without blocking
+                executor.shutdown(wait=False, cancel_futures=True)
 
             # Process results and return score
             return self._process_judge_results_sync(judge_results)
@@ -440,22 +446,19 @@ class PanelOfJudgesScorer(BaseScorer):
         if not judge_results:
             return 0.0
 
-        # Extract scores from judge results
-        scores = [
-            result[1]["score"]
+        # Extract scores and weights from judge results using the same filter
+        valid_results = [
+            result
             for result in judge_results
             if isinstance(result[1], dict) and "score" in result[1]
         ]
 
-        if not scores:
+        if not valid_results:
             return 0.0
 
-        # Calculate aggregated score using the configured method
-        weights = [result[0].weight for result in judge_results if len(result) > 0]
-
-        # Ensure weights list has same length as scores
-        if len(weights) != len(scores):
-            weights = [1.0] * len(scores)
+        # Extract scores and weights from the same filtered results
+        scores = [result[1]["score"] for result in valid_results]
+        weights = [result[0].weight for result in valid_results]
 
         return self._aggregate_scores(scores, weights, self.aggregation_method)
 
