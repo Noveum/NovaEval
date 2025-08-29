@@ -24,7 +24,53 @@ if TYPE_CHECKING:
     from sentence_transformers import SentenceTransformer
 
 
-class AnswerRelevancyScorer(BaseScorer):
+class RAGScorerMixin:
+    """
+    Mixin class providing common methods for RAG scorers.
+
+    This mixin provides the evaluate_multiple_queries and _evaluate_single_query_with_contexts
+    methods that are expected by the test suite for all RAG scorers.
+    """
+
+    async def evaluate_multiple_queries(
+        self,
+        queries: list[str],
+        contexts: list[list[str]],
+        answer: str,
+    ) -> list[float]:
+        """Evaluate multiple queries and return scores."""
+        scores = []
+        for query, context_list in zip(queries, contexts):
+            context_text = " ".join(context_list) if context_list else ""
+            # Type ignore: evaluate method is provided by the concrete scorer class
+            result = await self.evaluate(  # type: ignore[attr-defined]
+                input_text=query,
+                output_text=answer,
+                context=context_text,
+            )
+            scores.append(result.score)
+        return scores
+
+    async def _evaluate_single_query_with_contexts(
+        self,
+        query: str,
+        contexts: list[str],
+        answer: str,
+        expected_output: Optional[str] = None,
+    ) -> float:
+        """Evaluate a single query with multiple contexts."""
+        context_text = " ".join(contexts) if contexts else ""
+        # Type ignore: evaluate method is provided by the concrete scorer class
+        result = await self.evaluate(  # type: ignore[attr-defined]
+            input_text=query,
+            output_text=answer,
+            expected_output=expected_output,
+            context=context_text,
+        )
+        return result.score
+
+
+class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
     """
     Evaluates how relevant the answer is to the given question.
 
@@ -39,7 +85,7 @@ class AnswerRelevancyScorer(BaseScorer):
         embedding_model: str = "all-MiniLM-L6-v2",
         **kwargs: Any,
     ) -> None:
-        super().__init__(name="AnswerRelevancyScorer", **kwargs)
+        super().__init__(name=kwargs.pop("name", "AnswerRelevancyScorer"), **kwargs)
         self.threshold = threshold
         self.model = model
         self.embedding_model_name = embedding_model
@@ -212,7 +258,7 @@ class AnswerRelevancyScorer(BaseScorer):
         return questions
 
 
-class FaithfulnessScorer(BaseScorer):
+class FaithfulnessScorer(RAGScorerMixin, BaseScorer):
     """
     Evaluates whether the answer is faithful to the provided context.
 
@@ -221,7 +267,7 @@ class FaithfulnessScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, threshold: float = 0.8, **kwargs: Any) -> None:
-        super().__init__(name="FaithfulnessScorer", **kwargs)
+        super().__init__(name=kwargs.pop("name", "FaithfulnessScorer"), **kwargs)
         self.threshold = threshold
         self.model = model
 
@@ -367,7 +413,7 @@ class FaithfulnessScorer(BaseScorer):
         return parse_claims(response)
 
 
-class ContextualPrecisionScorer(BaseScorer):
+class ContextualPrecisionScorer(RAGScorerMixin, BaseScorer):
     """
     Evaluates the precision of the retrieved context.
 
@@ -376,7 +422,7 @@ class ContextualPrecisionScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
-        super().__init__(name="ContextualPrecisionScorer", **kwargs)
+        super().__init__(name=kwargs.pop("name", "ContextualPrecisionScorer"), **kwargs)
         self.threshold = threshold
         self.model = model
 
@@ -515,7 +561,7 @@ class ContextualPrecisionScorer(BaseScorer):
         return 3.0
 
 
-class ContextualRecallScorer(BaseScorer):
+class ContextualRecallScorer(RAGScorerMixin, BaseScorer):
     """
     Evaluates the recall of the retrieved context.
 
@@ -524,7 +570,7 @@ class ContextualRecallScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
-        super().__init__(name="ContextualRecallScorer", **kwargs)
+        super().__init__(name=kwargs.pop("name", "ContextualRecallScorer"), **kwargs)
         self.threshold = threshold
         self.model = model
 
@@ -669,7 +715,7 @@ class ContextualRecallScorer(BaseScorer):
         return parse_claims(response)
 
 
-class RAGASScorer(BaseScorer):
+class RAGASScorer(RAGScorerMixin, BaseScorer):
     """
     Composite RAGAS (Retrieval-Augmented Generation Assessment) scorer.
 
@@ -683,7 +729,7 @@ class RAGASScorer(BaseScorer):
         weights: Optional[dict[str, float]] = None,
         **kwargs: Any,
     ) -> None:
-        super().__init__(name="RAGASScorer", **kwargs)
+        super().__init__(name=kwargs.pop("name", "ragas_scorer"), **kwargs)
         self.threshold = threshold
         self.model = model
 
