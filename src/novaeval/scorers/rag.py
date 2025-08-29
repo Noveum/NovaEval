@@ -25,7 +25,7 @@ try:
     from sentence_transformers import SentenceTransformer
 except ImportError:
     # Fallback for when sentence_transformers is not installed
-    SentenceTransformer = None
+    SentenceTransformer = None  # type: ignore[assignment]
 
 
 class RAGScorerMixin:
