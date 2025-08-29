@@ -214,8 +214,14 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
             # questions
             self._load_embedding_model()
 
+            # Track whether we used a fallback method
+            used_fallback = False
+            fallback_reason = None
+
             if self.embedding_model is None:
                 # Fallback to simple text similarity if embedding model is not available
+                used_fallback = True
+                fallback_reason = "embedding_model_not_available"
                 similarities = []
                 input_words = set(input_text.lower().split())
                 for gen_question in generated_questions:
@@ -230,9 +236,11 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
             else:
                 # Use embedding model for semantic similarity
                 try:
-                    original_embedding = self.embedding_model.encode([input_text])
-                    generated_embeddings = self.embedding_model.encode(
-                        generated_questions
+                    original_embedding = await asyncio.to_thread(
+                        self.embedding_model.encode, [input_text]
+                    )
+                    generated_embeddings = await asyncio.to_thread(
+                        self.embedding_model.encode, generated_questions
                     )
 
                     # Calculate cosine similarities
@@ -244,21 +252,39 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
                         )
                         similarities.append(similarity)
                 except Exception as e:
-                    # Return 0.0 score when embedding encoding fails
-                    return ScoreResult(
-                        score=0.0,
-                        passed=False,
-                        reasoning=f"Answer relevancy evaluation failed: {e!s}",
-                        metadata={"error": str(e)},
+                    # Log the embedding error and fall back to token-overlap heuristic
+                    logging.warning(
+                        f"Embedding encoding failed, falling back to token-overlap: {e}"
                     )
+                    used_fallback = True
+                    fallback_reason = f"embedding_encoding_failed: {e!s}"
+
+                    # Fallback to token-overlap similarity
+                    similarities = []
+                    input_words = set(input_text.lower().split())
+                    for gen_question in generated_questions:
+                        gen_words = set(gen_question.lower().split())
+                        if input_words and gen_words:
+                            overlap = len(input_words.intersection(gen_words))
+                            union = len(input_words.union(gen_words))
+                            similarity = overlap / union if union > 0 else 0.0
+                        else:
+                            similarity = 0.0
+                        similarities.append(similarity)
 
             # Use mean similarity as the relevancy score
             relevancy_score = float(np.mean(similarities))
 
+            # Build reasoning with fallback information
+            similarity_method = (
+                "token-overlap" if used_fallback else "semantic embedding"
+            )
+            fallback_info = f" (fallback: {fallback_reason})" if used_fallback else ""
+
             reasoning = f"""
             Answer Relevancy Analysis:
             - Generated {len(generated_questions)} questions from the answer
-            - Calculated semantic similarity with original question
+            - Calculated {similarity_method} similarity with original question{fallback_info}
             - Individual similarities: {[f'{s:.3f}' for s in similarities]}
             - Mean relevancy score: {relevancy_score:.3f}
 
@@ -266,15 +292,21 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
             {chr(10).join(f'{i+1}. {q}' for i, q in enumerate(generated_questions))}
             """
 
+            metadata = {
+                "generated_questions": generated_questions,
+                "similarities": similarities,
+                "mean_similarity": relevancy_score,
+                "similarity_method": similarity_method,
+            }
+
+            if used_fallback:
+                metadata["fallback_reason"] = fallback_reason
+
             return ScoreResult(
                 score=relevancy_score,
                 passed=relevancy_score >= self.threshold,
                 reasoning=reasoning.strip(),
-                metadata={
-                    "generated_questions": generated_questions,
-                    "similarities": similarities,
-                    "mean_similarity": relevancy_score,
-                },
+                metadata=metadata,
             )
 
         except Exception as e:

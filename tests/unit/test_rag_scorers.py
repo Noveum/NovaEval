@@ -364,9 +364,14 @@ class TestAnswerRelevancyScorerExtended:
             )
 
             assert isinstance(result, ScoreResult)
-            assert result.score == 0.0
-            assert not result.passed
+            # Should fall back to token-overlap instead of hard-failing to 0.0
+            assert result.score > 0.0  # Should have a meaningful token-overlap score
+            assert not result.passed  # Should still fail the threshold
+            assert "token-overlap" in result.reasoning
+            assert "fallback" in result.reasoning
             assert "Encoding failed" in result.reasoning
+            assert result.metadata["similarity_method"] == "token-overlap"
+            assert "embedding_encoding_failed" in result.metadata["fallback_reason"]
 
     def test_score_method_with_context_dict(self):
         """Test score method with context dictionary."""
