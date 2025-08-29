@@ -11,6 +11,7 @@ This module implements various metrics for evaluating RAG systems including:
 """
 
 import asyncio
+import logging
 from typing import Any, Optional, Union
 
 import numpy as np
@@ -25,7 +26,7 @@ try:
     from sentence_transformers import SentenceTransformer
 except ImportError:
     # Fallback for when sentence_transformers is not installed
-    SentenceTransformer = None  # type: ignore[assignment]
+    SentenceTransformer = None  # type: ignore
 
 
 class RAGScorerMixin:
@@ -47,19 +48,15 @@ class RAGScorerMixin:
         import asyncio
         import inspect
 
-        # Check if generate is a coroutine function
-        if inspect.iscoroutinefunction(self.model.generate):  # type: ignore[attr-defined]
-            # It's an async function, await it directly
-            return await self.model.generate(*args, **kwargs)  # type: ignore[attr-defined]
-
-        # Check if the result is awaitable (for cases where generate returns a coroutine)
-        result = self.model.generate(*args, **kwargs)  # type: ignore[attr-defined]
+        gen = self.model.generate  # type: ignore[attr-defined]
+        if inspect.iscoroutinefunction(gen):
+            return await gen(*args, **kwargs)  # type: ignore[misc]
+        # Offload sync call
+        result = await asyncio.to_thread(gen, *args, **kwargs)
+        # Some sync wrappers may return an awaitable; handle it
         if inspect.isawaitable(result):
-            # The result is awaitable, await it
-            return await result
-
-        # It's a synchronous function, run it in a thread to avoid blocking
-        return await asyncio.to_thread(self.model.generate, *args, **kwargs)  # type: ignore[attr-defined]
+            return await result  # type: ignore[misc]
+        return result  # type: ignore[return-value]
 
     async def evaluate_multiple_queries(
         self,
@@ -132,33 +129,26 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
 
     def _load_embedding_model(self) -> None:
         """Load the sentence transformer model with error handling."""
-        if not self._model_loaded:
-            try:
-                if SentenceTransformer is None:
-                    raise ImportError("sentence_transformers not available")
+        if self._model_loaded:
+            return  # Already loaded, return early to make function idempotent
 
-                self.embedding_model = SentenceTransformer(self.embedding_model_name)
-            except ImportError:
-                self.embedding_model = None
-                print(
-                    "Warning: sentence_transformers not installed. "
-                    "Answer relevancy scoring will use fallback method."
-                )
-            except Exception as e:
-                self.embedding_model = None
-                print(f"Warning: Could not load SentenceTransformer model: {e}")
+        try:
+            if SentenceTransformer is None:
+                raise ImportError("sentence_transformers not available")
+
+            self.embedding_model = SentenceTransformer(self.embedding_model_name)
             self._model_loaded = True
-        else:
-            # If already loaded, reload to allow testing of different scenarios
-            try:
-                if SentenceTransformer is None:
-                    raise ImportError("sentence_transformers not available")
-
-                self.embedding_model = SentenceTransformer(self.embedding_model_name)
-            except ImportError:
-                self.embedding_model = None
-            except Exception:
-                self.embedding_model = None
+        except ImportError:
+            self.embedding_model = None
+            logging.warning(
+                "sentence_transformers not installed. "
+                "Answer relevancy scoring will use fallback method."
+            )
+            self._model_loaded = True  # Set to True to prevent re-attempting
+        except Exception as e:
+            self.embedding_model = None
+            logging.exception(f"Could not load SentenceTransformer model: {e}")
+            self._model_loaded = True  # Set to True to prevent re-attempting
 
     def score(
         self,

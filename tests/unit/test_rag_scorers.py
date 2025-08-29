@@ -28,19 +28,21 @@ class TestAnswerRelevancyScorer:
         def mock_load_embedding_model():
             scorer.embedding_model = None
             scorer._model_loaded = True
-            print(
-                "Warning: sentence_transformers not installed. Answer relevancy scoring will use fallback method."
+            import logging
+
+            logging.warning(
+                "sentence_transformers not installed. Answer relevancy scoring will use fallback method."
             )
 
         scorer._load_embedding_model = mock_load_embedding_model
 
-        with patch("builtins.print") as mock_print:
+        with patch("logging.warning") as mock_warning:
             scorer._load_embedding_model()
 
             assert scorer.embedding_model is None
             assert scorer._model_loaded is True
-            mock_print.assert_called_once_with(
-                "Warning: sentence_transformers not installed. "
+            mock_warning.assert_called_once_with(
+                "sentence_transformers not installed. "
                 "Answer relevancy scoring will use fallback method."
             )
 
@@ -407,31 +409,31 @@ class TestAnswerRelevancyScorerExtended:
 
         assert result == 0.7
 
-    def test_load_embedding_model_import_error(self):
-        """Test _load_embedding_model with ImportError."""
+    def test_load_embedding_model_import_error_via_import_mock(self):
+        """Test _load_embedding_model with ImportError via import mocking."""
         mock_llm = MockLLM()
-        scorer = AnswerRelevancyScorer(model=mock_llm)
 
         # Mock the import to fail
         with patch(
             "builtins.__import__",
             side_effect=ImportError("No module named 'sentence_transformers'"),
         ):
-            scorer._load_embedding_model()
+            # Create scorer after mocking to ensure the mock is active during initialization
+            scorer = AnswerRelevancyScorer(model=mock_llm)
             assert scorer.embedding_model is None
             assert scorer._model_loaded is True
 
     def test_load_embedding_model_general_exception(self):
         """Test _load_embedding_model with general Exception."""
         mock_llm = MockLLM()
-        scorer = AnswerRelevancyScorer(model=mock_llm)
 
         # Mock the import to succeed but SentenceTransformer to fail
         with patch(
             "novaeval.scorers.rag.SentenceTransformer",
             side_effect=Exception("Model loading failed"),
         ):
-            scorer._load_embedding_model()
+            # Create scorer after mocking to ensure the mock is active during initialization
+            scorer = AnswerRelevancyScorer(model=mock_llm)
             assert scorer.embedding_model is None
             assert scorer._model_loaded is True
 
