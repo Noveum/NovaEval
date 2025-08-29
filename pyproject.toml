@@ -156,6 +156,7 @@ openai = "novaeval.models.openai:OpenAIModel"
 anthropic = "novaeval.models.anthropic:AnthropicModel"
 azure_openai = "novaeval.models.azure_openai:AzureOpenAIModel"
 gemini = "novaeval.models.gemini:GeminiModel"
+ollama = "novaeval.models.ollama:OllamaModel"
 
 [project.entry-points."novaeval.scorers"]
 accuracy = "novaeval.scorers.accuracy:AccuracyScorer"
