@@ -343,10 +343,17 @@ class TestAnswerRelevancyScorerExtended:
         scorer.embedding_model = mock_model
         scorer._model_loaded = True
 
-        with patch.object(
-            scorer,
-            "_parse_questions",
-            return_value=["What is the capital?", "Which city is the capital?"],
+        with (
+            patch.object(
+                scorer,
+                "_parse_questions",
+                return_value=["What is the capital?", "Which city is the capital?"],
+            ),
+            patch.object(
+                scorer,
+                "_load_embedding_model",
+                return_value=None,
+            ),
         ):
             result = await scorer.evaluate(
                 input_text="What is the capital of France?",
@@ -421,7 +428,7 @@ class TestAnswerRelevancyScorerExtended:
 
         # Mock the import to succeed but SentenceTransformer to fail
         with patch(
-            "sentence_transformers.SentenceTransformer",
+            "novaeval.scorers.rag.SentenceTransformer",
             side_effect=Exception("Model loading failed"),
         ):
             scorer._load_embedding_model()
@@ -459,10 +466,17 @@ class TestAnswerRelevancyScorerExtended:
         scorer = AnswerRelevancyScorer(model=mock_llm)
 
         # Mock the question generation to return predictable results
-        with patch.object(
-            scorer,
-            "_parse_questions",
-            return_value=["What is the capital?", "Which city is the capital?"],
+        with (
+            patch.object(
+                scorer,
+                "_parse_questions",
+                return_value=["What is the capital?", "Which city is the capital?"],
+            ),
+            patch.object(
+                scorer,
+                "_load_embedding_model",
+                return_value=None,
+            ),
         ):
             # Mock embedding model to raise exception during encoding
             mock_embedding_model = Mock()

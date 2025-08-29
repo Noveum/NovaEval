@@ -1,0 +1,139 @@
+[33mcommit bd56d29db0c53c5bd18a87122506f8268805d156[m
+Author: Vidushi anand <Vidushi2709@gmail.com>
+Date:   Thu Aug 28 22:40:16 2025 +0530
+
+    fix: comments
+
+[1mdiff --git a/src/novaeval/scorers/panel_judge.py b/src/novaeval/scorers/panel_judge.py[m
+[1mindex 96a0fa0..22cbe6d 100644[m
+[1m--- a/src/novaeval/scorers/panel_judge.py[m
+[1m+++ b/src/novaeval/scorers/panel_judge.py[m
+[36m@@ -338,38 +338,45 @@[m [mclass PanelOfJudgesScorer(BaseScorer):[m
+                 input_text, prediction, ground_truth, context[m
+             )[m
+ [m
+[31m-            # Set judge-specific temperature if different from default[m
+[31m-            original_temp = getattr(judge.model, "temperature", None)[m
+[31m-            if hasattr(judge.model, "temperature"):[m
+[31m-                judge.model.temperature = judge.temperature[m
+[31m-[m
+[31m-            # Get evaluation from judge (synchronous call)[m
+[32m+[m[32m            # Get evaluation from judge (synchronous call) with temperature parameter[m
+             if hasattr(judge.model, "generate_sync"):[m
+[31m-                response = judge.model.generate_sync(evaluation_prompt)[m
+[32m+[m[32m                response = judge.model.generate_sync([m
+[32m+[m[32m                    evaluation_prompt, temperature=judge.temperature[m
+[32m+[m[32m                )[m
+             else:[m
+                 # Fallback to async method if sync method not available[m
+                 import asyncio[m
+ [m
+                 # Check if generate returns a coroutine[m
+                 if asyncio.iscoroutinefunction(judge.model.generate):[m
+[31m-                    response = asyncio.run(judge.model.generate(evaluation_prompt))[m
+[32m+[m[32m                    response = asyncio.run([m
+[32m+[m[32m                        judge.model.generate([m
+[32m+[m[32m                            evaluation_prompt, temperature=judge.temperature[m
+[32m+[m[32m                        )[m
+[32m+[m[32m                    )[m
+                 else:[m
+[31m-                    response = judge.model.generate(evaluation_prompt)[m
+[31m-[m
+[31m-            # Restore original temperature[m
+[31m-            if original_temp is not None and hasattr(judge.model, "temperature"):[m
+[31m-                judge.model.temperature = original_temp[m
+[32m+[m[32m                    response = judge.model.generate([m
+[32m+[m[32m                        evaluation_prompt, temperature=judge.temperature[m
+[32m+[m[32m                    )[m
+ [m
+[31m-            # Parse JSON response[m
+[32m+[m[32m            # Try direct parse, then non-greedy JSON block, then fenced JSON[m
+             import json[m
+             import re[m
+ [m
+[31m-            # Extract JSON from response[m
+[31m-            json_match = re.search(r"\{.*\}", response, re.DOTALL)[m
+[31m-            if not json_match:[m
+[31m-                raise ValueError("No JSON found in judge response")[m
+[31m-[m
+[31m-            result = json.loads(json_match.group())[m
+[32m+[m[32m            resp = response.strip()[m
+[32m+[m[32m            try:[m
+[32m+[m[32m                result = json.loads(resp)[m
+[32m+[m[32m            except Exception:[m
+[32m+[m[32m                fenced = re.search([m
+[32m+[m[32m                    r"```(?:json)?\s*(\{.*?\})\s*```", resp, re.DOTALL | re.IGNORECASE[m
+[32m+[m[32m                )[m
+[32m+[m[32m                block = fenced.group(1) if fenced else None[m
+[32m+[m[32m                if block is None:[m
+[32m+[m[32m                    m = re.search(r"\{.*?\}", resp, re.DOTALL)[m
+[32m+[m[32m                    block = m.group(0) if m else None[m
+[32m+[m[32m                if not block:[m
+[32m+[m[32m                    raise ValueError("No JSON found in judge response")[m
+[32m+[m[32m                result = json.loads(block)[m
+ [m
+             # Validate required fields[m
+             if "score" not in result or "reasoning" not in result:[m
+[36m@@ -511,28 +518,27 @@[m [mclass PanelOfJudgesScorer(BaseScorer):[m
+         """Evaluate with a single judge."""[m
+ [m
+         try:[m
+[31m-            # Set judge-specific temperature if different from default[m
+[31m-            original_temp = getattr(judge.model, "temperature", None)[m
+[31m-            if hasattr(judge.model, "temperature"):[m
+[31m-                judge.model.temperature = judge.temperature[m
+[31m-[m
+[31m-            # Get evaluation from judge[m
+[31m-            response = await judge.model.generate(prompt)  # type: ignore[m
+[32m+[m[32m            # Get evaluation from judge with temperature parameter[m
+[32m+[m[32m            response = await judge.model.generate(prompt, temperature=judge.temperature)  # type: ignore[m
+ [m
+[31m-            # Restore original temperature[m
+[31m-            if original_temp is not None and hasattr(judge.model, "temperature"):[m
+[31m-                judge.model.temperature = original_temp[m
+[31m-[m
+[31m-            # Parse JSON response[m
+[32m+[m[32m            # Try direct parse, then non-greedy JSON block, then fenced JSON[m
+             import json[m
+             import re[m
+ [m
+[31m-            # Extract JSON from response[m
+[31m-            json_match = re.search(r"\{.*\}", response, re.DOTALL)[m
+[31m-            if not json_match:[m
+[31m-                raise ValueError("No JSON found in judge response")[m
+[31m-[m
+[31m-            result = json.loads(json_match.group())[m
+[32m+[m[32m            resp = response.strip()[m
+[32m+[m[32m            try:[m
+[32m+[m[32m                result = json.loads(resp)[m
+[32m+[m[32m            except Exception:[m
+[32m+[m[32m                fenced = re.search([m
+[32m+[m[32m                    r"```(?:json)?\s*(\{.*?\})\s*```", resp, re.DOTALL | re.IGNORECASE[m
+[32m+[m[32m                )[m
+[32m+[m[32m                block = fenced.group(1) if fenced else None[m
+[32m+[m[32m                if block is None:[m
+[32m+[m[32m                    m = re.search(r"\{.*?\}", resp, re.DOTALL)[m
+[32m+[m[32m                    block = m.group(0) if m else None[m
+[32m+[m[32m                if not block:[m
+[32m+[m[32m                    raise ValueError("No JSON found in judge response")[m
+[32m+[m[32m                result = json.loads(block)[m
+ [m
+             # Validate required fields[m
+             if "score" not in result or "reasoning" not in result:[m
+[1mdiff --git a/tests/unit/test_utils_parsing.py b/tests/unit/test_utils_parsing.py[m
+[1mindex 86f710c..8b811de 100644[m
+[1m--- a/tests/unit/test_utils_parsing.py[m
+[1m+++ b/tests/unit/test_utils_parsing.py[m
+[36m@@ -4,8 +4,12 @@[m [mTests for parsing utility functions.[m
+ This module tests the parsing utilities used for LLM response processing.[m
+ """[m
+ [m
+[32m+[m[32mimport pytest[m
+[32m+[m
+ from src.novaeval.utils.parsing import parse_claims, parse_simple_claims[m
+ [m
+[32m+[m[32mpytestmark = pytest.mark.unit[m
+[32m+[m
+ [m
+ class TestParseClaims:[m
+     """Test the parse_claims function."""[m

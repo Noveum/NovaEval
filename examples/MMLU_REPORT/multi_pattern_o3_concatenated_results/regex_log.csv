@@ -1618,10 +1618,10 @@ C. 180
 D. 1800
 Answer:",18,1.8 | 18 | 180 | 1800,1
 mode_unspecified,elementary_mathematics_340,"Question: Find the median in the set of data $79.88, $21.88, $29.88, $19.88, $17.88.
-A. $17.88 
-B. $19.88 
-C. $21.88 
-D. $29.88 
+A. $17.88
+B. $19.88
+C. $21.88
+D. $29.88
 Answer:",$21.88 ,$17.88 | $19.88 | $21.88 | $29.88,2
 mode_unspecified,elementary_mathematics_94,"Question: What is the greatest common factor of 42 and 84?
 A. 7
@@ -1654,16 +1654,16 @@ C. 144
 D. 145
 Answer:",125,120 | 125 | 144 | 145,1
 mode_unspecified,elementary_mathematics_231,"Question: A grocerystore sells a bag of 5 lemons for $2.00. What is the unit cost of each lemon in the bag?
-A. $2.50 
-B. $0.60 
-C. $0.40 
-D. $0.10 
+A. $2.50
+B. $0.60
+C. $0.40
+D. $0.10
 Answer:",$0.40 ,$2.50 | $0.60 | $0.40 | $0.10,2
 mode_unspecified,elementary_mathematics_310,"Question: Molly got a haircut for $25 and she left a 15% tip. What was Molly’s final cost?
-A. $25.15 
-B. $26.50 
-C. $27.50 
-D. $28.75 
+A. $25.15
+B. $26.50
+C. $27.50
+D. $28.75
 Answer:",$28.75 ,$25.15 | $26.50 | $27.50 | $28.75,3
 mode_unspecified,elementary_mathematics_113,"Question: Subtract. 2,396 – 1,709
 A. 687
@@ -1744,10 +1744,10 @@ C. −19.32
 D. 14.72
 Answer:",7.4,7.4 | −7.4 | −19.32 | 14.72,0
 mode_unspecified,elementary_mathematics_304,"Question: The practice range at a golf course charges $4.00 for a bucket of 40 golf balls. At this rate, how much will a bucket of 100 golf balls cost?
-A. $10.00 
-B. $10.50 
-C. $13.50 
-D. $16.00 
+A. $10.00
+B. $10.50
+C. $13.50
+D. $16.00
 Answer:",$10.00 ,$10.00 | $10.50 | $13.50 | $16.00,0
 mode_unspecified,elementary_mathematics_118,"Question: Tara can develop 2 rolls of film in about 18 minutes. At this rate, how long will it take her to develop 8 rolls of film?
 A. 42 minutes

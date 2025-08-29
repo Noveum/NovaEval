@@ -35,10 +35,10 @@ from novaeval.models.openai import OpenAIModel
 async def score_agent():
     # Initialize model
     model = OpenAIModel(model_name="gpt-3.5-turbo", api_key="your-key")
-    
+
     # Create scorers
     scorers = AgentScorers(model)
-    
+
     # Create agent data
     agent_data = AgentData(
         agent_task="Solve math problem",
@@ -49,7 +49,7 @@ async def score_agent():
         tool_calls=[{"tool_name": "calculator", "parameters": {"expression": "2+2"}, "call_id": "1"}],
         # ... other fields
     )
-    
+
     # Score all aspects
     results = await scorers.score_all(agent_data)
     print(results)
@@ -206,4 +206,4 @@ The scoring system follows the G-Eval architecture:
 2. **LLM Evaluation** - Uses chain-of-thought reasoning for scoring
 3. **JSON Output** - Constrains output to structured numerical scores
 4. **Error Handling** - Graceful handling of missing fields and parsing errors
-5. **Flexible Data Types** - Supports both structured objects and string representations for backward compatibility 
+5. **Flexible Data Types** - Supports both structured objects and string representations for backward compatibility

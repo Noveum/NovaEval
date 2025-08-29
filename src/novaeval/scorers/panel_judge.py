@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from novaeval.models.base import BaseModel as LLMModel
 from novaeval.scorers.base import BaseScorer, ScoreResult
+from novaeval.scorers.conversational import _run_async_in_sync_context
 
 
 class AggregationMethod(str, Enum):
@@ -344,26 +345,20 @@ class PanelOfJudgesScorer(BaseScorer):
                 input_text, prediction, ground_truth, context
             )
 
-            # Get evaluation from judge (synchronous call) with temperature parameter
-            if hasattr(judge.model, "generate_sync"):
-                response = judge.model.generate_sync(
-                    evaluation_prompt, temperature=judge.temperature
-                )
-            else:
-                # Fallback to async method if sync method not available
-                import asyncio
+            # Get evaluation from judge with temperature parameter (supports sync/async)
+            import inspect
 
-                # Check if generate returns a coroutine
-                if asyncio.iscoroutinefunction(judge.model.generate):
-                    response = asyncio.run(
-                        judge.model.generate(
-                            evaluation_prompt, temperature=judge.temperature
-                        )
+            gen_sync = getattr(judge.model, "generate_sync", None)
+            if callable(gen_sync):
+                response = gen_sync(evaluation_prompt, temperature=judge.temperature)
+            else:
+                gen = judge.model.generate
+                if inspect.iscoroutinefunction(gen):
+                    response = _run_async_in_sync_context(
+                        gen(evaluation_prompt, temperature=judge.temperature)
                     )
                 else:
-                    response = judge.model.generate(
-                        evaluation_prompt, temperature=judge.temperature
-                    )
+                    response = gen(evaluation_prompt, temperature=judge.temperature)
 
             # Try direct parse, then non-greedy JSON block, then fenced JSON
             import json
@@ -521,8 +516,22 @@ class PanelOfJudgesScorer(BaseScorer):
         """Evaluate with a single judge."""
 
         try:
-            # Get evaluation from judge with temperature parameter
-            response = await judge.model.generate(prompt, temperature=judge.temperature)  # type: ignore
+            # Get evaluation from judge with temperature parameter (supports sync/async)
+            import inspect
+
+            gen_sync = getattr(judge.model, "generate_sync", None)
+            if callable(gen_sync):
+                response = await asyncio.to_thread(
+                    gen_sync, prompt, temperature=judge.temperature
+                )
+            else:
+                gen = judge.model.generate
+                if inspect.iscoroutinefunction(gen):
+                    response = await gen(prompt, temperature=judge.temperature)  # type: ignore
+                else:
+                    response = await asyncio.to_thread(
+                        gen, prompt, temperature=judge.temperature
+                    )
 
             # Try direct parse, then non-greedy JSON block, then fenced JSON
             import json

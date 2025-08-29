@@ -11,17 +11,21 @@ This module implements various metrics for evaluating RAG systems including:
 """
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import Any, Optional, Union
 
 import numpy as np
 
 from novaeval.models.base import BaseModel as LLMModel
 from novaeval.scorers.base import BaseScorer, ScoreResult
+from novaeval.scorers.conversational import _run_async_in_sync_context
 from novaeval.scorers.rag_prompts import RAGPrompts
 from novaeval.utils.parsing import parse_claims
 
-if TYPE_CHECKING:
+try:
     from sentence_transformers import SentenceTransformer
+except ImportError:
+    # Fallback for when sentence_transformers is not installed
+    SentenceTransformer = None
 
 
 class RAGScorerMixin:
@@ -32,6 +36,31 @@ class RAGScorerMixin:
     methods that are expected by the test suite for all RAG scorers.
     """
 
+    async def _call_generate(self, *args: Any, **kwargs: Any) -> str:
+        """
+        Coroutine-safe adapter for model.generate that handles both sync and async implementations.
+
+        This method detects whether self.model.generate is a coroutine function or returns an
+        awaitable, and if it's synchronous, runs it safely in a thread via asyncio.to_thread
+        to avoid blocking the event loop.
+        """
+        import asyncio
+        import inspect
+
+        # Check if generate is a coroutine function
+        if inspect.iscoroutinefunction(self.model.generate):  # type: ignore[attr-defined]
+            # It's an async function, await it directly
+            return await self.model.generate(*args, **kwargs)  # type: ignore[attr-defined]
+
+        # Check if the result is awaitable (for cases where generate returns a coroutine)
+        result = self.model.generate(*args, **kwargs)  # type: ignore[attr-defined]
+        if inspect.isawaitable(result):
+            # The result is awaitable, await it
+            return await result
+
+        # It's a synchronous function, run it in a thread to avoid blocking
+        return await asyncio.to_thread(self.model.generate, *args, **kwargs)  # type: ignore[attr-defined]
+
     async def evaluate_multiple_queries(
         self,
         queries: list[str],
@@ -39,6 +68,9 @@ class RAGScorerMixin:
         answer: str,
     ) -> list[float]:
         """Evaluate multiple queries and return scores."""
+        if len(queries) != len(contexts):
+            raise ValueError("Length mismatch between queries and contexts")
+
         scores = []
         for query, context_list in zip(queries, contexts):
             context_text = " ".join(context_list) if context_list else ""
@@ -59,6 +91,9 @@ class RAGScorerMixin:
         expected_output: Optional[str] = None,
     ) -> float:
         """Evaluate a single query with multiple contexts."""
+        if not contexts:
+            return 0.0
+
         context_text = " ".join(contexts) if contexts else ""
         # Type ignore: evaluate method is provided by the concrete scorer class
         result = await self.evaluate(  # type: ignore[attr-defined]
@@ -92,11 +127,15 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
         self.embedding_model: Optional[SentenceTransformer] = None
         self._model_loaded = False
 
+        # Load embedding model during initialization
+        self._load_embedding_model()
+
     def _load_embedding_model(self) -> None:
         """Load the sentence transformer model with error handling."""
         if not self._model_loaded:
             try:
-                from sentence_transformers import SentenceTransformer
+                if SentenceTransformer is None:
+                    raise ImportError("sentence_transformers not available")
 
                 self.embedding_model = SentenceTransformer(self.embedding_model_name)
             except ImportError:
@@ -109,6 +148,17 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
                 self.embedding_model = None
                 print(f"Warning: Could not load SentenceTransformer model: {e}")
             self._model_loaded = True
+        else:
+            # If already loaded, reload to allow testing of different scenarios
+            try:
+                if SentenceTransformer is None:
+                    raise ImportError("sentence_transformers not available")
+
+                self.embedding_model = SentenceTransformer(self.embedding_model_name)
+            except ImportError:
+                self.embedding_model = None
+            except Exception:
+                self.embedding_model = None
 
     def score(
         self,
@@ -117,13 +167,12 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
         context: Optional[dict[str, Any]] = None,
     ) -> Union[float, dict[str, float]]:
         """Synchronous wrapper for the async evaluate method."""
-        import asyncio
 
         # Extract context from dict if available
         context_text = context.get("context") if context else None
 
-        # Run async evaluation
-        result = asyncio.run(
+        # Run async evaluation (safe in both sync/async callers)
+        result = _run_async_in_sync_context(
             self.evaluate(
                 input_text=ground_truth,  # Use ground_truth as input
                 output_text=prediction,
@@ -158,9 +207,9 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
         """
 
         try:
-            generated_questions_response = await self.model.generate(
+            generated_questions_response = await self._call_generate(
                 question_generation_prompt
-            )  # type: ignore
+            )
             generated_questions = self._parse_questions(generated_questions_response)
 
             if not generated_questions:
@@ -190,17 +239,28 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
                     similarities.append(similarity)
             else:
                 # Use embedding model for semantic similarity
-                original_embedding = self.embedding_model.encode([input_text])
-                generated_embeddings = self.embedding_model.encode(generated_questions)
-
-                # Calculate cosine similarities
-                similarities = []
-                for gen_embedding in generated_embeddings:
-                    similarity = np.dot(original_embedding[0], gen_embedding) / (
-                        np.linalg.norm(original_embedding[0])
-                        * np.linalg.norm(gen_embedding)
+                try:
+                    original_embedding = self.embedding_model.encode([input_text])
+                    generated_embeddings = self.embedding_model.encode(
+                        generated_questions
                     )
-                    similarities.append(similarity)
+
+                    # Calculate cosine similarities
+                    similarities = []
+                    for gen_embedding in generated_embeddings:
+                        similarity = np.dot(original_embedding[0], gen_embedding) / (
+                            np.linalg.norm(original_embedding[0])
+                            * np.linalg.norm(gen_embedding)
+                        )
+                        similarities.append(similarity)
+                except Exception as e:
+                    # Return 0.0 score when embedding encoding fails
+                    return ScoreResult(
+                        score=0.0,
+                        passed=False,
+                        reasoning=f"Answer relevancy evaluation failed: {e!s}",
+                        metadata={"error": str(e)},
+                    )
 
             # Use mean similarity as the relevancy score
             relevancy_score = float(np.mean(similarities))
@@ -278,13 +338,12 @@ class FaithfulnessScorer(RAGScorerMixin, BaseScorer):
         context: Optional[dict[str, Any]] = None,
     ) -> Union[float, dict[str, float]]:
         """Synchronous wrapper for the async evaluate method."""
-        import asyncio
 
         # Extract context from dict if available
         context_text = context.get("context") if context else None
 
-        # Run async evaluation
-        result = asyncio.run(
+        # Run async evaluation (safe in both sync/async callers)
+        result = _run_async_in_sync_context(
             self.evaluate(
                 input_text=ground_truth,  # Use ground_truth as input
                 output_text=prediction,
@@ -327,7 +386,7 @@ class FaithfulnessScorer(RAGScorerMixin, BaseScorer):
         """
 
         try:
-            claims_response = await self.model.generate(claims_extraction_prompt)  # type: ignore
+            claims_response = await self._call_generate(claims_extraction_prompt)
             claims = self._parse_claims(claims_response)
 
             if not claims:
@@ -355,7 +414,7 @@ class FaithfulnessScorer(RAGScorerMixin, BaseScorer):
                 Explanation: [Brief explanation]
                 """
 
-                verification_response = await self.model.generate(verification_prompt)  # type: ignore
+                verification_response = await self._call_generate(verification_prompt)
                 verification_results.append((claim, verification_response))
 
             # Calculate faithfulness score
@@ -433,13 +492,12 @@ class ContextualPrecisionScorer(RAGScorerMixin, BaseScorer):
         context: Optional[dict[str, Any]] = None,
     ) -> Union[float, dict[str, float]]:
         """Synchronous wrapper for the async evaluate method."""
-        import asyncio
 
         # Extract context from dict if available
         context_text = context.get("context") if context else None
 
-        # Run async evaluation
-        result = asyncio.run(
+        # Run async evaluation (safe in both sync/async callers)
+        result = _run_async_in_sync_context(
             self.evaluate(
                 input_text=ground_truth,  # Use ground_truth as input
                 output_text=prediction,
@@ -487,7 +545,7 @@ class ContextualPrecisionScorer(RAGScorerMixin, BaseScorer):
                     input_text, chunk
                 )
 
-                relevance_response = await self.model.generate(relevance_prompt)  # type: ignore
+                relevance_response = await self._call_generate(relevance_prompt)
                 score = self._parse_relevance_score(relevance_response)
                 relevance_scores.append(score)
 
@@ -581,14 +639,13 @@ class ContextualRecallScorer(RAGScorerMixin, BaseScorer):
         context: Optional[dict[str, Any]] = None,
     ) -> Union[float, dict[str, float]]:
         """Synchronous wrapper for the async evaluate method."""
-        import asyncio
 
         # Extract context and expected_output from dict if available
         context_text = context.get("context") if context else None
         expected_output = context.get("expected_output") if context else None
 
-        # Run async evaluation
-        result = asyncio.run(
+        # Run async evaluation (safe in both sync/async callers)
+        result = _run_async_in_sync_context(
             self.evaluate(
                 input_text=ground_truth,  # Use ground_truth as input
                 output_text=prediction,
@@ -632,7 +689,7 @@ class ContextualRecallScorer(RAGScorerMixin, BaseScorer):
             ...
             """
 
-            key_info_response = await self.model.generate(key_info_prompt)  # type: ignore
+            key_info_response = await self._call_generate(key_info_prompt)
             key_information = self._parse_claims(key_info_response)
 
             if not key_information:
@@ -660,7 +717,7 @@ class ContextualRecallScorer(RAGScorerMixin, BaseScorer):
                 Explanation: [Brief explanation]
                 """
 
-                recall_response = await self.model.generate(recall_prompt)  # type: ignore
+                recall_response = await self._call_generate(recall_prompt)
                 recall_results.append((info, recall_response))
 
             # Calculate recall score
@@ -756,14 +813,13 @@ class RAGASScorer(RAGScorerMixin, BaseScorer):
         context: Optional[dict[str, Any]] = None,
     ) -> Union[float, dict[str, float]]:
         """Synchronous wrapper for the async evaluate method."""
-        import asyncio
 
         # Extract context from dict if available
         context_text = context.get("context") if context else None
         expected_output = context.get("expected_output") if context else None
 
-        # Run async evaluation
-        result = asyncio.run(
+        # Run async evaluation (safe in both sync/async callers)
+        result = _run_async_in_sync_context(
             self.evaluate(
                 input_text=ground_truth,  # Use ground_truth as input
                 output_text=prediction,
@@ -865,3 +921,7 @@ class RAGASScorer(RAGScorerMixin, BaseScorer):
                 reasoning=f"RAGAS evaluation failed: {e!s}",
                 metadata={"error": str(e)},
             )
+
+
+# Make SentenceTransformer available at module level for tests/mocking/etc.
+SentenceTransformer = SentenceTransformer
