@@ -8,6 +8,7 @@ This module contains fundamental scorers for RAG evaluation including:
 - Aggregate scoring
 """
 
+import asyncio
 import re
 from typing import TYPE_CHECKING, Any, Optional, Union
 
@@ -34,10 +35,7 @@ class AsyncLLMScorer(BaseScorer):
 
     async def _call_model(self, prompt: str) -> str:
         """Async wrapper for call_llm."""
-        import asyncio
-
-        loop = asyncio.get_event_loop()
-        return await loop.run_in_executor(None, call_llm, self.model, prompt)
+        return await asyncio.to_thread(call_llm, self.model, prompt)
 
     def _parse_numerical_response(self, response: str) -> float:
         """Parse numerical response from LLM and extract 0-10 score."""
@@ -474,7 +472,7 @@ class RetrievalRankingScorer(BaseScorer):
             return 0.0
 
         rankings = context["rankings"]
-        context.get("relevance_scores", [1.0] * len(rankings))
+        relevance_labels = context.get("relevance_scores", [1.0] * len(rankings))
 
         try:
             # Convert rankings to scores (1,2,3,4,5 -> 1.0, 0.8, 0.6, 0.4, 0.2)
@@ -487,29 +485,48 @@ class RetrievalRankingScorer(BaseScorer):
                 )  # 1->1.0, 2->0.8, 3->0.6, 4->0.4, 5->0.2
                 ranking_scores.append(score)
 
-            # Compute metrics
-            # MRR (Mean Reciprocal Rank) - using ranking scores
-            mrr = 0.0
-            for i, score in enumerate(ranking_scores):
-                if score > 0:
-                    mrr = 1.0 / (i + 1)  # i is the 0-based position
-                    break
+            # Derive predicted scores from rankings (higher ranking -> higher predicted score)
+            # Convert rankings to predicted scores where lower rank number = higher score
+            predicted_scores = []
+            for rank in rankings:
+                # Higher ranking (lower number) gets higher predicted score
+                predicted_score = (
+                    (max_rank + 1 - rank) / max_rank if rank <= max_rank else 0.0
+                )
+                predicted_scores.append(predicted_score)
 
-            # NDCG using ranking scores
+            # Ensure relevance_labels and predicted_scores have the same length
+            min_length = min(len(relevance_labels), len(predicted_scores))
+            relevance_labels = relevance_labels[:min_length]
+            predicted_scores = predicted_scores[:min_length]
+
+            # Compute MRR (Mean Reciprocal Rank) - find first relevant item
+            mrr = 0.0
             try:
+                for i, relevance in enumerate(relevance_labels):
+                    if relevance > 0:  # First relevant item found
+                        mrr = 1.0 / (i + 1)  # i is the 0-based position
+                        break
+            except Exception:
+                mrr = 0.0
+
+            # Compute NDCG using relevance labels and predicted scores
+            try:
+                # Convert to numpy arrays and ensure proper shape for sklearn
+                relevance_array = np.array(relevance_labels).reshape(1, -1)
+                predicted_array = np.array(predicted_scores).reshape(1, -1)
                 ndcg = ndcg_score(
-                    [ranking_scores],
-                    [list(range(1, len(ranking_scores) + 1))],
-                    k=len(ranking_scores),
+                    relevance_array, predicted_array, k=len(predicted_scores)
                 )
             except Exception:
                 ndcg = 0.0
 
-            # MAP using ranking scores
+            # Compute MAP using relevance labels and predicted scores
             try:
-                map_score = average_precision_score(
-                    ranking_scores, list(range(1, len(ranking_scores) + 1))
-                )
+                # Convert to numpy arrays for sklearn
+                relevance_array = np.array(relevance_labels)
+                predicted_array = np.array(predicted_scores)
+                map_score = average_precision_score(relevance_array, predicted_array)
             except Exception:
                 map_score = 0.0
 
@@ -905,10 +922,8 @@ class AggregateRAGScorer(BaseScorer):
                 if hasattr(result, "score"):
                     score = result.score
                 elif isinstance(result, dict):
-                    # Extract the main score from dictionary results
-                    score = result.get(
-                        "average", result.get("aggregate", result.get("diversity", 0.0))
-                    )
+                    # Extract the main score from dictionary results with robust key prioritization
+                    score = self._extract_numeric_score_from_dict(result)
                 else:
                     score = float(result) if result is not None else 0.0
 
@@ -937,6 +952,75 @@ class AggregateRAGScorer(BaseScorer):
             metadata={"individual_scores": scores, "weights": self.weights},
         )
         return {"aggregate": final_score, "individual_scores": scores}
+
+    def _extract_numeric_score_from_dict(self, result: dict[str, Any]) -> float:
+        """
+        Extract a numeric score from a dictionary with robust key prioritization.
+
+        Args:
+            result: Dictionary that may contain score information
+
+        Returns:
+            First numeric value found, or 0.0 if none found
+        """
+        # Prioritized list of keys to look for
+        priority_keys = [
+            "score",
+            "aggregate",
+            "average",
+            "similarity",
+            "f1",
+            "combined",
+            "diversity",
+            "precision",
+            "recall",
+            "accuracy",
+        ]
+
+        # First, try the prioritized keys
+        for key in priority_keys:
+            if key in result:
+                value = result[key]
+                if self._is_numeric_value(value):
+                    return float(value)
+                elif isinstance(value, dict):
+                    # Recursively try to extract from nested dict
+                    nested_score = self._extract_numeric_score_from_dict(value)
+                    if nested_score != 0.0:
+                        return nested_score
+
+        # If no prioritized keys found, try all keys in the dict
+        for _key, value in result.items():
+            if self._is_numeric_value(value):
+                return float(value)
+            elif isinstance(value, dict):
+                # Recursively try to extract from nested dict
+                nested_score = self._extract_numeric_score_from_dict(value)
+                if nested_score != 0.0:
+                    return nested_score
+
+        # Final fallback
+        return 0.0
+
+    def _is_numeric_value(self, value: Any) -> bool:
+        """
+        Check if a value is numeric or can be cast to float.
+
+        Args:
+            value: Value to check
+
+        Returns:
+            True if value is numeric or castable to float, False otherwise
+        """
+        if isinstance(value, (int, float)):
+            return True
+        if isinstance(value, str):
+            try:
+                float(value)
+                return True
+            except (ValueError, TypeError):
+                return False
+        return False
 
     def get_score_result(self) -> Optional[ScoreResult]:
         """Get the full ScoreResult from the last evaluation."""
