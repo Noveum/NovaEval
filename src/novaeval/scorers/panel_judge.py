@@ -615,7 +615,13 @@ class PanelOfJudgesScorer(BaseScorer):
         elif method == AggregationMethod.WEIGHTED_MEAN:
             if len(scores) != len(weights):
                 return statistics.mean(scores)  # Fallback to mean
-            return sum(score * weight for score, weight in zip(scores, weights))
+            total_weight = sum(weights)
+            if total_weight == 0:
+                return statistics.mean(scores)  # Fallback to mean if no weights
+            return (
+                sum(score * weight for score, weight in zip(scores, weights))
+                / total_weight
+            )
 
         elif method == AggregationMethod.MAJORITY_VOTE:
             # Convert to binary (pass/fail) and take majority

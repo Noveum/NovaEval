@@ -671,7 +671,9 @@ class SemanticSimilarityScorer(BaseScorer):
                 sim = np.dot(query_embedding, chunk_emb) / (
                     np.linalg.norm(query_embedding) * np.linalg.norm(chunk_emb)
                 )
-                similarities.append(sim)
+                # Normalize cosine similarity from [-1,1] to [0,1] to match fallback scale
+                sim_norm = (sim + 1.0) / 2.0
+                similarities.append(sim_norm)
 
             mean_similarity = np.mean(similarities)
             passed = bool(mean_similarity >= self.threshold)
@@ -760,7 +762,9 @@ class RetrievalDiversityScorer(BaseScorer):
                 cos_sim = np.dot(embeddings[i], embeddings[j]) / (
                     np.linalg.norm(embeddings[i]) * np.linalg.norm(embeddings[j])
                 )
-                distance = 1.0 - cos_sim
+                # Normalize cosine similarity from [-1,1] to [0,1], then compute distance
+                cos_sim_norm = (cos_sim + 1.0) / 2.0
+                distance = 1.0 - cos_sim_norm
                 distances.append(distance)
 
         return float(np.mean(distances)) if distances else 0.0

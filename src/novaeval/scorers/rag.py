@@ -160,11 +160,14 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
 
         # Extract context from dict if available
         context_text = context.get("context") if context else None
+        question = context.get("question") if context else ground_truth
 
         # Run async evaluation (safe in both sync/async callers)
         result = _run_async_in_sync_context(
             self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
+                input_text=(
+                    question if question is not None else ""
+                ),  # Use actual question as input
                 output_text=prediction,
                 context=context_text,
             )
@@ -250,7 +253,9 @@ class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
                             np.linalg.norm(original_embedding[0])
                             * np.linalg.norm(gen_embedding)
                         )
-                        similarities.append(similarity)
+                        # Normalize cosine similarity from [-1,1] to [0,1] to match token-overlap scale
+                        similarity_norm = (similarity + 1.0) / 2.0
+                        similarities.append(similarity_norm)
                 except Exception as e:
                     # Log the embedding error and fall back to token-overlap heuristic
                     logging.warning(
@@ -363,11 +368,14 @@ class FaithfulnessScorer(RAGScorerMixin, BaseScorer):
 
         # Extract context from dict if available
         context_text = context.get("context") if context else None
+        question = context.get("question") if context else ground_truth
 
         # Run async evaluation (safe in both sync/async callers)
         result = _run_async_in_sync_context(
             self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
+                input_text=(
+                    question if question is not None else ""
+                ),  # Use actual question as input
                 output_text=prediction,
                 context=context_text,
             )
@@ -517,11 +525,14 @@ class ContextualPrecisionScorer(RAGScorerMixin, BaseScorer):
 
         # Extract context from dict if available
         context_text = context.get("context") if context else None
+        question = context.get("question") if context else ground_truth
 
         # Run async evaluation (safe in both sync/async callers)
         result = _run_async_in_sync_context(
             self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
+                input_text=(
+                    question if question is not None else ""
+                ),  # Use actual question as input
                 output_text=prediction,
                 context=context_text,
             )
@@ -665,11 +676,14 @@ class ContextualRecallScorer(RAGScorerMixin, BaseScorer):
         # Extract context and expected_output from dict if available
         context_text = context.get("context") if context else None
         expected_output = context.get("expected_output") if context else None
+        question = context.get("question") if context else ground_truth
 
         # Run async evaluation (safe in both sync/async callers)
         result = _run_async_in_sync_context(
             self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
+                input_text=(
+                    question if question is not None else ""
+                ),  # Use actual question as input
                 output_text=prediction,
                 expected_output=expected_output,
                 context=context_text,
@@ -839,11 +853,14 @@ class RAGASScorer(RAGScorerMixin, BaseScorer):
         # Extract context from dict if available
         context_text = context.get("context") if context else None
         expected_output = context.get("expected_output") if context else None
+        question = context.get("question") if context else ground_truth
 
         # Run async evaluation (safe in both sync/async callers)
         result = _run_async_in_sync_context(
             self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
+                input_text=(
+                    question if question is not None else ""
+                ),  # Use actual question as input
                 output_text=prediction,
                 context=context_text,
                 expected_output=expected_output,

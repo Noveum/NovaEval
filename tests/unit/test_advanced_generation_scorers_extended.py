@@ -584,3 +584,59 @@ class TestAdvancedScorersErrorHandling:
                 assert hasattr(result, "score")  # Check it's a ScoreResult-like object
                 assert result.score >= 0.0
                 assert result.score <= 1.0
+
+
+class TestAdvancedGenerationCoverage:
+    """Additional tests to improve advanced_generation_scorers.py coverage."""
+
+    def test_bias_detection_scorer_initialization(self):
+        """Test BiasDetectionScorer initialization."""
+        mock_model = Mock()
+        scorer = BiasDetectionScorer(model=mock_model)
+
+        assert scorer.model == mock_model
+        assert scorer.name == "BiasDetectionScorer"
+
+    def test_factual_accuracy_scorer_initialization(self):
+        """Test FactualAccuracyScorer initialization."""
+        mock_model = Mock()
+        scorer = FactualAccuracyScorer(model=mock_model)
+
+        assert scorer.model == mock_model
+        assert scorer.name == "FactualAccuracyScorer"
+
+    def test_clarity_coherence_scorer_initialization(self):
+        """Test ClarityAndCoherenceScorer initialization."""
+        mock_model = Mock()
+        scorer = ClarityAndCoherenceScorer(model=mock_model)
+
+        assert scorer.model == mock_model
+        assert scorer.name == "ClarityAndCoherenceScorer"
+
+    def test_tone_consistency_scorer_initialization(self):
+        """Test ToneConsistencyScorer initialization."""
+        mock_model = Mock()
+        scorer = ToneConsistencyScorer(model=mock_model)
+
+        assert scorer.model == mock_model
+        assert scorer.name == "ToneConsistencyScorer"
+
+    def test_scorers_with_custom_params(self):
+        """Test scorers with custom parameters."""
+        mock_model = Mock()
+
+        bias_scorer = BiasDetectionScorer(model=mock_model, threshold=0.8)
+        assert bias_scorer.threshold == 0.8
+        assert bias_scorer.name == "BiasDetectionScorer"
+
+        factual_scorer = FactualAccuracyScorer(model=mock_model, threshold=0.9)
+        assert factual_scorer.threshold == 0.9
+        assert factual_scorer.name == "FactualAccuracyScorer"
+
+        clarity_scorer = ClarityAndCoherenceScorer(model=mock_model, threshold=0.7)
+        assert clarity_scorer.threshold == 0.7
+        assert clarity_scorer.name == "ClarityAndCoherenceScorer"
+
+        tone_scorer = ToneConsistencyScorer(model=mock_model, threshold=0.6)
+        assert tone_scorer.threshold == 0.6
+        assert tone_scorer.name == "ToneConsistencyScorer"
