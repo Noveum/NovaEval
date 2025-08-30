@@ -11,16 +11,98 @@ This module implements various metrics for evaluating RAG systems including:
 """
 
 import asyncio
+import logging
 from typing import Any, Optional, Union
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 from novaeval.models.base import BaseModel as LLMModel
 from novaeval.scorers.base import BaseScorer, ScoreResult
+from novaeval.scorers.conversational import _run_async_in_sync_context
+from novaeval.scorers.rag_prompts import RAGPrompts
+from novaeval.utils.parsing import parse_claims
+
+try:
+    from sentence_transformers import SentenceTransformer
+except ImportError:
+    # Fallback for when sentence_transformers is not installed
+    SentenceTransformer = None  # type: ignore
 
 
-class AnswerRelevancyScorer(BaseScorer):
+class RAGScorerMixin:
+    """
+    Mixin class providing common methods for RAG scorers.
+
+    This mixin provides the evaluate_multiple_queries and _evaluate_single_query_with_contexts
+    methods that are expected by the test suite for all RAG scorers.
+    """
+
+    async def _call_generate(self, *args: Any, **kwargs: Any) -> str:
+        """
+        Coroutine-safe adapter for model.generate that handles both sync and async implementations.
+
+        This method detects whether self.model.generate is a coroutine function or returns an
+        awaitable, and if it's synchronous, runs it safely in a thread via asyncio.to_thread
+        to avoid blocking the event loop.
+        """
+        import asyncio
+        import inspect
+
+        gen = self.model.generate  # type: ignore[attr-defined]
+        if inspect.iscoroutinefunction(gen):
+            return await gen(*args, **kwargs)  # type: ignore[misc]
+        # Offload sync call
+        result = await asyncio.to_thread(gen, *args, **kwargs)
+        # Some sync wrappers may return an awaitable; handle it
+        if inspect.isawaitable(result):
+            return await result  # type: ignore[misc]
+        return result  # type: ignore[return-value]
+
+    async def evaluate_multiple_queries(
+        self,
+        queries: list[str],
+        contexts: list[list[str]],
+        answer: str,
+    ) -> list[float]:
+        """Evaluate multiple queries and return scores."""
+        if len(queries) != len(contexts):
+            raise ValueError("Length mismatch between queries and contexts")
+
+        scores = []
+        for query, context_list in zip(queries, contexts):
+            context_text = " ".join(context_list) if context_list else ""
+            # Type ignore: evaluate method is provided by the concrete scorer class
+            result = await self.evaluate(  # type: ignore[attr-defined]
+                input_text=query,
+                output_text=answer,
+                context=context_text,
+            )
+            scores.append(result.score)
+        return scores
+
+    async def _evaluate_single_query_with_contexts(
+        self,
+        query: str,
+        contexts: list[str],
+        answer: str,
+        expected_output: Optional[str] = None,
+    ) -> float:
+        """Evaluate a single query with multiple contexts."""
+        if not contexts:
+            return 0.0
+
+        context_text = " ".join(contexts) if contexts else ""
+        # Type ignore: evaluate method is provided by the concrete scorer class
+        result = await self.evaluate(  # type: ignore[attr-defined]
+            input_text=query,
+            output_text=answer,
+            expected_output=expected_output,
+            context=context_text,
+        )
+        return result.score
+
+
+class AnswerRelevancyScorer(RAGScorerMixin, BaseScorer):
     """
     Evaluates how relevant the answer is to the given question.
 
@@ -35,10 +117,63 @@ class AnswerRelevancyScorer(BaseScorer):
         embedding_model: str = "all-MiniLM-L6-v2",
         **kwargs: Any,
     ) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name=kwargs.pop("name", "AnswerRelevancyScorer"), **kwargs)
         self.threshold = threshold
         self.model = model
-        self.embedding_model = SentenceTransformer(embedding_model)
+        self.embedding_model_name = embedding_model
+        self.embedding_model: Optional[SentenceTransformer] = None
+        self._model_loaded = False
+
+        # Load embedding model during initialization
+        self._load_embedding_model()
+
+    def _load_embedding_model(self) -> None:
+        """Load the sentence transformer model with error handling."""
+        if self._model_loaded:
+            return  # Already loaded, return early to make function idempotent
+
+        try:
+            if SentenceTransformer is None:
+                raise ImportError("sentence_transformers not available")
+
+            self.embedding_model = SentenceTransformer(self.embedding_model_name)
+            self._model_loaded = True
+        except ImportError:
+            self.embedding_model = None
+            logging.warning(
+                "sentence_transformers not installed. "
+                "Answer relevancy scoring will use fallback method."
+            )
+            self._model_loaded = True  # Set to True to prevent re-attempting
+        except Exception as e:
+            self.embedding_model = None
+            logging.exception(f"Could not load SentenceTransformer model: {e}")
+            self._model_loaded = True  # Set to True to prevent re-attempting
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        question = context.get("question") if context else ground_truth
+
+        # Run async evaluation (safe in both sync/async callers)
+        result = _run_async_in_sync_context(
+            self.evaluate(
+                input_text=(
+                    question if question is not None else ""
+                ),  # Use actual question as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
 
     async def evaluate(
         self,
@@ -65,9 +200,9 @@ class AnswerRelevancyScorer(BaseScorer):
         """
 
         try:
-            generated_questions_response = await self.model.generate(
+            generated_questions_response = await self._call_generate(
                 question_generation_prompt
-            )  # type: ignore
+            )
             generated_questions = self._parse_questions(generated_questions_response)
 
             if not generated_questions:
@@ -78,26 +213,83 @@ class AnswerRelevancyScorer(BaseScorer):
                     metadata={"error": "question_generation_failed"},
                 )
 
-            # Calculate semantic similarity between original question and generated questions
-            original_embedding = self.embedding_model.encode([input_text])
-            generated_embeddings = self.embedding_model.encode(generated_questions)
+            # Calculate semantic similarity between original question and generated
+            # questions
+            self._load_embedding_model()
 
-            # Calculate cosine similarities
-            similarities = []
-            for gen_embedding in generated_embeddings:
-                similarity = np.dot(original_embedding[0], gen_embedding) / (
-                    np.linalg.norm(original_embedding[0])
-                    * np.linalg.norm(gen_embedding)
-                )
-                similarities.append(similarity)
+            # Track whether we used a fallback method
+            used_fallback = False
+            fallback_reason = None
+
+            if self.embedding_model is None:
+                # Fallback to simple text similarity if embedding model is not available
+                used_fallback = True
+                fallback_reason = "embedding_model_not_available"
+                similarities = []
+                input_words = set(input_text.lower().split())
+                for gen_question in generated_questions:
+                    gen_words = set(gen_question.lower().split())
+                    if input_words and gen_words:
+                        overlap = len(input_words.intersection(gen_words))
+                        union = len(input_words.union(gen_words))
+                        similarity = overlap / union if union > 0 else 0.0
+                    else:
+                        similarity = 0.0
+                    similarities.append(similarity)
+            else:
+                # Use embedding model for semantic similarity
+                try:
+                    original_embedding = await asyncio.to_thread(
+                        self.embedding_model.encode, [input_text]
+                    )
+                    generated_embeddings = await asyncio.to_thread(
+                        self.embedding_model.encode, generated_questions
+                    )
+
+                    # Calculate cosine similarities
+                    similarities = []
+                    for gen_embedding in generated_embeddings:
+                        similarity = np.dot(original_embedding[0], gen_embedding) / (
+                            np.linalg.norm(original_embedding[0])
+                            * np.linalg.norm(gen_embedding)
+                        )
+                        # Normalize cosine similarity from [-1,1] to [0,1] to match token-overlap scale
+                        similarity_norm = (similarity + 1.0) / 2.0
+                        similarities.append(similarity_norm)
+                except Exception as e:
+                    # Log the embedding error and fall back to token-overlap heuristic
+                    logging.warning(
+                        f"Embedding encoding failed, falling back to token-overlap: {e}"
+                    )
+                    used_fallback = True
+                    fallback_reason = f"embedding_encoding_failed: {e!s}"
+
+                    # Fallback to token-overlap similarity
+                    similarities = []
+                    input_words = set(input_text.lower().split())
+                    for gen_question in generated_questions:
+                        gen_words = set(gen_question.lower().split())
+                        if input_words and gen_words:
+                            overlap = len(input_words.intersection(gen_words))
+                            union = len(input_words.union(gen_words))
+                            similarity = overlap / union if union > 0 else 0.0
+                        else:
+                            similarity = 0.0
+                        similarities.append(similarity)
 
             # Use mean similarity as the relevancy score
             relevancy_score = float(np.mean(similarities))
 
+            # Build reasoning with fallback information
+            similarity_method = (
+                "token-overlap" if used_fallback else "semantic embedding"
+            )
+            fallback_info = f" (fallback: {fallback_reason})" if used_fallback else ""
+
             reasoning = f"""
             Answer Relevancy Analysis:
             - Generated {len(generated_questions)} questions from the answer
-            - Calculated semantic similarity with original question
+            - Calculated {similarity_method} similarity with original question{fallback_info}
             - Individual similarities: {[f'{s:.3f}' for s in similarities]}
             - Mean relevancy score: {relevancy_score:.3f}
 
@@ -105,15 +297,21 @@ class AnswerRelevancyScorer(BaseScorer):
             {chr(10).join(f'{i+1}. {q}' for i, q in enumerate(generated_questions))}
             """
 
+            metadata = {
+                "generated_questions": generated_questions,
+                "similarities": similarities,
+                "mean_similarity": relevancy_score,
+                "similarity_method": similarity_method,
+            }
+
+            if used_fallback:
+                metadata["fallback_reason"] = fallback_reason
+
             return ScoreResult(
                 score=relevancy_score,
                 passed=relevancy_score >= self.threshold,
                 reasoning=reasoning.strip(),
-                metadata={
-                    "generated_questions": generated_questions,
-                    "similarities": similarities,
-                    "mean_similarity": relevancy_score,
-                },
+                metadata=metadata,
             )
 
         except Exception as e:
@@ -123,104 +321,6 @@ class AnswerRelevancyScorer(BaseScorer):
                 reasoning=f"Answer relevancy evaluation failed: {e!s}",
                 metadata={"error": str(e)},
             )
-
-    async def evaluate_multiple_queries(
-        self,
-        queries: list[str],
-        contexts: list[list[str]],
-        output_text: str,
-        expected_output: Optional[str] = None,
-        **kwargs: Any,
-    ) -> list[float]:
-        """
-        Evaluate answer relevancy for multiple queries and their associated contexts.
-
-        Args:
-            queries: List of retrieval queries
-            contexts: List of context lists, where contexts[i] contains contexts for queries[i]
-            output_text: The generated answer text
-            expected_output: Expected output for comparison
-
-        Returns:
-            List of relevancy scores, one per query
-        """
-        if len(queries) != len(contexts):
-            raise ValueError(
-                f"Length mismatch: {len(queries)} queries but {len(contexts)} context lists"
-            )
-
-        scores = []
-
-        for _i, (query, context_list) in enumerate(zip(queries, contexts)):
-            # For each query, evaluate all its contexts in a single LLM call
-            query_score = await self._evaluate_single_query_with_contexts(
-                query, context_list, output_text, expected_output, **kwargs
-            )
-            scores.append(query_score)
-
-        return scores
-
-    async def _evaluate_single_query_with_contexts(
-        self,
-        query: str,
-        contexts: list[str],
-        output_text: str,
-        expected_output: Optional[str] = None,
-        **kwargs: Any,
-    ) -> float:
-        """
-        Evaluate answer relevancy for a single query with multiple contexts, returning average score.
-
-        Args:
-            query: Single retrieval query
-            contexts: List of contexts for this query
-            output_text: Generated answer text
-            expected_output: Expected output for comparison
-
-        Returns:
-            Average relevancy score for this query across all contexts
-        """
-        if not contexts:
-            return 0.0
-
-        # Create a combined prompt for all contexts
-        context_text = "\n\n".join(
-            [f"Context {i+1}: {ctx}" for i, ctx in enumerate(contexts)]
-        )
-
-        # Use the existing evaluate method with combined context
-        result = await self.evaluate(
-            input_text=query,
-            output_text=output_text,
-            expected_output=expected_output,
-            context=context_text,
-            **kwargs,
-        )
-
-        return result.score
-
-    def score(
-        self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
-        """Synchronous wrapper for the async evaluate method."""
-        import asyncio
-
-        # Extract context from dict if available
-        context_text = context.get("context") if context else None
-
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
-                output_text=prediction,
-                context=context_text,
-            )
-        )
-
-        return result.score
 
     def _parse_questions(self, response: str) -> list[str]:
         """Parse generated questions from LLM response."""
@@ -245,7 +345,7 @@ class AnswerRelevancyScorer(BaseScorer):
         return questions
 
 
-class FaithfulnessScorer(BaseScorer):
+class FaithfulnessScorer(RAGScorerMixin, BaseScorer):
     """
     Evaluates whether the answer is faithful to the provided context.
 
@@ -254,9 +354,34 @@ class FaithfulnessScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, threshold: float = 0.8, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name=kwargs.pop("name", "FaithfulnessScorer"), **kwargs)
         self.threshold = threshold
         self.model = model
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        question = context.get("question") if context else ground_truth
+
+        # Run async evaluation (safe in both sync/async callers)
+        result = _run_async_in_sync_context(
+            self.evaluate(
+                input_text=(
+                    question if question is not None else ""
+                ),  # Use actual question as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
 
     async def evaluate(
         self,
@@ -291,7 +416,7 @@ class FaithfulnessScorer(BaseScorer):
         """
 
         try:
-            claims_response = await self.model.generate(claims_extraction_prompt)  # type: ignore
+            claims_response = await self._call_generate(claims_extraction_prompt)
             claims = self._parse_claims(claims_response)
 
             if not claims:
@@ -319,7 +444,7 @@ class FaithfulnessScorer(BaseScorer):
                 Explanation: [Brief explanation]
                 """
 
-                verification_response = await self.model.generate(verification_prompt)  # type: ignore
+                verification_response = await self._call_generate(verification_prompt)
                 verification_results.append((claim, verification_response))
 
             # Calculate faithfulness score
@@ -334,7 +459,10 @@ class FaithfulnessScorer(BaseScorer):
 
             # Score calculation: full points for supported, half points for partial
             total_claims = len(claims)
-            faithfulness_score = (supported_count + 0.5 * partial_count) / total_claims
+            partial_weight = 0.5  # Configurable weight for partial support
+            faithfulness_score = (
+                supported_count + partial_weight * partial_count
+            ) / total_claims
 
             reasoning = f"""
             Faithfulness Analysis:
@@ -369,141 +497,12 @@ class FaithfulnessScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    async def evaluate_multiple_queries(
-        self,
-        queries: list[str],
-        contexts: list[list[str]],
-        output_text: str,
-        expected_output: Optional[str] = None,
-        **kwargs: Any,
-    ) -> list[float]:
-        """
-        Evaluate faithfulness for multiple queries and their associated contexts.
-
-        Args:
-            queries: List of retrieval queries
-            contexts: List of context lists, where contexts[i] contains contexts for queries[i]
-            output_text: The generated answer text
-            expected_output: Expected output for comparison
-
-        Returns:
-            List of faithfulness scores, one per query
-        """
-        if len(queries) != len(contexts):
-            raise ValueError(
-                f"Length mismatch: {len(queries)} queries but {len(contexts)} context lists"
-            )
-
-        scores = []
-
-        for _i, (query, context_list) in enumerate(zip(queries, contexts)):
-            # For each query, evaluate all its contexts in a single LLM call
-            query_score = await self._evaluate_single_query_with_contexts(
-                query, context_list, output_text, expected_output, **kwargs
-            )
-            scores.append(query_score)
-
-        return scores
-
-    async def _evaluate_single_query_with_contexts(
-        self,
-        query: str,
-        contexts: list[str],
-        output_text: str,
-        expected_output: Optional[str] = None,
-        **kwargs: Any,
-    ) -> float:
-        """
-        Evaluate faithfulness for a single query with multiple contexts, returning average score.
-
-        Args:
-            query: Single retrieval query
-            contexts: List of contexts for this query
-            output_text: Generated answer text
-            expected_output: Expected output for comparison
-
-        Returns:
-            Average faithfulness score for this query across all contexts
-        """
-        if not contexts:
-            return 0.0
-
-        # Create a combined prompt for all contexts
-        context_text = "\n\n".join(
-            [f"Context {i+1}: {ctx}" for i, ctx in enumerate(contexts)]
-        )
-
-        # Use the existing evaluate method with combined context
-        result = await self.evaluate(
-            input_text=query,
-            output_text=output_text,
-            expected_output=expected_output,
-            context=context_text,
-            **kwargs,
-        )
-
-        return result.score
-
-    def score(
-        self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
-        """Synchronous wrapper for the async evaluate method."""
-        import asyncio
-
-        # Extract context from dict if available
-        context_text = context.get("context") if context else None
-
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
-                output_text=prediction,
-                context=context_text,
-            )
-        )
-
-        return result.score
-
     def _parse_claims(self, response: str) -> list[str]:
         """Parse claims from LLM response."""
-        claims = []
-        lines = response.strip().split("\n")
-
-        for line in lines:
-            line = line.strip()
-            if line and (
-                line[0].isdigit() or line.startswith("-") or line.startswith("*")
-            ):
-                # Remove numbering and bullet points
-                claim = line
-                for prefix in [
-                    "1.",
-                    "2.",
-                    "3.",
-                    "4.",
-                    "5.",
-                    "6.",
-                    "7.",
-                    "8.",
-                    "9.",
-                    "10.",
-                    "-",
-                    "*",
-                ]:
-                    if claim.startswith(prefix):
-                        claim = claim[len(prefix) :].strip()
-                        break
-
-                if claim:
-                    claims.append(claim)
-
-        return claims
+        return parse_claims(response)
 
 
-class ContextualPrecisionScorer(BaseScorer):
+class ContextualPrecisionScorer(RAGScorerMixin, BaseScorer):
     """
     Evaluates the precision of the retrieved context.
 
@@ -512,9 +511,34 @@ class ContextualPrecisionScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name=kwargs.pop("name", "ContextualPrecisionScorer"), **kwargs)
         self.threshold = threshold
         self.model = model
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        question = context.get("question") if context else ground_truth
+
+        # Run async evaluation (safe in both sync/async callers)
+        result = _run_async_in_sync_context(
+            self.evaluate(
+                input_text=(
+                    question if question is not None else ""
+                ),  # Use actual question as input
+                output_text=prediction,
+                context=context_text,
+            )
+        )
+
+        return result.score
 
     async def evaluate(
         self,
@@ -550,27 +574,11 @@ class ContextualPrecisionScorer(BaseScorer):
             relevance_scores = []
 
             for _i, chunk in enumerate(context_chunks):
-                relevance_prompt = f"""
-                Question: {input_text}
+                relevance_prompt = RAGPrompts.get_numerical_chunk_relevance_1_5(
+                    input_text, chunk
+                )
 
-                Context chunk: {chunk}
-
-                Is this context chunk relevant for answering the question?
-                Rate the relevance on a scale of 1-5 where:
-                1 = Not relevant at all
-                2 = Slightly relevant
-                3 = Moderately relevant
-                4 = Highly relevant
-                5 = Extremely relevant
-
-                Provide your rating and a brief explanation.
-
-                Format:
-                Rating: [1-5]
-                Explanation: [Brief explanation]
-                """
-
-                relevance_response = await self.model.generate(relevance_prompt)  # type: ignore
+                relevance_response = await self._call_generate(relevance_prompt)
                 score = self._parse_relevance_score(relevance_response)
                 relevance_scores.append(score)
 
@@ -603,104 +611,6 @@ class ContextualPrecisionScorer(BaseScorer):
                 reasoning=f"Contextual precision evaluation failed: {e!s}",
                 metadata={"error": str(e)},
             )
-
-    async def evaluate_multiple_queries(
-        self,
-        queries: list[str],
-        contexts: list[list[str]],
-        output_text: str,
-        expected_output: Optional[str] = None,
-        **kwargs: Any,
-    ) -> list[float]:
-        """
-        Evaluate contextual precision for multiple queries and their associated contexts.
-
-        Args:
-            queries: List of retrieval queries
-            contexts: List of context lists, where contexts[i] contains contexts for queries[i]
-            output_text: The generated answer text
-            expected_output: Expected output for comparison
-
-        Returns:
-            List of precision scores, one per query
-        """
-        if len(queries) != len(contexts):
-            raise ValueError(
-                f"Length mismatch: {len(queries)} queries but {len(contexts)} context lists"
-            )
-
-        scores = []
-
-        for _i, (query, context_list) in enumerate(zip(queries, contexts)):
-            # For each query, evaluate all its contexts in a single LLM call
-            query_score = await self._evaluate_single_query_with_contexts(
-                query, context_list, output_text, expected_output, **kwargs
-            )
-            scores.append(query_score)
-
-        return scores
-
-    async def _evaluate_single_query_with_contexts(
-        self,
-        query: str,
-        contexts: list[str],
-        output_text: str,
-        expected_output: Optional[str] = None,
-        **kwargs: Any,
-    ) -> float:
-        """
-        Evaluate contextual precision for a single query with multiple contexts, returning average score.
-
-        Args:
-            query: Single retrieval query
-            contexts: List of contexts for this query
-            output_text: Generated answer text
-            expected_output: Expected output for comparison
-
-        Returns:
-            Average precision score for this query across all contexts
-        """
-        if not contexts:
-            return 0.0
-
-        # Create a combined prompt for all contexts
-        context_text = "\n\n".join(
-            [f"Context {i+1}: {ctx}" for i, ctx in enumerate(contexts)]
-        )
-
-        # Use the existing evaluate method with combined context
-        result = await self.evaluate(
-            input_text=query,
-            output_text=output_text,
-            expected_output=expected_output,
-            context=context_text,
-            **kwargs,
-        )
-
-        return result.score
-
-    def score(
-        self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
-        """Synchronous wrapper for the async evaluate method."""
-        import asyncio
-
-        # Extract context from dict if available
-        context_text = context.get("context") if context else None
-
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
-                output_text=prediction,
-                context=context_text,
-            )
-        )
-
-        return result.score
 
     def _split_context(self, context: str) -> list[str]:
         """Split context into chunks for evaluation."""
@@ -742,7 +652,7 @@ class ContextualPrecisionScorer(BaseScorer):
         return 3.0
 
 
-class ContextualRecallScorer(BaseScorer):
+class ContextualRecallScorer(RAGScorerMixin, BaseScorer):
     """
     Evaluates the recall of the retrieved context.
 
@@ -751,9 +661,36 @@ class ContextualRecallScorer(BaseScorer):
     """
 
     def __init__(self, model: LLMModel, threshold: float = 0.7, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+        super().__init__(name=kwargs.pop("name", "ContextualRecallScorer"), **kwargs)
         self.threshold = threshold
         self.model = model
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+
+        # Extract context and expected_output from dict if available
+        context_text = context.get("context") if context else None
+        expected_output = context.get("expected_output") if context else None
+        question = context.get("question") if context else ground_truth
+
+        # Run async evaluation (safe in both sync/async callers)
+        result = _run_async_in_sync_context(
+            self.evaluate(
+                input_text=(
+                    question if question is not None else ""
+                ),  # Use actual question as input
+                output_text=prediction,
+                expected_output=expected_output,
+                context=context_text,
+            )
+        )
+
+        return result.score
 
     async def evaluate(
         self,
@@ -788,7 +725,7 @@ class ContextualRecallScorer(BaseScorer):
             ...
             """
 
-            key_info_response = await self.model.generate(key_info_prompt)  # type: ignore
+            key_info_response = await self._call_generate(key_info_prompt)
             key_information = self._parse_claims(key_info_response)
 
             if not key_information:
@@ -816,7 +753,7 @@ class ContextualRecallScorer(BaseScorer):
                 Explanation: [Brief explanation]
                 """
 
-                recall_response = await self.model.generate(recall_prompt)  # type: ignore
+                recall_response = await self._call_generate(recall_prompt)
                 recall_results.append((info, recall_response))
 
             # Calculate recall score
@@ -830,7 +767,8 @@ class ContextualRecallScorer(BaseScorer):
                     partial_count += 1
 
             total_info = len(key_information)
-            recall_score = (present_count + 0.5 * partial_count) / total_info
+            partial_weight = 0.5  # Configurable weight for partial presence
+            recall_score = (present_count + partial_weight * partial_count) / total_info
 
             reasoning = f"""
             Contextual Recall Analysis:
@@ -865,143 +803,12 @@ class ContextualRecallScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    async def evaluate_multiple_queries(
-        self,
-        queries: list[str],
-        contexts: list[list[str]],
-        output_text: str,
-        expected_output: Optional[str] = None,
-        **kwargs: Any,
-    ) -> list[float]:
-        """
-        Evaluate contextual recall for multiple queries and their associated contexts.
-
-        Args:
-            queries: List of retrieval queries
-            contexts: List of context lists, where contexts[i] contains contexts for queries[i]
-            output_text: The generated answer text
-            expected_output: Expected output for comparison
-
-        Returns:
-            List of recall scores, one per query
-        """
-        if len(queries) != len(contexts):
-            raise ValueError(
-                f"Length mismatch: {len(queries)} queries but {len(contexts)} context lists"
-            )
-
-        scores = []
-
-        for _i, (query, context_list) in enumerate(zip(queries, contexts)):
-            # For each query, evaluate all its contexts in a single LLM call
-            query_score = await self._evaluate_single_query_with_contexts(
-                query, context_list, output_text, expected_output, **kwargs
-            )
-            scores.append(query_score)
-
-        return scores
-
-    async def _evaluate_single_query_with_contexts(
-        self,
-        query: str,
-        contexts: list[str],
-        output_text: str,
-        expected_output: Optional[str] = None,
-        **kwargs: Any,
-    ) -> float:
-        """
-        Evaluate contextual recall for a single query with multiple contexts, returning average score.
-
-        Args:
-            query: Single retrieval query
-            contexts: List of contexts for this query
-            output_text: Generated answer text
-            expected_output: Expected output for comparison
-
-        Returns:
-            Average recall score for this query across all contexts
-        """
-        if not contexts:
-            return 0.0
-
-        # Create a combined prompt for all contexts
-        context_text = "\n\n".join(
-            [f"Context {i+1}: {ctx}" for i, ctx in enumerate(contexts)]
-        )
-
-        # Use the existing evaluate method with combined context
-        result = await self.evaluate(
-            input_text=query,
-            output_text=output_text,
-            expected_output=expected_output,
-            context=context_text,
-            **kwargs,
-        )
-
-        return result.score
-
-    def score(
-        self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
-        """Synchronous wrapper for the async evaluate method."""
-        import asyncio
-
-        # Extract context from dict if available
-        context_text = context.get("context") if context else None
-        expected_output = context.get("expected_output") if context else None
-
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
-                output_text=prediction,
-                context=context_text,
-                expected_output=expected_output,
-            )
-        )
-
-        return result.score
-
     def _parse_claims(self, response: str) -> list[str]:
         """Parse claims/information from LLM response."""
-        claims = []
-        lines = response.strip().split("\n")
-
-        for line in lines:
-            line = line.strip()
-            if line and (
-                line[0].isdigit() or line.startswith("-") or line.startswith("*")
-            ):
-                # Remove numbering and bullet points
-                claim = line
-                for prefix in [
-                    "1.",
-                    "2.",
-                    "3.",
-                    "4.",
-                    "5.",
-                    "6.",
-                    "7.",
-                    "8.",
-                    "9.",
-                    "10.",
-                    "-",
-                    "*",
-                ]:
-                    if claim.startswith(prefix):
-                        claim = claim[len(prefix) :].strip()
-                        break
-
-                if claim:
-                    claims.append(claim)
-
-        return claims
+        return parse_claims(response)
 
 
-class RAGASScorer(BaseScorer):
+class RAGASScorer(RAGScorerMixin, BaseScorer):
     """
     Composite RAGAS (Retrieval-Augmented Generation Assessment) scorer.
 
@@ -1015,8 +822,7 @@ class RAGASScorer(BaseScorer):
         weights: Optional[dict[str, float]] = None,
         **kwargs: Any,
     ) -> None:
-        name = kwargs.pop("name", "ragas_scorer")
-        super().__init__(name=name, **kwargs)
+        super().__init__(name=kwargs.pop("name", "ragas_scorer"), **kwargs)
         self.threshold = threshold
         self.model = model
 
@@ -1029,18 +835,39 @@ class RAGASScorer(BaseScorer):
         }
 
         # Initialize individual scorers
-        self.answer_relevancy_scorer = AnswerRelevancyScorer(
-            model, name="answer_relevancy", threshold=0.7
-        )
-        self.faithfulness_scorer = FaithfulnessScorer(
-            model, name="faithfulness", threshold=0.8
-        )
+        self.answer_relevancy_scorer = AnswerRelevancyScorer(model, threshold=0.7)
+        self.faithfulness_scorer = FaithfulnessScorer(model, threshold=0.8)
         self.contextual_precision_scorer = ContextualPrecisionScorer(
-            model, name="contextual_precision", threshold=0.7
+            model, threshold=0.7
         )
-        self.contextual_recall_scorer = ContextualRecallScorer(
-            model, name="contextual_recall", threshold=0.7
+        self.contextual_recall_scorer = ContextualRecallScorer(model, threshold=0.7)
+
+    def score(
+        self,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[dict[str, Any]] = None,
+    ) -> Union[float, dict[str, float]]:
+        """Synchronous wrapper for the async evaluate method."""
+
+        # Extract context from dict if available
+        context_text = context.get("context") if context else None
+        expected_output = context.get("expected_output") if context else None
+        question = context.get("question") if context else ground_truth
+
+        # Run async evaluation (safe in both sync/async callers)
+        result = _run_async_in_sync_context(
+            self.evaluate(
+                input_text=(
+                    question if question is not None else ""
+                ),  # Use actual question as input
+                output_text=prediction,
+                context=context_text,
+                expected_output=expected_output,
+            )
         )
+
+        return result.score
 
     async def evaluate(
         self,
@@ -1134,100 +961,6 @@ class RAGASScorer(BaseScorer):
                 metadata={"error": str(e)},
             )
 
-    async def evaluate_multiple_queries(
-        self,
-        queries: list[str],
-        contexts: list[list[str]],
-        output_text: str,
-        expected_output: Optional[str] = None,
-        **kwargs: Any,
-    ) -> list[float]:
-        """
-        Evaluate RAG performance for multiple queries and their associated contexts.
 
-        Args:
-            queries: List of retrieval queries
-            contexts: List of context lists, where contexts[i] contains contexts for queries[i]
-            output_text: The generated answer text
-            expected_output: Expected output for comparison
-
-        Returns:
-            List of scores, one per query
-        """
-        if len(queries) != len(contexts):
-            raise ValueError(
-                f"Length mismatch: {len(queries)} queries but {len(contexts)} context lists"
-            )
-
-        scores = []
-
-        for _i, (query, context_list) in enumerate(zip(queries, contexts)):
-            # For each query, evaluate all its contexts in a single LLM call
-            query_score = await self._evaluate_single_query_with_contexts(
-                query, context_list, output_text, expected_output, **kwargs
-            )
-            scores.append(query_score)
-
-        return scores
-
-    async def _evaluate_single_query_with_contexts(
-        self,
-        query: str,
-        contexts: list[str],
-        output_text: str,
-        expected_output: Optional[str] = None,
-        **kwargs: Any,
-    ) -> float:
-        """
-        Evaluate a single query with multiple contexts, returning average score.
-
-        Args:
-            query: Single retrieval query
-            contexts: List of contexts for this query
-            output_text: Generated answer text
-            expected_output: Expected output for comparison
-
-        Returns:
-            Average score for this query across all contexts
-        """
-        if not contexts:
-            return 0.0
-
-        # Create a combined prompt for all contexts
-        context_text = "\n\n".join(
-            [f"Context {i+1}: {ctx}" for i, ctx in enumerate(contexts)]
-        )
-
-        # Use the existing evaluate method with combined context
-        result = await self.evaluate(
-            input_text=query,
-            output_text=output_text,
-            expected_output=expected_output,
-            context=context_text,
-            **kwargs,
-        )
-
-        return result.score
-
-    def score(
-        self,
-        prediction: str,
-        ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
-        """Synchronous wrapper for the async evaluate method."""
-        import asyncio
-
-        # Extract context from dict if available
-        context_text = context.get("context") if context else None
-
-        # Run async evaluation
-        result = asyncio.run(
-            self.evaluate(
-                input_text=ground_truth,  # Use ground_truth as input
-                output_text=prediction,
-                context=context_text,
-            )
-        )
-
-        return result.score
+# Make SentenceTransformer available at module level for tests/mocking/etc.
+SentenceTransformer = SentenceTransformer

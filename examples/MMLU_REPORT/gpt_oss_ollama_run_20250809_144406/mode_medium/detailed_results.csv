@@ -4,14 +4,14 @@ A. It is an example of nonresponse bias, the systematic tendency of individuals 
 B. It is the systematic difference between a statistic and parameter caused by the nonrandom selection of surveyed persons.
 C. It is the difference between the same statistics computed from two different samples.
 D. It is the difference between the statistic and the truth due to use of a random sample.
-Answer:",It is the difference between the same statistics computed from two different samples.,"**Answer: A.**  
+Answer:",It is the difference between the same statistics computed from two different samples.,"**Answer: A.**
 The discrepancy between the newspaper’s poll (58 % opposed) and the actual voting results (56 % opposed) is a classic case of **nonresponse bias**. In the poll, only those who answered the survey were counted; in the vote, only those who turned out to vote were counted. The people who did not vote are a systematic group whose views may differ from those who did vote, producing the observed difference.",0.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_79,"Question: Which of the following is not true with regard to contingency tables for chi-square tests for independence?
 A. The categories are not numerical for either variable.
 B. Observed frequencies should be whole numbers.
 C. Expected frequencies should be whole numbers.
 D. Expected frequencies in each cell should be at least 5, and to achieve this, one sometimes combines categories for one or the other or both of the variables.
-Answer:",Expected frequencies should be whole numbers.,"**C. Expected frequencies should be whole numbers.**  
+Answer:",Expected frequencies should be whole numbers.,"**C. Expected frequencies should be whole numbers.**
 
 In a chi‑square test for independence, expected counts are calculated from the observed totals and are typically fractional, not required to be whole numbers. The other statements (A, B, D) are correct.",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_146,"Question: The Hardcore Construction Company has two offices, one in Atlanta and one in New Orleans. Fifteen engineers work in the Atlanta office, and 14 engineers work in the New Orleans office. The business manager decided to use a 2-sample t-test to compare the mean salaries of engineers in the two offices. Because there were only 15 engineers in one office and 14 engineers in the other, he used the salaries of all the engineers in the computation. Is the 2-sample t-test an appropriate inferential technique in this situation?
@@ -25,11 +25,11 @@ A. Choose all of the customers who joined in the last month.
 B. Make a list of all the customers who joined in the last 12 months and choose a random sample of customers on this list.
 C. From the list of all customers who joined in the last 12 months, classify customers by the state in which they live, then choose 10 customers from each state.
 D. From the list of all customers who joined in the last 12 months, classify customers by the state in which they live, then choose 3% of the customers from each state.
-Answer:","From the list of all customers who joined in the last 12 months, classify customers by the state in which they live, then choose 3% of the customers from each state.","The goal is to get a sample that reflects the geographical distribution of the customer base, because musical taste differs by region.  
+Answer:","From the list of all customers who joined in the last 12 months, classify customers by the state in which they live, then choose 3% of the customers from each state.","The goal is to get a sample that reflects the geographical distribution of the customer base, because musical taste differs by region.
 
-- **Option A** looks only at customers who joined in the last month—this is a very small, highly selective group and will not be representative.  
-- **Option B** is a simple random sample of all customers who joined in the past 12 months; while random, it doesn’t guarantee that each state (region) is represented in proportion to its share of the population.  
-- **Option C** selects a fixed number (10) from each state; this gives equal representation to every state, even very small ones, so the overall sample is not proportional to the actual state sizes.  
+- **Option A** looks only at customers who joined in the last month—this is a very small, highly selective group and will not be representative.
+- **Option B** is a simple random sample of all customers who joined in the past 12 months; while random, it doesn’t guarantee that each state (region) is represented in proportion to its share of the population.
+- **Option C** selects a fixed number (10) from each state; this gives equal representation to every state, even very small ones, so the overall sample is not proportional to the actual state sizes.
 - **Option D** selects 3 % of the customers from each state. This is *proportional stratified sampling*—each state contributes the same proportion of its customers, so the final sample mirrors the geographical distribution of the entire customer base.
 
 **Answer: D.**",1.0
@@ -52,7 +52,7 @@ C. The value of the random variable of interest is the number of trials until th
 D. There is a fixed number of trials.
 Answer:",The value of the random variable of interest is the number of trials until the first success occurs.,"**Answer: C**
 
-In a binomial experiment the random variable of interest is the number of successes in a **fixed** number of independent Bernoulli trials.  
+In a binomial experiment the random variable of interest is the number of successes in a **fixed** number of independent Bernoulli trials.
 Option **C** describes the geometric distribution (counting trials until the first success), which is **not** a requirement for a binomial setting.",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_126,"Question: The mean daily demand for bread at a popular bakery is 2,500 loaves, with a standard deviation of 225 loaves. Every morning the bakery bakes 3,000 loaves. What is the probability that today it will run out of bread? Assume that the mean daily demand for bread at this bakery is normally distributed.
 A. 0.8333
@@ -92,7 +92,7 @@ A. The standard deviation of the population is also zero.
 B. The sample mean and sample median are equal.
 C. The sample may have outliers.
 D. The population has a symmetric distribution.
-Answer:",The sample mean and sample median are equal.,"**Answer: B.**  
+Answer:",The sample mean and sample median are equal.,"**Answer: B.**
 
 If every observation in the sample is identical (standard deviation = 0), then the sample mean equals that common value, and the median of a set of identical values is also that same value. Hence the mean and median must be equal.",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_156,"Question: The sampling distribution of the sample mean is close to the normal distribution
@@ -106,14 +106,14 @@ A. Closing the park when the lead levels are within the allowed limit
 B. Keeping the park open when the lead levels are in excess of the allowed limit
 C. Closing the park when the lead levels are in excess of the allowed limit
 D. Keeping the park open when the lead levels are within the allowed limit
-Answer:",Closing the park when the lead levels are within the allowed limit,"**Answer: A.**  
+Answer:",Closing the park when the lead levels are within the allowed limit,"**Answer: A.**
 A Type I error occurs when we reject the null hypothesis (the lead level is within the allowed limit) while it is actually true. In this context, that would mean **closing the park when the lead levels are actually within the allowed limit**.",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_89,"Question: An assembly line machine is supposed to turn out ball bearings with a diameter of 1.25 centimeters. Each morning the first 30 bearings produced are pulled and measured. If their mean diameter is under 1.23 centimeters or over 1.27 centimeters, the machinery is stopped and an engineer is called to make adjustments before production is resumed. The quality control procedure may be viewed as a hypothesis test with the null hypothesis H0: μ = 1.25 and the alternative hypothesis Ha: μ ≠ 1.25. The engineer is asked to make adjustments when the null hypothesis is rejected. In test terminology, what would a Type II error result in?
 A. A warranted halt in production to adjust the machinery
 B. An unnecessary stoppage of the production process
 C. Continued production of wrong size ball bearings
 D. Continued production of proper size ball bearings
-Answer:",Continued production of wrong size ball bearings,"**Answer: C.**  
+Answer:",Continued production of wrong size ball bearings,"**Answer: C.**
 
 A Type II error occurs when the test fails to reject the null hypothesis even though the true mean diameter is not 1.25 cm. In this situation the production line would continue operating, producing ball bearings that are the wrong size.",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_209,"Question: A correlation of 0.6 indicates that the percentage of variation in y that is explained by the variation in x is how many times the percentage indicated by a correlation of 0.3?
@@ -124,7 +124,7 @@ D. 6
 Answer:",4,"The coefficient of determination is \(R^{2}\).
 
 \[
-R^{2}_{0.6} = (0.6)^2 = 0.36,\qquad 
+R^{2}_{0.6} = (0.6)^2 = 0.36,\qquad
 R^{2}_{0.3} = (0.3)^2 = 0.09
 \]
 
@@ -185,7 +185,7 @@ C. increases the interval size by 57%.
 D. decreases the interval size by 57%.
 Answer:",increases the interval size by 57%.,"**C. increases the interval size by 57%.**
 
-The half‑width of a confidence interval for a proportion is  
+The half‑width of a confidence interval for a proportion is
 \[
 \text{half‑width}= z_{\alpha/2}\sqrt{\frac{p(1-p)}{n}} .
 \]
@@ -193,7 +193,7 @@ The half‑width of a confidence interval for a proportion is
 - For a 90 % CI: \(z_{0.05}\approx 1.645\).
 - For a 99 % CI: \(z_{0.005}\approx 2.576\).
 
-The ratio of the new to the old z‑values is  
+The ratio of the new to the old z‑values is
 
 \[
 \frac{2.576}{1.645}\approx 1.566 .
@@ -209,9 +209,9 @@ Answer:","This is a stratified sample, which may give comparative information th
 
 **Why?**
 
-* **Stratified sampling** – The population is divided into non‑overlapping groups (strata) that are relatively homogeneous within each group but differ between groups. The researcher then draws a random sample from each stratum.  
-  * In this case, the strata are the 125 school districts.  
-  * From each district, a random sample of principals is drawn.  
+* **Stratified sampling** – The population is divided into non‑overlapping groups (strata) that are relatively homogeneous within each group but differ between groups. The researcher then draws a random sample from each stratum.
+  * In this case, the strata are the 125 school districts.
+  * From each district, a random sample of principals is drawn.
   * This ensures that every district is represented in the sample, and it allows comparisons across districts that would not be possible with a simple random sample.
 
 * **Cluster sampling** – Would involve randomly selecting a subset of districts and then taking all principals in those selected districts (or a random sample within each selected district). That is not what is described.
@@ -226,7 +226,7 @@ A. 95 percent of the students in her school are from families whose income is be
 B. There is a 95% probability that the families of all the students in this school have an income of between $35,095 and $45,005.
 C. If we were to take another sample of the same size and compute a 95 percent confidence interval, we would have a 95% chance of getting the interval ($35,095, $45,005).
 D. There is a 95% probability that the mean income per family in the school is between $35,095 and $45,005.
-Answer:","There is a 95% probability that the mean income per family in the school is between $35,095 and $45,005.","The interval is an estimate of the **population mean**.  
+Answer:","There is a 95% probability that the mean income per family in the school is between $35,095 and $45,005.","The interval is an estimate of the **population mean**.
 A 95 % confidence interval means that if we were to repeat the sampling procedure many times, about 95 % of the intervals we would construct would contain the true mean. For this particular sample we are 95 % confident that the mean income per family lies between \$35,095 and \$45,005.
 
 **Correct choice: D.**",1.0
@@ -241,10 +241,10 @@ Answer:",$405,"The total cost per semester is the sum of four independent compon
 T = 4500\;(\text{tuition}) + B + R + P
 \]
 
-where  
+where
 
-* \(B\) = books, \(\sigma_B = 65\)  
-* \(R\) = room and board, \(\sigma_R = 380\)  
+* \(B\) = books, \(\sigma_B = 65\)
+* \(R\) = room and board, \(\sigma_R = 380\)
 * \(P\) = personal expenses, \(\sigma_P = 125\)
 
 Because the components are independent, the variance of the sum equals the sum of the variances:
@@ -276,9 +276,9 @@ A. Matched pairs comparison of population proportions
 B. Matched pairs comparison of population means
 C. Independent samples comparison of population proportions
 D. Independent samples comparison of population means
-Answer:",Matched pairs comparison of population means,"The experiment is a paired design – each of the 25 engines is run twice (once with the additive and once without).  
-The response variable of interest is a continuous measure (engine lifespan).  
-Thus the appropriate analysis is a **matched‑pairs (paired) comparison of population means**.  
+Answer:",Matched pairs comparison of population means,"The experiment is a paired design – each of the 25 engines is run twice (once with the additive and once without).
+The response variable of interest is a continuous measure (engine lifespan).
+Thus the appropriate analysis is a **matched‑pairs (paired) comparison of population means**.
 
 **Answer: B. Matched pairs comparison of population means**",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_21,"Question: Which of these explains why t should be used instead of z for inference procedures for means.
@@ -292,11 +292,11 @@ Answer:","When using the sample standard deviation to estimate the population st
 
 **Why this is the right answer**
 
-- In inference about a population mean, we usually do not know the true population standard deviation, σ.  
-- We estimate σ with the sample standard deviation, \(s\).  
-- Substituting \(s\) for σ introduces extra uncertainty (the estimate \(s\) varies from sample to sample).  
-- The resulting sampling distribution of \(\bar{X}\) is no longer exactly normal; it has heavier tails.  
-- The **t‑distribution** accounts for this additional variability, and it converges to the normal distribution as the sample size becomes large (by the Central Limit Theorem).  
+- In inference about a population mean, we usually do not know the true population standard deviation, σ.
+- We estimate σ with the sample standard deviation, \(s\).
+- Substituting \(s\) for σ introduces extra uncertainty (the estimate \(s\) varies from sample to sample).
+- The resulting sampling distribution of \(\bar{X}\) is no longer exactly normal; it has heavier tails.
+- The **t‑distribution** accounts for this additional variability, and it converges to the normal distribution as the sample size becomes large (by the Central Limit Theorem).
 
 Thus, we use the t‑distribution for mean‑inference procedures when σ is unknown and must be estimated from the data.",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_124,"Question: A soft drink dispenser can be adjusted to deliver any fixed number of ounces. If the machine is operating with a standard deviation in delivery equal to 0.3 ounce, what should be the mean setting so that a 12-ounce cup will overflow less than 1% of the time? Assume a normal distribution for ounces delivered.
@@ -304,16 +304,16 @@ A. 12 - 0.99(0.3) ounces
 B. 12 - 2.326(0.3) ounces
 C. 12 - 2.576(0.3) ounces
 D. 12 + 2.326(0.3) ounces
-Answer:",12 - 2.326(0.3) ounces,"**Answer: B.**  
-\( \displaystyle \mu = 12 - 2.326(0.3)\) ounces.  
+Answer:",12 - 2.326(0.3) ounces,"**Answer: B.**
+\( \displaystyle \mu = 12 - 2.326(0.3)\) ounces.
 Because we want \(P(\text{delivery}>12)\;<1\%\), we set the mean so that the 99th percentile of the normal distribution equals 12 oz. Thus \( (12-\mu)/0.3 = 2.326 \Rightarrow \mu = 12 - 2.326(0.3) \).",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_204,"Question: Suppose X and Y are random variables with E(X) = 312, var(X) = 6, E(X) = 307, and var(Y) = 8. What are the expected value and variance of the random variable X + Y?
 A. E(X + Y) = 619, var(X + Y) = 7
 B. E(X + Y) = 619, var(X + Y) = 10
 C. E(X + Y) = 619, var(X + Y) = 14
 D. There is insufficient information to answer this question.
-Answer:",There is insufficient information to answer this question.,"**Answer: C.**  
-- \(E(X+Y)=E(X)+E(Y)=312+307=619\).  
+Answer:",There is insufficient information to answer this question.,"**Answer: C.**
+- \(E(X+Y)=E(X)+E(Y)=312+307=619\).
 - If \(X\) and \(Y\) are independent, \(\operatorname{Var}(X+Y)=\operatorname{Var}(X)+\operatorname{Var}(Y)=6+8=14\).",0.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_171,"Question: A town has one high school, which buses students from urban, suburban, and rural communities. Which of the following samples is recommended in studying attitudes toward tracking of students in honors, regular, and below-grade classes?
 A. Convenience sample
@@ -326,19 +326,19 @@ A. 0.8
 B. 0.4096
 C. 0.25
 D. 0.2
-Answer:",0.4096,"The side‑effect chance for one patient is  
+Answer:",0.4096,"The side‑effect chance for one patient is
 
 \[
 P(\text{side effect}) = \frac{1}{5}=0.2,
 \]
 
-so the probability of **not** getting a side effect for a single patient is  
+so the probability of **not** getting a side effect for a single patient is
 
 \[
 P(\text{no side effect}) = 1-0.2 = 0.8.
 \]
 
-The four patients are unrelated, so the events are independent.  
+The four patients are unrelated, so the events are independent.
 Thus the probability that none of the four develop side effects is the product of the individual “no‑side‑effect” probabilities:
 
 \[
@@ -363,7 +363,7 @@ C. 0.915
 D. The answer cannot be determined without knowing the size of the jury pool.
 Answer:",The answer cannot be determined without knowing the size of the jury pool.,"**Answer: D. The answer cannot be determined without knowing the size of the jury pool.**
 
-The probability of getting at least three women in a random sample of 12 depends on how many people are in the pool and how many of them are women.  
+The probability of getting at least three women in a random sample of 12 depends on how many people are in the pool and how many of them are women.
 If the pool is very large relative to 12, one can approximate the selection as independent Bernoulli trials with probability \(p = 0.30\) of picking a woman (a binomial model). In that case the probability would be
 
 \[
@@ -377,7 +377,7 @@ However, if the jury pool is not very large, the correct model is the hypergeome
 P(\text{at least 3 women})=\sum_{k=3}^{12}\frac{\binom{W}{k}\binom{N-W}{12-k}}{\binom{N}{12}},
 \]
 
-where \(N\) is the total number of potential jurors and \(W=0.30N\) is the number of women.  
+where \(N\) is the total number of potential jurors and \(W=0.30N\) is the number of women.
 Because the values of \(N\) and \(W\) are not given, the exact probability cannot be computed from the information supplied.
 
 Hence, **without knowing the size of the jury pool, the probability cannot be determined**.",1.0
@@ -402,13 +402,13 @@ A. 15 points
 B. 58 points
 C. 118 points
 D. 127 points
-Answer:",127 points,"For the midterm  
+Answer:",127 points,"For the midterm
 
 \[
 z_{\text{midterm}}=\frac{58-52}{4}= \frac{6}{4}=1.5
 \]
 
-The student’s standardized score is \(z = 1.5\).  
+The student’s standardized score is \(z = 1.5\).
 For the final exam, a score with the same z‑score satisfies
 
 \[
@@ -465,7 +465,7 @@ A. If there is sufficient evidence to reject a null hypothesis at the 10% level,
 B. Whether to use a one- or a two-sided test is typically decided after the data are gathered.
 C. If a hypothesis test is conducted at the 1% level, there is a 1% chance of rejecting the null hypothesis.
 D. The power of a test concerns its ability to detect an alternative hypothesis.
-Answer:",The power of a test concerns its ability to detect an alternative hypothesis.,"**Answer: D.**  
+Answer:",The power of a test concerns its ability to detect an alternative hypothesis.,"**Answer: D.**
 
 The power of a hypothesis test is defined as the probability that the test correctly rejects the null hypothesis when the alternative hypothesis is true. In other words, it measures the test’s ability to detect an effect (or alternative) when it actually exists. The other statements are incorrect:
 
@@ -477,7 +477,7 @@ A. I only
 B. II only
 C. III only
 D. I and II
-Answer:",I and II,"Power of a test is \(1-\beta\), where \(\beta\) is the probability of a Type II error.  
+Answer:",I and II,"Power of a test is \(1-\beta\), where \(\beta\) is the probability of a Type II error.
 To increase power we must **decrease \(\beta\)**.
 
 | Change | Effect on \(\beta\) | Effect on power |
@@ -486,7 +486,7 @@ To increase power we must **decrease \(\beta\)**.
 | Increase significance level (\(\alpha\)) | Makes it easier to reject \(H_0\) → \(\beta\) decreases | **Increases** power |
 | Increase probability of a Type II error (\(\beta\)) | Directly increases \(\beta\) | **Decreases** power |
 
-Thus the only changes that raise power are **I (larger sample size)** and **II (larger \(\alpha\))**.  
+Thus the only changes that raise power are **I (larger sample size)** and **II (larger \(\alpha\))**.
 Increasing \(\beta\) (III) would lower power, not raise it.
 
 **Answer: D. I and II**.",1.0
@@ -495,7 +495,7 @@ A. Use the surveys that were returned and change the sample size to 48 for the a
 B. Use the surveys that were returned and leave the sample size at 75 for the analysis.
 C. Randomly select 27 additional class members and send the survey to them.
 D. Follow up with those that did not return the survey to encourage them to respond.
-Answer:",Follow up with those that did not return the survey to encourage them to respond.,"**Answer: D. Follow up with those that did not return the survey to encourage them to respond.**  
+Answer:",Follow up with those that did not return the survey to encourage them to respond.,"**Answer: D. Follow up with those that did not return the survey to encourage them to respond.**
 
 The goal is to reduce non‑response bias. By reaching out to the 27 non‑respondents, the school can increase the response rate and obtain a more representative sample, improving the validity of the results.",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_44,"Question: In one study half of a class were instructed to watch exactly 1 hour of television per day, the other half were told to watch 5 hours per day, and then their class grades were compared. In a second study students in a class responded to a questionnaire asking about their television usage and their class grades.
@@ -503,9 +503,9 @@ A. The first study was an experiment without a control group, while the second w
 B. The first study was an observational study, while the second was a controlled experiment.
 C. Both studies were controlled experiments.
 D. Both studies were observational studies.
-Answer:","The first study was an experiment without a control group, while the second was an observational study.","**Answer: A**  
+Answer:","The first study was an experiment without a control group, while the second was an observational study.","**Answer: A**
 
-The first study is an experiment (the researchers assigned students to two different TV‑watching schedules), but it does not contain a separate “no‑TV” control group.  
+The first study is an experiment (the researchers assigned students to two different TV‑watching schedules), but it does not contain a separate “no‑TV” control group.
 The second study is observational – students simply reported their own TV habits and grades, with no manipulation by the researchers.",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_198,"Question: A significance test of the hypothesis H0: p= 0.3 against the alternative HA: p> 0.3 found a value of = 0.35 for a random sample of size 95. What is the P-value of this test?
 A. 1.06
@@ -530,7 +530,7 @@ z = \frac{\hat p - p_0}{\sqrt{p_0(1-p_0)/n}}
   \approx 1.06
 \]
 
-2. **Find the P‑value (upper tail)**  
+2. **Find the P‑value (upper tail)**
 
 The P‑value is the probability of obtaining a test statistic at least as large as 1.06 under \(H_0\):
 
@@ -558,7 +558,7 @@ Answer:",0.3,"Using inclusion–exclusion:
 P(A\cup B)=P(A)+P(B)-P(A\cap B)
 \]
 
-Given  
+Given
 \(P(A\cup B)=0.72,\; P(A)=0.6,\; P(A\cap B)=0.18\).
 
 Solve for \(P(B)\):
@@ -576,10 +576,10 @@ A. The sample sizes are different.
 B. The sample sizes are too large.
 C. The number of successes and the number of failures for the two groups are not all large enough.
 D. The shapes of the population distributions are not known.
-Answer:",The number of successes and the number of failures for the two groups are not all large enough.,"The two‑proportion z‑test assumes that in **both** groups the number of “successes” (opponents) and the number of “failures” (non‑opponents) are at least about 10.  
+Answer:",The number of successes and the number of failures for the two groups are not all large enough.,"The two‑proportion z‑test assumes that in **both** groups the number of “successes” (opponents) and the number of “failures” (non‑opponents) are at least about 10.
 In this poll
 
-* **Male**: 50 oppose → 50 successes, 10 failures (both ≥ 10)  
+* **Male**: 50 oppose → 50 successes, 10 failures (both ≥ 10)
 * **Female**: 66 oppose → 66 successes, 4 failures (the 4 failures is < 10)
 
 Because the female group has fewer than 10 failures, the normal‑approximation assumption for the binomial counts is violated. Hence a two‑proportion z‑test is not appropriate.
@@ -590,7 +590,7 @@ A. 30 times for each game
 B. 300 times for each game
 C. 30 times for the first game and 300 times for the second
 D. 300 times for the first game and 30 times for the second
-Answer:",300 times for the first game and 30 times for the second,"**Answer: D.**  
+Answer:",300 times for the first game and 30 times for the second,"**Answer: D.**
 You should flip **300 times for the first game** (the 45–55 % band) and **30 times for the second game** (the >80 % heads requirement).",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_47,"Question: The regression analysis of question 20 indicated that ""R-sq = 98.1%."" Which of the following is (are) true? I. There is a strong positive linear relationship between the explanatory and response variables. II. There is a strong negative linear relationship between the explanatory and response variables. III. About 98% of the variation in the response variable can be explained by the regression on the explanatory variable.
 A. I and III only
@@ -599,7 +599,7 @@ C. I or II (but not both) and III
 D. II and III only
 Answer:",I or II (but not both) and III,"**Answer: C**
 
-A very high \(R^{2}\) (98.1 %) tells us that the linear model explains about 98 % of the variability in the response variable – statement III is certainly true.  
+A very high \(R^{2}\) (98.1 %) tells us that the linear model explains about 98 % of the variability in the response variable – statement III is certainly true.
 However, \(R^{2}\) gives no information about the *direction* of the relationship (whether the slope is positive or negative). Thus, either a strong positive or a strong negative relationship could be present, but not both. Therefore, statement I or statement II may be true (but not both), and together with III this corresponds to option **C**.",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_134,"Question: The relation between the selling price of a car (in $1,000) and its age (in years) is estimated from a random sample of cars of a specific model. The relation is given by the following formula: Selling price = 15.9 – 0.983 (age) Which of the following can we conclude from this equation?
 A. For every year the car gets older, the selling price goes down by approximately 9.83 percent.
@@ -613,7 +613,7 @@ Answer:","For every year the car gets older, the selling price drops by approxim
 \]
 
 - The intercept \(15.9\) means a brand‑new car is expected to sell for \(15.9\times \$1{,}000 = \$15{,}900\).
-- The slope \(-0.983\) is expressed in thousands of dollars per year.  
+- The slope \(-0.983\) is expressed in thousands of dollars per year.
   Therefore each additional year of age reduces the expected selling price by \(0.983\times \$1{,}000 = \$983\).
 
 Hence, the only correct interpretation among the options is:
@@ -624,7 +624,7 @@ A. A third group for which no music is played
 B. A third group that randomly hears either classical or light rock music each day
 C. A third group that hears day-long R & B music
 D. A third group that hears classical music every morning and light rock every afternoon
-Answer:",A third group for which no music is played,"**Answer: A – a third group for which no music is played.**  
+Answer:",A third group for which no music is played,"**Answer: A – a third group for which no music is played.**
 
 A control group should provide a baseline against which the two music treatments can be compared. Having a group that experiences no music allows the researcher to determine whether the presence of music itself (regardless of genre) influences piecework output, and to isolate the specific effects of classical versus light rock. The other options either introduce additional variability (random music, different genre, or both music types at different times) and therefore do not serve as an appropriate control.",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_130,"Question: The registrar’s office at a university has noticed that a large number of students fail to report a change of address. The registrar decides to take a random sample of 150 students from the current directory of students and determine the number of students with the correct addresses on record. He then uses this information to construct a 95 percent confidence interval. Which of the following statements must be true?
@@ -636,7 +636,7 @@ Answer:",The sample proportion of students at this university with the correct a
 
 **Why C is the correct statement**
 
-A 95 % confidence interval for a proportion is constructed so that, if we were to repeat the sampling procedure many times, **approximately 95 % of the intervals that we would compute would contain the true population proportion**.  
+A 95 % confidence interval for a proportion is constructed so that, if we were to repeat the sampling procedure many times, **approximately 95 % of the intervals that we would compute would contain the true population proportion**.
 That is the formal interpretation of “95 % confidence”: the interval is not guaranteed to contain the true proportion in this particular sample, but it has a 95 % chance (over repeated samples) of doing so.
 
 **Why the other statements are not necessarily true**
@@ -664,7 +664,7 @@ D. 0.05
 Answer:",0.0057,"The sample mean of the 40 jars is normally distributed with
 
 \[
-\mu_{\bar X}=4\ \text{oz}, \qquad 
+\mu_{\bar X}=4\ \text{oz}, \qquad
 \sigma_{\bar X}= \frac{\sigma}{\sqrt{n}}=\frac{0.25}{\sqrt{40}}
               \approx 0.03953\ \text{oz}.
 \]
@@ -676,7 +676,7 @@ P(\bar X < 3.9)=P\!\left( Z < \frac{3.9-4}{0.03953}\right)
                =P\!\left( Z < -2.53\right),
 \]
 
-where \(Z\) is a standard normal variable.  
+where \(Z\) is a standard normal variable.
 Using the standard normal table (or a calculator),
 
 \[
@@ -693,7 +693,7 @@ A. This study was an observational study.
 B. Lack of blocking makes this a poorly designed study.
 C. The placebo effect is irrelevant in this type of study.
 D. This study was an experiment in which the subjects were used as their own controls.
-Answer:",This study was an experiment in which the subjects were used as their own controls.,"**Answer: D.**  
+Answer:",This study was an experiment in which the subjects were used as their own controls.,"**Answer: D.**
 The study is an experiment in which each subject serves as his or her own control (pre‑post comparison).",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_12,"Question: The longevity of people living in a certain locality has a standard deviation of 14 years. What is the mean longevity if 30% of the people live longer than 75 years? Assume a normal distribution for life spans.
 A. 75 - 0.30(14)
@@ -702,12 +702,12 @@ C. 75 - 0.4756(14)
 D. 75 - 0.5244(14)
 Answer:",75 - 0.5244(14),"To find the mean \( \mu \) we use the fact that the normal distribution has a symmetry property.
 
-1. **Convert the tail probability to a cumulative probability**  
+1. **Convert the tail probability to a cumulative probability**
    \[
    P(X>75)=0.30 \;\;\Longrightarrow\;\; P(X\le75)=1-0.30=0.70.
    \]
 
-2. **Standardize**  
+2. **Standardize**
    \[
    Z=\frac{X-\mu}{\sigma}, \qquad \sigma=14.
    \]
@@ -716,13 +716,13 @@ Answer:",75 - 0.5244(14),"To find the mean \( \mu \) we use the fact that the no
    P\!\left(Z\le \frac{75-\mu}{14}\right)=0.70.
    \]
 
-3. **Find the z‑value that gives a cumulative probability of 0.70**  
+3. **Find the z‑value that gives a cumulative probability of 0.70**
    The 70th percentile of the standard normal distribution is
    \[
    z_{0.70}\approx 0.5244.
    \]
 
-4. **Solve for \( \mu \)**  
+4. **Solve for \( \mu \)**
    \[
    \frac{75-\mu}{14}=0.5244
    \;\Longrightarrow\;
@@ -743,7 +743,7 @@ A. Yes, because every student has the same chance of being selected.
 B. Yes, but only if there is a single entrance to the school.
 C. Yes, because the 24 out of every 25 students who are not selected will form a control group.
 D. No, because not every sample of the intended size has an equal chance of being selected.
-Answer:","No, because not every sample of the intended size has an equal chance of being selected.","**Answer: D. No, because not every sample of the intended size has an equal chance of being selected.**  
+Answer:","No, because not every sample of the intended size has an equal chance of being selected.","**Answer: D. No, because not every sample of the intended size has an equal chance of being selected.**
 
 Selecting every 25th student is a form of systematic sampling. While each individual student does indeed have an equal probability of being chosen, the specific subsets of students that can be selected are not all equally likely. In a simple random sample every possible sample of that size must have the same probability of occurrence, which is not the case here.",1.0
 ollama_gpt-oss:20b_think_medium,high_school_statistics_140,"Question: An automobile service station performs oil changes and tire replacements, as well as other services. Sixty percent of its customers request an oil change, 30 percent request tire replacements, and 10 percent request both. A customer requests an oil change. What is the probability this customer does not request tire replacements?

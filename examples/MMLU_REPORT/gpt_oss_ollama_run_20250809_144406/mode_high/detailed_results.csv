@@ -34,7 +34,7 @@ A. Plan I
 B. Plan II
 C. Both plans use random samples and so will produce equivalent results.
 D. Neither plan will give an accurate estimate.
-Answer:",Plan II,"**Answer: B.** Plan II is the better plan.  
+Answer:",Plan II,"**Answer: B.** Plan II is the better plan.
 
 By sampling only the 132 students who actually invest, you target exactly the sub‑population that contributes to the total investment. This reduces the sampling variance (the zeros from the other 1518 students are excluded) and gives a more precise estimate of the total stock market investment in the school.",1.0
 ollama_gpt-oss:20b_think_high,high_school_statistics_73,"Question: Which of the following is notrequired in a binomial setting?
@@ -60,8 +60,8 @@ A. The standard deviation of the population is also zero.
 B. The sample mean and sample median are equal.
 C. The sample may have outliers.
 D. The population has a symmetric distribution.
-Answer:",The sample mean and sample median are equal.,"Because the sample standard deviation is zero, every observation in that sample must be identical.  
-In such a case the sample mean is that common value, and the sample median is also that same value.  
+Answer:",The sample mean and sample median are equal.,"Because the sample standard deviation is zero, every observation in that sample must be identical.
+In such a case the sample mean is that common value, and the sample median is also that same value.
 So the only statement that must be true is
 
 **B. The sample mean and sample median are equal.**",1.0
@@ -80,12 +80,12 @@ C. Closing the park when the lead levels are in excess of the allowed limit
 D. Keeping the park open when the lead levels are within the allowed limit
 Answer:",Closing the park when the lead levels are within the allowed limit,"**Answer: A**
 
-**Why?**  
-- **Null hypothesis (H₀):** The lead level is **within the allowed limit** (no problem).  
-- **Alternative hypothesis (H₁):** The lead level **exceeds** the allowed limit (problem).  
+**Why?**
+- **Null hypothesis (H₀):** The lead level is **within the allowed limit** (no problem).
+- **Alternative hypothesis (H₁):** The lead level **exceeds** the allowed limit (problem).
 
-The department will **close** the park only when the test rejects H₀.  
-A **Type I error** occurs when we reject H₀ even though it is actually true.  
+The department will **close** the park only when the test rejects H₀.
+A **Type I error** occurs when we reject H₀ even though it is actually true.
 Thus, we would close the park **even though the lead levels are actually within the allowed limit** – option **A**.",1.0
 ollama_gpt-oss:20b_think_high,high_school_statistics_89,"Question: An assembly line machine is supposed to turn out ball bearings with a diameter of 1.25 centimeters. Each morning the first 30 bearings produced are pulled and measured. If their mean diameter is under 1.23 centimeters or over 1.27 centimeters, the machinery is stopped and an engineer is called to make adjustments before production is resumed. The quality control procedure may be viewed as a hypothesis test with the null hypothesis H0: μ = 1.25 and the alternative hypothesis Ha: μ ≠ 1.25. The engineer is asked to make adjustments when the null hypothesis is rejected. In test terminology, what would a Type II error result in?
 A. A warranted halt in production to adjust the machinery
@@ -126,8 +126,8 @@ A. increases the interval size by 9%.
 B. decreases the interval size by 9%.
 C. increases the interval size by 57%.
 D. decreases the interval size by 57%.
-Answer:",increases the interval size by 57%.,"**Answer: C.**  
-When you move from a 90 % to a 99 % confidence level the critical z‑value rises from about 1.645 to about 2.576.  
+Answer:",increases the interval size by 57%.,"**Answer: C.**
+When you move from a 90 % to a 99 % confidence level the critical z‑value rises from about 1.645 to about 2.576.
 The margin of error—and thus the width of the interval—increases by a factor \(2.576/1.645 \approx 1.57\), i.e. about **57 % larger**.",1.0
 ollama_gpt-oss:20b_think_high,high_school_statistics_84,"Question: A researcher planning a survey of school principals in a particular state has lists of the school principals employed in each of the 125 school districts. The procedure is to obtain a random sample of principals from each of the districts rather than grouping all the lists together and obtaining a sample from the entire group. Which of the following is a correct conclusion?
 A. This is a simple random sample obtained in an easier and less costly manner than procedures involving sampling from the entire population of principals.
@@ -140,7 +140,7 @@ A. 95 percent of the students in her school are from families whose income is be
 B. There is a 95% probability that the families of all the students in this school have an income of between $35,095 and $45,005.
 C. If we were to take another sample of the same size and compute a 95 percent confidence interval, we would have a 95% chance of getting the interval ($35,095, $45,005).
 D. There is a 95% probability that the mean income per family in the school is between $35,095 and $45,005.
-Answer:","There is a 95% probability that the mean income per family in the school is between $35,095 and $45,005.","**Answer: D** – “There is a 95 % probability that the mean income per family in the school is between $35,095 and $45,005.”  
+Answer:","There is a 95% probability that the mean income per family in the school is between $35,095 and $45,005.","**Answer: D** – “There is a 95 % probability that the mean income per family in the school is between $35,095 and $45,005.”
 (Under the frequentist interpretation this is usually phrased as: “We are 95 % confident that the true population mean lies in that interval.”)",1.0
 ollama_gpt-oss:20b_think_high,high_school_statistics_202,"Question: The financial aid office at a state university conducts a study to determine the total student costs per semester. All students are charged $4500 for tuition. The mean cost for books is $350 with a standard deviation of $65. The mean outlay for room and board is $2800 with a standard deviation of $380. The mean personal expenditure is $675 with a standard deviation of $125. Assuming independence among categories, what is the standard deviation of the total student costs?
 A. $24
@@ -153,12 +153,12 @@ Answer:",$405,"The total cost is the sum of four components:
 \text{Total cost}= \underbrace{4500}_{\text{tuition}} + B + R + P
 \]
 
-where  
-\(B\) = books (\(\sigma_B = 65\)),  
-\(R\) = room & board (\(\sigma_R = 380\)),  
+where
+\(B\) = books (\(\sigma_B = 65\)),
+\(R\) = room & board (\(\sigma_R = 380\)),
 \(P\) = personal expenses (\(\sigma_P = 125\)).
 
-Since tuition is fixed, its variance is 0.  
+Since tuition is fixed, its variance is 0.
 Assuming the three cost categories are independent, the variance of the sum is the sum of the variances:
 
 \[
@@ -200,8 +200,8 @@ A. 12 - 0.99(0.3) ounces
 B. 12 - 2.326(0.3) ounces
 C. 12 - 2.576(0.3) ounces
 D. 12 + 2.326(0.3) ounces
-Answer:",12 - 2.326(0.3) ounces,"**Answer: B.**  
-Set the mean to  
+Answer:",12 - 2.326(0.3) ounces,"**Answer: B.**
+Set the mean to
 
 \[
 \mu = 12 - 2.326 \times 0.3 \text{ ounces}
@@ -258,13 +258,13 @@ A. 0.8
 B. 0.4096
 C. 0.25
 D. 0.2
-Answer:",0.4096,"The chance that a single patient **does not** develop a side effect is  
+Answer:",0.4096,"The chance that a single patient **does not** develop a side effect is
 
 \[
 1-\frac{1}{5}= \frac{4}{5}=0.8 .
 \]
 
-Because the four patients are unrelated, the events are independent.  
+Because the four patients are unrelated, the events are independent.
 Thus the probability that none of the four patients experience side effects is
 
 \[
@@ -289,7 +289,7 @@ A. The possible outcomes must all be numerical.
 B. The possible outcomes must be mutually exclusive.
 C. The mean (expected value) always equals the sum of the products obtained by multiplying each value by its corresponding probability.
 D. Approximately 95% of the outcomes will be within two standard deviations of the mean.
-Answer:",Approximately 95% of the outcomes will be within two standard deviations of the mean.,"D. Approximately 95% of the outcomes will be within two standard deviations of the mean.  
+Answer:",Approximately 95% of the outcomes will be within two standard deviations of the mean.,"D. Approximately 95% of the outcomes will be within two standard deviations of the mean.
 That 95‑percent rule holds only for (approximately) normal distributions, not for all discrete random variables.",1.0
 ollama_gpt-oss:20b_think_high,high_school_statistics_106,"Question: An experiment is to be conducted to determine whether taking fish oil capsules or garlic capsules has more of an effect on cholesterol levels. In past studies it was noted that daily exercise intensity (low, moderate, high) is associated with cholesterol level, but average sleep length (< 5, 5 - 8, > 8 hours) is not associated with cholesterol level. This experiment should be done
 A. by blocking on exercise intensity
@@ -320,7 +320,7 @@ A. 27
 B. 64
 C. 106
 D. 423
-Answer:",423,"For a 90 % confidence interval the margin of error is  
+Answer:",423,"For a 90 % confidence interval the margin of error is
 
 \[
 E = \frac{\text{width}}{2}= \frac{0.08}{2}=0.04 .
@@ -335,7 +335,7 @@ n = \frac{z_{0.05}^2\,p(1-p)}{E^2}
    \approx 423.7 .
 \]
 
-Thus we need at least **423 students**.  
+Thus we need at least **423 students**.
 
 **Answer: D. 423**",1.0
 ollama_gpt-oss:20b_think_high,high_school_statistics_3,"Question: Which of the following is a true statement about hypothesis testing?
@@ -353,7 +353,7 @@ Answer:",I and II,"**Answer: D – I and II**
 
 **Why?**
 
-- **Power** is the probability of correctly rejecting a false null hypothesis, i.e.,  
+- **Power** is the probability of correctly rejecting a false null hypothesis, i.e.,
   \[
   \text{Power} = 1 - \beta
   \]
@@ -385,7 +385,7 @@ A. 1.06
 B. 0.1446
 C. 0.2275
 D. 0.8554
-Answer:",0.1446,"The test statistic for a proportion is  
+Answer:",0.1446,"The test statistic for a proportion is
 
 \[
 z=\frac{\hat p-p_0}{\sqrt{p_0(1-p_0)/n}}
@@ -406,7 +406,7 @@ A. 0.78
 B. 0.3
 C. 0.24
 D. 0.48
-Answer:",0.3,"The probability that Ben asks Charlene is  
+Answer:",0.3,"The probability that Ben asks Charlene is
 
 \[
 \boxed{0.30}
@@ -414,14 +414,14 @@ Answer:",0.3,"The probability that Ben asks Charlene is
 
 **Solution**
 
-Let  
+Let
 
-- \(A\) = “Alfred asks Charlene”, \(P(A)=0.60\)  
+- \(A\) = “Alfred asks Charlene”, \(P(A)=0.60\)
 - \(B\) = “Ben asks Charlene”, \(P(B)=?\)
 
-We are given  
+We are given
 
-- \(P(A\cup B)=0.72\) (at least one asks)  
+- \(P(A\cup B)=0.72\) (at least one asks)
 - \(P(A\cap B)=0.18\) (both ask)
 
 Using the inclusion–exclusion formula:
@@ -450,10 +450,10 @@ A. The sample sizes are different.
 B. The sample sizes are too large.
 C. The number of successes and the number of failures for the two groups are not all large enough.
 D. The shapes of the population distributions are not known.
-Answer:",The number of successes and the number of failures for the two groups are not all large enough.,"**Answer: C.**  
-The two‑proportion z‑test requires that, in each sample, the expected number of successes and the expected number of failures are both at least 5 (so that the sampling distribution of the proportion is approximately normal).  
+Answer:",The number of successes and the number of failures for the two groups are not all large enough.,"**Answer: C.**
+The two‑proportion z‑test requires that, in each sample, the expected number of successes and the expected number of failures are both at least 5 (so that the sampling distribution of the proportion is approximately normal).
 
-- Females: 66 oppose, 4 do not oppose (4 < 5).  
+- Females: 66 oppose, 4 do not oppose (4 < 5).
 - Males: 50 oppose, 10 do not oppose (10 ≥ 5).
 
 Because the female sample has fewer than 5 failures, the normal approximation is not justified, so a two‑proportion z‑test is not appropriate.",1.0
@@ -468,8 +468,8 @@ A. I and III only
 B. I or II only
 C. I or II (but not both) and III
 D. II and III only
-Answer:",I or II (but not both) and III,"The high \(R^{2}\) (98.1 %) tells us that a very large proportion of the variation in the response is accounted for by the linear model, i.e. the relationship is strong.  
-It does **not** indicate whether the slope is positive or negative – only the strength.  
+Answer:",I or II (but not both) and III,"The high \(R^{2}\) (98.1 %) tells us that a very large proportion of the variation in the response is accounted for by the linear model, i.e. the relationship is strong.
+It does **not** indicate whether the slope is positive or negative – only the strength.
 Therefore we can assert statement III, and either statement I or statement II (but not both).
 
 **Answer: C. I or II (but not both) and III**",1.0
@@ -478,10 +478,10 @@ A. For every year the car gets older, the selling price goes down by approximate
 B. A new car costs on the average $9,830.
 C. For every year the car gets older, the selling price drops by approximately $1,590.
 D. For every year the car gets older, the selling price drops by approximately $983.
-Answer:","For every year the car gets older, the selling price drops by approximately $983.","**Answer: D.**  
+Answer:","For every year the car gets older, the selling price drops by approximately $983.","**Answer: D.**
 
-The regression equation is expressed in units of $1,000.  
-- The intercept 15.9 means a brand‑new car (age = 0) sells for about **$15,900**.  
+The regression equation is expressed in units of $1,000.
+- The intercept 15.9 means a brand‑new car (age = 0) sells for about **$15,900**.
 - The slope \(-0.983\) means that for each additional year of age the selling price decreases by **0.983 × $1,000 = $983**.
 
 Thus the only statement that follows directly from the equation is:
@@ -492,7 +492,7 @@ A. A third group for which no music is played
 B. A third group that randomly hears either classical or light rock music each day
 C. A third group that hears day-long R & B music
 D. A third group that hears classical music every morning and light rock every afternoon
-Answer:",A third group for which no music is played,"The best control is a third group in which **no music is played at all**.  
+Answer:",A third group for which no music is played,"The best control is a third group in which **no music is played at all**.
 
 So the correct choice is **A.**",1.0
 ollama_gpt-oss:20b_think_high,high_school_statistics_130,"Question: The registrar’s office at a university has noticed that a large number of students fail to report a change of address. The registrar decides to take a random sample of 150 students from the current directory of students and determine the number of students with the correct addresses on record. He then uses this information to construct a 95 percent confidence interval. Which of the following statements must be true?
@@ -524,7 +524,7 @@ A. 75 - 0.30(14)
 B. 75 + 0.30(14)
 C. 75 - 0.4756(14)
 D. 75 - 0.5244(14)
-Answer:",75 - 0.5244(14),"**Answer: D**  
+Answer:",75 - 0.5244(14),"**Answer: D**
 
 Because 30 % of the people live longer than 75 years, 70 % live 75 years or less.
 
@@ -532,7 +532,7 @@ Because 30 % of the people live longer than 75 years, 70 % live 75 years
 P(X\le 75)=0.70
 \]
 
-Let \(Z=\frac{X-\mu}{\sigma}\) with \(\sigma = 14\).  
+Let \(Z=\frac{X-\mu}{\sigma}\) with \(\sigma = 14\).
 Then
 
 \[
@@ -559,7 +559,7 @@ A. Experiments are only conducted on human subjects; observational studies can b
 B. In an experiment, the researcher manipulates some variable to observe its effect on a response variable; in an observational study, he or she simply observes and records the observations.
 C. Experiments must use randomized treatment and control groups; observational studies also use treatment and control groups, but they do not need to be randomized.
 D. Experiments must be double-blind; observational studies do not need to be.
-Answer:",Experiments are only conducted on human subjects; observational studies can be conducted on nonhuman subjects.,"**Answer: B.**  
+Answer:",Experiments are only conducted on human subjects; observational studies can be conducted on nonhuman subjects.,"**Answer: B.**
 
 In an experiment the researcher **manipulates** one or more variables (the “treatment”) to see how that manipulation affects a response variable. In an observational study the researcher merely **observes and records** what happens without any intervention. This manipulation‑vs‑observation distinction is the primary difference between the two designs.",0.0
 ollama_gpt-oss:20b_think_high,high_school_statistics_138,"Question: To survey the opinions of the students at your high school, a researcher plans to select every twenty-fifth student entering the school in the morning. Assuming there are no absences, will this result in a simple random sample of students attending your school?
@@ -573,27 +573,27 @@ A. 0.42
 B. 0.5
 C. 0.7
 D. 0.833
-Answer:",0.833,"**Answer: D. 0.833**  
+Answer:",0.833,"**Answer: D. 0.833**
 
-*Explanation*:  
-Let \(O\) be “customer requests an oil change” and \(T\) be “customer requests a tire replacement.”  
-We have  
-- \(P(O) = 0.60\)  
-- \(P(T) = 0.30\)  
+*Explanation*:
+Let \(O\) be “customer requests an oil change” and \(T\) be “customer requests a tire replacement.”
+We have
+- \(P(O) = 0.60\)
+- \(P(T) = 0.30\)
 - \(P(O \cap T) = 0.10\)
 
-The probability that a customer who requests an oil change **does not** request a tire replacement is  
+The probability that a customer who requests an oil change **does not** request a tire replacement is
 
 \[
 P(\text{not }T \mid O) = \frac{P(O \cap \text{not }T)}{P(O)}.
 \]
 
-But  
+But
 \[
 P(O \cap \text{not }T) = P(O) - P(O \cap T) = 0.60 - 0.10 = 0.50.
 \]
 
-Thus  
+Thus
 
 \[
 P(\text{not }T \mid O) = \frac{0.50}{0.60} \approx 0.8333.

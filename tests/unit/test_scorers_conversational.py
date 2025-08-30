@@ -565,7 +565,8 @@ class TestConversationalScorerIntegration:
 
         scores = scorer.score("Purple is nice", "Weather question", context)
 
-        # Should get low scores across the board - adjusted threshold for very poor conversation
+        # Should get low scores across the board - adjusted threshold for very poor
+        # conversation
         assert scores["overall"] < 0.7  # Poor overall performance (adjusted from 0.5)
         assert all(0.0 <= score <= 1.0 for score in scores.values())
 
@@ -580,3 +581,47 @@ class TestConversationalScorerIntegration:
         scores = scorer.score("Response", "Question", context)
         assert isinstance(scores, dict)
         assert "overall" in scores
+
+
+class TestConversationalCoverage:
+    """Additional tests to improve conversational.py coverage."""
+
+    def test_knowledge_retention_scorer_initialization(self):
+        """Test KnowledgeRetentionScorer initialization."""
+        mock_model = MockLLMModel()
+        scorer = KnowledgeRetentionScorer(model=mock_model)
+
+        assert scorer.model == mock_model
+        assert scorer.name == "Knowledge Retention"
+
+    def test_conversation_relevancy_scorer_initialization(self):
+        """Test ConversationRelevancyScorer initialization."""
+        mock_model = MockLLMModel()
+        scorer = ConversationRelevancyScorer(model=mock_model)
+
+        assert scorer.model == mock_model
+        assert scorer.name == "Conversation Relevancy"
+
+    def test_conversation_completeness_scorer_initialization(self):
+        """Test ConversationCompletenessScorer initialization."""
+        mock_model = MockLLMModel()
+        scorer = ConversationCompletenessScorer(model=mock_model)
+
+        assert scorer.model == mock_model
+        assert scorer.name == "Conversation Completeness"
+
+    def test_role_adherence_scorer_initialization(self):
+        """Test RoleAdherenceScorer initialization."""
+        mock_model = MockLLMModel()
+        scorer = RoleAdherenceScorer(model=mock_model)
+
+        assert scorer.model == mock_model
+        assert scorer.name == "Role Adherence"
+
+    def test_conversational_metrics_scorer_initialization(self):
+        """Test ConversationalMetricsScorer initialization."""
+        mock_model = MockLLMModel()
+        scorer = ConversationalMetricsScorer(model=mock_model)
+
+        assert scorer.model == mock_model
+        assert scorer.name == "Conversational Metrics"

@@ -83,7 +83,7 @@ class ConversationTurn(BaseModel):
     speaker: str = Field(description="Speaker identifier (user, assistant, system)")
     message: str = Field(description="The message content")
     timestamp: Optional[str] = Field(default=None, description="Optional timestamp")
-    metadata: Optional[dict[str, Any]] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
 
@@ -96,7 +96,7 @@ class Conversation(BaseModel):
         default=None, description="Overall conversation context or system role"
     )
     topic: Optional[str] = Field(default=None, description="Conversation topic")
-    metadata: Optional[dict[str, Any]] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
 

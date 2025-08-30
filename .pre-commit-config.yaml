@@ -1,4 +1,4 @@
-default_stages: [commit, commit-msg]
+default_stages: [pre-commit, commit-msg]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
@@ -33,7 +33,7 @@ repos:
     rev: v1.13.0
     hooks:
       - id: mypy
-        additional_dependencies: [types-PyYAML, types-requests, types-click]
+        additional_dependencies: [types-PyYAML, types-requests, types-click, pydantic]
         files: ^src/novaeval/
         args: [--ignore-missing-imports]
 
@@ -53,6 +53,14 @@ repos:
 
   - repo: local
     hooks:
+      - id: pytest
+        name: pytest
+        entry: pytest
+        language: python
+        args: ["-v", "--tb=short", "--disable-warnings"]
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
       - id: safety
         name: safety
         entry: safety

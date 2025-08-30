@@ -40,7 +40,6 @@ def main():
     # original_output_file = getattr(
     #     eval_module, "DEFAULT_OUTPUT_FILE", "agent_scores_with_reasoning.csv"
     # )
-
     # Update the module's main function to use our parameters
     def custom_main():
         """Main evaluation workflow with custom parameters."""
