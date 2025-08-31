@@ -31,6 +31,8 @@ from novaeval.scorers.advanced_generation_scorers import (
 )
 from novaeval.scorers.base import ScoreResult
 
+pytestmark = pytest.mark.unit
+
 
 class MockLLMModel:
     """Mock LLM model for testing."""
@@ -340,7 +342,6 @@ class TestAdvancedGenerationCoverage:
     async def test_advanced_scorers_with_exceptions(self):
         """Test advanced scorers with model exceptions."""
         mock_model = MockLLMModel()
-        mock_model.generate = AsyncMock(side_effect=Exception("Model error"))
 
         scorers = [
             BiasDetectionScorer(model=mock_model),
@@ -352,9 +353,15 @@ class TestAdvancedGenerationCoverage:
         ]
 
         for scorer in scorers:
-            result = await scorer.evaluate(
-                input_text="test", output_text="test output", context="test context"
-            )
+            # Mock the scorer's internal _call_model method to raise exception
+            with patch.object(
+                scorer,
+                "_call_model",
+                new=AsyncMock(side_effect=Exception("Model error")),
+            ):
+                result = await scorer.evaluate(
+                    input_text="test", output_text="test output", context="test context"
+                )
             assert isinstance(result, ScoreResult)
             assert result.score == 0.0
 
@@ -370,11 +377,13 @@ class TestAdvancedGenerationCoverage:
         ]
 
         for scorer in scorers:
-            # Mock the async evaluate method
+            # Mock the async evaluate method with AsyncMock
             with patch.object(
                 scorer,
                 "evaluate",
-                return_value=ScoreResult(score=0.8, passed=True, reasoning="test"),
+                new=AsyncMock(
+                    return_value=ScoreResult(score=0.8, passed=True, reasoning="test")
+                ),
             ):
                 result = scorer.score(
                     "test input", "test output", context={"context": "test context"}
@@ -386,7 +395,6 @@ class TestAdvancedGenerationCoverage:
     async def test_advanced_scorers_with_malformed_responses(self):
         """Test advanced scorers with malformed LLM responses."""
         mock_model = MockLLMModel()
-        mock_model.generate = AsyncMock(return_value="invalid json response")
 
         scorers = [
             BiasDetectionScorer(model=mock_model),
@@ -396,9 +404,15 @@ class TestAdvancedGenerationCoverage:
         ]
 
         for scorer in scorers:
-            result = await scorer.evaluate(
-                input_text="test", output_text="test output", context="test context"
-            )
+            # Mock the scorer's internal _call_model method to return malformed response
+            with patch.object(
+                scorer,
+                "_call_model",
+                new=AsyncMock(return_value="invalid json response"),
+            ):
+                result = await scorer.evaluate(
+                    input_text="test", output_text="test output", context="test context"
+                )
             assert isinstance(result, ScoreResult)
             # Should fallback to default scores
             assert 0.0 <= result.score <= 1.0

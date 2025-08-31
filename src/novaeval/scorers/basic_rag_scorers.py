@@ -8,9 +8,11 @@ This module contains fundamental scorers for RAG evaluation including:
 - Aggregate scoring
 """
 
+from __future__ import annotations
+
 import asyncio
 import re
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from sklearn.metrics import average_precision_score, ndcg_score
@@ -133,8 +135,8 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
         self,
         input_text: str,
         output_text: str,
-        expected_output: Optional[str] = None,
-        context: Optional[dict[str, Any]] = None,
+        expected_output: str | None = None,
+        context: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> ScoreResult:
         if not context or not input_text:
@@ -146,7 +148,9 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
             )
 
         # Extract chunks from context
-        chunks = context.get("chunks", [context.get("context", "")])
+        chunks = context.get("chunks")
+        if not chunks and context.get("context"):
+            chunks = [context["context"]]
         if not chunks:
             return ScoreResult(
                 score=0.0,
@@ -185,8 +189,8 @@ class ContextualPrecisionScorerPP(AsyncLLMScorer):
         self,
         prediction: str,
         ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+        context: dict[str, Any] | None = None,
+    ) -> float | dict[str, float]:
         import asyncio
 
         # Check if we're already in an async context
@@ -296,8 +300,8 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
         self,
         input_text: str,
         output_text: str,
-        expected_output: Optional[str] = None,
-        context: Optional[dict[str, Any]] = None,
+        expected_output: str | None = None,
+        context: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> ScoreResult:
         if not context or not input_text:
@@ -309,7 +313,9 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
             )
 
         # Extract chunks from context
-        chunks = context.get("chunks", [context.get("context", "")])
+        chunks = context.get("chunks")
+        if not chunks and context.get("context"):
+            chunks = [context["context"]]
         if not chunks:
             return ScoreResult(
                 score=0.0,
@@ -356,8 +362,8 @@ class ContextualRecallScorerPP(AsyncLLMScorer):
         self,
         prediction: str,
         ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+        context: dict[str, Any] | None = None,
+    ) -> float | dict[str, float]:
         import asyncio
 
         # Check if we're already in an async context
@@ -409,14 +415,14 @@ class RetrievalF1Scorer(BaseScorer):
         self.precision_scorer = precision_scorer
         self.recall_scorer = recall_scorer
         self.threshold = threshold
-        self._last_result: Optional[ScoreResult] = None
+        self._last_result: ScoreResult | None = None
 
     def score(
         self,
         prediction: str,
         ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+        context: dict[str, Any] | None = None,
+    ) -> float | dict[str, float]:
         # Calls the precision and recall scorers, then computes F1
         precision = self.precision_scorer.score(prediction, ground_truth, context)
         recall = self.recall_scorer.score(prediction, ground_truth, context)
@@ -440,7 +446,7 @@ class RetrievalF1Scorer(BaseScorer):
         # interface
         return {"f1": f1_score, "precision": precision, "recall": recall}
 
-    def get_score_result(self) -> Optional[ScoreResult]:
+    def get_score_result(self) -> ScoreResult | None:
         """Get the full ScoreResult from the last evaluation."""
         return self._last_result
 
@@ -453,14 +459,14 @@ class RetrievalRankingScorer(BaseScorer):
     def __init__(self, threshold: float = 0.5, **kwargs: Any) -> None:
         super().__init__(name="RetrievalRankingScorer", **kwargs)
         self.threshold = threshold
-        self._last_result: Optional[ScoreResult] = None
+        self._last_result: ScoreResult | None = None
 
     def score(
         self,
         prediction: str,
         ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+        context: dict[str, Any] | None = None,
+    ) -> float | dict[str, float]:
         # Computes ranking scores based on rankings (1,2,3,4,5) and relevance scores
         if not context or "rankings" not in context:
             self._last_result = ScoreResult(
@@ -474,10 +480,12 @@ class RetrievalRankingScorer(BaseScorer):
         rankings = context["rankings"]
         relevance_labels = context.get("relevance_scores", [1.0] * len(rankings))
 
+        # Define max_rank outside try block to avoid UnboundLocalError in except paths
+        max_rank = 5  # Configurable maximum rank for scoring
+
         try:
             # Convert rankings to scores (1,2,3,4,5 -> 1.0, 0.8, 0.6, 0.4, 0.2)
             # Higher ranking (lower number) should get higher score
-            max_rank = 5  # Configurable maximum rank for scoring
             ranking_scores = []
             for rank in rankings:
                 score = (
@@ -500,13 +508,20 @@ class RetrievalRankingScorer(BaseScorer):
             relevance_labels = relevance_labels[:min_length]
             predicted_scores = predicted_scores[:min_length]
 
-            # Compute MRR (Mean Reciprocal Rank) - find first relevant item
+            # Compute MRR (Mean Reciprocal Rank) - find best relevant rank
             mrr = 0.0
             try:
+                # Find the minimum rank among items whose relevance label meets the threshold
+                relevant_ranks = []
                 for i, relevance in enumerate(relevance_labels):
-                    if relevance > 0:  # First relevant item found
-                        mrr = 1.0 / (i + 1)  # i is the 0-based position
-                        break
+                    if relevance > 0:  # Item is relevant
+                        relevant_ranks.append(
+                            rankings[i]
+                        )  # Use actual rank, not position
+
+                if relevant_ranks:
+                    min_rank = min(relevant_ranks)
+                    mrr = 1.0 / min_rank
             except Exception:
                 mrr = 0.0
 
@@ -587,7 +602,7 @@ class RetrievalRankingScorer(BaseScorer):
                 )
                 return 0.0
 
-    def get_score_result(self) -> Optional[ScoreResult]:
+    def get_score_result(self) -> ScoreResult | None:
         """Get the full ScoreResult from the last evaluation."""
         return self._last_result
 
@@ -606,22 +621,25 @@ class SemanticSimilarityScorer(BaseScorer):
         super().__init__(name="SemanticSimilarityScorer", **kwargs)
         self.threshold = threshold
         self.embedding_model = embedding_model
-        self.model: Optional[SentenceTransformer] = None
+        self.model: SentenceTransformer | None = None
         self._model_loaded = False
-        self._last_result: Optional[ScoreResult] = None
+        self._last_result: ScoreResult | None = None
 
     def _load_model(self) -> None:
         """Load the sentence transformer model."""
-        try:
-            from sentence_transformers import SentenceTransformer
+        if self.model is None and not self._model_loaded:
+            try:
+                from sentence_transformers import SentenceTransformer
 
-            self.model = SentenceTransformer(self.embedding_model)
-        except ImportError:
-            self.model = None
-            print(
-                "Warning: sentence_transformers not installed. "
-                "Using simple similarity computation."
-            )
+                self.model = SentenceTransformer(self.embedding_model)
+                self._model_loaded = True
+            except ImportError:
+                self.model = None
+                self._model_loaded = True  # Mark as loaded to avoid retrying
+                print(
+                    "Warning: sentence_transformers not installed. "
+                    "Using simple similarity computation."
+                )
 
     def _compute_simple_similarity(self, query: str, chunks: list[str]) -> float:
         """Fallback similarity computation without embeddings."""
@@ -647,8 +665,8 @@ class SemanticSimilarityScorer(BaseScorer):
         self,
         prediction: str,
         ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+        context: dict[str, Any] | None = None,
+    ) -> float | dict[str, float]:
         # Embeds the query and all chunks, computes mean semantic similarity
         if not context or not ground_truth:
             self._last_result = ScoreResult(
@@ -660,14 +678,17 @@ class SemanticSimilarityScorer(BaseScorer):
             return 0.0
 
         try:
-            self._load_model()
+            if not self._model_loaded:
+                self._load_model()
 
             query = ground_truth
-            chunks = context.get("chunks", [context.get("context", "")])
+            chunks = context.get("chunks")
+            if not chunks and context.get("context"):
+                chunks = [context["context"]]
 
             if self.model is None:
                 # Use fallback similarity computation
-                similarity = self._compute_simple_similarity(query, chunks)
+                similarity = self._compute_simple_similarity(query, chunks or [])
                 passed = similarity >= self.threshold
 
                 self._last_result = ScoreResult(
@@ -680,7 +701,7 @@ class SemanticSimilarityScorer(BaseScorer):
 
             # Compute embeddings
             query_embedding = self.model.encode([query])[0]
-            chunk_embeddings = self.model.encode(chunks)
+            chunk_embeddings = self.model.encode(chunks or [])
 
             # Compute similarities
             similarities = []
@@ -716,7 +737,7 @@ class SemanticSimilarityScorer(BaseScorer):
             )
             return 0.0
 
-    def get_score_result(self) -> Optional[ScoreResult]:
+    def get_score_result(self) -> ScoreResult | None:
         """Get the full ScoreResult from the last evaluation."""
         return self._last_result
 
@@ -735,9 +756,9 @@ class RetrievalDiversityScorer(BaseScorer):
         super().__init__(name="RetrievalDiversityScorer", **kwargs)
         self.embedding_model = embedding_model
         self.threshold = threshold
-        self.model: Optional[SentenceTransformer] = None
+        self.model: SentenceTransformer | None = None
         self._model_loaded = False
-        self._last_result: Optional[ScoreResult] = None
+        self._last_result: ScoreResult | None = None
 
     def _load_model(self) -> None:
         if self.model is None and not self._model_loaded:
@@ -821,8 +842,8 @@ class RetrievalDiversityScorer(BaseScorer):
         self,
         prediction: str,
         ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, float]]:
+        context: dict[str, Any] | None = None,
+    ) -> float | dict[str, float]:
         if not context or "chunks" not in context:
             self._last_result = ScoreResult(
                 score=0.0, passed=False, reasoning="No chunks provided", metadata={}
@@ -841,7 +862,8 @@ class RetrievalDiversityScorer(BaseScorer):
             return 0.0
 
         try:
-            self._load_model()
+            if not self._model_loaded:
+                self._load_model()
 
             if self.model is None:
                 # Use fallback diversity computation
@@ -881,7 +903,7 @@ class RetrievalDiversityScorer(BaseScorer):
             )
             return 0.0
 
-    def get_score_result(self) -> Optional[ScoreResult]:
+    def get_score_result(self) -> ScoreResult | None:
         """Get the full ScoreResult from the last evaluation."""
         return self._last_result
 
@@ -894,7 +916,7 @@ class AggregateRAGScorer(BaseScorer):
     def __init__(
         self,
         scorers: dict[str, Any],
-        weights: Optional[dict[str, float]] = None,
+        weights: dict[str, float] | None = None,
         threshold: float = 0.5,
         **kwargs: Any,
     ) -> None:
@@ -902,14 +924,14 @@ class AggregateRAGScorer(BaseScorer):
         self.scorers = scorers
         self.weights = weights or dict.fromkeys(scorers.keys(), 1.0)
         self.threshold = threshold
-        self._last_result: Optional[ScoreResult] = None
+        self._last_result: ScoreResult | None = None
 
     def score(
         self,
         prediction: str,
         ground_truth: str,
-        context: Optional[dict[str, Any]] = None,
-    ) -> Union[float, dict[str, Any]]:
+        context: dict[str, Any] | None = None,
+    ) -> float | dict[str, Any]:
         # Calls each scorer, extracts main score, and computes weighted average
         scores: dict[str, float] = {}
         total_weight = 0.0
@@ -1022,6 +1044,6 @@ class AggregateRAGScorer(BaseScorer):
                 return False
         return False
 
-    def get_score_result(self) -> Optional[ScoreResult]:
+    def get_score_result(self) -> ScoreResult | None:
         """Get the full ScoreResult from the last evaluation."""
         return self._last_result

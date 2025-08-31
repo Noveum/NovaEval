@@ -74,21 +74,24 @@ class TestPanelJudgeCoverage:
     async def test_evaluate_all_judges_fail(self):
         """Test evaluation when all judges fail."""
         mock_model = MockLLMModel()
-        mock_model.generate = AsyncMock(side_effect=Exception("Model error"))
-
         judge = JudgeConfig(model=mock_model, weight=1.0)
         scorer = PanelOfJudgesScorer(judges=[judge])
 
-        result = await scorer.evaluate(
-            input_text="test input", output_text="test output"
-        )
+        # Mock the _evaluate_with_judge method to raise exception
+        with patch.object(
+            scorer,
+            "_evaluate_with_judge",
+            new_callable=AsyncMock,
+            side_effect=Exception("Model error"),
+        ):
+            result = await scorer.evaluate(
+                input_text="test input", output_text="test output"
+            )
 
         assert result.score == 0.0
         assert not result.passed
-        # The actual implementation doesn't return "All judges failed to evaluate"
-        # when judges fail, it processes the failures and returns a detailed report
-        assert "Judge evaluation failed" in result.reasoning
-        assert "failed_judges" in result.metadata.get("metadata", {})
+        assert "All judges failed to evaluate" in result.reasoning
+        assert "failed_judges" in result.metadata
 
     @pytest.mark.asyncio
     async def test_evaluate_with_invalid_results(self):
@@ -243,8 +246,10 @@ class TestPanelJudgeCoverage:
         judge = JudgeConfig(model=mock_model, weight=1.0)
         scorer = PanelOfJudgesScorer(judges=[judge])
 
-        # Mock the async evaluate method to raise exception
-        with patch.object(scorer, "evaluate", side_effect=Exception("Test error")):
+        # Mock the synchronous helper method that's called by ThreadPoolExecutor
+        with patch.object(
+            scorer, "_evaluate_with_judge_sync", side_effect=Exception("Test error")
+        ):
             result = scorer.score("test input", "test output")
 
         assert result == 0.0

@@ -139,7 +139,6 @@ class TestConversationalCoverage:
     async def test_conversational_scorers_with_exceptions(self):
         """Test conversational scorers with model exceptions."""
         mock_model = MockLLMModel()
-        mock_model.generate = AsyncMock(side_effect=Exception("Model error"))
 
         scorers = [
             KnowledgeRetentionScorer(model=mock_model),
@@ -149,11 +148,17 @@ class TestConversationalCoverage:
         ]
 
         for scorer in scorers:
-            result = await scorer.evaluate(
-                input_text="test",
-                output_text="test",
-                context={"conversation_history": []},
-            )
+            # Mock the model's generate method to raise exception
+            with patch.object(
+                scorer.model,
+                "generate",
+                new=AsyncMock(side_effect=Exception("Model error")),
+            ):
+                result = await scorer.evaluate(
+                    input_text="test",
+                    output_text="test",
+                    context={"conversation_history": []},
+                )
             assert isinstance(result, ScoreResult)
             # The scorers have fallback behavior, so they don't always return 0.0 on exceptions
             assert 0.0 <= result.score <= 1.0
@@ -170,11 +175,13 @@ class TestConversationalCoverage:
         ]
 
         for scorer in scorers:
-            # Mock the async evaluate method
+            # Mock the async evaluate method with AsyncMock
             with patch.object(
                 scorer,
                 "evaluate",
-                return_value=ScoreResult(score=0.8, passed=True, reasoning="test"),
+                new=AsyncMock(
+                    return_value=ScoreResult(score=0.8, passed=True, reasoning="test")
+                ),
             ):
                 result = scorer.score(
                     "test input", "test output", context={"conversation_history": []}
@@ -198,7 +205,9 @@ class TestConversationalCoverage:
             with patch.object(
                 scorer,
                 "evaluate",
-                return_value=ScoreResult(score=0.0, passed=False, reasoning="test"),
+                new=AsyncMock(
+                    return_value=ScoreResult(score=0.0, passed=False, reasoning="test")
+                ),
             ):
                 result = scorer.score("test input", "test output", context="invalid")
 
@@ -233,7 +242,6 @@ class TestConversationalCoverage:
     async def test_conversational_scorers_with_malformed_responses(self):
         """Test conversational scorers with malformed LLM responses."""
         mock_model = MockLLMModel()
-        mock_model.generate = AsyncMock(return_value="invalid json response")
 
         scorers = [
             KnowledgeRetentionScorer(model=mock_model),
@@ -243,11 +251,17 @@ class TestConversationalCoverage:
         ]
 
         for scorer in scorers:
-            result = await scorer.evaluate(
-                input_text="test",
-                output_text="test",
-                context={"conversation_history": []},
-            )
+            # Mock the model's generate method to return malformed response
+            with patch.object(
+                scorer.model,
+                "generate",
+                new=AsyncMock(return_value="invalid json response"),
+            ):
+                result = await scorer.evaluate(
+                    input_text="test",
+                    output_text="test",
+                    context={"conversation_history": []},
+                )
             assert isinstance(result, ScoreResult)
             # Should fallback to default scores
             assert 0.0 <= result.score <= 1.0

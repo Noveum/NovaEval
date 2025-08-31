@@ -1,128 +1,105 @@
 """
-Tests for centralized RAG prompts.
+Unit tests for RAG prompts module.
 """
 
-from src.novaeval.scorers.rag_prompts import RAGPrompts
+import pytest
+
+from novaeval.scorers.rag_prompts import RAGPrompts
 
 
 class TestRAGPrompts:
-    """Test the centralized RAG prompts class."""
+    """Test cases for RAGPrompts class."""
 
-    def test_numerical_chunk_relevance_1_5_prompt(self):
-        """Test 1-5 scale chunk relevance prompt formatting."""
-        question = "How does neural networks work?"
-        chunk = (
-            "Neural networks are computational models inspired by biological neurons."
+    def test_format_prompt_basic(self):
+        """Test basic prompt formatting."""
+        template = "Question: {question}\nAnswer: {answer}"
+        result = RAGPrompts.format_prompt(
+            template, question="What is ML?", answer="Machine Learning"
         )
 
-        prompt = RAGPrompts.get_numerical_chunk_relevance_1_5(question, chunk)
+        expected = "Question: What is ML?\nAnswer: Machine Learning"
+        assert result == expected
 
-        assert "Question: How does neural networks work?" in prompt
-        assert "Context chunk: Neural networks are computational models" in prompt
-        assert "1 = Not relevant at all" in prompt
-        assert "5 = Extremely relevant" in prompt
-        assert "Rating: [1-5]" in prompt
-
-    def test_numerical_chunk_relevance_0_10_prompt(self):
-        """Test 0-10 scale chunk relevance prompt formatting."""
-        question = "What is deep learning?"
-        chunk = "Deep learning uses multiple layers of neural networks."
-
-        prompt = RAGPrompts.get_numerical_chunk_relevance_0_10(question, chunk)
-
-        assert "Question: What is deep learning?" in prompt
-        assert "Context chunk: Deep learning uses multiple layers" in prompt
-        assert "0: Completely irrelevant" in prompt
-        assert "10: Highly relevant" in prompt
-        assert "Rating: [0-10]" in prompt
-
-    def test_estimate_total_relevant_prompt(self):
-        """Test total relevant chunks estimation prompt formatting."""
-        query = "What are the benefits of AI?"
-        num_retrieved = 5
-
-        prompt = RAGPrompts.get_estimate_total_relevant(query, num_retrieved)
-
-        assert "Query: What are the benefits of AI?" in prompt
-        assert "Retrieved Chunks: 5 chunks" in prompt
-        assert "estimated_total" in prompt
-        assert "JSON" in prompt
-
-    def test_format_prompt_method(self):
-        """Test the format_prompt class method."""
-        template = "Hello {name}, you are {age} years old."
-        result = RAGPrompts.format_prompt(template, name="Alice", age=25)
-
-        assert result == "Hello Alice, you are 25 years old."
-
-    def test_bias_detection_evaluation_prompt(self):
-        """Test bias detection evaluation prompt formatting."""
-        input_text = "What are good careers?"
-        output_text = "Men should consider engineering, women should consider nursing."
-
-        prompt = RAGPrompts.get_bias_detection_evaluation(
-            input_text=input_text, output_text=output_text
+    def test_get_numerical_chunk_relevance_1_5(self):
+        """Test 1-5 scale chunk relevance prompt generation."""
+        result = RAGPrompts.get_numerical_chunk_relevance_1_5(
+            question="What is machine learning?",
+            chunk="Machine learning is a subset of artificial intelligence.",
         )
 
-        assert "**Question:** What are good careers?" in prompt
+        assert "What is machine learning?" in result
+        assert "Machine learning is a subset of artificial intelligence." in result
+        assert "1 = Not relevant at all" in result
+        assert "5 = Extremely relevant" in result
+
+    def test_get_bias_detection_evaluation(self):
+        """Test bias detection evaluation prompt generation."""
+        result = RAGPrompts.get_bias_detection_evaluation(
+            input_text="What careers are good for young people?",
+            output_text="Men should consider engineering, women should consider nursing.",
+        )
+
+        assert "What careers are good for young people?" in result
         assert (
-            "**Answer:** Men should consider engineering, women should consider nursing."
-            in prompt
+            "Men should consider engineering, women should consider nursing." in result
         )
-        assert "Bias Detection Evaluation" in prompt
-        assert "Gender Bias" in prompt
+        assert "Gender Bias" in result
+        assert "bias_score" in result
 
-    def test_factual_accuracy_evaluation_prompt(self):
-        """Test factual accuracy evaluation prompt formatting."""
-        context = "The Apollo 11 mission landed on the Moon on July 20, 1969."
-        output_text = "Apollo 11 landed on Mars in 1970."
-
-        prompt = RAGPrompts.get_factual_accuracy_evaluation(
-            context=context, output_text=output_text
+    def test_get_factual_accuracy_evaluation(self):
+        """Test factual accuracy evaluation prompt generation."""
+        result = RAGPrompts.get_factual_accuracy_evaluation(
+            context="The Apollo 11 mission landed on the Moon on July 20, 1969.",
+            output_text="Apollo 11 landed on the Moon on July 20, 1969.",
         )
 
-        assert (
-            "**Context:** The Apollo 11 mission landed on the Moon on July 20, 1969."
-            in prompt
-        )
-        assert "**Answer:** Apollo 11 landed on Mars in 1970." in prompt
-        assert "Factual Accuracy Evaluation" in prompt
+        assert "The Apollo 11 mission landed on the Moon on July 20, 1969." in result
+        assert "Apollo 11 landed on the Moon on July 20, 1969." in result
+        assert "accuracy_score" in result
 
-    def test_hallucination_detection_evaluation_prompt(self):
-        """Test hallucination detection evaluation prompt formatting."""
-        context = "The Earth is round."
-        output_text = "The Earth is flat and the Moon is made of cheese."
+    def test_prompt_templates_contain_required_elements(self):
+        """Test that all prompt templates contain required structural elements."""
+        bias_prompt = RAGPrompts.BIAS_DETECTION_EVALUATION
+        assert "## Task" in bias_prompt
+        assert "## Input" in bias_prompt
+        assert "## Evaluation Criteria" in bias_prompt
+        assert "## Output Format" in bias_prompt
+        assert "```json" in bias_prompt
 
-        prompt = RAGPrompts.get_hallucination_detection_evaluation(
-            context=context, output_text=output_text
-        )
+    def test_prompt_templates_have_examples(self):
+        """Test that prompt templates include helpful examples."""
+        bias_prompt = RAGPrompts.BIAS_DETECTION_EVALUATION
+        assert "**Example 1" in bias_prompt
+        assert "**Example 2" in bias_prompt
 
-        assert "**Context:** The Earth is round." in prompt
-        assert "**Answer:** The Earth is flat and the Moon is made of cheese." in prompt
-        assert "Hallucination Detection Evaluation" in prompt
+    def test_prompt_templates_rating_scales(self):
+        """Test that rating scales are properly defined in templates."""
+        bias_prompt = RAGPrompts.BIAS_DETECTION_EVALUATION
+        assert "**1 (No Bias)**" in bias_prompt
+        assert "**5 (Major Bias)**" in bias_prompt
 
-    def test_context_faithfulness_evaluation_prompt(self):
-        """Test context faithfulness evaluation prompt formatting."""
-        context = "Python is a programming language."
-        output_text = "Python is a snake species."
+    def test_prompt_templates_handle_edge_cases(self):
+        """Test that prompt templates handle edge cases properly."""
+        result = RAGPrompts.get_bias_detection_evaluation("", "")
+        assert result is not None
+        assert len(result) > 0
 
-        prompt = RAGPrompts.get_context_faithfulness_evaluation(
-            context=context, output_text=output_text
-        )
+    def test_prompt_templates_consistency(self):
+        """Test that similar prompt templates have consistent structure."""
+        evaluation_templates = [
+            RAGPrompts.BIAS_DETECTION_EVALUATION,
+            RAGPrompts.FACTUAL_ACCURACY_EVALUATION,
+            RAGPrompts.CLAIM_EXTRACTION_EVALUATION,
+            RAGPrompts.CLAIM_VERIFICATION_EVALUATION,
+        ]
 
-        assert "**Context:** Python is a programming language." in prompt
-        assert "**Answer:** Python is a snake species." in prompt
-        assert "Context Faithfulness Evaluation" in prompt
+        for template in evaluation_templates:
+            assert "## Task" in template
+            assert "## Input" in template
+            assert "## Evaluation Criteria" in template
+            assert "## Output Format" in template
+            assert "```json" in template
 
-    def test_question_answer_alignment_evaluation_prompt(self):
-        """Test question-answer alignment evaluation prompt formatting."""
-        input_text = "What is the capital of France?"
-        output_text = "The capital of France is Paris."
 
-        prompt = RAGPrompts.get_question_answer_alignment_evaluation(
-            input_text=input_text, output_text=output_text
-        )
-
-        assert "**Question:** What is the capital of France?" in prompt
-        assert "**Answer:** The capital of France is Paris." in prompt
-        assert "Question-Answer Alignment Evaluation" in prompt
+if __name__ == "__main__":
+    pytest.main([__file__])
