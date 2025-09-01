@@ -196,10 +196,10 @@ class TestAzureOpenAIAdvancedFeatures:
 
         # High temperature should yield more random output
         response1 = azure_openai_model.generate(
-            prompt="The meaning of life is", temperature=0.9, max_tokens=10
+            prompt="The meaning of life is", temperature=1.9, max_tokens=20
         )
         response2 = azure_openai_model.generate(
-            prompt="The meaning of life is", temperature=0.9, max_tokens=10
+            prompt="The meaning of life is", temperature=1.9, max_tokens=20
         )
         assert response1 != response2
 
