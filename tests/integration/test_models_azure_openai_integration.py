@@ -26,7 +26,16 @@ def azure_credentials():
     api_version = os.getenv("AZURE_OPENAI_API_VERSION")
     deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
     if not all([api_key, base_url, api_version, deployment]):
-        pytest.skip("Azure credentials must be set in environment variables.")
+        missing_vars = []
+        if not api_key:
+            missing_vars.append("AZURE_OPENAI_API_KEY")
+        if not base_url:
+            missing_vars.append("AZURE_OPENAI_BASE_URL")
+        if not api_version:
+            missing_vars.append("AZURE_OPENAI_API_VERSION")
+        if not deployment:
+            missing_vars.append("AZURE_OPENAI_DEPLOYMENT")
+        pytest.skip(f"Missing Azure environment variables: {', '.join(missing_vars)}")
     return {
         "api_key": api_key,
         "base_url": base_url,
@@ -187,10 +196,10 @@ class TestAzureOpenAIAdvancedFeatures:
 
         # High temperature should yield more random output
         response1 = azure_openai_model.generate(
-            prompt="The meaning of life is", temperature=0.9, max_tokens=10
+            prompt="The meaning of life is", temperature=1.9, max_tokens=20
         )
         response2 = azure_openai_model.generate(
-            prompt="The meaning of life is", temperature=0.9, max_tokens=10
+            prompt="The meaning of life is", temperature=1.9, max_tokens=20
         )
         assert response1 != response2
 
