@@ -37,7 +37,7 @@ class TestGeminiModelIntegration:
         assert model.name == "gemini_gemini-2.5-flash"
         assert model.model_name == "gemini-2.5-flash"
         assert model.client is not None
- 
+
         # Note: validate_connection() might fail due to API rate limits or temporary issues
         # So we'll test the basic functionality instead
         try:
@@ -58,6 +58,7 @@ class TestGeminiModelIntegration:
                     f"Both validate_connection and generate failed due to API issues: {gen_error}"
                 )
                 # The test passes in this case since it's an API issue, not a code issue
+
     @requires_api_key
     @integration_test
     def test_model_initialization_with_custom_parameters(self, gemini_api_key):
