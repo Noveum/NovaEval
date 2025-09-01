@@ -57,7 +57,6 @@ class TestGeminiModelIntegration:
                     f"Both validate_connection and generate failed due to API issues: {gen_error}"
                 )
                 # The test passes in this case since it's an API issue, not a code issue
-                pass
 
     @requires_api_key
     @integration_test
