@@ -510,35 +510,40 @@ class TestOllamaModel:
 
     def test_estimate_cost_with_gpu_cost(self):
         """Test GPU cost calculation."""
-        model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
+        with patch("novaeval.models.ollama.Client"):
+            model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
 
         cost = model.estimate_cost("prompt", "response", total_duration_ns=1000000000)
         assert cost == 0.001  # 1 second * 0.001 per second
 
     def test_estimate_cost_without_gpu_cost(self):
         """Test no cost when gpu_cost_per_sec is None."""
-        model = OllamaModel(pull_on_init=False)
+        with patch("novaeval.models.ollama.Client"):
+            model = OllamaModel(pull_on_init=False)
 
         cost = model.estimate_cost("prompt", "response")
         assert cost == 0.0
 
     def test_estimate_cost_with_duration_ns(self):
         """Test using total_duration_ns."""
-        model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
+        with patch("novaeval.models.ollama.Client"):
+            model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
 
         cost = model.estimate_cost("prompt", "response", total_duration_ns=2000000000)
         assert cost == 0.002  # 2 seconds * 0.001 per second
 
     def test_estimate_cost_with_elapsed_seconds(self):
         """Test using elapsed_seconds fallback."""
-        model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
+        with patch("novaeval.models.ollama.Client"):
+            model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
 
         cost = model.estimate_cost("prompt", "response", elapsed_seconds=3.0)
         assert cost == 0.003  # 3 seconds * 0.001 per second
 
     def test_estimate_cost_fallback(self):
         """Test no duration metrics available."""
-        model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
+        with patch("novaeval.models.ollama.Client"):
+            model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
 
         cost = model.estimate_cost("prompt", "response")
         assert cost == 0.0
@@ -918,21 +923,24 @@ class TestOllamaModel:
 
     def test_estimate_cost_negative_duration(self):
         """Test cost estimation with negative duration."""
-        model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
+        with patch("novaeval.models.ollama.Client"):
+            model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
 
         cost = model.estimate_cost("prompt", "response", total_duration_ns=-1000000000)
         assert cost == 0.0  # The method returns 0.0 for negative duration
 
     def test_estimate_cost_zero_duration(self):
         """Test cost estimation with zero duration."""
-        model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
+        with patch("novaeval.models.ollama.Client"):
+            model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
 
         cost = model.estimate_cost("prompt", "response", total_duration_ns=0)
         assert cost == 0.0
 
     def test_estimate_cost_very_small_duration(self):
         """Test cost estimation with very small duration."""
-        model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
+        with patch("novaeval.models.ollama.Client"):
+            model = OllamaModel(gpu_cost_per_sec=0.001, pull_on_init=False)
 
         cost = model.estimate_cost(
             "prompt", "response", total_duration_ns=1000000

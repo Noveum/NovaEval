@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "novaeval"
-version = "0.5.1"
+version = "0.5.2"
 description = "A comprehensive, open-source LLM evaluation framework for testing and benchmarking AI models"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -55,6 +55,10 @@ dependencies = [
     "ijson>=3.4.0",
     "noveum-trace>=0.3.5",
     "python-dotenv>=1.0.0",
+    "ollama>=0.5.3",
+    "transformers>=4.20.0",
+    "scikit-learn>=1.0.0",
+    "plotly>=5.0.0",
 ]
 
 [project.optional-dependencies]
@@ -152,6 +156,7 @@ openai = "novaeval.models.openai:OpenAIModel"
 anthropic = "novaeval.models.anthropic:AnthropicModel"
 azure_openai = "novaeval.models.azure_openai:AzureOpenAIModel"
 gemini = "novaeval.models.gemini:GeminiModel"
+ollama = "novaeval.models.ollama:OllamaModel"
 
 [project.entry-points."novaeval.scorers"]
 accuracy = "novaeval.scorers.accuracy:AccuracyScorer"
