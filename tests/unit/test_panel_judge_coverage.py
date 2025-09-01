@@ -14,6 +14,8 @@ from novaeval.scorers.panel_judge import (
     PanelResult,
 )
 
+pytestmark = pytest.mark.unit
+
 
 class MockLLMModel(BaseModel):
     """Mock LLM model for testing."""

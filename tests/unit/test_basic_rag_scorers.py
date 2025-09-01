@@ -42,6 +42,50 @@ class TestAsyncLLMScorer:
             assert result == "test response"
             mock_call.assert_called_once_with(model, "test prompt")
 
+    def test_parse_numerical_response_edge_cases(self):
+        """Test _parse_numerical_response with various edge cases."""
+        model = Mock()
+        scorer = ContextualPrecisionScorerPP(model=model)
+
+        # Test with score in JSON (using integer to avoid regex conflict)
+        response = '{"score": 8}'
+        result = scorer._parse_numerical_response(response)
+        assert result == 8.0
+
+        # Test with rating in JSON
+        response = '{"rating": 7}'
+        result = scorer._parse_numerical_response(response)
+        assert result == 7.0
+
+        # Test with invalid JSON
+        response = '{"invalid": json}'
+        result = scorer._parse_numerical_response(response)
+        assert result == 5.0  # Fallback
+
+        # Test with no numbers
+        response = "No numbers here at all"
+        result = scorer._parse_numerical_response(response)
+        assert result == 5.0  # Fallback
+
+        # Test with numbers outside 0-10 range
+        response = "Rating: 15"
+        result = scorer._parse_numerical_response(response)
+        assert result == 10.0  # Should be clamped to 10
+
+        response = "Rating: 0"
+        result = scorer._parse_numerical_response(response)
+        assert result == 0.0  # Should be 0
+
+    def test_parse_numerical_response_exception_handling(self):
+        """Test _parse_numerical_response exception handling."""
+        model = Mock()
+        scorer = ContextualPrecisionScorerPP(model=model)
+
+        # Test with response that causes exception during parsing
+        response = None  # This should cause an exception
+        result = scorer._parse_numerical_response(response)
+        assert result == 5.0  # Fallback
+
 
 class TestContextualPrecisionScorerPP:
     def test_init(self):
@@ -176,6 +220,79 @@ class TestContextualPrecisionScorerPP:
             result = scorer.score("prediction", "ground_truth", context)
             assert result == 0.8
 
+    @pytest.mark.asyncio
+    async def test_evaluate_with_context_key(self):
+        """Test evaluate method when context has 'context' key instead of 'chunks'."""
+        model = Mock()
+        scorer = ContextualPrecisionScorerPP(model=model)
+
+        context = {"context": "single context string"}
+
+        with patch.object(scorer, "_evaluate_chunk_relevance", return_value=True):
+            result = await scorer.evaluate("query", "answer", context=context)
+            assert result.score == 1.0  # 1 relevant out of 1 chunk
+            assert result.passed is True  # Above default threshold of 0.7
+
+    @pytest.mark.asyncio
+    async def test_evaluate_with_mixed_relevance(self):
+        """Test evaluate method with mixed relevance results."""
+        model = Mock()
+        scorer = ContextualPrecisionScorerPP(model=model, relevance_threshold=0.5)
+
+        context = {"chunks": ["chunk1", "chunk2", "chunk3", "chunk4"]}
+
+        with patch.object(
+            scorer, "_evaluate_chunk_relevance", side_effect=[True, False, True, False]
+        ):
+            result = await scorer.evaluate("query", "answer", context=context)
+            assert result.score == 0.5  # 2 relevant out of 4 chunks
+            assert result.passed is True  # Meets threshold of 0.5
+            assert result.metadata["relevant_chunks"] == 2
+            assert result.metadata["total_chunks"] == 4
+
+    def test_score_method_with_async_context(self):
+        """Test score method when called from within an async context."""
+        model = Mock()
+        scorer = ContextualPrecisionScorerPP(model=model)
+        context = {"chunks": ["chunk1", "chunk2"]}
+
+        # Mock the async evaluate method
+        mock_result = ScoreResult(
+            score=0.7, passed=True, reasoning="Test precision", metadata={}
+        )
+
+        with (
+            patch("asyncio.get_running_loop") as mock_get_loop,
+            patch("concurrent.futures.ThreadPoolExecutor") as mock_executor,
+        ):
+            # Simulate being in an async context
+            mock_get_loop.return_value = Mock()
+
+            # Mock the executor and future
+            mock_future = Mock()
+            mock_future.result.return_value = mock_result
+            mock_executor_instance = Mock()
+            mock_executor_instance.submit.return_value = mock_future
+            mock_executor.return_value.__enter__.return_value = mock_executor_instance
+
+            result = scorer.score("prediction", "ground_truth", context)
+
+            assert result == 0.7
+            mock_executor_instance.submit.assert_called_once()
+
+    def test_score_method_result_without_score_attribute(self):
+        """Test score method when result doesn't have score attribute."""
+        model = Mock()
+        scorer = ContextualPrecisionScorerPP(model=model)
+        context = {"chunks": ["chunk1"]}
+
+        # Mock result without score attribute
+        mock_result = Mock(spec=[])  # Empty spec means no attributes
+
+        with patch("asyncio.run", return_value=mock_result):
+            result = scorer.score("prediction", "ground_truth", context)
+            assert result == 0.0
+
 
 class TestContextualRecallScorerPP:
     def test_init(self):
@@ -295,6 +412,90 @@ class TestContextualRecallScorerPP:
             result = scorer.score("prediction", "ground_truth", context)
             assert result == 0.0
 
+    @pytest.mark.asyncio
+    async def test_evaluate_with_context_key(self):
+        """Test evaluate method when context has 'context' key instead of 'chunks'."""
+        model = Mock()
+        scorer = ContextualRecallScorerPP(model=model)
+
+        context = {"context": "single context string"}
+
+        with (
+            patch.object(scorer, "_evaluate_chunk_relevance", return_value=True),
+            patch.object(scorer, "_estimate_total_relevant_chunks", return_value=2),
+        ):
+            result = await scorer.evaluate("query", "answer", context=context)
+            assert result.score == 0.5  # 1 relevant retrieved, estimated 2 total
+            assert result.passed is False  # Below default threshold of 0.7
+
+    @pytest.mark.asyncio
+    async def test_evaluate_with_high_recall(self):
+        """Test evaluate method with high recall scenario."""
+        model = Mock()
+        scorer = ContextualRecallScorerPP(model=model, relevance_threshold=0.5)
+
+        context = {"chunks": ["chunk1", "chunk2", "chunk3"]}
+
+        with (
+            patch.object(
+                scorer, "_evaluate_chunk_relevance", side_effect=[True, True, True]
+            ),
+            patch.object(scorer, "_estimate_total_relevant_chunks", return_value=3),
+        ):
+            result = await scorer.evaluate("query", "answer", context=context)
+            assert result.score == 1.0  # 3 relevant retrieved, estimated 3 total
+            assert result.passed is True  # Meets threshold of 0.5
+            assert result.metadata["relevant_chunks"] == 3
+            assert result.metadata["estimated_total_relevant"] == 3
+
+    @pytest.mark.asyncio
+    async def test_estimate_total_relevant_chunks_with_exception(self):
+        """Test _estimate_total_relevant_chunks with exception handling."""
+        model = Mock()
+        scorer = ContextualRecallScorerPP(model=model)
+
+        with patch.object(scorer, "_call_model", side_effect=Exception("API error")):
+            result = await scorer._estimate_total_relevant_chunks(
+                "query", ["chunk1", "chunk2"]
+            )
+            assert result == 2  # Should fallback to length of retrieved chunks
+
+    @pytest.mark.asyncio
+    async def test_estimate_total_relevant_chunks_with_invalid_json(self):
+        """Test _estimate_total_relevant_chunks with invalid JSON response."""
+        model = Mock()
+        scorer = ContextualRecallScorerPP(model=model)
+
+        with patch.object(scorer, "_call_model", return_value="invalid json"):
+            result = await scorer._estimate_total_relevant_chunks(
+                "query", ["chunk1", "chunk2", "chunk3"]
+            )
+            assert result == 3  # Should fallback to length of retrieved chunks
+
+    @pytest.mark.asyncio
+    async def test_estimate_total_relevant_chunks_with_missing_key(self):
+        """Test _estimate_total_relevant_chunks with missing estimated_total key."""
+        model = Mock()
+        scorer = ContextualRecallScorerPP(model=model)
+
+        with patch.object(scorer, "_call_model", return_value='{"other_key": 5}'):
+            result = await scorer._estimate_total_relevant_chunks(
+                "query", ["chunk1", "chunk2"]
+            )
+            assert result == 2  # Should fallback to length of retrieved chunks
+
+    @pytest.mark.asyncio
+    async def test_estimate_total_relevant_chunks_with_low_estimate(self):
+        """Test _estimate_total_relevant_chunks when estimate is lower than retrieved."""
+        model = Mock()
+        scorer = ContextualRecallScorerPP(model=model)
+
+        with patch.object(scorer, "_call_model", return_value='{"estimated_total": 1}'):
+            result = await scorer._estimate_total_relevant_chunks(
+                "query", ["chunk1", "chunk2", "chunk3"]
+            )
+            assert result == 3  # Should be at least as many as retrieved
+
 
 class TestRetrievalF1Scorer:
     def test_init(self):
@@ -350,6 +551,75 @@ class TestRetrievalF1Scorer:
         result = scorer.get_score_result()
         assert result is not None
 
+    def test_score_with_high_precision_low_recall(self):
+        """Test F1 score calculation with high precision, low recall."""
+        precision_scorer = Mock()
+        recall_scorer = Mock()
+        scorer = RetrievalF1Scorer(precision_scorer, recall_scorer)
+
+        precision_scorer.score.return_value = 0.9
+        recall_scorer.score.return_value = 0.3
+
+        result = scorer.score("prediction", "ground_truth", {"context": "test"})
+
+        # F1 should be lower than both precision and recall
+        expected_f1 = 2 * (0.9 * 0.3) / (0.9 + 0.3)
+        assert result["f1"] == pytest.approx(expected_f1, rel=1e-3)
+        assert result["precision"] == 0.9
+        assert result["recall"] == 0.3
+
+    def test_score_with_low_precision_high_recall(self):
+        """Test F1 score calculation with low precision, high recall."""
+        precision_scorer = Mock()
+        recall_scorer = Mock()
+        scorer = RetrievalF1Scorer(precision_scorer, recall_scorer)
+
+        precision_scorer.score.return_value = 0.2
+        recall_scorer.score.return_value = 0.8
+
+        result = scorer.score("prediction", "ground_truth", {"context": "test"})
+
+        # F1 should be lower than both precision and recall
+        expected_f1 = 2 * (0.2 * 0.8) / (0.2 + 0.8)
+        assert result["f1"] == pytest.approx(expected_f1, rel=1e-3)
+        assert result["precision"] == 0.2
+        assert result["recall"] == 0.8
+
+    def test_score_with_perfect_scores(self):
+        """Test F1 score calculation with perfect precision and recall."""
+        precision_scorer = Mock()
+        recall_scorer = Mock()
+        scorer = RetrievalF1Scorer(precision_scorer, recall_scorer)
+
+        precision_scorer.score.return_value = 1.0
+        recall_scorer.score.return_value = 1.0
+
+        result = scorer.score("prediction", "ground_truth", {"context": "test"})
+
+        # Perfect precision and recall should give perfect F1
+        assert result["f1"] == 1.0
+        assert result["precision"] == 1.0
+        assert result["recall"] == 1.0
+
+    def test_score_result_metadata(self):
+        """Test that the score result contains correct metadata."""
+        precision_scorer = Mock()
+        recall_scorer = Mock()
+        scorer = RetrievalF1Scorer(precision_scorer, recall_scorer)
+
+        precision_scorer.score.return_value = 0.6
+        recall_scorer.score.return_value = 0.4
+
+        scorer.score("prediction", "ground_truth", {"context": "test"})
+
+        result = scorer.get_score_result()
+        assert result is not None
+        assert result.metadata["precision"] == 0.6
+        assert result.metadata["recall"] == 0.4
+        assert "F1 Score:" in result.reasoning
+        assert "Precision: 0.600" in result.reasoning
+        assert "Recall: 0.400" in result.reasoning
+
 
 class TestRetrievalRankingScorer:
     def test_init(self):
@@ -391,6 +661,113 @@ class TestRetrievalRankingScorer:
 
         result = scorer.score("prediction", "ground_truth", context)
         assert result == 0.0
+
+    def test_score_with_rankings_detailed_metrics(self):
+        """Test score method with detailed ranking metrics."""
+        scorer = RetrievalRankingScorer()
+
+        context = {
+            "rankings": [1, 2, 3, 4, 5],
+            "relevance_scores": [1.0, 0.8, 0.6, 0.4, 0.2],
+        }
+
+        result = scorer.score("prediction", "ground_truth", context)
+
+        # Should return a dictionary with all ranking metrics
+        assert isinstance(result, dict)
+        assert "mrr" in result
+        assert "ndcg" in result
+        assert "map" in result
+        assert "avg_ranking" in result
+        assert "combined" in result
+
+        # All metrics should be between 0 and 1
+        for metric in ["mrr", "ndcg", "map", "avg_ranking", "combined"]:
+            assert 0 <= result[metric] <= 1
+
+    def test_score_with_rankings_no_relevant_items(self):
+        """Test score method when no items are relevant."""
+        scorer = RetrievalRankingScorer()
+
+        context = {
+            "rankings": [1, 2, 3, 4, 5],
+            "relevance_scores": [0.0, 0.0, 0.0, 0.0, 0.0],  # No relevant items
+        }
+
+        result = scorer.score("prediction", "ground_truth", context)
+
+        assert isinstance(result, dict)
+        assert result["mrr"] == 0.0  # No relevant items means MRR = 0
+
+    def test_score_with_rankings_high_ranks(self):
+        """Test score method with rankings higher than max_rank."""
+        scorer = RetrievalRankingScorer()
+
+        context = {
+            "rankings": [1, 2, 3, 4, 5, 10, 15],  # Some ranks > max_rank (5)
+            "relevance_scores": [1.0, 0.8, 0.6, 0.4, 0.2, 0.1, 0.0],
+        }
+
+        result = scorer.score("prediction", "ground_truth", context)
+
+        assert isinstance(result, dict)
+        # High ranks should get 0.0 score
+        assert result["avg_ranking"] < 1.0
+
+    def test_score_with_rankings_different_lengths(self):
+        """Test score method with different lengths of rankings and relevance scores."""
+        scorer = RetrievalRankingScorer()
+
+        context = {
+            "rankings": [1, 2, 3, 4, 5],
+            "relevance_scores": [1.0, 0.8, 0.6],  # Shorter than rankings
+        }
+
+        result = scorer.score("prediction", "ground_truth", context)
+
+        assert isinstance(result, dict)
+        # Should handle different lengths gracefully
+
+    def test_score_with_rankings_fallback_exception(self):
+        """Test score method fallback when main computation fails."""
+        scorer = RetrievalRankingScorer()
+
+        # Create context that might cause issues in the main computation
+        context = {
+            "rankings": [1, 2, 3],
+            "relevance_scores": [1.0, 0.8, 0.6],
+        }
+
+        # Mock numpy operations to raise exceptions
+        with patch("numpy.array", side_effect=Exception("Numpy error")):
+            result = scorer.score("prediction", "ground_truth", context)
+
+            # Should fallback to simple ranking score
+            assert isinstance(result, dict)
+            assert "avg_ranking" in result
+
+    def test_score_with_rankings_complete_failure(self):
+        """Test score method when even fallback fails."""
+        scorer = RetrievalRankingScorer()
+
+        context = {
+            "rankings": [1, 2, 3],
+            "relevance_scores": [1.0, 0.8, 0.6],
+        }
+
+        # Mock both main computation and fallback to fail
+        with (
+            patch("numpy.array", side_effect=Exception("Numpy error")),
+            patch("numpy.mean", side_effect=Exception("Mean error")),
+        ):
+            result = scorer.score("prediction", "ground_truth", context)
+
+            # Should return 0.0 when everything fails
+            assert result == 0.0
+
+            score_result = scorer.get_score_result()
+            assert score_result.score == 0.0
+            assert "Ranking computation failed" in score_result.reasoning
 
 
 class TestSemanticSimilarityScorer:
@@ -522,6 +899,96 @@ class TestSemanticSimilarityScorer:
             score_result = scorer.get_score_result()
             assert "Semantic similarity computation failed" in score_result.reasoning
 
+    def test_score_with_context_fallback(self):
+        """Test score method when context has 'context' key instead of 'chunks'."""
+        scorer = SemanticSimilarityScorer(threshold=0.5)
+
+        context = {"context": "single context string"}
+
+        with patch.object(scorer, "_load_model"):
+            scorer.model = None  # Use fallback mode
+
+            with patch.object(scorer, "_compute_simple_similarity", return_value=0.6):
+                result = scorer.score("prediction", "ground_truth", context)
+
+                assert isinstance(result, dict)
+                assert result["similarity"] == 0.6
+
+    def test_score_with_empty_ground_truth(self):
+        """Test score method with empty ground_truth."""
+        scorer = SemanticSimilarityScorer()
+
+        context = {"chunks": ["chunk1", "chunk2"]}
+
+        result = scorer.score("prediction", "", context)
+        assert result == 0.0
+
+        score_result = scorer.get_score_result()
+        assert "No context or query provided" in score_result.reasoning
+
+    def test_score_with_embeddings_normalization(self):
+        """Test score method with embeddings and cosine similarity normalization."""
+        scorer = SemanticSimilarityScorer(threshold=0.5)
+
+        context = {"chunks": ["chunk1", "chunk2"]}
+
+        # Mock the model and its methods
+        mock_model = Mock()
+        # Create embeddings that will result in specific cosine similarities
+        mock_model.encode.side_effect = [
+            np.array([1.0, 0.0, 0.0]),  # query embedding
+            [np.array([1.0, 0.0, 0.0]), np.array([0.0, 1.0, 0.0])],  # chunk embeddings
+        ]
+
+        with patch.object(scorer, "_load_model"):
+            scorer.model = mock_model
+
+            result = scorer.score("prediction", "ground_truth", context)
+
+            assert isinstance(result, dict)
+            assert "similarity" in result
+            # Should normalize cosine similarity from [-1,1] to [0,1]
+            assert 0 <= result["similarity"] <= 1
+
+    def test_compute_simple_similarity_no_overlap(self):
+        """Test _compute_simple_similarity with no word overlap."""
+        scorer = SemanticSimilarityScorer()
+
+        query = "machine learning"
+        chunks = ["cooking recipes", "sports news"]
+
+        similarity = scorer._compute_simple_similarity(query, chunks)
+
+        # Should be 0.0 when there's no overlap
+        assert similarity == 0.0
+
+    def test_compute_simple_similarity_partial_overlap(self):
+        """Test _compute_simple_similarity with partial word overlap."""
+        scorer = SemanticSimilarityScorer()
+
+        query = "machine learning algorithms"
+        chunks = ["machine learning is important", "cooking recipes"]
+
+        similarity = scorer._compute_simple_similarity(query, chunks)
+
+        # Should be between 0 and 1
+        assert 0 < similarity < 1
+
+    def test_load_model_already_loaded(self):
+        """Test _load_model when model is already loaded."""
+        scorer = SemanticSimilarityScorer()
+        scorer._model_loaded = True
+        mock_model = Mock()
+        scorer.model = mock_model
+
+        # Test that _load_model doesn't do anything when already loaded
+        original_model = scorer.model
+        scorer._load_model()
+
+        # Should not change anything
+        assert scorer.model == original_model
+        assert scorer._model_loaded is True
+
 
 class TestRetrievalDiversityScorer:
     def test_init(self):
@@ -648,6 +1115,104 @@ class TestRetrievalDiversityScorer:
             assert result == 0.0
             score_result = scorer.get_score_result()
             assert "Diversity computation failed" in score_result.reasoning
+
+    def test_compute_simple_diversity_identical_chunks(self):
+        """Test _compute_simple_diversity with identical chunks."""
+        scorer = RetrievalDiversityScorer()
+
+        chunks = ["same text", "same text", "same text"]
+        diversity = scorer._compute_simple_diversity(chunks)
+
+        # Should have some diversity due to text difference calculation
+        assert 0 <= diversity <= 1
+
+    def test_compute_simple_diversity_completely_different(self):
+        """Test _compute_simple_diversity with completely different chunks."""
+        scorer = RetrievalDiversityScorer()
+
+        chunks = [
+            "machine learning algorithms",
+            "cooking recipes and ingredients",
+            "sports news and updates",
+        ]
+        diversity = scorer._compute_simple_diversity(chunks)
+
+        # Should have high diversity
+        assert diversity > 0.5
+
+    def test_compute_pairwise_cosine_distance_identical_embeddings(self):
+        """Test _compute_pairwise_cosine_distance with identical embeddings."""
+        scorer = RetrievalDiversityScorer()
+
+        embeddings = [[1.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 0.0, 0.0]]
+        distance = scorer._compute_pairwise_cosine_distance(embeddings)
+
+        # Identical embeddings should have distance close to 0
+        assert distance < 0.1
+
+    def test_compute_pairwise_cosine_distance_opposite_embeddings(self):
+        """Test _compute_pairwise_cosine_distance with opposite embeddings."""
+        scorer = RetrievalDiversityScorer()
+
+        embeddings = [[1.0, 0.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
+        distance = scorer._compute_pairwise_cosine_distance(embeddings)
+
+        # Opposite embeddings should have high distance
+        assert distance > 0.5
+
+    def test_load_model_exception_handling(self):
+        """Test _load_model exception handling."""
+        scorer = RetrievalDiversityScorer()
+
+        # Mock the import to raise an exception
+        original_import = __builtins__["__import__"]
+
+        def mock_import(name, *args, **kwargs):
+            if name == "sentence_transformers":
+                raise Exception("Model load failed")
+            return original_import(name, *args, **kwargs)
+
+        with (
+            patch("builtins.__import__", side_effect=mock_import),
+            patch("builtins.print") as mock_print,
+        ):
+            scorer._load_model()
+
+            assert scorer.model is None
+            assert scorer._model_loaded is True
+            # Check that print was called with a warning message (exact message may vary)
+            mock_print.assert_called_once()
+            call_args = mock_print.call_args[0][0]
+            assert "Warning: Could not load SentenceTransformer model:" in call_args
+
+    def test_score_with_embeddings_detailed_metrics(self):
+        """Test score method with embeddings and detailed metrics."""
+        scorer = RetrievalDiversityScorer()
+
+        context = {"chunks": ["chunk1", "chunk2", "chunk3"]}
+
+        # Mock the model
+        mock_model = Mock()
+        mock_model.encode.return_value = [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+
+        with patch.object(scorer, "_load_model"):
+            scorer.model = mock_model
+
+            result = scorer.score("prediction", "ground_truth", context)
+
+            assert isinstance(result, dict)
+            assert "diversity" in result
+            assert 0 <= result["diversity"] <= 1
+
+            # Check that the last result was set correctly
+            score_result = scorer.get_score_result()
+            assert score_result is not None
+            assert "Diversity Score:" in score_result.reasoning
+            assert "cosine distance between embeddings" in score_result.reasoning
 
 
 class TestAggregateRAGScorer:
@@ -928,3 +1493,69 @@ class TestAggregateRAGScorerExtended:
             assert last_result.score == 0.0
             assert last_result.passed is False
             assert "All scorers failed" in last_result.reasoning
+
+    def test_extract_numeric_score_from_dict_priority_keys(self):
+        """Test _extract_numeric_score_from_dict with priority keys."""
+        mock_scorer1 = Mock()
+        mock_scorer1.score.return_value = {"score": 0.8}
+
+        scorers = {"scorer1": mock_scorer1}
+        scorer = AggregateRAGScorer(scorers)
+
+        result = scorer.score("prediction", "ground_truth", {"context": "test"})
+        assert result["aggregate"] == 0.8
+
+    def test_extract_numeric_score_from_dict_nested_dict(self):
+        """Test _extract_numeric_score_from_dict with nested dictionaries."""
+        mock_scorer1 = Mock()
+        mock_scorer1.score.return_value = {"metrics": {"score": 0.7}}
+
+        scorers = {"scorer1": mock_scorer1}
+        scorer = AggregateRAGScorer(scorers)
+
+        result = scorer.score("prediction", "ground_truth", {"context": "test"})
+        assert result["aggregate"] == 0.7
+
+    def test_extract_numeric_score_from_dict_fallback(self):
+        """Test _extract_numeric_score_from_dict fallback behavior."""
+        mock_scorer1 = Mock()
+        mock_scorer1.score.return_value = {"some_other_key": 0.6}
+
+        scorers = {"scorer1": mock_scorer1}
+        scorer = AggregateRAGScorer(scorers)
+
+        result = scorer.score("prediction", "ground_truth", {"context": "test"})
+        assert result["aggregate"] == 0.6
+
+    def test_is_numeric_value_various_types(self):
+        """Test _is_numeric_value with various input types."""
+        mock_scorer1 = Mock()
+        mock_scorer1.score.return_value = {"score": "0.5"}  # String number
+
+        scorers = {"scorer1": mock_scorer1}
+        scorer = AggregateRAGScorer(scorers)
+
+        result = scorer.score("prediction", "ground_truth", {"context": "test"})
+        assert result["aggregate"] == 0.5
+
+    def test_is_numeric_value_invalid_string(self):
+        """Test _is_numeric_value with invalid string."""
+        mock_scorer1 = Mock()
+        mock_scorer1.score.return_value = {"score": "not_a_number"}
+
+        scorers = {"scorer1": mock_scorer1}
+        scorer = AggregateRAGScorer(scorers)
+
+        result = scorer.score("prediction", "ground_truth", {"context": "test"})
+        assert result["aggregate"] == 0.0  # Should fallback to 0.0
+
+    def test_score_with_none_result(self):
+        """Test score method with None result from scorer."""
+        mock_scorer1 = Mock()
+        mock_scorer1.score.return_value = None
+
+        scorers = {"scorer1": mock_scorer1}
+        scorer = AggregateRAGScorer(scorers)
+
+        result = scorer.score("prediction", "ground_truth", {"context": "test"})
+        assert result["aggregate"] == 0.0
