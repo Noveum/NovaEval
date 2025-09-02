@@ -334,7 +334,8 @@ class TestLoggingEdgeCases:
 
     def test_get_logger_with_none_name(self):
         """Test get_logger with None name."""
-        # logging.getLogger(None) actually returns the root logger, doesn't raise TypeError
+        # logging.getLogger(None) actually returns the root logger, doesn't raise
+        # TypeError
         logger = get_logger(None)
         assert isinstance(logger, logging.Logger)
         assert logger.name == "root"  # None gets converted to root logger

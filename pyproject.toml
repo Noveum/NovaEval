@@ -285,6 +285,7 @@ markers = [
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
     "e2e: marks tests as end-to-end tests",
+    "asyncio: Async tests that require asyncio support",
 ]
 
 # Coverage configuration
@@ -315,6 +316,8 @@ skip_covered = false
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+
 
 # Commitizen configuration
 [tool.commitizen]

@@ -29,9 +29,8 @@ class TestGeminiModelIntegration:
 
     @requires_api_key
     @integration_test
-    @smoke_test
     def test_model_initialization_with_real_api(self, gemini_api_key):
-        """Test successful model initialization with valid API keys."""
+        """Test model initialization with real API key."""
         model = GeminiModel(model_name="gemini-2.5-flash", api_key=gemini_api_key)
 
         assert model.name == "gemini_gemini-2.5-flash"

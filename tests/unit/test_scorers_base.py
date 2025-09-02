@@ -299,7 +299,9 @@ class TestBaseScorer:
         """Test batch scoring with scoring errors."""
 
         # Create a scorer that will fail on certain inputs
+
         class FailingScorer(BaseScorer):
+
             def score(self, prediction, ground_truth, context=None):
                 if prediction == "fail":
                     raise ValueError("Intentional failure")

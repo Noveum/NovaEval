@@ -11,10 +11,11 @@ import statistics
 from enum import Enum
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 from novaeval.models.base import BaseModel as LLMModel
 from novaeval.scorers.base import BaseScorer, ScoreResult
+from novaeval.scorers.conversational import _run_async_in_sync_context
 
 
 class AggregationMethod(str, Enum):
@@ -46,7 +47,8 @@ class JudgeConfig(BaseModel):
         default=0.0, description="Temperature for judge's responses"
     )
 
-    @validator("weight")
+    @field_validator("weight")
+    @classmethod
     def validate_weight(cls, v: float) -> float:
         if v < 0.0:
             raise ValueError("Judge weight must be non-negative")
@@ -76,7 +78,7 @@ class PanelOfJudgesScorer(BaseScorer):
     Panel of LLMs as Judge scorer.
 
     This scorer uses multiple LLM models as judges to evaluate outputs,
-    providing more robust and diverse assessments than single-model evaluation.
+        providing more robust and diverse assessments than single-model evaluation.
     """
 
     def __init__(
@@ -217,6 +219,7 @@ class PanelOfJudgesScorer(BaseScorer):
             )
 
         except Exception as e:
+            # Handle any unexpected exceptions in the evaluate method itself
             return ScoreResult(
                 score=0.0,
                 passed=False,
@@ -231,7 +234,7 @@ class PanelOfJudgesScorer(BaseScorer):
         context: Optional[dict[str, Any]] = None,
     ) -> float:
         """
-        Synchronous wrapper around the async evaluate method.
+        Synchronous wrapper around the async evaluate method using ThreadPoolExecutor for true parallelism.
 
         Args:
             prediction: Model's prediction
@@ -241,31 +244,218 @@ class PanelOfJudgesScorer(BaseScorer):
         Returns:
             Score value between 0 and 1
         """
-        # Create event loop if none exists
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        import concurrent.futures
+        import platform
 
-        # Run the async evaluation
-        try:
-            # Extract input text from context if available, otherwise use ground_truth
-            input_text = context.get("input", ground_truth) if context else ground_truth
-            context_str = context.get("context") if context else None
+        # Extract input text from context if available, otherwise use ground_truth
+        input_text = context.get("input", ground_truth) if context else ground_truth
+        context_str = context.get("context") if context else None
 
-            result = loop.run_until_complete(
-                self.evaluate(
-                    input_text=input_text,
-                    output_text=prediction,
-                    expected_output=ground_truth,
-                    context=context_str,
-                )
+        # Detect macOS and use sequential execution to avoid segmentation faults
+        is_macos = platform.system() == "Darwin"
+
+        if is_macos:
+            # Use sequential execution on macOS to avoid segmentation faults
+            return self._score_sequential(
+                input_text, prediction, ground_truth, context_str
             )
-            return result.score
+
+        try:
+            # Use ThreadPoolExecutor with conservative settings for other platforms
+            max_workers = min(
+                len(self.judges), 4
+            )  # Limit max workers to prevent memory issues
+
+            executor = concurrent.futures.ThreadPoolExecutor(
+                max_workers=max_workers, thread_name_prefix="PanelJudge"
+            )
+            try:
+                # Submit all judge evaluations as concurrent tasks
+                future_to_judge = {}
+
+                for judge in self.judges:
+                    future = executor.submit(
+                        self._evaluate_with_judge_sync,
+                        judge,
+                        input_text,
+                        prediction,
+                        ground_truth,
+                        context_str,
+                    )
+                    future_to_judge[future] = judge
+
+                # Use wait() to enforce overall timeout
+                done, not_done = concurrent.futures.wait(
+                    future_to_judge.keys(),
+                    timeout=30,
+                    return_when=concurrent.futures.ALL_COMPLETED,
+                )
+
+                # Collect results from completed futures
+                judge_results = []
+                for future in done:
+                    judge = future_to_judge[future]
+                    try:
+                        result = future.result()
+                        judge_results.append((judge, result))
+                    except Exception as e:
+                        # Handle individual judge failures
+                        judge_results.append(
+                            (judge, {"score": 0.0, "reasoning": f"Judge failed: {e}"})
+                        )
+
+                # Handle timed out/canceled futures
+                for future in not_done:
+                    judge = future_to_judge[future]
+                    future.cancel()  # Cancel the future
+                    judge_results.append(
+                        (judge, {"score": 0.0, "reasoning": "Judge timed out"})
+                    )
+
+            finally:
+                # Shutdown executor without blocking
+                executor.shutdown(wait=False, cancel_futures=True)
+
+            # Process results and return score
+            return self._process_judge_results_sync(judge_results)
+
+        except Exception:
+            # Fallback to sequential execution if ThreadPoolExecutor fails
+            try:
+                return self._score_sequential(
+                    input_text, prediction, ground_truth, context_str
+                )
+            except Exception:
+                # If everything fails, return 0.0 as a fallback
+                return 0.0
+
+    def _evaluate_with_judge_sync(
+        self,
+        judge: JudgeConfig,
+        input_text: str,
+        prediction: str,
+        ground_truth: str,
+        context: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """Synchronous version of _evaluate_with_judge for ThreadPoolExecutor."""
+
+        try:
+            # Build evaluation prompt
+            evaluation_prompt = self._build_evaluation_prompt(
+                input_text, prediction, ground_truth, context
+            )
+
+            # Get evaluation from judge with temperature parameter (supports sync/async)
+            import inspect
+
+            gen_sync = getattr(judge.model, "generate_sync", None)
+            if callable(gen_sync):
+                response = gen_sync(evaluation_prompt, temperature=judge.temperature)
+            else:
+                gen = judge.model.generate
+                if inspect.iscoroutinefunction(gen):
+                    response = _run_async_in_sync_context(
+                        gen(evaluation_prompt, temperature=judge.temperature)
+                    )
+                else:
+                    response = gen(evaluation_prompt, temperature=judge.temperature)
+
+            # Try direct parse, then non-greedy JSON block, then fenced JSON
+            import json
+            import re
+
+            resp = response.strip()
+            try:
+                result = json.loads(resp)
+            except Exception:
+                fenced = re.search(
+                    r"```(?:json)?\s*(\{.*?\})\s*```", resp, re.DOTALL | re.IGNORECASE
+                )
+                block = fenced.group(1) if fenced else None
+                if block is None:
+                    m = re.search(r"\{.*?\}", resp, re.DOTALL)
+                    block = m.group(0) if m else None
+                if not block:
+                    raise ValueError("No JSON found in judge response")
+                result = json.loads(block)
+
+            # Validate required fields
+            if "score" not in result or "reasoning" not in result:
+                raise ValueError("Judge response missing required fields")
+
+            # Normalize score to 0-1 range
+            score = float(result["score"])
+            if score < 1 or score > 5:
+                raise ValueError(f"Score must be between 1 and 5, got {score}")
+
+            normalized_score = (score - 1) / 4  # Convert 1-5 to 0-1
+
+            return {
+                "score": normalized_score,
+                "reasoning": result["reasoning"],
+                "raw_score": score,
+                "strengths": result.get("strengths", ""),
+                "weaknesses": result.get("weaknesses", ""),
+                "confidence": result.get("confidence", 3),
+            }
+
         except Exception as e:
-            print(f"Warning: Panel scoring failed: {e}")
+            # Return error result instead of raising
+            return {
+                "score": 0.0,
+                "reasoning": f"Judge evaluation failed: {e!s}",
+                "raw_score": 0,
+                "strengths": "",
+                "weaknesses": f"Error: {e!s}",
+                "confidence": 0,
+            }
+
+    def _score_sequential(
+        self,
+        input_text: str,
+        prediction: str,
+        ground_truth: str,
+        context_str: Optional[str] = None,
+    ) -> float:
+        """Fallback sequential evaluation when ThreadPoolExecutor fails."""
+
+        judge_results = []
+
+        for judge in self.judges:
+            try:
+                result = self._evaluate_with_judge_sync(
+                    judge, input_text, prediction, ground_truth, context_str
+                )
+                judge_results.append((judge, result))
+            except Exception as e:
+                judge_results.append(
+                    (judge, {"score": 0.0, "reasoning": f"Judge failed: {e}"})
+                )
+
+        return self._process_judge_results_sync(judge_results)
+
+    def _process_judge_results_sync(
+        self, judge_results: list[tuple[JudgeConfig, dict[str, Any]]]
+    ) -> float:
+        """Process judge results and return aggregated score."""
+        if not judge_results:
             return 0.0
+
+        # Extract scores and weights from judge results using the same filter
+        valid_results = [
+            result
+            for result in judge_results
+            if isinstance(result[1], dict) and "score" in result[1]
+        ]
+
+        if not valid_results:
+            return 0.0
+
+        # Extract scores and weights from the same filtered results
+        scores = [result[1]["score"] for result in valid_results]
+        weights = [result[0].weight for result in valid_results]
+
+        return self._aggregate_scores(scores, weights, self.aggregation_method)
 
     def _build_evaluation_prompt(
         self,
@@ -326,28 +516,41 @@ class PanelOfJudgesScorer(BaseScorer):
         """Evaluate with a single judge."""
 
         try:
-            # Set judge-specific temperature if different from default
-            original_temp = getattr(judge.model, "temperature", None)
-            if hasattr(judge.model, "temperature"):
-                judge.model.temperature = judge.temperature
+            # Get evaluation from judge with temperature parameter (supports sync/async)
+            import inspect
 
-            # Get evaluation from judge
-            response = await judge.model.generate(prompt)  # type: ignore
+            gen_sync = getattr(judge.model, "generate_sync", None)
+            if callable(gen_sync):
+                response = await asyncio.to_thread(
+                    gen_sync, prompt, temperature=judge.temperature
+                )
+            else:
+                gen = judge.model.generate
+                if inspect.iscoroutinefunction(gen):
+                    response = await gen(prompt, temperature=judge.temperature)  # type: ignore
+                else:
+                    response = await asyncio.to_thread(
+                        gen, prompt, temperature=judge.temperature
+                    )
 
-            # Restore original temperature
-            if original_temp is not None and hasattr(judge.model, "temperature"):
-                judge.model.temperature = original_temp
-
-            # Parse JSON response
+            # Try direct parse, then non-greedy JSON block, then fenced JSON
             import json
             import re
 
-            # Extract JSON from response
-            json_match = re.search(r"\{.*\}", response, re.DOTALL)
-            if not json_match:
-                raise ValueError("No JSON found in judge response")
-
-            result = json.loads(json_match.group())
+            resp = response.strip()
+            try:
+                result = json.loads(resp)
+            except Exception:
+                fenced = re.search(
+                    r"```(?:json)?\s*(\{.*?\})\s*```", resp, re.DOTALL | re.IGNORECASE
+                )
+                block = fenced.group(1) if fenced else None
+                if block is None:
+                    m = re.search(r"\{.*?\}", resp, re.DOTALL)
+                    block = m.group(0) if m else None
+                if not block:
+                    raise ValueError("No JSON found in judge response")
+                result = json.loads(block)
 
             # Validate required fields
             if "score" not in result or "reasoning" not in result:
@@ -370,7 +573,15 @@ class PanelOfJudgesScorer(BaseScorer):
             }
 
         except Exception as e:
-            raise Exception(f"Judge evaluation failed: {e!s}")
+            # Return error result instead of raising
+            return {
+                "score": 0.0,
+                "reasoning": f"Judge evaluation failed: {e!s}",
+                "raw_score": 0,
+                "strengths": "",
+                "weaknesses": f"Error: {e!s}",
+                "confidence": 0,
+            }
 
     def _calculate_consensus(self, scores: list[float]) -> float:
         """Calculate consensus level among judges (0-1)."""
@@ -404,7 +615,13 @@ class PanelOfJudgesScorer(BaseScorer):
         elif method == AggregationMethod.WEIGHTED_MEAN:
             if len(scores) != len(weights):
                 return statistics.mean(scores)  # Fallback to mean
-            return sum(score * weight for score, weight in zip(scores, weights))
+            total_weight = sum(weights)
+            if total_weight == 0:
+                return statistics.mean(scores)  # Fallback to mean if no weights
+            return (
+                sum(score * weight for score, weight in zip(scores, weights))
+                / total_weight
+            )
 
         elif method == AggregationMethod.MAJORITY_VOTE:
             # Convert to binary (pass/fail) and take majority
