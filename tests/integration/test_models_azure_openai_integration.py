@@ -191,7 +191,7 @@ class TestAzureOpenAIAdvancedFeatures:
         )
         response2 = azure_openai_model.generate(
             prompt="The meaning of life is", temperature=0.9, max_tokens=10
-        )
+git         )
         assert response1 != response2
 
     def test_stop_sequence(self, azure_openai_model):

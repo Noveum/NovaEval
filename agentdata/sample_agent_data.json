@@ -1,0 +1,281 @@
+{
+  "user_id": "user_12345",
+  "task_id": "weather_task_789",
+  "turn_id": "turn_final_456",
+  "ground_truth": "The weather in New York is 22°C (72°F) with partly cloudy conditions",
+  "expected_tool_call": {
+    "tool_name": "get_weather",
+    "parameters": {
+      "latitude": 40.7128,
+      "longitude": -74.0060
+    },
+    "call_id": "call_001"
+  },
+  "agent_name": "WeatherAssistant",
+  "agent_role": "Weather Information Provider",
+  "agent_task": "Provide weather information for New York and convert temperature to Fahrenheit",
+  "system_prompt": "You are a helpful weather assistant. You can get weather information and convert temperatures between Celsius and Fahrenheit.",
+  "agent_response": "I'll help you get the weather information for New York and convert it to Fahrenheit. Let me fetch the current weather data and convert the temperature for you.",
+  "trace": [
+    {
+      "turn_id": "turn_001",
+      "ground_truth": "Get weather for coordinates 40.7128, -74.0060",
+      "expected_tool_call": {
+        "tool_name": "get_weather",
+        "parameters": {
+          "latitude": 40.7128,
+          "longitude": -74.0060
+        },
+        "call_id": "call_001"
+      },
+      "agent_name": "WeatherAssistant",
+      "agent_role": "Weather Information Provider",
+      "agent_task": "Get weather information for New York City",
+      "system_prompt": "You are a helpful weather assistant. You can get weather information for any location using latitude and longitude coordinates.",
+      "agent_response": "I'll get the weather information for New York City using the provided coordinates.",
+      "tools_available": [
+        {
+          "name": "get_weather",
+          "description": "Get current weather information for a specific location using latitude and longitude",
+          "args_schema": {
+            "type": "object",
+            "properties": {
+              "latitude": {
+                "type": "number",
+                "description": "Latitude coordinate"
+              },
+              "longitude": {
+                "type": "number", 
+                "description": "Longitude coordinate"
+              }
+            },
+            "required": ["latitude", "longitude"]
+          },
+          "return_schema": {
+            "type": "object",
+            "properties": {
+              "temperature_celsius": {"type": "number"},
+              "condition": {"type": "string"},
+              "humidity": {"type": "number"},
+              "location": {"type": "string"}
+            }
+          }
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "get_weather",
+          "parameters": {
+            "latitude": 40.7128,
+            "longitude": -74.0060
+          },
+          "call_id": "call_001"
+        }
+      ],
+      "parameters_passed": {
+        "latitude": 40.7128,
+        "longitude": -74.0060
+      },
+      "tool_call_results": [
+        {
+          "call_id": "call_001",
+          "result": {
+            "temperature_celsius": 22,
+            "condition": "partly cloudy",
+            "humidity": 65,
+            "location": "New York, NY"
+          },
+          "success": true,
+          "error_message": null
+        }
+      ],
+      "retrieval_query": ["New York weather coordinates", "NYC latitude longitude"],
+      "retrieved_context": [
+        ["New York City coordinates: 40.7128° N, 74.0060° W", "NYC is located in southeastern New York State"],
+        ["Central Park coordinates: 40.7829° N, 73.9654° W", "Manhattan coordinates: 40.7831° N, 73.9712° W"]
+      ],
+      "exit_status": "success"
+    },
+    {
+      "turn_id": "turn_002", 
+      "ground_truth": "Convert 22°C to Fahrenheit which equals 72°F",
+      "expected_tool_call": {
+        "tool_name": "convert_celsius_to_fahrenheit",
+        "parameters": {
+          "celsius": 22
+        },
+        "call_id": "call_002"
+      },
+      "agent_name": "WeatherAssistant",
+      "agent_role": "Weather Information Provider", 
+      "agent_task": "Convert the temperature from Celsius to Fahrenheit",
+      "system_prompt": "You are a helpful weather assistant. You can convert temperatures between Celsius and Fahrenheit.",
+      "agent_response": "Now I'll convert the temperature of 22°C to Fahrenheit so you have the temperature in both units.",
+      "tools_available": [
+        {
+          "name": "convert_celsius_to_fahrenheit",
+          "description": "Convert temperature from Celsius to Fahrenheit",
+          "args_schema": {
+            "type": "object", 
+            "properties": {
+              "celsius": {
+                "type": "number",
+                "description": "Temperature in Celsius to convert"
+              }
+            },
+            "required": ["celsius"]
+          },
+          "return_schema": {
+            "type": "object",
+            "properties": {
+              "fahrenheit": {"type": "number"},
+              "celsius": {"type": "number"}
+            }
+          }
+        }
+      ],
+      "tool_calls": [
+        {
+          "tool_name": "convert_celsius_to_fahrenheit", 
+          "parameters": {
+            "celsius": 22
+          },
+          "call_id": "call_002"
+        }
+      ],
+      "parameters_passed": {
+        "celsius": 22
+      },
+      "tool_call_results": [
+        {
+          "call_id": "call_002",
+          "result": {
+            "fahrenheit": 72,
+            "celsius": 22
+          },
+          "success": true,
+          "error_message": null
+        }
+      ],
+      "retrieval_query": ["celsius to fahrenheit conversion formula"],
+      "retrieved_context": [
+        ["Formula: F = (C × 9/5) + 32", "To convert Celsius to Fahrenheit multiply by 1.8 and add 32"]
+      ],
+      "exit_status": "success"
+    }
+  ],
+  "tools_available": [
+    {
+      "name": "get_weather",
+      "description": "Get current weather information for a specific location using latitude and longitude",
+      "args_schema": {
+        "type": "object",
+        "properties": {
+          "latitude": {
+            "type": "number",
+            "description": "Latitude coordinate"
+          },
+          "longitude": {
+            "type": "number",
+            "description": "Longitude coordinate"
+          }
+        },
+        "required": ["latitude", "longitude"]
+      },
+      "return_schema": {
+        "type": "object",
+        "properties": {
+          "temperature_celsius": {"type": "number"},
+          "condition": {"type": "string"},
+          "humidity": {"type": "number"},
+          "location": {"type": "string"}
+        }
+      }
+    },
+    {
+      "name": "convert_celsius_to_fahrenheit",
+      "description": "Convert temperature from Celsius to Fahrenheit",
+      "args_schema": {
+        "type": "object",
+        "properties": {
+          "celsius": {
+            "type": "number",
+            "description": "Temperature in Celsius to convert"
+          }
+        },
+        "required": ["celsius"]
+      },
+      "return_schema": {
+        "type": "object",
+        "properties": {
+          "fahrenheit": {"type": "number"},
+          "celsius": {"type": "number"}
+        }
+      }
+    }
+  ],
+  "tool_calls": [
+    {
+      "tool_name": "get_weather",
+      "parameters": {
+        "latitude": 40.7128,
+        "longitude": -74.0060
+      },
+      "call_id": "call_001"
+    },
+    {
+      "tool_name": "convert_celsius_to_fahrenheit",
+      "parameters": {
+        "celsius": 22
+      },
+      "call_id": "call_002"
+    }
+  ],
+  "parameters_passed": {
+    "location": "New York",
+    "latitude": 40.7128,
+    "longitude": -74.0060,
+    "temperature_unit": "both"
+  },
+  "tool_call_results": [
+    {
+      "call_id": "call_001",
+      "result": {
+        "temperature_celsius": 22,
+        "condition": "partly cloudy",
+        "humidity": 65,
+        "location": "New York, NY"
+      },
+      "success": true,
+      "error_message": null
+    },
+    {
+      "call_id": "call_002",
+      "result": {
+        "fahrenheit": 72,
+        "celsius": 22
+      },
+      "success": true,
+      "error_message": null
+    }
+  ],
+  "retrieval_query": [
+    "New York weather coordinates",
+    "celsius to fahrenheit conversion"
+  ],
+  "retrieved_context": [
+    [
+      "New York City coordinates: 40.7128° N, 74.0060° W",
+      "NYC is located in southeastern New York State",
+      "Manhattan is the most densely populated borough"
+    ],
+    [
+      "Formula: F = (C × 9/5) + 32",
+      "32°F is the freezing point of water",
+      "212°F is the boiling point of water"
+    ]
+  ],
+  "exit_status": "completed_successfully",
+  "agent_exit": false,
+  "metadata": "Weather query session completed with temperature conversion. User requested NYC weather with Fahrenheit conversion."
+}
