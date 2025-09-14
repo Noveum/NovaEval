@@ -214,3 +214,5 @@ TASKS.md
 # Task files
 # tasks.json
 tasks/
+
+demo/langchain_agent/chroma_db/
