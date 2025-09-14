@@ -1,0 +1,169 @@
+{
+  "success": true,
+  "traces": [
+    {
+      "trace_id": "1ebb2587-3f6c-40a0-82c7-846bad47bf53",
+      "name": "auto_trace_generate",
+      "project": "novaeval",
+      "environment": "dev-shivam",
+      "status": "ok",
+      "status_message": "",
+      "start_time": "2025-09-14 19:54:50.774000000",
+      "end_time": "2025-09-14 19:54:51.101000000",
+      "duration_ms": 326.817,
+      "span_count": 1,
+      "error_count": 0,
+      "sdk": {
+        "name": "noveum-trace-python",
+        "version": "0.3.5"
+      },
+      "attributes": {
+        "auto_created": true,
+        "function": "generate",
+        "type": "llm_call",
+        "noveum.project": "novaeval",
+        "noveum.environment": "dev-shivam",
+        "noveum.sdk.version": "0.3.5",
+        "noveum.sampling.decision": "record"
+      },
+      "metadata": {
+        "user_id": null,
+        "session_id": null,
+        "request_id": null,
+        "tags": {},
+        "custom_attributes": {}
+      },
+      "spans": [
+        {
+          "span_id": "fb524fdf-055b-4ea7-b961-cbf0ebe1ffe6",
+          "trace_id": "1ebb2587-3f6c-40a0-82c7-846bad47bf53",
+          "parent_span_id": "",
+          "name": "generate",
+          "start_time": "2025-09-14 19:54:50.775000000",
+          "end_time": "2025-09-14 19:54:51.101000000",
+          "duration_ms": 326.364,
+          "status": "error",
+          "status_message": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-1.5-flash'}, 'quotaValue': '50'}]}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}",
+          "attributes": {
+            "function.name": "generate",
+            "function.module": "novaeval.models.gemini",
+            "function.qualname": "GeminiModel.generate",
+            "function.type": "llm_call",
+            "llm.operation_type": "completion",
+            "llm.max_tokens": null,
+            "llm.temperature": null,
+            "llm.stop_sequences": null,
+            "llm.provider": "google",
+            "llm.prompts": "# Role Adherence Evaluation\n\n## Task\nEvaluate whether the agent's tool calls and response adhere to its assigned role and task.\n\n## Criteria\nRate the role adherence on a scale of 1-10, where:\n- 1-3: Agent completely ignores its role, acts inappropriately or contradicts its assigned task\n- 4-6: Agent partially follows its role but has significant deviations or inconsistencies\n- 7-8: Agent mostly adheres to its role with minor deviations\n- 9-10: Agent perfectly adheres to its role and task, maintaining consistency throughout\n\n## Agent Information\n**Agent Role:** llm\n**Agent Task:** Human: Answer the following questions as best you can. You have access to the following tools:\n\nescalate_to_human(reason: str = 'Complex query requiring human assistance') -> str - Use this tool when the query is too complex or you cannot resolve the user's issue. This will escalate to human customer support.\nuser_input(prompt: str = 'Please provide more information') -> str - Use this tool when you need additional information or clarification from the user. This will prompt the user for more details.\nlangchain_retriever(query: str) -> str - Use this tool to search through the knowledge base for relevant information. Input should be a search query.\n\nUse the following format:\n\nQuestion: the input question you must answer\nThought: you should always think about what to do\nAction: the action to take, should be one of [escalate_to_human, user_input, langchain_retriever]\nAction Input: the input to the action\nObservation: the result of the action\n... (this Thought/Action/Action Input/Observation can repeat N times)\nThought: I now know the final answer\nFinal Answer: the final answer to the original input question\n\nBegin!\n\nQuestion: hello, who are you\nThought:This is a general inquiry, so I should provide a brief introduction about myself.\nAction: langchain_retriever\nAction Input: \"Introduction to virtual assistant\"\nObservation: Retrieved information:\n\n1. LangChain Agent Documentation\n\nThis is a sample document for testing the LangChain agent with retrieval capabilities.\n\nKey Features:\n- Document ingestion from PDF and TXT files\n- ChromaDB vector store for semantic search\n- Custom tools for conversation control\n- Memory between conversation turns\n- Comprehensive tracing with Noveum Trace\n\nCustom Tools:\n1. escalate_to_human - Escalates complex queries to human support\n2. user_input - Gets additional input or clarification from the user\n3. langchain_retriever - Searches the knowledge base\n\nThe agent uses a ReAct (Reasoning and Acting) approach to handle user queries by:\n1. Understanding the user's question\n2. Deciding which tools to use\n3. Executing the tools\n4. Reasoning about the results\n5. Providing a response or taking further action\n\nThis allows for complex multi-step reasoning and tool usage in a conversational format.\n\nFUN FACT - \"ELON MUSK IS AFRICAN!!\"\n\n\nThought:The retrieved information did not provide a direct introduction, so I should try to provide a simple introduction on my own.\nAction: escalate_to_human\nAction Input: 'Introduction to virtual assistant'\nObservation: ESCALATED TO HUMAN SUPPORT. Reason: 'Introduction to virtual assistant'. Please wait for a human customer support representative to get back to you.\nThought:\n\n## Agent Response\nI couldn't provide a direct answer, so I'll wait for the human support representative to assist with this general inquiry.\nFinal Answer: N/A\n\n## Tool Calls Made\n[]\n\n## Instructions\nEvaluate:\n1. Does the agent maintain its assigned role throughout the interaction?\n2. Are the tool calls appropriate for the agent's role and expertise?\n3. Is the response content consistent with what's expected from this role?\n4. Does the agent stay focused on its assigned task?\n5. Are there any role contradictions or inappropriate behaviors?\n\nThe reasoning should be of 50-60 words. It should not be longer than 75 words.\n\nProvide a single adherence score from 1-10 along with your reasoning. IMPORTANT: Use decimal scores (e.g., 7.5, 8.2, 9.1) rather than round numbers (e.g., 7.0, 8.0, 9.0) to provide more nuanced evaluation.\n\nFormat your response as a JSON object:\n{\n  \"score\": 8.5,\n  \"reasoning\": \"The agent consistently maintains its assigned role as a data analyst and stays focused on the data analysis task. The tool calls are appropriate for this role, using statistical tools effectively. Minor deduction for one instance where the response could have been more aligned with the analytical tone expected from this role.\"\n}\n\nYour response should be ONLY the JSON object, nothing else.\n",
+            "llm.usage.input_tokens": 1302,
+            "exception.type": "ClientError",
+            "exception.message": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-1.5-flash'}, 'quotaValue': '50'}]}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}",
+            "exception.escaped": false,
+            "exception.stacktrace": "Traceback (most recent call last):\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/noveum_trace/decorators/llm.py\", line 169, in wrapper\n    result = func(*args, **kwargs)\n  File \"/home/shivam/Desktop/noveum/NovaEval/src/novaeval/models/gemini.py\", line 189, in generate\n    response = self.client.models.generate_content(\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/models.py\", line 5898, in generate_content\n    response = self._generate_content(\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/models.py\", line 4838, in _generate_content\n    response = self._api_client.request(\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/_api_client.py\", line 1067, in request\n    response = self._request(http_request, stream=False)\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/_api_client.py\", line 958, in _request\n    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/tenacity/__init__.py\", line 475, in __call__\n    do = self.iter(retry_state=retry_state)\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/tenacity/__init__.py\", line 376, in iter\n    result = action(retry_state)\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/tenacity/__init__.py\", line 418, in exc_check\n    raise retry_exc.reraise()\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/tenacity/__init__.py\", line 185, in reraise\n    raise self.last_attempt.result()\n  File \"/usr/lib/python3.10/concurrent/futures/_base.py\", line 451, in result\n    return self.__get_result()\n  File \"/usr/lib/python3.10/concurrent/futures/_base.py\", line 403, in __get_result\n    raise self._exception\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/tenacity/__init__.py\", line 478, in __call__\n    result = fn(*args, **kwargs)\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/_api_client.py\", line 948, in _request_once\n    errors.APIError.raise_for_response(response)\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/errors.py\", line 104, in raise_for_response\n    raise ClientError(status_code, response_json, response)\ngoogle.genai.errors.ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-1.5-flash'}, 'quotaValue': '50'}]}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}\n",
+            "llm.error.type": "ClientError",
+            "llm.error.message": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-1.5-flash'}, 'quotaValue': '50'}]}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}"
+          },
+          "events": [
+            {
+              "name": "exception",
+              "timestamp": "2025-09-14T19:54:51.101Z",
+              "attributes": {
+                "exception.type": "ClientError",
+                "exception.message": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-1.5-flash'}, 'quotaValue': '50'}]}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}"
+              }
+            }
+          ],
+          "links": []
+        }
+      ],
+      "created_at": "2025-09-14 19:54:58.545000000",
+      "updated_at": "2025-09-14 19:54:58.545000000"
+    },
+    {
+      "trace_id": "d0476548-195d-453c-b64c-d679eaad2e2e",
+      "name": "auto_trace_generate",
+      "project": "novaeval",
+      "environment": "dev-shivam",
+      "status": "ok",
+      "status_message": "",
+      "start_time": "2025-09-14 19:54:50.461000000",
+      "end_time": "2025-09-14 19:54:50.772000000",
+      "duration_ms": 311.678,
+      "span_count": 1,
+      "error_count": 0,
+      "sdk": {
+        "name": "noveum-trace-python",
+        "version": "0.3.5"
+      },
+      "attributes": {
+        "auto_created": true,
+        "function": "generate",
+        "type": "llm_call",
+        "noveum.project": "novaeval",
+        "noveum.environment": "dev-shivam",
+        "noveum.sdk.version": "0.3.5",
+        "noveum.sampling.decision": "record"
+      },
+      "metadata": {
+        "user_id": null,
+        "session_id": null,
+        "request_id": null,
+        "tags": {},
+        "custom_attributes": {}
+      },
+      "spans": [
+        {
+          "span_id": "ba405b25-a845-4d2e-a570-f6bcc24d1af0",
+          "trace_id": "d0476548-195d-453c-b64c-d679eaad2e2e",
+          "parent_span_id": "",
+          "name": "generate",
+          "start_time": "2025-09-14 19:54:50.461000000",
+          "end_time": "2025-09-14 19:54:50.772000000",
+          "duration_ms": 311.329,
+          "status": "error",
+          "status_message": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-1.5-flash', 'location': 'global'}, 'quotaValue': '50'}]}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}",
+          "attributes": {
+            "function.name": "generate",
+            "function.module": "novaeval.models.gemini",
+            "function.qualname": "GeminiModel.generate",
+            "function.type": "llm_call",
+            "llm.operation_type": "completion",
+            "llm.max_tokens": null,
+            "llm.temperature": null,
+            "llm.stop_sequences": null,
+            "llm.provider": "google",
+            "llm.prompts": "# Context Relevancy Evaluation\n\n## Task\nEvaluate whether the agent response is appropriate and relevant given the agent's task and role.\n\n## Criteria\nRate the response appropriateness on a scale of 1-10, where:\n- 1-3: Response is completely inappropriate or irrelevant for the task and role\n- 4-6: Response is somewhat appropriate but not well-aligned with task and role\n- 7-8: Response is appropriate and well-aligned with the task and role\n- 9-10: Response is highly appropriate, perfectly aligned with both task and role\n\n## Agent Information\n**Agent Role:** llm\n**Agent Task:** Human: Answer the following questions as best you can. You have access to the following tools:\n\nescalate_to_human(reason: str = 'Complex query requiring human assistance') -> str - Use this tool when the query is too complex or you cannot resolve the user's issue. This will escalate to human customer support.\nuser_input(prompt: str = 'Please provide more information') -> str - Use this tool when you need additional information or clarification from the user. This will prompt the user for more details.\nlangchain_retriever(query: str) -> str - Use this tool to search through the knowledge base for relevant information. Input should be a search query.\n\nUse the following format:\n\nQuestion: the input question you must answer\nThought: you should always think about what to do\nAction: the action to take, should be one of [escalate_to_human, user_input, langchain_retriever]\nAction Input: the input to the action\nObservation: the result of the action\n... (this Thought/Action/Action Input/Observation can repeat N times)\nThought: I now know the final answer\nFinal Answer: the final answer to the original input question\n\nBegin!\n\nQuestion: hello, who are you\nThought:This is a general inquiry, so I should provide a brief introduction about myself.\nAction: langchain_retriever\nAction Input: \"Introduction to virtual assistant\"\nObservation: Retrieved information:\n\n1. LangChain Agent Documentation\n\nThis is a sample document for testing the LangChain agent with retrieval capabilities.\n\nKey Features:\n- Document ingestion from PDF and TXT files\n- ChromaDB vector store for semantic search\n- Custom tools for conversation control\n- Memory between conversation turns\n- Comprehensive tracing with Noveum Trace\n\nCustom Tools:\n1. escalate_to_human - Escalates complex queries to human support\n2. user_input - Gets additional input or clarification from the user\n3. langchain_retriever - Searches the knowledge base\n\nThe agent uses a ReAct (Reasoning and Acting) approach to handle user queries by:\n1. Understanding the user's question\n2. Deciding which tools to use\n3. Executing the tools\n4. Reasoning about the results\n5. Providing a response or taking further action\n\nThis allows for complex multi-step reasoning and tool usage in a conversational format.\n\nFUN FACT - \"ELON MUSK IS AFRICAN!!\"\n\n\nThought:The retrieved information did not provide a direct introduction, so I should try to provide a simple introduction on my own.\nAction: escalate_to_human\nAction Input: 'Introduction to virtual assistant'\nObservation: ESCALATED TO HUMAN SUPPORT. Reason: 'Introduction to virtual assistant'. Please wait for a human customer support representative to get back to you.\nThought:\n\n## Agent Response\nI couldn't provide a direct answer, so I'll wait for the human support representative to assist with this general inquiry.\nFinal Answer: N/A\n\n## Instructions\nEvaluate:\n1. Is the response directly relevant to the assigned task?\n2. Does the response align with the agent's designated role and expertise?\n3. Is the response appropriate in tone and content for the role?\n4. Does the response demonstrate understanding of the task requirements?\n5. Is the response helpful in progressing toward task completion?\n\nThe reasoning should be of 50-60 words. It should not be longer than 75 words.\n\nProvide a single appropriateness score from 1-10 along with your reasoning. IMPORTANT: Use decimal scores (e.g., 7.5, 8.2, 9.1) rather than round numbers (e.g., 7.0, 8.0, 9.0) to provide more nuanced evaluation.\n\nFormat your response as a JSON object:\n{\n  \"score\": 7.8,\n  \"reasoning\": \"The agent response is directly relevant to the assigned task and demonstrates good alignment with the designated role. The tone and content are appropriate for the role, though there could be minor improvements in demonstrating deeper task understanding to achieve a higher score.\"\n}\n\nYour response should be ONLY the JSON object, nothing else.\n",
+            "llm.usage.input_tokens": 1283,
+            "exception.type": "ClientError",
+            "exception.message": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-1.5-flash', 'location': 'global'}, 'quotaValue': '50'}]}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}",
+            "exception.escaped": false,
+            "exception.stacktrace": "Traceback (most recent call last):\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/noveum_trace/decorators/llm.py\", line 169, in wrapper\n    result = func(*args, **kwargs)\n  File \"/home/shivam/Desktop/noveum/NovaEval/src/novaeval/models/gemini.py\", line 189, in generate\n    response = self.client.models.generate_content(\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/models.py\", line 5898, in generate_content\n    response = self._generate_content(\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/models.py\", line 4838, in _generate_content\n    response = self._api_client.request(\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/_api_client.py\", line 1067, in request\n    response = self._request(http_request, stream=False)\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/_api_client.py\", line 958, in _request\n    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/tenacity/__init__.py\", line 475, in __call__\n    do = self.iter(retry_state=retry_state)\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/tenacity/__init__.py\", line 376, in iter\n    result = action(retry_state)\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/tenacity/__init__.py\", line 418, in exc_check\n    raise retry_exc.reraise()\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/tenacity/__init__.py\", line 185, in reraise\n    raise self.last_attempt.result()\n  File \"/usr/lib/python3.10/concurrent/futures/_base.py\", line 451, in result\n    return self.__get_result()\n  File \"/usr/lib/python3.10/concurrent/futures/_base.py\", line 403, in __get_result\n    raise self._exception\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/tenacity/__init__.py\", line 478, in __call__\n    result = fn(*args, **kwargs)\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/_api_client.py\", line 948, in _request_once\n    errors.APIError.raise_for_response(response)\n  File \"/home/shivam/Desktop/noveum/.venv/lib/python3.10/site-packages/google/genai/errors.py\", line 104, in raise_for_response\n    raise ClientError(status_code, response_json, response)\ngoogle.genai.errors.ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-1.5-flash', 'location': 'global'}, 'quotaValue': '50'}]}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}\n",
+            "llm.error.type": "ClientError",
+            "llm.error.message": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-1.5-flash', 'location': 'global'}, 'quotaValue': '50'}]}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}"
+          },
+          "events": [
+            {
+              "name": "exception",
+              "timestamp": "2025-09-14T19:54:50.772Z",
+              "attributes": {
+                "exception.type": "ClientError",
+                "exception.message": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-1.5-flash', 'location': 'global'}, 'quotaValue': '50'}]}, {'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}"
+              }
+            }
+          ],
+          "links": []
+        }
+      ],
+      "created_at": "2025-09-14 19:54:58.545000000",
+      "updated_at": "2025-09-14 19:54:58.545000000"
+    }
+  ],
+  "pagination": {
+    "total": 276,
+    "limit": 2,
+    "offset": 0,
+    "has_more": true
+  },
+  "timestamp": "2025-09-14T20:24:05.680Z",
+  "processing_time_ms": 0
+}
