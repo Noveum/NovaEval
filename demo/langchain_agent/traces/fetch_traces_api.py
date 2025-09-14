@@ -17,7 +17,7 @@ load_dotenv()
 
 # Get API key and project from environment
 api_key = os.getenv('NOVEUM_API_KEY')
-project = os.getenv('NOVEUM_PROJECT', 'novaeval')
+project = 'novaeval-shivam'
 
 if not api_key:
     print('Error: NOVEUM_API_KEY environment variable not found')
@@ -31,7 +31,9 @@ headers = {
 
 def clean_and_create_traces_dir():
     """Clean existing traces directory and create a new one"""
-    traces_dir = 'traces'
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    traces_dir = os.path.join(script_dir, 'traces')
     
     if os.path.exists(traces_dir):
         print(f"Cleaning existing traces directory: {traces_dir}")
