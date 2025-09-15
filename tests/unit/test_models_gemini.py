@@ -6,7 +6,6 @@ import os
 from unittest.mock import Mock, patch
 
 import pytest
-
 from novaeval.models import gemini as gemini_module
 from novaeval.models.gemini import GeminiModel, rough_token_estimate
 

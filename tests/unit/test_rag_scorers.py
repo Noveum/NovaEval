@@ -2,7 +2,6 @@ import asyncio
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-
 from novaeval.scorers.base import ScoreResult
 from novaeval.scorers.rag import (
     AnswerRelevancyScorer,
@@ -11,6 +10,7 @@ from novaeval.scorers.rag import (
     FaithfulnessScorer,
     RAGASScorer,
 )
+
 from tests.unit.test_utils import MockLLM
 
 

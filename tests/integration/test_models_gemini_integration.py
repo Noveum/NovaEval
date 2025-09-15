@@ -11,7 +11,6 @@ import os
 import time
 
 import pytest
-
 from novaeval.models.gemini import GeminiModel
 
 # Test markers for different test categories

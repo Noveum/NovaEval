@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
-
 from novaeval.datasets.custom import CustomDataset
 
 

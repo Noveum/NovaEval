@@ -3,7 +3,6 @@ Unit tests for metrics calculation functionality.
 """
 
 import pytest
-
 from novaeval.reporting.metrics import (
     AggregatedMetrics,
     MetricsCalculator,

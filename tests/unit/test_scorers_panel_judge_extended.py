@@ -3,7 +3,6 @@ Extended tests for panel judge functionality to improve coverage.
 """
 
 import pytest
-
 from novaeval.models.base import BaseModel
 from novaeval.scorers.panel_judge import (
     AggregationMethod,

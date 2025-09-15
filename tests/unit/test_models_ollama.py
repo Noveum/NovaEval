@@ -6,7 +6,6 @@ import os
 from unittest.mock import Mock, patch
 
 import pytest
-
 from novaeval.models.ollama import OllamaModel
 
 pytestmark = pytest.mark.unit

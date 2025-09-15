@@ -3,7 +3,6 @@ Unit tests for RAG prompts module.
 """
 
 import pytest
-
 from novaeval.scorers.rag_prompts import RAGPrompts
 
 

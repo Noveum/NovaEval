@@ -1,7 +1,6 @@
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-
 from novaeval.models.base import BaseModel
 from novaeval.scorers.base import ScoreResult
 from novaeval.scorers.panel_judge import (

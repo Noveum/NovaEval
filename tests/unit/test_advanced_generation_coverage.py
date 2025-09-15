@@ -5,7 +5,6 @@ Additional tests for advanced generation scorers to increase coverage.
 from unittest.mock import AsyncMock, patch
 
 import pytest
-
 from novaeval.scorers.advanced_generation_scorers import (
     AnswerCompletenessScorer,
     BiasDetectionScorer,

@@ -6,7 +6,6 @@ from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
-
 from novaeval.datasets.agent_dataset import AgentDataset
 from novaeval.evaluators.agent_evaluator import AgentEvaluator
 from novaeval.models.base import BaseModel

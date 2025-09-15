@@ -3,7 +3,6 @@ Unit tests for base scorer functionality.
 """
 
 import pytest
-
 from novaeval.scorers.base import BaseScorer, ScoreResult
 
 

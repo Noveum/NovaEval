@@ -10,7 +10,6 @@ from unittest.mock import Mock, patch
 
 import pandas as pd
 import pytest
-
 from novaeval.datasets.base import BaseDataset
 from novaeval.evaluators.standard import Evaluator
 from novaeval.models.base import BaseModel

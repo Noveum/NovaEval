@@ -9,7 +9,6 @@ from unittest.mock import Mock, patch
 
 import yaml
 from click.testing import CliRunner
-
 from novaeval.cli import _display_config_summary, _display_results_summary, cli, main
 from novaeval.utils.config import Config
 

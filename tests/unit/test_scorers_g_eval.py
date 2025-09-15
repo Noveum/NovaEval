@@ -4,7 +4,6 @@ import inspect
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-
 from novaeval.scorers.g_eval import CommonGEvalCriteria, GEvalCriteria, GEvalScorer
 
 
