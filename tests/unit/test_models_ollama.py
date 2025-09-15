@@ -445,7 +445,7 @@ class TestOllamaModel:
                 mock_client.return_value.chat.return_value = mock_response
 
                 model = OllamaModel(pull_on_init=False)
-                response, thinking = model.generate_with_thought("test prompt")
+                _response, thinking = model.generate_with_thought("test prompt")
 
                 assert thinking == f"test {field_name}"
 
@@ -755,7 +755,7 @@ class TestOllamaModel:
                 mock_client.return_value.chat.return_value = mock_response
 
                 model = OllamaModel(pull_on_init=False)
-                response, thinking = model.generate_with_thought("test prompt")
+                _response, thinking = model.generate_with_thought("test prompt")
                 assert thinking == expected_thinking
 
     # -------------------------- Performance and Metrics Tests --------------------------
@@ -1053,7 +1053,7 @@ class TestOllamaModel:
                 mock_client.return_value.chat.return_value = mock_response
 
                 model = OllamaModel(pull_on_init=False)
-                response, thinking = model.generate_with_thought("test prompt")
+                _response, thinking = model.generate_with_thought("test prompt")
 
                 assert thinking == field_value
 
@@ -1072,7 +1072,7 @@ class TestOllamaModel:
                 mock_client.return_value.chat.return_value = mock_response
 
                 model = OllamaModel(pull_on_init=False)
-                response, thinking = model.generate_with_thought("test prompt")
+                _response, thinking = model.generate_with_thought("test prompt")
 
                 assert thinking == field_value
 
@@ -1091,7 +1091,7 @@ class TestOllamaModel:
                 mock_client.return_value.chat.return_value = mock_response
 
                 model = OllamaModel(pull_on_init=False)
-                response, thinking = model.generate_with_thought("test prompt")
+                _response, thinking = model.generate_with_thought("test prompt")
 
                 assert thinking == field_value
 

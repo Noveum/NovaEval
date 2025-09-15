@@ -644,7 +644,7 @@ class TestAzureOpenAIModel:
             response = model.generate(prompt="hi")
             assert response == "wrapped"
             model.generate_chat.assert_called_once()
-            args, kwargs = model.generate_chat.call_args
+            _args, kwargs = model.generate_chat.call_args
             assert kwargs["messages"][0]["content"] == "hi"
 
     def test_generate_batch_empty(self, mock_azure_env):

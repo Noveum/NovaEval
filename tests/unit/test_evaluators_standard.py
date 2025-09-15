@@ -639,7 +639,7 @@ class TestEvaluator:
 
                 # Verify tqdm was called with correct parameters
                 mock_tqdm.assert_called_once()
-                args, kwargs = mock_tqdm.call_args
+                _args, kwargs = mock_tqdm.call_args
                 assert kwargs.get("total") == 3
                 assert kwargs.get("desc") == "Evaluating test_model"
 
