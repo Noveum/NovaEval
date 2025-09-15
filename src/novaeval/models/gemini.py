@@ -158,7 +158,7 @@ class GeminiModel(BaseModel):
         try:
             self.client = genai.Client(api_key=effective_api_key)
         except Exception as e:
-            raise ValueError(f"Failed to initialize Gemini client: {e!s}")
+            raise ValueError(f"Failed to initialize Gemini client: {e!s}") from e
 
         self.max_retries = max_retries
         self.timeout = timeout
@@ -185,14 +185,17 @@ class GeminiModel(BaseModel):
         Returns:
             Generated text
         """
-        try:
-            response = self.client.models.generate_content(
+        def _make_request():
+            return self.client.models.generate_content(
                 model=self.model_name,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     temperature=temperature, max_output_tokens=max_tokens, **kwargs
                 ),
             )
+        
+        try:
+            response = super()._retry_with_exponential_backoff(_make_request)
 
             # Extract text from response, handling different response formats
             output = ""
@@ -371,12 +374,15 @@ class GeminiModel(BaseModel):
         Returns:
             True if success
         """
-        try:
-            response = self.client.models.generate_content(
+        def _make_ping_request():
+            return self.client.models.generate_content(
                 model=self.model_name,
                 contents="Ping!",
                 config=types.GenerateContentConfig(max_output_tokens=1),
             )
+        
+        try:
+            response = super()._retry_with_exponential_backoff(_make_ping_request)
             return bool(response.text)
         except Exception as e:
             self._handle_error(e, "Connection test failed")

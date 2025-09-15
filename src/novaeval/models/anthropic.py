@@ -5,7 +5,6 @@ This module provides an interface to Anthropic's Claude models.
 """
 
 import os
-import time
 from typing import Any, Optional, Union
 
 import anthropic
@@ -92,7 +91,7 @@ class AnthropicModel(BaseModel):
         Returns:
             Generated text
         """
-        try:
+        def _make_request():
             # Prepare parameters
             params = {
                 "model": self.model_name,
@@ -109,9 +108,10 @@ class AnthropicModel(BaseModel):
             params = {k: v for k, v in params.items() if v is not None}
 
             # Make API call
-            time.time()
-            response = self.client.messages.create(**params)
-            time.time()
+            return self.client.messages.create(**params)
+
+        try:
+            response = super()._retry_with_exponential_backoff(_make_request)
 
             # Extract response
             generated_text = response.content[0].text
@@ -231,13 +231,15 @@ class AnthropicModel(BaseModel):
         Returns:
             True if connection is valid, False otherwise
         """
-        try:
-            # Try a simple API call
-            response = self.client.messages.create(
+        def _make_ping_request():
+            return self.client.messages.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": "Hello"}],
                 max_tokens=1,
             )
+        
+        try:
+            response = super()._retry_with_exponential_backoff(_make_ping_request)
             return response is not None
         except Exception as e:
             self._handle_error(e, "Anthropic connection validation failed")
