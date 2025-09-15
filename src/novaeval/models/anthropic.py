@@ -92,7 +92,7 @@ class AnthropicModel(BaseModel):
             Generated text
         """
 
-        def _make_request():
+        def _make_request() -> Any:
             # Prepare parameters
             params = {
                 "model": self.model_name,
@@ -233,7 +233,7 @@ class AnthropicModel(BaseModel):
             True if connection is valid, False otherwise
         """
 
-        def _make_ping_request():
+        def _make_ping_request() -> Any:
             return self.client.messages.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": "Hello"}],

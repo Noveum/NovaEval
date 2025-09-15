@@ -250,7 +250,7 @@ class BaseModel(ABC):
         self.total_tokens += tokens_used
         self.total_cost += cost
 
-    def _retry_with_exponential_backoff(self, func, *args, **kwargs):
+    def _retry_with_exponential_backoff(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
         """
         Retry a function with exponential backoff.
 
@@ -304,9 +304,12 @@ class BaseModel(ABC):
                     raise
 
         # This should never be reached, but just in case
-        raise last_exception
+        if last_exception is not None:
+            raise last_exception
+        else:
+            raise RuntimeError("Unexpected error in retry logic")
 
-    def _extract_status_code(self, exception):
+    def _extract_status_code(self, exception: Exception) -> Optional[int]:
         """
         Extract status code from various exception types.
 

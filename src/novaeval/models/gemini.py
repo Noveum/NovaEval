@@ -186,7 +186,7 @@ class GeminiModel(BaseModel):
             Generated text
         """
 
-        def _make_request():
+        def _make_request() -> Any:
             return self.client.models.generate_content(
                 model=self.model_name,
                 contents=prompt,
@@ -376,7 +376,7 @@ class GeminiModel(BaseModel):
             True if success
         """
 
-        def _make_ping_request():
+        def _make_ping_request() -> Any:
             return self.client.models.generate_content(
                 model=self.model_name,
                 contents="Ping!",
