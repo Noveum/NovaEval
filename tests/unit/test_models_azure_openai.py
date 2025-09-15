@@ -417,7 +417,7 @@ class TestAzureOpenAIModel:
             mock_client.return_value = mock_client_instance
             model = AzureOpenAIModel()
             with pytest.raises(
-                RuntimeError, match="does not support the 'chat.completions' endpoint"
+                RuntimeError, match=r"does not support the 'chat.completions' endpoint"
             ):
                 model.generate_chat(messages=[{"role": "user", "content": "hi"}])
 
@@ -526,7 +526,7 @@ class TestAzureOpenAIModel:
             mock_client.return_value = mock_client_instance
             model = AzureOpenAIModel()
             with pytest.raises(
-                RuntimeError, match="does not support the 'chat.completions' endpoint"
+                RuntimeError, match=r"does not support the 'chat.completions' endpoint"
             ):
                 model.validate_connection()
 
