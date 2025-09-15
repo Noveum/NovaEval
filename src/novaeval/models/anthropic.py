@@ -91,6 +91,7 @@ class AnthropicModel(BaseModel):
         Returns:
             Generated text
         """
+
         def _make_request():
             # Prepare parameters
             params = {
@@ -231,13 +232,14 @@ class AnthropicModel(BaseModel):
         Returns:
             True if connection is valid, False otherwise
         """
+
         def _make_ping_request():
             return self.client.messages.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": "Hello"}],
                 max_tokens=1,
             )
-        
+
         try:
             response = super()._retry_with_exponential_backoff(_make_ping_request)
             return response is not None

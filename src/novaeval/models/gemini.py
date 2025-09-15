@@ -185,6 +185,7 @@ class GeminiModel(BaseModel):
         Returns:
             Generated text
         """
+
         def _make_request():
             return self.client.models.generate_content(
                 model=self.model_name,
@@ -193,7 +194,7 @@ class GeminiModel(BaseModel):
                     temperature=temperature, max_output_tokens=max_tokens, **kwargs
                 ),
             )
-        
+
         try:
             response = super()._retry_with_exponential_backoff(_make_request)
 
@@ -374,13 +375,14 @@ class GeminiModel(BaseModel):
         Returns:
             True if success
         """
+
         def _make_ping_request():
             return self.client.models.generate_content(
                 model=self.model_name,
                 contents="Ping!",
                 config=types.GenerateContentConfig(max_output_tokens=1),
             )
-        
+
         try:
             response = super()._retry_with_exponential_backoff(_make_ping_request)
             return bool(response.text)

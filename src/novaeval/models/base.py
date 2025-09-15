@@ -253,39 +253,42 @@ class BaseModel(ABC):
     def _retry_with_exponential_backoff(self, func, *args, **kwargs):
         """
         Retry a function with exponential backoff.
-        
+
         Args:
             func: Function to retry
             *args: Arguments to pass to the function
             **kwargs: Keyword arguments to pass to the function
-            
+
         Returns:
             Result of the function call
-            
+
         Raises:
             Exception: If all retries are exhausted and the last error is not 429
         """
         last_exception = None
-        current_timeout = getattr(self, 'timeout', 60.0)
-        max_retries = getattr(self, 'max_retries', 3)
-        
+        current_timeout = getattr(self, "timeout", 60.0)
+        max_retries = getattr(self, "max_retries", 3)
+
         for attempt in range(max_retries + 1):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
                 last_exception = e
-                
+
                 # Check if it's a 429 error (rate limit)
                 # Try multiple ways to get the status code
                 status_code = self._extract_status_code(e)
-                
+
                 if status_code == 429:
                     if attempt < max_retries:
                         logger.warning(
                             "Rate limit hit (429) on attempt %d/%d. Retrying in %.2f seconds...",
-                            attempt + 1, max_retries + 1, current_timeout
+                            attempt + 1,
+                            max_retries + 1,
+                            current_timeout,
                         )
                         import time
+
                         time.sleep(current_timeout)
                         current_timeout *= 1.25  # Exponential backoff factor
                         continue
@@ -293,75 +296,75 @@ class BaseModel(ABC):
                         # All retries exhausted for 429 error
                         logger.error(
                             "Rate limit error (429) persisted after %d attempts. Giving up on request.",
-                            max_retries + 1
+                            max_retries + 1,
                         )
                         return ""  # Return empty string instead of raising
                 else:
                     # For non-429 errors, re-raise immediately
                     raise
-        
+
         # This should never be reached, but just in case
         raise last_exception
 
     def _extract_status_code(self, exception):
         """
         Extract status code from various exception types.
-        
+
         This method handles exceptions from different model providers:
         - OpenAI: Uses 'status_code' attribute
-        - Anthropic: Uses 'status_code' attribute  
+        - Anthropic: Uses 'status_code' attribute
         - Google GenAI: Uses 'code' attribute
         - Azure OpenAI: Uses 'status_code' attribute
-        
+
         Args:
             exception: The exception to extract status code from
-            
+
         Returns:
             Status code if found, None otherwise
         """
         # Method 1: Direct attribute (works for OpenAI, Anthropic RateLimitError)
-        status_code = getattr(exception, 'status_code', None)
+        status_code = getattr(exception, "status_code", None)
         if status_code is not None:
             return status_code
-        
+
         # Method 2: Google GenAI uses 'code' attribute instead of 'status_code'
-        code = getattr(exception, 'code', None)
+        code = getattr(exception, "code", None)
         if code is not None:
             return code
-        
+
         # Method 3: Nested in response object
-        if hasattr(exception, 'response'):
+        if hasattr(exception, "response"):
             response = exception.response
-            if hasattr(response, 'status_code'):
-                return getattr(response, 'status_code', None)
-            if hasattr(response, 'status'):
-                return getattr(response, 'status', None)
-            if hasattr(response, 'code'):
-                return getattr(response, 'code', None)
-        
+            if hasattr(response, "status_code"):
+                return getattr(response, "status_code", None)
+            if hasattr(response, "status"):
+                return getattr(response, "status", None)
+            if hasattr(response, "code"):
+                return getattr(response, "code", None)
+
         # Method 4: Check for HTTP status in message or args
-        if hasattr(exception, 'args') and exception.args:
+        if hasattr(exception, "args") and exception.args:
             for arg in exception.args:
-                if isinstance(arg, str) and '429' in arg:
+                if isinstance(arg, str) and "429" in arg:
                     return 429
-                if isinstance(arg, dict) and 'status_code' in arg:
-                    return arg['status_code']
-                if isinstance(arg, dict) and 'code' in arg:
-                    return arg['code']
-        
+                if isinstance(arg, dict) and "status_code" in arg:
+                    return arg["status_code"]
+                if isinstance(arg, dict) and "code" in arg:
+                    return arg["code"]
+
         # Method 5: Check for specific exception types that are known to be 429
         exception_name = exception.__class__.__name__.lower()
-        if 'ratelimit' in exception_name or 'rate_limit' in exception_name:
+        if "ratelimit" in exception_name or "rate_limit" in exception_name:
             return 429
-        
+
         # Method 6: Check for Google GenAI specific patterns
-        if hasattr(exception, 'response_json'):
+        if hasattr(exception, "response_json"):
             response_json = exception.response_json
-            if isinstance(response_json, dict) and 'error' in response_json:
-                error_info = response_json['error']
-                if 'code' in error_info:
-                    return error_info['code']
-        
+            if isinstance(response_json, dict) and "error" in response_json:
+                error_info = response_json["error"]
+                if "code" in error_info:
+                    return error_info["code"]
+
         return None
 
     def _handle_error(self, error: Exception, context: str = "") -> None:

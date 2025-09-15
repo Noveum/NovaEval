@@ -190,6 +190,7 @@ class AzureOpenAIModel(BaseModel):
         """
         Generate a chat completion using the Azure OpenAI chat endpoint.
         """
+
         def _make_request():
             params: dict[str, Any] = {
                 "model": self.model_name,  # deployment name
@@ -337,13 +338,14 @@ class AzureOpenAIModel(BaseModel):
             raise RuntimeError(
                 "The OpenAI client does not support the 'chat.completions' endpoint. Please upgrade your SDK."
             )
+
         def _make_ping_request():
             return self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": "Ping!"}],
                 max_tokens=1,
             )
-        
+
         try:
             response = super()._retry_with_exponential_backoff(_make_ping_request)
             return bool(response.choices)
