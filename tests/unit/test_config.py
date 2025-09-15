@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+
 from novaeval.utils.config import Config
 
 

@@ -6,6 +6,7 @@ import json
 
 import pandas as pd
 import pytest
+
 from novaeval.evaluators.aggregators import (
     _aggregate_by_agent_memory,
     _aggregate_by_agent_streaming,

@@ -6,6 +6,7 @@ import os
 from unittest.mock import Mock, patch
 
 import pytest
+
 from novaeval.models.anthropic import AnthropicModel
 
 

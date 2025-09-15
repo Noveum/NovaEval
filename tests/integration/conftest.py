@@ -10,6 +10,7 @@ import time
 from typing import Optional
 
 import pytest
+
 from novaeval.models.gemini import GeminiModel
 
 

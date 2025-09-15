@@ -5,6 +5,7 @@ Minimal tests for RAG Pipeline Evaluator to improve code coverage.
 from unittest.mock import Mock
 
 import pytest
+
 from novaeval.scorers.rag_pipeline_evaluator import (
     AgentData,
     ErrorPropagationScorer,
@@ -19,7 +20,6 @@ from novaeval.scorers.rag_pipeline_evaluator import (
     RetrievalStageEvaluator,
     StageMetrics,
 )
-
 from tests.unit.test_utils import MockLLM
 
 

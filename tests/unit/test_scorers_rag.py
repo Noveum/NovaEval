@@ -5,6 +5,7 @@ Unit tests for RAG (Retrieval-Augmented Generation) scorers.
 from unittest.mock import patch
 
 import pytest
+
 from novaeval.scorers.base import ScoreResult
 from novaeval.scorers.rag import (
     AnswerRelevancyScorer,

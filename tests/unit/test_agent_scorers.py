@@ -7,6 +7,8 @@ Tests all scoring functions, classes, and utilities for agent evaluation.
 from unittest.mock import Mock, patch
 
 import pytest
+from pydantic import ValidationError
+
 from novaeval.agents.agent_data import AgentData, ToolCall, ToolResult, ToolSchema
 from novaeval.scorers.agent_scorers import (
     AgentScorers,
@@ -27,7 +29,6 @@ from novaeval.scorers.agent_scorers import (
     tool_correctness_scorer,
     tool_relevancy_scorer,
 )
-from pydantic import ValidationError
 
 
 class MockLLMModel:

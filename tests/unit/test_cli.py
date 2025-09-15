@@ -9,6 +9,7 @@ from unittest.mock import Mock, patch
 
 import yaml
 from click.testing import CliRunner
+
 from novaeval.cli import _display_config_summary, _display_results_summary, cli, main
 from novaeval.utils.config import Config
 
@@ -540,7 +541,7 @@ class TestDisplayFunctions:
             # Verify that console.print was called with a table
             mock_print.assert_called_once()
             # The argument should be a Rich Table object
-            args, kwargs = mock_print.call_args
+            args, _kwargs = mock_print.call_args
             assert hasattr(args[0], "add_row")  # Rich Table has add_row method
 
     def test_display_results_summary(self):
@@ -561,7 +562,7 @@ class TestDisplayFunctions:
             # Verify that console.print was called with a table
             mock_print.assert_called_once()
             # The argument should be a Rich Table object
-            args, kwargs = mock_print.call_args
+            args, _kwargs = mock_print.call_args
             assert hasattr(args[0], "add_row")  # Rich Table has add_row method
 
     def test_display_results_summary_empty(self):

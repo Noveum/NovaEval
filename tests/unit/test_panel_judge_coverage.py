@@ -5,6 +5,7 @@ Additional tests for PanelOfJudgesScorer to increase coverage.
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from novaeval.models.base import BaseModel
 from novaeval.scorers.panel_judge import (
     AggregationMethod,

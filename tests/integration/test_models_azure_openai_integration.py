@@ -9,6 +9,7 @@ import os
 import time
 
 import pytest
+
 from novaeval.models.azure_openai import AzureOpenAIModel
 
 # Test markers

@@ -1,4 +1,5 @@
 import pytest
+
 from novaeval.scorers.advanced_generation_scorers import (
     AnswerCompletenessScorer,
     BiasDetectionScorer,

@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 import pandas as pd
 import pytest
+
 from novaeval.agents.agent_data import AgentData
 from novaeval.datasets.swe_agent_trajectories_dataset import (
     create_dataset,

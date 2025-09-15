@@ -3,6 +3,7 @@ Unit tests for accuracy scorers.
 """
 
 import pytest
+
 from novaeval.scorers.accuracy import (
     AccuracyScorer,
     ExactMatchScorer,
