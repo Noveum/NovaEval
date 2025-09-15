@@ -242,7 +242,7 @@ class AnthropicModel(BaseModel):
 
         try:
             response = super()._retry_with_exponential_backoff(_make_ping_request)
-            return response is not None
+            return bool(response)
         except Exception as e:
             self._handle_error(e, "Anthropic connection validation failed")
             return False
