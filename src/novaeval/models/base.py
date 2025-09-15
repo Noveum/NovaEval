@@ -250,7 +250,9 @@ class BaseModel(ABC):
         self.total_tokens += tokens_used
         self.total_cost += cost
 
-    def _retry_with_exponential_backoff(self, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    def _retry_with_exponential_backoff(
+        self, func: Callable[..., Any], *args: Any, **kwargs: Any
+    ) -> Any:
         """
         Retry a function with exponential backoff.
 
