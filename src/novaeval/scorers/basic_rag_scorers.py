@@ -12,15 +12,17 @@ from __future__ import annotations
 
 import asyncio
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics import average_precision_score, ndcg_score
 
 from novaeval.scorers.base import BaseScorer, ScoreResult
 from novaeval.scorers.rag_prompts import RAGPrompts
 from novaeval.utils.llm import call_llm
+
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer  # noqa: TC004
 
 
 class AsyncLLMScorer(BaseScorer):
