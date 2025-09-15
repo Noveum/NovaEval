@@ -268,8 +268,8 @@ class BaseModel(ABC):
             Exception: If all retries are exhausted and the last error is not 429
         """
         last_exception = None
-        current_timeout = getattr(self, "timeout", 60.0)
-        max_retries = getattr(self, "max_retries", 3)
+        current_timeout = getattr(self, "timeout", self.kwargs.get("timeout", 60.0))
+        max_retries = getattr(self, "max_retries", self.kwargs.get("max_retries", 3))
 
         for attempt in range(max_retries + 1):
             try:

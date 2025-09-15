@@ -123,6 +123,10 @@ class OpenAIModel(BaseModel):
         try:
             response = super()._retry_with_exponential_backoff(_make_request)
 
+            # Handle case where retry logic returns empty string (max retries exceeded)
+            if isinstance(response, str):
+                return response
+
             # Extract response
             generated_text = response.choices[0].message.content
 

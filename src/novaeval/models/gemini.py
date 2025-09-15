@@ -198,6 +198,10 @@ class GeminiModel(BaseModel):
         try:
             response = super()._retry_with_exponential_backoff(_make_request)
 
+            # Handle case where retry logic returns empty string (max retries exceeded)
+            if isinstance(response, str):
+                return response
+
             # Extract text from response, handling different response formats
             output = ""
             if response.text is not None:
