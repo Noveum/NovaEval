@@ -153,7 +153,7 @@ class AzureOpenAIModel(BaseModel):
             )
 
         except Exception as e:
-            raise ValueError(f"Failed to initialize Azure OpenAI client: {e!s}")
+            raise ValueError(f"Failed to initialize Azure OpenAI client: {e!s}") from e
 
     @trace_llm
     def generate(
@@ -190,7 +190,8 @@ class AzureOpenAIModel(BaseModel):
         """
         Generate a chat completion using the Azure OpenAI chat endpoint.
         """
-        try:
+
+        def _make_request() -> Any:
             params: dict[str, Any] = {
                 "model": self.model_name,  # deployment name
                 "messages": messages,
@@ -211,7 +212,10 @@ class AzureOpenAIModel(BaseModel):
                     "The OpenAI client does not support the 'chat.completions' endpoint. Please upgrade your SDK."
                 )
 
-            response = self.client.chat.completions.create(**params)
+            return self.client.chat.completions.create(**params)
+
+        try:
+            response = super()._retry_with_exponential_backoff(_make_request)
 
             output_text = ""
             if hasattr(response, "choices") and response.choices:
@@ -334,12 +338,16 @@ class AzureOpenAIModel(BaseModel):
             raise RuntimeError(
                 "The OpenAI client does not support the 'chat.completions' endpoint. Please upgrade your SDK."
             )
-        try:
-            response = self.client.chat.completions.create(
+
+        def _make_ping_request() -> Any:
+            return self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[{"role": "user", "content": "Ping!"}],
                 max_tokens=1,
             )
+
+        try:
+            response = super()._retry_with_exponential_backoff(_make_ping_request)
             return bool(response.choices)
         except Exception as e:
             self._handle_error(e, "Connection test failed")

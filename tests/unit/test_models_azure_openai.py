@@ -417,7 +417,7 @@ class TestAzureOpenAIModel:
             mock_client.return_value = mock_client_instance
             model = AzureOpenAIModel()
             with pytest.raises(
-                RuntimeError, match="does not support the 'chat.completions' endpoint"
+                RuntimeError, match=r"does not support the 'chat.completions' endpoint"
             ):
                 model.generate_chat(messages=[{"role": "user", "content": "hi"}])
 
@@ -526,7 +526,7 @@ class TestAzureOpenAIModel:
             mock_client.return_value = mock_client_instance
             model = AzureOpenAIModel()
             with pytest.raises(
-                RuntimeError, match="does not support the 'chat.completions' endpoint"
+                RuntimeError, match=r"does not support the 'chat.completions' endpoint"
             ):
                 model.validate_connection()
 
@@ -644,7 +644,7 @@ class TestAzureOpenAIModel:
             response = model.generate(prompt="hi")
             assert response == "wrapped"
             model.generate_chat.assert_called_once()
-            args, kwargs = model.generate_chat.call_args
+            _args, kwargs = model.generate_chat.call_args
             assert kwargs["messages"][0]["content"] == "hi"
 
     def test_generate_batch_empty(self, mock_azure_env):
@@ -719,3 +719,171 @@ class TestAzureOpenAIModel:
                 "supported_models",
             ]:
                 assert key in info
+
+    def test_generate_chat_with_retry_logic_429_error(self, mock_azure_env):
+        """Test generate_chat with 429 error and retry logic."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
+
+        with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+
+            # Mock response for successful call
+            mock_response = Mock()
+            mock_response.choices = [Mock()]
+            mock_response.choices[0].message.content = "Test response"
+            mock_response.usage = Mock()
+            mock_response.usage.prompt_tokens = 10
+            mock_response.usage.completion_tokens = 5
+
+            # First call fails with 429, second succeeds
+            call_count = 0
+
+            def mock_create(**kwargs):
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1:
+                    error = Exception("Rate limit")
+                    error.status_code = 429
+                    raise error
+                return mock_response
+
+            mock_client.chat.completions.create = mock_create
+
+            model = AzureOpenAIModel(model_name="gpt-4")
+
+            with patch("time.sleep") as mock_sleep:
+                result = model.generate_chat(
+                    messages=[{"role": "user", "content": "Hello"}]
+                )
+                assert result == "Test response"
+                assert call_count == 2
+                assert mock_sleep.call_count == 1
+
+    def test_generate_chat_with_retry_logic_429_error_max_retries_exceeded(
+        self, mock_azure_env
+    ):
+        """Test generate_chat with 429 error that exceeds max retries."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
+
+        with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+
+            # Always fail with 429
+            def mock_create(**kwargs):
+                error = Exception("Rate limit")
+                error.status_code = 429
+                raise error
+
+            mock_client.chat.completions.create = mock_create
+
+            model = AzureOpenAIModel(model_name="gpt-4", max_retries=1)
+
+            with patch("time.sleep") as mock_sleep:
+                result = model.generate_chat(
+                    messages=[{"role": "user", "content": "Hello"}]
+                )
+                assert (
+                    result == ""
+                )  # Should return empty string when max retries exceeded
+                assert mock_sleep.call_count == 1  # Sleep once between attempts
+
+    def test_generate_chat_with_retry_logic_non_429_error(self, mock_azure_env):
+        """Test generate_chat with non-429 error raises immediately."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
+
+        with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+
+            # Fail with non-429 error
+            def mock_create(**kwargs):
+                raise ValueError("Not a rate limit error")
+
+            mock_client.chat.completions.create = mock_create
+
+            model = AzureOpenAIModel(model_name="gpt-4")
+
+            with pytest.raises(ValueError, match="Not a rate limit error"):
+                model.generate_chat(messages=[{"role": "user", "content": "Hello"}])
+
+    def test_validate_connection_with_retry_logic_429_error(self, mock_azure_env):
+        """Test validate_connection with 429 error and retry logic."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
+
+        with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+
+            # Mock response for successful call
+            mock_response = Mock()
+            mock_response.choices = [Mock()]
+
+            # First call fails with 429, second succeeds
+            call_count = 0
+
+            def mock_create(**kwargs):
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1:
+                    error = Exception("Rate limit")
+                    error.status_code = 429
+                    raise error
+                return mock_response
+
+            mock_client.chat.completions.create = mock_create
+
+            model = AzureOpenAIModel(model_name="gpt-4")
+
+            with patch("time.sleep") as mock_sleep:
+                result = model.validate_connection()
+                assert result is True
+                assert call_count == 2
+                assert mock_sleep.call_count == 1
+
+    def test_validate_connection_with_retry_logic_429_error_max_retries_exceeded(
+        self, mock_azure_env
+    ):
+        """Test validate_connection with 429 error that exceeds max retries."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
+
+        with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+
+            # Always fail with 429
+            def mock_create(**kwargs):
+                error = Exception("Rate limit")
+                error.status_code = 429
+                raise error
+
+            mock_client.chat.completions.create = mock_create
+
+            model = AzureOpenAIModel(model_name="gpt-4", max_retries=1)
+
+            with patch("time.sleep") as mock_sleep:
+                result = model.validate_connection()
+                assert result is False  # Should return False when max retries exceeded
+                assert mock_sleep.call_count == 1  # Sleep once between attempts
+
+    def test_validate_connection_with_retry_logic_non_429_error(self, mock_azure_env):
+        """Test validate_connection with non-429 error returns False."""
+        from novaeval.models.azure_openai import AzureOpenAIModel
+
+        with patch("novaeval.models.azure_openai.AzureOpenAI") as mock_client_class:
+            mock_client = Mock()
+            mock_client_class.return_value = mock_client
+
+            # Fail with non-429 error
+            def mock_create(**kwargs):
+                raise ValueError("Not a rate limit error")
+
+            mock_client.chat.completions.create = mock_create
+
+            model = AzureOpenAIModel(model_name="gpt-4")
+
+            result = model.validate_connection()
+            assert result is False
+            assert len(model.errors) == 1
+            assert "Connection test failed" in model.errors[0]

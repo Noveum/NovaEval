@@ -430,3 +430,150 @@ class TestAnthropicModel:
                 # None values should be filtered out
                 assert "temperature" not in call_args[1]
                 assert "stop_sequences" not in call_args[1]
+
+    def test_generate_with_retry_logic_429_error(self):
+        """Test generate with 429 error and retry logic."""
+        with patch("novaeval.models.anthropic.anthropic.Anthropic") as mock_anthropic:
+            mock_client = Mock()
+            mock_anthropic.return_value = mock_client
+
+            # Mock response for successful call
+            mock_response = Mock()
+            mock_response.content = [Mock(text="Test response")]
+            mock_response.usage = Mock(input_tokens=10, output_tokens=5)
+
+            # First call fails with 429, second succeeds
+            call_count = 0
+
+            def mock_create(**kwargs):
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1:
+                    error = Exception("Rate limit")
+                    error.status_code = 429
+                    raise error
+                return mock_response
+
+            mock_client.messages.create = mock_create
+
+            model = AnthropicModel()
+
+            with (
+                patch("time.sleep") as mock_sleep,
+                patch.object(model, "estimate_cost", return_value=0.01),
+            ):
+                result = model.generate("Test prompt")
+                assert result == "Test response"
+                assert call_count == 2
+                assert mock_sleep.call_count == 1
+
+    def test_generate_with_retry_logic_429_error_max_retries_exceeded(self):
+        """Test generate with 429 error that exceeds max retries."""
+        with patch("novaeval.models.anthropic.anthropic.Anthropic") as mock_anthropic:
+            mock_client = Mock()
+            mock_anthropic.return_value = mock_client
+
+            # Always fail with 429
+            def mock_create(**kwargs):
+                error = Exception("Rate limit")
+                error.status_code = 429
+                raise error
+
+            mock_client.messages.create = mock_create
+
+            model = AnthropicModel(max_retries=1)
+
+            with patch("time.sleep") as mock_sleep:
+                result = model.generate("Test prompt")
+                assert (
+                    result == ""
+                )  # Should return empty string when max retries exceeded
+                assert mock_sleep.call_count == 1  # Only 1 sleep call between attempts
+
+    def test_generate_with_retry_logic_non_429_error(self):
+        """Test generate with non-429 error raises immediately."""
+        with patch("novaeval.models.anthropic.anthropic.Anthropic") as mock_anthropic:
+            mock_client = Mock()
+            mock_anthropic.return_value = mock_client
+
+            # Fail with non-429 error
+            def mock_create(**kwargs):
+                raise ValueError("Not a rate limit error")
+
+            mock_client.messages.create = mock_create
+
+            model = AnthropicModel()
+
+            with pytest.raises(ValueError, match="Not a rate limit error"):
+                model.generate("Test prompt")
+
+    def test_validate_connection_with_retry_logic_429_error(self):
+        """Test validate_connection with 429 error and retry logic."""
+        with patch("novaeval.models.anthropic.anthropic.Anthropic") as mock_anthropic:
+            mock_client = Mock()
+            mock_anthropic.return_value = mock_client
+
+            # Mock response for successful call
+            mock_response = Mock()
+            mock_response.content = [Mock(text="Hello")]
+
+            # First call fails with 429, second succeeds
+            call_count = 0
+
+            def mock_create(**kwargs):
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1:
+                    error = Exception("Rate limit")
+                    error.status_code = 429
+                    raise error
+                return mock_response
+
+            mock_client.messages.create = mock_create
+
+            model = AnthropicModel()
+
+            with patch("time.sleep") as mock_sleep:
+                result = model.validate_connection()
+                assert result is True
+                assert call_count == 2
+                assert mock_sleep.call_count == 1
+
+    def test_validate_connection_with_retry_logic_429_error_max_retries_exceeded(self):
+        """Test validate_connection with 429 error that exceeds max retries."""
+        with patch("novaeval.models.anthropic.anthropic.Anthropic") as mock_anthropic:
+            mock_client = Mock()
+            mock_anthropic.return_value = mock_client
+
+            # Always fail with 429
+            def mock_create(**kwargs):
+                error = Exception("Rate limit")
+                error.status_code = 429
+                raise error
+
+            mock_client.messages.create = mock_create
+
+            model = AnthropicModel(max_retries=1)
+
+            with patch("time.sleep") as mock_sleep:
+                result = model.validate_connection()
+                assert result is False  # Should return False when max retries exceeded
+                assert mock_sleep.call_count == 1  # Only 1 sleep call between attempts
+
+    def test_validate_connection_with_retry_logic_non_429_error(self):
+        """Test validate_connection with non-429 error raises immediately."""
+        with patch("novaeval.models.anthropic.anthropic.Anthropic") as mock_anthropic:
+            mock_client = Mock()
+            mock_anthropic.return_value = mock_client
+
+            # Fail with non-429 error
+            def mock_create(**kwargs):
+                raise ValueError("Not a rate limit error")
+
+            mock_client.messages.create = mock_create
+
+            model = AnthropicModel()
+
+            result = model.validate_connection()
+            assert result is False  # Should return False for non-429 errors
+            assert len(model.errors) > 0  # Should have logged the error

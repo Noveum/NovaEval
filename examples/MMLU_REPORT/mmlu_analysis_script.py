@@ -833,7 +833,7 @@ class MMLUAnalyzer:
         if not ollama_data:
             return
 
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+        _fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
         # Performance comparison
         modes = []
