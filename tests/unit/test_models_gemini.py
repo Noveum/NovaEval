@@ -571,13 +571,14 @@ class TestGeminiModel:
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
             mock_client_instance = Mock()
             mock_client.return_value = mock_client_instance
-            
+
             # Mock response for successful call
             mock_response = Mock()
             mock_response.text = "Test response"
-            
+
             # First call fails with 429, second succeeds
             call_count = 0
+
             def mock_generate_content(**kwargs):
                 nonlocal call_count
                 call_count += 1
@@ -586,12 +587,15 @@ class TestGeminiModel:
                     error.code = 429  # Gemini uses 'code' attribute
                     raise error
                 return mock_response
-            
+
             mock_client_instance.models.generate_content = mock_generate_content
-            
+
             model = GeminiModel()
-            
-            with patch("time.sleep") as mock_sleep, patch.object(model, "estimate_cost", return_value=0.01):
+
+            with (
+                patch("time.sleep") as mock_sleep,
+                patch.object(model, "estimate_cost", return_value=0.01),
+            ):
                 result = model.generate("Test prompt")
                 assert result == "Test response"
                 assert call_count == 2
@@ -603,20 +607,22 @@ class TestGeminiModel:
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
             mock_client_instance = Mock()
             mock_client.return_value = mock_client_instance
-            
+
             # Always fail with 429
             def mock_generate_content(**kwargs):
                 error = Exception("Rate limit")
                 error.code = 429  # Gemini uses 'code' attribute
                 raise error
-            
+
             mock_client_instance.models.generate_content = mock_generate_content
-            
+
             model = GeminiModel(max_retries=1)
-            
+
             with patch("time.sleep") as mock_sleep:
                 result = model.generate("Test prompt")
-                assert result == ""  # Should return empty string when max retries exceeded
+                assert (
+                    result == ""
+                )  # Should return empty string when max retries exceeded
                 assert mock_sleep.call_count == 1  # Only 1 sleep call between attempts
 
     @patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"})
@@ -625,15 +631,15 @@ class TestGeminiModel:
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
             mock_client_instance = Mock()
             mock_client.return_value = mock_client_instance
-            
+
             # Fail with non-429 error
             def mock_generate_content(**kwargs):
                 raise ValueError("Not a rate limit error")
-            
+
             mock_client_instance.models.generate_content = mock_generate_content
-            
+
             model = GeminiModel()
-            
+
             with pytest.raises(ValueError, match="Not a rate limit error"):
                 model.generate("Test prompt")
 
@@ -643,13 +649,14 @@ class TestGeminiModel:
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
             mock_client_instance = Mock()
             mock_client.return_value = mock_client_instance
-            
+
             # Mock response for successful call
             mock_response = Mock()
             mock_response.text = "Pong"
-            
+
             # First call fails with 429, second succeeds
             call_count = 0
+
             def mock_generate_content(**kwargs):
                 nonlocal call_count
                 call_count += 1
@@ -658,11 +665,11 @@ class TestGeminiModel:
                     error.code = 429  # Gemini uses 'code' attribute
                     raise error
                 return mock_response
-            
+
             mock_client_instance.models.generate_content = mock_generate_content
-            
+
             model = GeminiModel()
-            
+
             with patch("time.sleep") as mock_sleep:
                 result = model.validate_connection()
                 assert result is True
@@ -675,17 +682,17 @@ class TestGeminiModel:
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
             mock_client_instance = Mock()
             mock_client.return_value = mock_client_instance
-            
+
             # Always fail with 429
             def mock_generate_content(**kwargs):
                 error = Exception("Rate limit")
                 error.code = 429  # Gemini uses 'code' attribute
                 raise error
-            
+
             mock_client_instance.models.generate_content = mock_generate_content
-            
+
             model = GeminiModel(max_retries=1)
-            
+
             with patch("time.sleep") as mock_sleep:
                 result = model.validate_connection()
                 assert result is False  # Should return False when max retries exceeded
@@ -697,15 +704,15 @@ class TestGeminiModel:
         with patch("novaeval.models.gemini.genai.Client") as mock_client:
             mock_client_instance = Mock()
             mock_client.return_value = mock_client_instance
-            
+
             # Fail with non-429 error
             def mock_generate_content(**kwargs):
                 raise ValueError("Not a rate limit error")
-            
+
             mock_client_instance.models.generate_content = mock_generate_content
-            
+
             model = GeminiModel()
-            
+
             result = model.validate_connection()
             assert result is False  # Should return False for non-429 errors
             assert len(model.errors) > 0  # Should have logged the error
@@ -781,4 +788,3 @@ def test_estimate_cost_zero_rates():
             "prompt", "response", input_tokens=100, output_tokens=200
         )
         assert cost == 0.0
-
