@@ -282,7 +282,7 @@ def test_tool_relevancy_scorer_missing_tools(minimal_agent_data):
     result = tool_relevancy_scorer(minimal_agent_data, mock_model)
 
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
     # Check that tools_available is in the missing fields (it can be either tools_available or tool_calls or both)
     missing_fields = result["missing_fields"]
     assert (
@@ -304,7 +304,7 @@ def test_tool_relevancy_scorer_missing_tool_calls():
     result = tool_relevancy_scorer(agent_data, mock_model)
 
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
     assert "tool_calls" in result["missing_fields"]
 
 
@@ -605,7 +605,7 @@ def test_tool_correctness_scorer_missing_expected_tool_call():
 
     # Should return error dict
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
     assert "expected_tool_call" in result["missing_fields"]
 
 
@@ -629,7 +629,7 @@ def test_tool_correctness_scorer_missing_tool_calls():
 
     # Should return error dict
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
     assert "tool_calls" in result["missing_fields"]
 
 
@@ -654,7 +654,7 @@ def test_tool_correctness_scorer_empty_tool_calls():
 
     # Should return error dict
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
     assert "tool_calls" in result["missing_fields"]
 
 
@@ -786,7 +786,7 @@ def test_parameter_correctness_scorer_missing_fields():
 
     # Should return error dict
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
 
 
 @pytest.mark.unit
@@ -841,7 +841,7 @@ def test_role_adherence_scorer_missing_fields():
 
     # Should return error dict
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
 
 
 @pytest.mark.unit
@@ -885,7 +885,7 @@ def test_task_progression_scorer_missing_fields():
 
     # Should return error dict
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
 
 
 @pytest.mark.unit
@@ -933,7 +933,7 @@ def test_context_relevancy_scorer_missing_fields():
 
     # Should return error dict
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
 
 
 @pytest.mark.unit
@@ -1164,7 +1164,7 @@ def test_goal_achievement_scorer_missing_trace():
     result = goal_achievement_scorer(agent_data, mock_model)
 
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
     assert "trace" in result["missing_fields"]
     assert mock_model.call_count == 0
 
@@ -1184,7 +1184,7 @@ def test_goal_achievement_scorer_empty_trace():
     result = goal_achievement_scorer(agent_data, mock_model)
 
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
     assert "trace" in result["missing_fields"]
 
 
@@ -1326,7 +1326,7 @@ def test_conversation_coherence_scorer_missing_trace():
     result = conversation_coherence_scorer(agent_data, mock_model)
 
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
     assert "trace" in result["missing_fields"]
 
 
@@ -1345,7 +1345,7 @@ def test_conversation_coherence_scorer_empty_trace():
     result = conversation_coherence_scorer(agent_data, mock_model)
 
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
     assert "trace" in result["missing_fields"]
 
 
@@ -1492,7 +1492,7 @@ def test_parameter_correctness_scorer_missing_tool_call_results():
     result = parameter_correctness_scorer(agent_data, mock_model)
 
     assert isinstance(result, dict)
-    assert result["error"] == "Missing required fields"
+    assert "Missing required fields:" in result["error"]
     assert "tool_call_results" in result["missing_fields"]
 
 

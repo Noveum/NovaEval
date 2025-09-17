@@ -320,7 +320,7 @@ def tool_relevancy_scorer(
             field for field, available in required_fields.items() if not available
         ]
         return {
-            "error": "Missing required fields",
+            "error": f"Missing required fields: {missing_fields}, out of all required fields: {list(required_fields.keys())}",
             "required_fields": required_fields,
             "missing_fields": missing_fields,
         }
@@ -404,7 +404,7 @@ def tool_correctness_scorer(
             field for field, available in required_fields.items() if not available
         ]
         return {
-            "error": "Missing required fields",
+            "error": f"Missing required fields: {missing_fields}, out of all required fields: {list(required_fields.keys())}",
             "required_fields": required_fields,
             "missing_fields": missing_fields,
         }
@@ -491,7 +491,7 @@ def parameter_correctness_scorer(
             field for field, available in required_fields.items() if not available
         ]
         return {
-            "error": "Missing required fields",
+            "error": f"Missing required fields: {missing_fields}, out of all required fields: {list(required_fields.keys())}",
             "required_fields": required_fields,
             "missing_fields": missing_fields,
         }
@@ -630,7 +630,7 @@ def task_progression_scorer(
             field for field, available in required_fields.items() if not available
         ]
         return {
-            "error": "Missing required fields",
+            "error": f"Missing required fields: {missing_fields}, out of all required fields: {list(required_fields.keys())}",
             "required_fields": required_fields,
             "missing_fields": missing_fields,
         }
@@ -680,7 +680,7 @@ def context_relevancy_scorer(
             field for field, available in required_fields.items() if not available
         ]
         return {
-            "error": "Missing required fields",
+            "error": f"Missing required fields: {missing_fields}, out of all required fields: {list(required_fields.keys())}",
             "required_fields": required_fields,
             "missing_fields": missing_fields,
         }
@@ -729,7 +729,7 @@ def role_adherence_scorer(
             field for field, available in required_fields.items() if not available
         ]
         return {
-            "error": "Missing required fields",
+            "error": f"Missing required fields: {missing_fields}, out of all required fields: {list(required_fields.keys())}",
             "required_fields": required_fields,
             "missing_fields": missing_fields,
         }
@@ -789,7 +789,7 @@ def goal_achievement_scorer(
             field for field, available in required_fields.items() if not available
         ]
         return {
-            "error": "Missing required fields",
+            "error": f"Missing required fields: {missing_fields}, out of all required fields: {list(required_fields.keys())}",
             "required_fields": required_fields,
             "missing_fields": missing_fields,
         }
@@ -908,7 +908,7 @@ def conversation_coherence_scorer(
             field for field, available in required_fields.items() if not available
         ]
         return {
-            "error": "Missing required fields",
+            "error": f"Missing required fields: {missing_fields}, out of all required fields: {list(required_fields.keys())}",
             "required_fields": required_fields,
             "missing_fields": missing_fields,
         }
