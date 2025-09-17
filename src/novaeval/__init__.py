@@ -6,7 +6,7 @@ providers, datasets, and metrics. It supports both standalone usage and integrat
 with the Noveum.ai platform for enhanced analytics and reporting.
 """
 
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 __title__ = "novaeval"
 __author__ = "Noveum Team"
 __license__ = "Apache 2.0"
