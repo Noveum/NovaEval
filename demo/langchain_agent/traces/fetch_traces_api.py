@@ -43,16 +43,16 @@ def clean_and_create_traces_dir():
     print(f"Created traces directory: {traces_dir}")
     return traces_dir
 
-def fetch_traces_batch(limit: int, offset: int = 0) -> Dict[str, Any]:
+def fetch_traces_batch(size: int, from_offset: int = 0) -> Dict[str, Any]:
     """Fetch a batch of traces from the API"""
     traces_url = 'https://api.noveum.ai/api/v1/traces'
     params = {
         'project': project,
-        'limit': limit,
-        'offset': offset
+        'size': size,
+        'from': from_offset
     }
     
-    print(f"Fetching traces: limit={limit}, offset={offset}")
+    print(f"Fetching traces: size={size}, from={from_offset}")
     
     try:
         response = requests.get(traces_url, headers=headers, params=params)
@@ -107,15 +107,15 @@ def main():
     batch_number = 1
     
     for batch in range(num_batches):
-        # Calculate limit and offset for this batch
+        # Calculate size and from_offset for this batch
         remaining_traces = args.count - total_fetched
-        current_limit = min(max_per_batch, remaining_traces)
-        current_offset = batch * max_per_batch
+        current_size = min(max_per_batch, remaining_traces)
+        current_from = batch * max_per_batch
         
         print(f"\n--- Batch {batch_number}/{num_batches} ---")
         
         # Fetch this batch
-        batch_data = fetch_traces_batch(current_limit, current_offset)
+        batch_data = fetch_traces_batch(current_size, current_from)
         
         if batch_data is None:
             print(f"Failed to fetch batch {batch_number}")
