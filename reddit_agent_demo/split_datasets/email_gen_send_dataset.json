@@ -1,0 +1,992 @@
+[
+  {
+    "span_id": "416f37aa-f0a9-47e1-839e-18bc1d00e67c",
+    "trace_id": "86faa9ea-a67c-4b68-802d-9ae265597bb8",
+    "parent_span_id": "1ba59467-6dd0-4d9f-aa4e-cc61ba3f9931",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 09:20:51.721000000",
+    "end_time": "2025-09-22 09:20:54.060000000",
+    "duration_ms": 2338.5159999999996,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_1.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2523,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T09:20:54.059Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_1.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"techsupport\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T09:20:54.059Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T09:20:54.059Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_1.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "techsupport"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T09:20:54.059Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "86faa9ea-a67c-4b68-802d-9ae265597bb8",
+    "trace_name": "auto_trace_reddit_agent_run_1",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 09:20:15.548000000",
+    "trace_end_time": "2025-09-22 09:20:54.061000000",
+    "trace_duration_ms": 38512.563,
+    "span_count": 7,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 09:20:55.114000000",
+    "updated_at": "2025-09-22 09:20:55.114000000"
+  },
+  {
+    "span_id": "d5dd4ed2-5db7-4a6e-ae36-848b339f086f",
+    "trace_id": "dc147dc0-5d56-4a1d-b23b-8ed4b447638d",
+    "parent_span_id": "23a12697-d826-4c21-b628-866147d63c01",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 09:15:47.194000000",
+    "end_time": "2025-09-22 09:15:49.829000000",
+    "duration_ms": 2634.844,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_2.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2536,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T09:15:49.829Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_2.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"HytaleInfo\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T09:15:49.829Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T09:15:49.829Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_2.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "HytaleInfo"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T09:15:49.829Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "dc147dc0-5d56-4a1d-b23b-8ed4b447638d",
+    "trace_name": "auto_trace_reddit_agent_run_2",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 09:13:27.823000000",
+    "trace_end_time": "2025-09-22 09:15:49.851000000",
+    "trace_duration_ms": 142028.11,
+    "span_count": 19,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 09:15:50.997000000",
+    "updated_at": "2025-09-22 09:15:50.997000000"
+  },
+  {
+    "span_id": "4bb13002-db5e-4afe-a745-86fd902f6c51",
+    "trace_id": "cd6f7595-bbae-43ee-9182-9a2265daaa21",
+    "parent_span_id": "1c6ad2d8-279e-47df-ac7e-b9b67352f6b1",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 09:13:24.523000000",
+    "end_time": "2025-09-22 09:13:27.799000000",
+    "duration_ms": 3276.4120000000003,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_1.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2511,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T09:13:27.799Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_1.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"Calibre\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T09:13:27.799Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T09:13:27.799Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_1.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "Calibre"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T09:13:27.799Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "cd6f7595-bbae-43ee-9182-9a2265daaa21",
+    "trace_name": "auto_trace_reddit_agent_run_1",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 09:12:16.326000000",
+    "trace_end_time": "2025-09-22 09:13:27.821000000",
+    "trace_duration_ms": 71495.891,
+    "span_count": 11,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 09:13:29.243000000",
+    "updated_at": "2025-09-22 09:13:29.243000000"
+  },
+  {
+    "span_id": "0063a91b-6f76-4040-a567-1fa81950508a",
+    "trace_id": "095f60a0-12fa-4f92-a8f7-477033e562d9",
+    "parent_span_id": "6b154a84-b239-4778-9536-0d0f8188cf71",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 09:03:04.587000000",
+    "end_time": "2025-09-22 09:03:07.045000000",
+    "duration_ms": 2457.2470000000003,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_2.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2600,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T09:03:07.045Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_2.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"RedditEng\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T09:03:07.045Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T09:03:07.045Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_2.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "RedditEng"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T09:03:07.045Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "095f60a0-12fa-4f92-a8f7-477033e562d9",
+    "trace_name": "auto_trace_reddit_agent_run_2",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 09:01:35.502000000",
+    "trace_end_time": "2025-09-22 09:03:07.047000000",
+    "trace_duration_ms": 91544.48999999999,
+    "span_count": 15,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 09:03:08.169000000",
+    "updated_at": "2025-09-22 09:03:08.169000000"
+  },
+  {
+    "span_id": "3bf4b5f5-a0b6-483c-a85f-ec72866501fd",
+    "trace_id": "5704951d-7675-4cca-96b0-1e20eb6a63fe",
+    "parent_span_id": "26705795-e9d7-4406-b046-14894f89e2ae",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 09:01:32.632000000",
+    "end_time": "2025-09-22 09:01:35.499000000",
+    "duration_ms": 2866.715,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_1.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 3,
+      "email_generation.subreddits_count": 3,
+      "email_generation.html_size_bytes": 4114,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T09:01:35.499Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_1.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 3, \"subreddits\": [\"Coffee\", \"austinfood\", \"chicagofood\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T09:01:35.499Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T09:01:35.499Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_1.html",
+          "api_title": "Unnamed API",
+          "comments_included": 3,
+          "subreddits": [
+            "Coffee",
+            "austinfood",
+            "chicagofood"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T09:01:35.499Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "5704951d-7675-4cca-96b0-1e20eb6a63fe",
+    "trace_name": "auto_trace_reddit_agent_run_1",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 08:58:31.974000000",
+    "trace_end_time": "2025-09-22 09:01:35.501000000",
+    "trace_duration_ms": 183526.45,
+    "span_count": 19,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 09:01:37.738000000",
+    "updated_at": "2025-09-22 09:01:37.738000000"
+  },
+  {
+    "span_id": "66807bb3-1fe6-4c15-8744-98c79b44f8ad",
+    "trace_id": "e714a357-65f4-4b31-9e60-9e049c83a197",
+    "parent_span_id": "dfd50021-f6e9-4586-97bf-89e51737a4b7",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 08:58:22.513000000",
+    "end_time": "2025-09-22 08:58:25.651000000",
+    "duration_ms": 3137.413,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_2.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2512,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T08:58:25.650Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_2.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"podcasting\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T08:58:25.651Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T08:58:25.650Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_2.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "podcasting"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T08:58:25.651Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "e714a357-65f4-4b31-9e60-9e049c83a197",
+    "trace_name": "auto_trace_reddit_agent_run_2",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 08:56:28.713000000",
+    "trace_end_time": "2025-09-22 08:58:25.652000000",
+    "trace_duration_ms": 116939.52799999999,
+    "span_count": 19,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 08:58:26.809000000",
+    "updated_at": "2025-09-22 08:58:26.809000000"
+  },
+  {
+    "span_id": "d8426ab7-f633-4cee-89d8-56883dc481da",
+    "trace_id": "27c00e33-0b9b-4044-b3ea-1d768ff83be7",
+    "parent_span_id": "f56a76f2-a93c-4098-a94e-de6b5181c571",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 08:52:55.724000000",
+    "end_time": "2025-09-22 08:52:57.260000000",
+    "duration_ms": 1536.202,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_1.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2559,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T08:52:57.260Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_1.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"dataisbeautiful\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T08:52:57.260Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T08:52:57.260Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_1.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "dataisbeautiful"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T08:52:57.260Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "27c00e33-0b9b-4044-b3ea-1d768ff83be7",
+    "trace_name": "auto_trace_reddit_agent_run_1",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 08:51:59.615000000",
+    "trace_end_time": "2025-09-22 08:52:57.262000000",
+    "trace_duration_ms": 57647.103,
+    "span_count": 8,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 08:52:58.577000000",
+    "updated_at": "2025-09-22 08:52:58.577000000"
+  },
+  {
+    "span_id": "6f32035f-23fb-448f-94fb-c376412263c7",
+    "trace_id": "40483f5a-de79-4b68-999b-2d008445fb23",
+    "parent_span_id": "79efff9f-dee9-459f-be42-ea82ef2a40a3",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 08:50:48.242000000",
+    "end_time": "2025-09-22 08:50:50.494000000",
+    "duration_ms": 2252.5080000000003,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_2.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2524,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T08:50:50.494Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_2.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"darknetdiaries\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T08:50:50.494Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T08:50:50.494Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_2.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "darknetdiaries"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T08:50:50.494Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "40483f5a-de79-4b68-999b-2d008445fb23",
+    "trace_name": "auto_trace_reddit_agent_run_2",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 08:48:48.444000000",
+    "trace_end_time": "2025-09-22 08:50:50.496000000",
+    "trace_duration_ms": 122052.239,
+    "span_count": 16,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 08:50:51.595000000",
+    "updated_at": "2025-09-22 08:50:51.595000000"
+  },
+  {
+    "span_id": "a386dfaf-96cf-4547-8c68-d6111b74586f",
+    "trace_id": "7a9a0238-6d0d-4b02-ac0b-c2a6bca733b7",
+    "parent_span_id": "2f87e3af-b695-423d-bf41-ceb60c407daf",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 08:45:19.051000000",
+    "end_time": "2025-09-22 08:45:46.798000000",
+    "duration_ms": 27746.485,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_1.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2506,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T08:45:46.798Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_1.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"HTML\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T08:45:46.798Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T08:45:46.798Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_1.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "HTML"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T08:45:46.798Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "7a9a0238-6d0d-4b02-ac0b-c2a6bca733b7",
+    "trace_name": "auto_trace_reddit_agent_run_1",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 08:43:54.138000000",
+    "trace_end_time": "2025-09-22 08:45:46.799000000",
+    "trace_duration_ms": 112661.666,
+    "span_count": 11,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 08:45:49.656000000",
+    "updated_at": "2025-09-22 08:45:49.656000000"
+  },
+  {
+    "span_id": "a883d84b-789c-4402-a227-682ec2838ecf",
+    "trace_id": "1cbfc0dc-9d80-4400-8b16-7ef038561b93",
+    "parent_span_id": "5c26521a-e92b-457a-949a-cf0496d7f76e",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 08:43:46.687000000",
+    "end_time": "2025-09-22 08:43:48.532000000",
+    "duration_ms": 1844.536,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_2.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2586,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T08:43:48.532Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_2.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"DigitalMarketing\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T08:43:48.532Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T08:43:48.532Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_2.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "DigitalMarketing"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T08:43:48.532Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "1cbfc0dc-9d80-4400-8b16-7ef038561b93",
+    "trace_name": "auto_trace_reddit_agent_run_2",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 08:42:31.525000000",
+    "trace_end_time": "2025-09-22 08:43:48.533000000",
+    "trace_duration_ms": 77008.544,
+    "span_count": 11,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 08:43:49.286000000",
+    "updated_at": "2025-09-22 08:43:49.286000000"
+  },
+  {
+    "span_id": "63c9887c-999f-4d93-83a2-eccfbd77a4e8",
+    "trace_id": "79c2e052-6fac-47a6-b7d9-2e12b216c27c",
+    "parent_span_id": "1ba23205-acbc-42de-9363-1bfeb301eafe",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 08:40:10.002000000",
+    "end_time": "2025-09-22 08:40:12.255000000",
+    "duration_ms": 2252.461,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_1.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2492,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T08:40:12.254Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_1.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"singularity\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T08:40:12.255Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T08:40:12.254Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_1.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "singularity"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T08:40:12.255Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "79c2e052-6fac-47a6-b7d9-2e12b216c27c",
+    "trace_name": "auto_trace_reddit_agent_run_1",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 08:38:16.587000000",
+    "trace_end_time": "2025-09-22 08:40:12.256000000",
+    "trace_duration_ms": 115669.706,
+    "span_count": 19,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 08:40:14.285000000",
+    "updated_at": "2025-09-22 08:40:14.285000000"
+  },
+  {
+    "span_id": "2e0bb0e0-5974-4e91-9dfb-f5951026b5d7",
+    "trace_id": "717950e4-3f36-4829-9881-1fd70a33e166",
+    "parent_span_id": "7301af05-d9b9-46e7-9bbf-de2fa131869d",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 08:38:08.243000000",
+    "end_time": "2025-09-22 08:38:10.804000000",
+    "duration_ms": 2560.789,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_2.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2562,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T08:38:10.804Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_2.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"RealEstate\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T08:38:10.804Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T08:38:10.804Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_2.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "RealEstate"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T08:38:10.804Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "717950e4-3f36-4829-9881-1fd70a33e166",
+    "trace_name": "auto_trace_reddit_agent_run_2",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 08:37:01.068000000",
+    "trace_end_time": "2025-09-22 08:38:10.805000000",
+    "trace_duration_ms": 69736.766,
+    "span_count": 11,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 08:38:11.616000000",
+    "updated_at": "2025-09-22 08:38:11.616000000"
+  },
+  {
+    "span_id": "8b5d008b-8972-4e79-aa47-956e07b32e2a",
+    "trace_id": "076b4cfa-4eaf-4418-b253-c5f6a1e0c676",
+    "parent_span_id": "a3c66f9f-ddc6-4c0d-96d3-cb16015e596d",
+    "name": "email_generation_and_sending",
+    "start_time": "2025-09-22 08:36:57.893000000",
+    "end_time": "2025-09-22 08:37:01.066000000",
+    "duration_ms": 3172.748,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "email_generation.output_path": "static/reddit_output_run_1.html",
+      "email_generation.api_title": "Unnamed API",
+      "email_generation.comments_count": 1,
+      "email_generation.subreddits_count": 1,
+      "email_generation.html_size_bytes": 2633,
+      "tool_response": "[{\"name\": \"email_generated\", \"timestamp\": \"2025-09-22T08:37:01.066Z\", \"attributes\": {\"output_file\": \"static/reddit_output_run_1.html\", \"api_title\": \"Unnamed API\", \"comments_included\": 1, \"subreddits\": [\"learnpython\"]}}, {\"name\": \"email_sent\", \"timestamp\": \"2025-09-22T08:37:01.066Z\", \"attributes\": {\"recipients\": [\"hello@magicapi.com\", \"aditi@noveum.ai\"], \"subject\": \"\\ud83e\\udde0 Reddit Agent API Report\", \"email_service\": \"sendgrid\"}}]"
+    },
+    "events": [
+      {
+        "name": "email_generated",
+        "timestamp": "2025-09-22T08:37:01.066Z",
+        "attributes": {
+          "output_file": "static/reddit_output_run_1.html",
+          "api_title": "Unnamed API",
+          "comments_included": 1,
+          "subreddits": [
+            "learnpython"
+          ]
+        }
+      },
+      {
+        "name": "email_sent",
+        "timestamp": "2025-09-22T08:37:01.066Z",
+        "attributes": {
+          "recipients": [
+            "hello@magicapi.com",
+            "aditi@noveum.ai"
+          ],
+          "subject": "🧠 Reddit Agent API Report",
+          "email_service": "sendgrid"
+        }
+      }
+    ],
+    "links": [],
+    "trace_trace_id": "076b4cfa-4eaf-4418-b253-c5f6a1e0c676",
+    "trace_name": "auto_trace_reddit_agent_run_1",
+    "project": "reddit-agent-system",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-09-22 08:35:51.797000000",
+    "trace_end_time": "2025-09-22 08:37:01.067000000",
+    "trace_duration_ms": 69270.73300000001,
+    "span_count": 11,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "reddit-agent-system",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-09-22 08:37:02.785000000",
+    "updated_at": "2025-09-22 08:37:02.785000000"
+  }
+]
