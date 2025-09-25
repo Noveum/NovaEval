@@ -88,6 +88,7 @@ def upload_dataset_items(items: List[Dict[str, Any]], version: str, item_type: s
     transformed_items = []
     for item in items:
         # Create a copy of the item to avoid modifying the original
+        item['item_type'] = item_type
         item_copy = item.copy()
         
         # Start with base structure
