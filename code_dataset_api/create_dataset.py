@@ -87,9 +87,13 @@ def create_dataset(dataset_type: str, description: str = "", visibility: str = "
         return None
 
 def main():
+    # Define valid dataset types
+    valid_dataset_types = ['agent', 'conversational', 'g_eval', 'custom']
+    
     parser = argparse.ArgumentParser(description='Create a new dataset in Noveum API')
-    parser.add_argument('dataset_type', type=str,
-                       help='Type of the dataset (e.g., custom, evaluation, etc.)')
+    parser.add_argument('--dataset-type', type=str, default='agent',
+                       choices=valid_dataset_types,
+                       help=f'Type of the dataset. Must be one of: {", ".join(valid_dataset_types)} (default: agent)')
     parser.add_argument('--description', type=str, default="",
                        help='Description of the dataset (default: empty string)')
     parser.add_argument('--visibility', type=str, default="org",
