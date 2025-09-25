@@ -21,6 +21,7 @@ dataset_json = 'processed_agent_dataset.json'
 api_key = os.getenv('NOVEUM_API_KEY')
 org_slug = os.getenv('NOVEUM_ORG_SLUG')
 dataset_slug = os.getenv('NOVEUM_DATASET_SLUG')
+beta_env = os.getenv('BETA', 'false').lower() == 'true'
 
 def validate_environment():
     """Validate that all required environment variables are set"""
@@ -135,8 +136,11 @@ def upload_dataset_items(items: List[Dict[str, Any]], version: str, item_type: s
         transformed_item["content"] = item
         transformed_items.append(transformed_item)
     
-    # Construct API URL
-    api_url = f"https://noveum.ai/api/v1/organizations/{org_slug}/datasets/{dataset_slug}/items"
+    # Construct API URL based on BETA environment variable
+    if beta_env:
+        api_url = f"https://beta.noveum.ai/api/v1/datasets/{dataset_slug}/items?organizationSlug={org_slug}"
+    else:
+        api_url = f"https://noveum.ai/api/v1/organizations/{org_slug}/datasets/{dataset_slug}/items"
     
     # Prepare headers
     headers = {

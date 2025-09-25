@@ -18,6 +18,7 @@ load_dotenv()
 api_key = os.getenv('NOVEUM_API_KEY')
 org_slug = os.getenv('NOVEUM_ORG_SLUG')
 dataset_slug = os.getenv('NOVEUM_DATASET_SLUG')
+beta_env = os.getenv('BETA', 'false').lower() == 'true'
 
 def validate_environment():
     """Validate that all required environment variables are set"""
@@ -39,13 +40,17 @@ def validate_environment():
 def create_dataset_version(version: str) -> Optional[Dict[str, Any]]:
     """Create a new dataset version in Noveum API"""
     
-    # Construct API URL
-    api_url = f"https://noveum.ai/api/v1/organizations/{org_slug}/datasets/{dataset_slug}/versions"
+    # Construct API URL based on BETA environment variable
+    if beta_env:
+        api_url = f"https://beta.noveum.ai/api/v1/datasets/{dataset_slug}/versions?organizationSlug={org_slug}"
+    else:
+        api_url = f"https://noveum.ai/api/v1/organizations/{org_slug}/datasets/{dataset_slug}/versions"
     
     # Prepare headers
     headers = {
         'Content-Type': 'application/json',
-        'Authorization': f'Bearer {api_key}'
+        'Authorization': f'Bearer {api_key}',
+        'Cookie': f'apiKeyCookie={api_key}'
     }
     
     # Prepare request data

@@ -18,6 +18,7 @@ load_dotenv()
 api_key = os.getenv('NOVEUM_API_KEY')
 org_slug = os.getenv('NOVEUM_ORG_SLUG')
 dataset_slug = os.getenv('NOVEUM_DATASET_SLUG')
+beta_env = os.getenv('BETA', 'false').lower() == 'true'
 
 def validate_environment():
     """Validate that all required environment variables are set"""
@@ -39,12 +40,16 @@ def validate_environment():
 def list_dataset_items(version: str = "", limit: int = 1, offset: int = 0, item_type: str = "any") -> Optional[Dict[str, Any]]:
     """List dataset items from Noveum API"""
     
-    # Construct API URL
-    api_url = f"https://noveum.ai/api/v1/organizations/{org_slug}/datasets/{dataset_slug}/items"
+    # Construct API URL based on BETA environment variable
+    if beta_env:
+        api_url = f"https://beta.noveum.ai/api/v1/datasets/{dataset_slug}/items"
+    else:
+        api_url = f"https://noveum.ai/api/v1/organizations/{org_slug}/datasets/{dataset_slug}/items"
     
     # Prepare headers
     headers = {
-        'Authorization': f'Bearer {api_key}'
+        'Authorization': f'Bearer {api_key}',
+        'Cookie': f'apiKeyCookie={api_key}'
     }
     
     # Prepare query parameters
@@ -54,6 +59,10 @@ def list_dataset_items(version: str = "", limit: int = 1, offset: int = 0, item_
         'offset': offset,
         'item_type': item_type
     }
+    
+    # Add organizationSlug parameter for beta environment
+    if beta_env:
+        params['organizationSlug'] = org_slug
     
     print(f"Fetching dataset items from: {api_url}")
     print(f"Organization: {org_slug}")
