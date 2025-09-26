@@ -128,12 +128,12 @@ TASK_PROGRESSION_PROMPT = """# Task Progression Evaluation
 Evaluate whether the agent has made meaningful progress on the assigned task.
 
 ## Criteria
-Rate the task progression on a scale of 1-5, where:
-- 1: No progress made, response is off-topic or unhelpful
-- 2: Minimal progress, some understanding shown but no concrete advancement
-- 3: Moderate progress, clear advancement but incomplete or inefficient
-- 4: Good progress, significant advancement with minor gaps
-- 5: Excellent progress, substantial advancement toward task completion
+  Rate the task progression on a scale of 1-10, where:
+- 1-2: No progress made, response is off-topic or unhelpful
+- 3-4: Minimal progress, some understanding shown but no concrete advancement
+- 5-6: Moderate progress, clear advancement but incomplete or inefficient
+- 7-8: Good progress, significant advancement with minor gaps
+- 9-10: Excellent progress, substantial advancement toward task completion
 
 ## Agent Information
 **Agent Role:** {agent_role}
@@ -151,11 +151,11 @@ Evaluate:
 
 The reasoning should be of 50-60 words. It should not be longer than 75 words.
 
-Provide a single progression score from 1-5 along with your reasoning. IMPORTANT: Use decimal scores (e.g., 3.5, 4.2, 4.8) rather than round numbers (e.g., 3.0, 4.0, 5.0) to provide more nuanced evaluation.
+Provide a single progression score from 1-10 along with your reasoning. IMPORTANT: Use decimal scores (e.g., 7.5, 8.2, 9.1) rather than round numbers (e.g., 7.0, 8.0, 9.0) to provide more nuanced evaluation.
 
 Format your response as a JSON object:
 {{
-  "score": 4.2,
+  "score": 8.2,
   "reasoning": "The agent demonstrates good understanding of its role and has made significant progress toward completing the assigned task. The approach is logical and efficient, with only minor gaps in execution that prevent a perfect score."
 }}
 
