@@ -1,8 +1,8 @@
 {
   "success": true,
   "dataset": {
-    "id": "70f52b46-ddab-4282-991c-66be0a39bc29",
-    "slug": "demo-fail-15",
+    "id": "376bbddd-579b-4fe5-9250-888aadbd0239",
+    "slug": "judgellm-hf-test",
     "organization_slug": "magic-api"
   }
 }

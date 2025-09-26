@@ -18,6 +18,7 @@ load_dotenv()
 api_key = os.getenv('NOVEUM_API_KEY')
 org_slug = os.getenv('NOVEUM_ORG_SLUG')
 dataset_slug = os.getenv('NOVEUM_DATASET_SLUG')
+latest_version = os.getenv('LATEST_VERSION')
 beta_env = os.getenv('BETA', 'false').lower() == 'true'
 
 def validate_environment():
@@ -25,7 +26,8 @@ def validate_environment():
     required_vars = {
         'NOVEUM_API_KEY': api_key,
         'NOVEUM_ORG_SLUG': org_slug,
-        'NOVEUM_DATASET_SLUG': dataset_slug
+        'NOVEUM_DATASET_SLUG': dataset_slug,
+        'LATEST_VERSION': latest_version
     }
     
     missing_vars = [var for var, value in required_vars.items() if not value]
@@ -42,7 +44,7 @@ def list_dataset_items(version: str = "", limit: int = 1, offset: int = 0, item_
     
     # Construct API URL based on BETA environment variable
     if beta_env:
-        api_url = f"https://beta.noveum.ai/api/v1/datasets/{dataset_slug}/items"
+        api_url = f"https://noveum.ai/api/v1/datasets/{dataset_slug}/items"
     else:
         api_url = f"https://noveum.ai/api/v1/organizations/{org_slug}/datasets/{dataset_slug}/items"
     
@@ -88,8 +90,6 @@ def list_dataset_items(version: str = "", limit: int = 1, offset: int = 0, item_
 
 def main():
     parser = argparse.ArgumentParser(description='List dataset items from Noveum API')
-    parser.add_argument('--version', type=str, default="",
-                       help='Version to filter by (default: empty string for all versions)')
     parser.add_argument('--limit', type=int, default=50,
                        help='Number of items to fetch (default: 50)')
     parser.add_argument('--offset', type=int, default=0,
@@ -109,7 +109,7 @@ def main():
     
     # Fetch dataset items
     data = list_dataset_items(
-        version=args.version,
+        version=latest_version,
         limit=args.limit,
         offset=args.offset,
         item_type=args.item_type

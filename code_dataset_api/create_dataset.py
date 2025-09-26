@@ -44,7 +44,7 @@ def create_dataset(dataset_type: str, description: str = "", visibility: str = "
     
     # Construct API URL based on BETA environment variable
     if beta_env:
-        api_url = f"https://beta.noveum.ai/api/v1/datasets"
+        api_url = f"https://noveum.ai/api/v1/datasets"
     else:
         api_url = f"https://noveum.ai/api/v1/organizations/{org_slug}/datasets"
     
@@ -92,7 +92,7 @@ def create_dataset(dataset_type: str, description: str = "", visibility: str = "
 
 def main():
     # Define valid dataset types
-    valid_dataset_types = ['agent', 'conversational', 'g_eval', 'custom']
+    valid_dataset_types = ['agent', 'conversational', 'g-eval', 'custom']
     
     parser = argparse.ArgumentParser(description='Create a new dataset in Noveum API')
     parser.add_argument('--dataset-type', type=str, default='agent',

@@ -21,6 +21,7 @@ dataset_json = 'processed_agent_dataset.json'
 api_key = os.getenv('NOVEUM_API_KEY')
 org_slug = os.getenv('NOVEUM_ORG_SLUG')
 dataset_slug = os.getenv('NOVEUM_DATASET_SLUG')
+latest_version = os.getenv('LATEST_VERSION')
 beta_env = os.getenv('BETA', 'false').lower() == 'true'
 
 def validate_environment():
@@ -28,7 +29,8 @@ def validate_environment():
     required_vars = {
         'NOVEUM_API_KEY': api_key,
         'NOVEUM_ORG_SLUG': org_slug,
-        'NOVEUM_DATASET_SLUG': dataset_slug
+        'NOVEUM_DATASET_SLUG': dataset_slug,
+        'LATEST_VERSION': latest_version
     }
     
     missing_vars = [var for var, value in required_vars.items() if not value]
@@ -138,7 +140,7 @@ def upload_dataset_items(items: List[Dict[str, Any]], version: str, item_type: s
     
     # Construct API URL based on BETA environment variable
     if beta_env:
-        api_url = f"https://beta.noveum.ai/api/v1/datasets/{dataset_slug}/items?organizationSlug={org_slug}"
+        api_url = f"https://noveum.ai/api/v1/datasets/{dataset_slug}/items?organizationSlug={org_slug}"
     else:
         api_url = f"https://noveum.ai/api/v1/organizations/{org_slug}/datasets/{dataset_slug}/items"
     
@@ -184,15 +186,11 @@ def upload_dataset_items(items: List[Dict[str, Any]], version: str, item_type: s
         return False
 
 def main():
-    # Generate default version as simple semantic version
-    default_version = "1.0.0"
     default_item_type = "conversation"
     
     parser = argparse.ArgumentParser(description='Upload dataset items to Noveum API')
     parser.add_argument('--dataset-json', type=str, default=dataset_json,
                        help=f'Path to JSON file containing dataset items (default: {dataset_json})')
-    parser.add_argument('--version', type=str, default=default_version,
-                       help=f'Version string for the dataset (default: {default_version})')
     parser.add_argument('--item-type', type=str, default=default_item_type,
                        help=f'Item type for the dataset items (default: {default_item_type})')
     
@@ -208,7 +206,7 @@ def main():
         return 1
     
     # Upload items
-    success = upload_dataset_items(items, args.version, args.item_type)
+    success = upload_dataset_items(items, latest_version, args.item_type)
     return 0 if success else 1
 
 if __name__ == "__main__":

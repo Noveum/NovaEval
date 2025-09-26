@@ -18,6 +18,7 @@ load_dotenv()
 api_key = os.getenv('NOVEUM_API_KEY')
 org_slug = os.getenv('NOVEUM_ORG_SLUG')
 dataset_slug = os.getenv('NOVEUM_DATASET_SLUG')
+latest_version = os.getenv('LATEST_VERSION')
 beta_env = os.getenv('BETA', 'false').lower() == 'true'
 
 def validate_environment():
@@ -25,7 +26,8 @@ def validate_environment():
     required_vars = {
         'NOVEUM_API_KEY': api_key,
         'NOVEUM_ORG_SLUG': org_slug,
-        'NOVEUM_DATASET_SLUG': dataset_slug
+        'NOVEUM_DATASET_SLUG': dataset_slug,
+        'LATEST_VERSION': latest_version
     }
     
     missing_vars = [var for var, value in required_vars.items() if not value]
@@ -42,7 +44,7 @@ def publish_dataset_version(version: str) -> Optional[Dict[str, Any]]:
     
     # Construct API URL based on BETA environment variable
     if beta_env:
-        api_url = f"https://beta.noveum.ai/api/v1/datasets/{dataset_slug}/versions/{version}/publish?organizationSlug={org_slug}"
+        api_url = f"https://noveum.ai/api/v1/datasets/{dataset_slug}/versions/{version}/publish?organizationSlug={org_slug}"
     else:
         api_url = f"https://noveum.ai/api/v1/organizations/{org_slug}/datasets/{dataset_slug}/versions/{version}/publish"
     
@@ -76,8 +78,6 @@ def publish_dataset_version(version: str) -> Optional[Dict[str, Any]]:
 
 def main():
     parser = argparse.ArgumentParser(description='Publish a dataset version in Noveum API')
-    parser.add_argument('version', type=str,
-                       help='Version string to publish (e.g., 1.0.0, v2.1, etc.)')
     parser.add_argument('--pretty', action='store_true',
                        help='Pretty print the JSON response')
     parser.add_argument('--output', type=str, default="dataset_publish_response.json",
@@ -90,7 +90,7 @@ def main():
         return 1
     
     # Publish dataset version
-    data = publish_dataset_version(version=args.version)
+    data = publish_dataset_version(version=latest_version)
     
     if data is None:
         return 1
