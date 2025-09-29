@@ -41,9 +41,9 @@ def add_agent_comment_generation_fields(span: Dict[str, Any]) -> Dict[str, Any]:
         post_title = event_attrs.get('post_title', '')
         
         if subreddit:
-            agent_task_parts.append(f"({subreddit})")
+            agent_task_parts.append(f"subreddit is - {subreddit}")
         if post_title:
-            agent_task_parts.append(f"({post_title})")
+            agent_task_parts.append(f"post title is - {post_title}")
     
     agent_task = '\n'.join(agent_task_parts)
     attributes['agent_task'] = agent_task
