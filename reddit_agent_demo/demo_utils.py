@@ -4,6 +4,7 @@ import re
 import logging
 from typing import Any, Dict, List, Optional
 import pandas as pd
+from pathlib import Path
 
 # NovaEval imports
 from novaeval.agents.agent_data import AgentData, ToolSchema, ToolCall, ToolResult
@@ -661,6 +662,11 @@ def export_processed_dataset(dataset: AgentDataset, file_name: str = "processed_
     
     success = True
     
+    # Create directory if it doesn't exist
+    output_dir = Path(file_name).parent
+    print(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     try:
         # Export to JSON
         json_file = f'{file_name}.json'
@@ -912,7 +918,7 @@ def run_complete_agent_evaluation(selected_file: str,
         print("\n📋 Step 7: Exporting Dataset")
         export_success = export_processed_dataset(
             dataset=dataset,
-            file_name=f"{evaluation_name}_processed_dataset"
+            file_name=f"./processed_datasets/{evaluation_name}_processed_dataset"
         )
         
         results['export_success'] = export_success

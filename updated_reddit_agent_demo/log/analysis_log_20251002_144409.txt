@@ -1,0 +1,422 @@
+
+==================================================
+TIMESTAMP: 2025-10-02 14:44:23
+DESCRIPTION: email_gen_send_dataset - task_progression Analysis
+==================================================
+Analysis for scorer: task_progression
+Scorer Name: Task Progression
+Reasoning:
+Based on the samples with lower scores, the key reasons for the agent not achieving a perfect score are:
+
+*   **Insufficient Detail in Output:** The agent executed its function correctly, such as sending an email, but the content generated for the email lacked specific details or context.
+*   **Potential for Inefficiency:** While the agent completed the task, the scorer noted that its approach or the steps taken could have been more efficient.
+*   **Minor Imperfections in Final Output:** The agent's final output had minor flaws. The scorer sometimes attributed these imperfections to the limitations of the tool the agent was using, rather than a failure in the agent's logic.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:44:36
+DESCRIPTION: email_gen_send_dataset - context_relevancy Analysis
+==================================================
+Analysis for scorer: context_relevancy
+Scorer Name: context_relevancy
+Reasoning:
+Based on the scorer's feedback, the agent's responses are consistently relevant but could be improved. The key reasons for not achieving higher scores are:
+*   The agent's response lacks summarization or analysis of the tool's results.
+*   The response fails to provide sufficient context or detailed explanations about the actions it performed.
+*   It does not include an explicit summary of the tool's functionality.
+*   The output sometimes lacks specific details about the tool's execution and usage.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:44:54
+DESCRIPTION: email_gen_send_dataset - role_adherence Analysis
+==================================================
+Analysis for scorer: role_adherence
+Scorer Name: role_adherence
+Reasoning: 
+Based on the 25 samples provided, the scorer `role_adherence` did not identify any failures. All runs received high scores (9.0 and above), with the reasoning consistently indicating that the agent performed its role as a tool flawlessly and without any deviations or contradictions. There are no low scores to analyze for this scorer.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:45:07
+DESCRIPTION: email_gen_send_dataset - tool_relevancy Analysis
+==================================================
+Analysis for scorer: tool_relevancy
+Scorer Name: tool_relevancy
+Reasoning: 
+All 25 samples provided for this scorer have a low score due to a "Missing required fields" error. As per the instructions, this is a developer-side code issue and should not be included in the agent's failure analysis. Therefore, there are no other key reasons for low scores from this data set to report.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:45:15
+DESCRIPTION: email_gen_send_dataset - parameter_correctness Analysis
+==================================================
+Analysis for scorer: parameter_correctness
+Scorer Name: parameter_correctness
+Reasoning: 
+Based on the provided data, all 25 low-scoring samples were attributed to the "Error: Missing required fields". As per the instructions, this is a developer-side code issue and has been excluded from the agent's failure analysis. There are no other reasons for low scores present in the data.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:45:26
+DESCRIPTION: email_gen_send_dataset - Dataset Summary
+==================================================
+Agent Name: email_gen_send_dataset
+Reasoning:
+Based on the analysis from multiple scorers, the primary issues with the agent are related to the quality and context of its final output.
+
+*   **Lack of Detail and Context:** The agent's responses and generated content (like emails) are often insufficient. They lack specific details, context about the actions performed, and do not summarize or analyze the results from the tools it uses.
+*   **Potential Inefficiency:** While the agent completes its tasks, its methodology could be more efficient.
+*   **Minor Output Flaws:** The final output sometimes contains minor imperfections, which may be due to limitations in the tools being used rather than the agent's own logic.
+
+It is important to note that the agent performed its role flawlessly without any deviations, and no agent-side failures were identified for tool relevancy or parameter correctness.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:45:45
+DESCRIPTION: agent_comment_gen_dataset - task_progression Analysis
+==================================================
+Analysis for scorer: task_progression
+Scorer Name: Task Progression
+Reasoning: 
+Based on the provided scores, the agent's performance is hindered by the following key issues:
+
+*   **Irrelevant or Tangential Suggestions:** The agent sometimes provides suggestions that are not directly related to the user's request or the context of the discussion. For example, it recommended an API for app mockups when the user needed 3D assets, making the solution only tangentially related and not a direct fix.
+*   **Off-Topic Responses:** In one instance, the provided link and response were not directly related to the user's need (OpenAPI generation) and were also considered off-topic for the specific subreddit ('node').
+*   **Providing Incorrect Information:** The agent has provided incorrect links, which directly hinders the user's ability to progress with the suggested solution.
+*   **Lack of Sufficient Detail:** While a relevant tool might be suggested, the response can lack important details. For instance, it proposed an API for tree detection but didn't provide enough information, and in another case, it failed to give a brief overview of the suggested API's features.
+*   **Failure to Complete the Core Task:** The agent sometimes fails to perform the main objective. In one case, instead of generating the required comment, it offered a personal anecdote, which was not the requested action.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:46:03
+DESCRIPTION: agent_comment_gen_dataset - context_relevancy Analysis
+==================================================
+Analysis for scorer: context_relevancy
+Scorer Name: context_relevancy
+Reasoning:
+Based on the scorer's feedback, the agent's performance is negatively impacted by a lack of contextual alignment and relevance. The key reasons for low scores are:
+
+*   **Irrelevant API/Link Suggestions:** The most common issue is that the API suggested by the agent is completely unrelated to the user's specific problem or technical stack (e.g., suggesting an unrelated API for a query about OpenAPI and node.js or document parsing).
+*   **Indirect or Tangential Solutions:** The agent sometimes provides a solution that is not a direct answer to the user's query but is only indirectly related, thus not fully addressing their needs (e.g., suggesting a 3D asset generator when a mockup platform was needed).
+*   **Lack of Specificity:** The agent fails to tailor its response to the specific context mentioned in the prompt, such as the programming language (node.js) or technology (OpenAPI), making the suggestion less helpful.
+*   **Superficial Engagement:** In some cases, the response acknowledges the topic but doesn't engage directly or deeply with the post's content, resulting in a generic comment.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:46:19
+DESCRIPTION: agent_comment_gen_dataset - role_adherence Analysis
+==================================================
+Analysis for scorer: role_adherence
+Scorer Name: role_adherence
+Reasoning: 
+Based on the low-scoring samples, the agent fails to adhere to its role for the following key reasons:
+
+*   **Irrelevance and Deviation:** The agent significantly strays from the assigned task and context. Responses often have no connection to the specified API, post title, or subreddit.
+*   **Inappropriate Content:** It provides irrelevant or off-topic links instead of the expected helpful resource.
+*   **Unsuitable Tone:** The agent's responses can be overly conversational or sound like casual recommendations rather than focused, helpful comments. In some cases, it shifts focus by relating personal experiences.
+*   **Failure to Use Tools:** The agent fails to generate relevant tool calls when required, contradicting a core requirement of its role.
+*   **Lack of Focus:** The responses sometimes lack a data-driven or analytical focus, deviating from the core task.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:46:28
+DESCRIPTION: agent_comment_gen_dataset - tool_relevancy Analysis
+==================================================
+Analysis for scorer: tool_relevancy
+Scorer Name: tool_relevancy
+Reasoning: 
+All the provided samples for this scorer indicated a "Missing required fields" error. As per the instructions, this is a developer-side code issue and not an agent failure, so there are no key reasons for agent failure to report from this data.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:46:38
+DESCRIPTION: agent_comment_gen_dataset - parameter_correctness Analysis
+==================================================
+Analysis for scorer: parameter_correctness
+Scorer Name: parameter_correctness
+Reasoning: 
+Based on the provided data, all low scores are attributed to a "Missing required fields" error. As per the instructions, this is a developer-side code issue and is not included in the analysis of the agent's performance. Therefore, there are no agent-specific failure reasons to highlight from this data set.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:46:51
+DESCRIPTION: agent_comment_gen_dataset - Dataset Summary
+==================================================
+Agent Name: agent_comment_gen_dataset
+Reasoning: 
+Based on the analyses, the agent's performance is poor due to several recurring issues:
+
+*   **Irrelevant and Off-Topic Suggestions:** The most significant issue is providing suggestions, such as APIs and links, that are completely unrelated to the user's specific problem, technical stack (e.g., node.js, OpenAPI), or the context of the subreddit.
+*   **Lack of Detail and Specificity:** Even when a suggestion is tangentially related, the agent fails to provide sufficient detail or a clear overview of its features, making the response unhelpful. The responses are often generic and not tailored to the specifics of the user's request.
+*   **Providing Incorrect Information:** The agent has been observed providing incorrect links, which directly prevents the user from utilizing the suggested solution.
+*   **Failure to Adhere to Role and Tone:** The agent deviates from its core task by offering personal anecdotes instead of generating the required comment. Its tone can be overly conversational and lacks the expected analytical focus.
+*   **Failure to Complete Core Task:** The agent sometimes fails to perform its main function, such as not generating a comment at all or failing to generate the necessary tool calls.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:47:05
+DESCRIPTION: post_validation_dataset - task_progression Analysis
+==================================================
+Analysis for scorer: task_progression
+Scorer Name: Task Progression
+Reasoning:
+Based on the scorer's feedback, the agent is performing its function correctly, but the scores are lowered for the following reasons:
+
+*   **Task Simplicity:** The primary reason for the lowest scores (7.8, 7.9) is the scorer's assessment that the task itself was too simple. While the agent executed its function effectively, the lack of complexity in the assigned task prevented it from achieving a higher score.
+*   **Incomplete Information:** In one instance, the response was noted to be lacking some specific, though unstated, information that would have made it a more complete fulfillment of the task.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:47:21
+DESCRIPTION: post_validation_dataset - context_relevancy Analysis
+==================================================
+Analysis for scorer: context_relevancy
+Scorer Name: context_relevancy
+Reasoning:
+*   The agent's tool outputs frequently lack context. They do not indicate the initial input, what triggered the tool's execution, or provide details on what specific information was being processed or validated.
+*   The output, while functional, could be improved for clarity. Some responses are not user-friendly and could benefit from being more descriptive or providing a clearer summary of the results.
+*   The purpose of the tool's action (e.g., validation) is not always clear from the response alone.
+*   The agent is noted for merely providing a result without any analysis or indication of problem-solving.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:47:32
+DESCRIPTION: post_validation_dataset - role_adherence Analysis
+==================================================
+Analysis for scorer: role_adherence
+Scorer Name: role_adherence
+Reasoning:
+Based on the 25 samples provided, the scorer consistently assigned high scores (9.0 and 9.5). There were no low scores or failures identified in the data for this scorer. All reasoning indicates that the agent was performing its role perfectly.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:47:43
+DESCRIPTION: post_validation_dataset - tool_relevancy Analysis
+==================================================
+Analysis for scorer: tool_relevancy
+Scorer Name: tool_relevancy
+Reasoning: All 25 provided samples for this scorer have a score of 0.0 with the reasoning "Error: Missing required fields". As instructed, this reason is being excluded as it is a developer-side code issue. Therefore, there are no other key reasons for agent failure to report from this dataset.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:47:53
+DESCRIPTION: post_validation_dataset - parameter_correctness Analysis
+==================================================
+Analysis for scorer: parameter_correctness
+Scorer Name: parameter_correctness
+Reasoning: 
+All 25 samples for this scorer received a low score due to a "Missing required fields" error. As per the instructions, this is a developer-side code issue and has been excluded from this analysis. There were no other reasons provided for the agent's failure.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:48:03
+DESCRIPTION: post_validation_dataset - Dataset Summary
+==================================================
+Agent Name: post_validation_dataset
+Reasoning:
+Based on the analysis from multiple scorers, the agent performs its core function correctly but receives poor scores for the following reasons:
+
+*   **Lack of Context:** The tool's outputs are frequently missing context. They do not specify the initial input, what triggered the tool's execution, or what specific information was being validated.
+*   **Poor Output Clarity:** The responses are not user-friendly. They simply provide a result without any analysis, descriptive summary, or indication of the problem-solving process, making the purpose of the action unclear from the output alone.
+*   **Task Simplicity:** In some cases, low scores were given not because the agent failed, but because the assigned task was too simple to demonstrate the agent's full capabilities.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:48:17
+DESCRIPTION: agent_query_gen_dataset - task_progression Analysis
+==================================================
+Analysis for scorer: task_progression
+Scorer Name: Task Progression
+Reasoning:
+Based on the low-scoring samples, the agent is failing for the following key reasons:
+
+*   **Complete Misunderstanding of Role:** The agent sometimes fundamentally misunderstands its assigned role. Instead of acting as a helpful agent designed to interact with an API, it behaves like an end-user seeking help, making its response completely off-topic.
+*   **Failure to Interact with the API:** A primary reason for low scores is the agent's failure to make any concrete progress by actually using or attempting to interact with the provided API specification. The responses are related to the topic but show no evidence of API utilization.
+*   **Asking Questions Instead of Providing Solutions:** The agent often defaults to generating a list of example user questions or questions about the API's function rather than taking action or moving towards a solution. This demonstrates a superficial understanding but is not considered concrete progress toward completing the task.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:48:37
+DESCRIPTION: agent_query_gen_dataset - context_relevancy Analysis
+==================================================
+Analysis for scorer: context_relevancy
+Scorer Name: context_relevancy
+Reasoning:
+While the agent generally performs well, the analysis of the lower-scoring runs indicates a few key areas for improvement:
+
+*   **Indirect API Interaction:** The agent correctly understands the user's intent and the API's purpose but sometimes provides responses that are not a direct use of the API itself.
+*   **Lack of Specificity:** In some instances, the agent's responses fulfill the basic requirements of the task but lack specific details, indicating room for more precise and detailed interactions.
+*   **Failure to Mention the API:** The agent occasionally creates relevant prompts or questions for a given task but fails to explicitly mention or reference the specific API it is supposed to be using.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:48:51
+DESCRIPTION: agent_query_gen_dataset - role_adherence Analysis
+==================================================
+Analysis for scorer: role_adherence
+Scorer Name: role_adherence
+Reasoning:
+Based on the low-scoring samples, the agent is failing to adhere to its role for the following key reasons:
+
+*   **Role Confusion:** The agent frequently misunderstands its role. Instead of acting as an agent designed to *use* the provided API specification, it behaves like a developer, asking questions about how to fix, debug, or process the OpenAPI file itself.
+*   **Task Deviation:** The agent deviates significantly from the assigned task. Rather than using the API to perform an action or provide insights, its responses are focused on troubleshooting the API spec, which is irrelevant to the user's goal.
+*   **Failure to Engage with API:** The agent fails to make any tool calls or interact with the provided API. It does not attempt to use the tool as instructed.
+*   **Misinterpreting the Goal:** In one instance, the agent acted like a search engine or a user on a forum, asking generic questions about the API's general topic (e.g., photo restoration) instead of acting as the AI tool meant to perform that function.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:49:03
+DESCRIPTION: agent_query_gen_dataset - tool_relevancy Analysis
+==================================================
+Analysis for scorer: tool_relevancy
+Scorer Name: tool_relevancy
+Reasoning: 
+Based on the provided data, all low scores were attributed to a "Missing required fields" error. As per the instructions to exclude this as a code issue, there are no other specific reasons for agent failure to report from this dataset.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:49:12
+DESCRIPTION: agent_query_gen_dataset - parameter_correctness Analysis
+==================================================
+Analysis for scorer: parameter_correctness
+Scorer Name: parameter_correctness
+Reasoning: 
+Based on the provided data, all 25 samples for this scorer have low scores due to "Missing required fields". As per the instructions, this specific reason should be ignored as it is a developer-side code issue. Therefore, there are no other reasons for agent failure to report from this dataset.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:49:24
+DESCRIPTION: agent_query_gen_dataset - Dataset Summary
+==================================================
+Agent Name: query_generation
+Reasoning:
+Based on the analysis of low-scoring runs, the agent exhibits several key failures:
+
+*   **Fundamental Role Confusion:** The agent frequently misunderstands its role. Instead of acting as a tool designed to use the provided API, it behaves like a developer attempting to debug the API specification, an end-user seeking help, or a search engine asking generic questions about the topic.
+*   **Failure to Use the API:** A primary issue is the agent's failure to make tool calls or interact directly with the provided API. It does not take concrete action to progress the task using the tools available.
+*   **Generating Questions Instead of Solutions:** The agent often defaults to generating questions about the API's functionality or example user queries rather than providing a direct solution or attempting to use the API.
+*   **Indirect or Vague Responses:** In some instances, while the agent understands the user's intent, its responses are not a direct use of the API, lack specific details, or fail to explicitly reference the API it is supposed to be interacting with.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:49:45
+DESCRIPTION: tavily_search_results_dataset - task_progression Analysis
+==================================================
+Analysis for scorer: task_progression
+Scorer Name: Task Progression
+Reasoning: 
+Based on the analysis of the low-scoring runs, the key reasons for the agent's failure or lower performance are:
+
+*   **Execution is too basic:** The agent successfully retrieves information using tools but often stops there. It is criticized for not performing any further analysis or synthesis on the information it gathers. The scorer indicates that simply presenting raw, un-analyzed search results is not enough for a high score.
+*   **Lacks connection to a larger task:** In some instances, the agent's action is correct in isolation, but it is unclear how that specific action fits into or progresses a larger, overall objective. The action appears disconnected from a broader goal.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:50:11
+DESCRIPTION: tavily_search_results_dataset - context_relevancy Analysis
+==================================================
+Analysis for scorer: context_relevancy
+Scorer Name: context_relevancy
+Reasoning:
+Based on the scorer's feedback, the agent's lower-scoring responses, while generally relevant, exhibit the following issues:
+*   **Lack of Conciseness and Focus:** The information returned is not always concise, directly pertinent, or structured effectively. Some responses would benefit from a more focused presentation.
+*   **Inconsistent Relevance:** In some cases, not all of the retrieved search results are equally relevant to the task, with some results being more useful than others.
+*   **Insufficient Synthesis:** The agent sometimes provides raw information without demonstrating a deeper synthesis or understanding of the retrieved content.
+*   **Missing Context:** The responses occasionally appear to be missing some context, which makes them feel incomplete or imperfect.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:50:21
+DESCRIPTION: tavily_search_results_dataset - role_adherence Analysis
+==================================================
+Analysis for scorer: role_adherence
+Scorer Name: role_adherence
+Reasoning: 
+There were no low-scored runs for this scorer in the provided data. All runs received a perfect score of 10.0.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:50:31
+DESCRIPTION: tavily_search_results_dataset - tool_relevancy Analysis
+==================================================
+Analysis for scorer: tool_relevancy
+Scorer Name: tool_relevancy
+Reasoning: 
+No specific agent failures were identified in the provided data. All low scores were attributed to a 'Missing required fields' error, which was instructed to be ignored as a code-level issue.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:50:43
+DESCRIPTION: tavily_search_results_dataset - parameter_correctness Analysis
+==================================================
+Analysis for scorer: parameter_correctness
+Scorer Name: parameter_correctness
+Reasoning: 
+All provided low scores for this scorer were due to a "Missing required fields" error. As per the instructions, this is a developer-side code issue and is not included as a reason for agent failure.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:50:54
+DESCRIPTION: tavily_search_results_dataset - Dataset Summary
+==================================================
+Agent Name: tavily_search_results_dataset
+Reasoning: 
+Based on the provided analyses, the agent's performance suffers primarily from a lack of depth and synthesis. A key recurring issue is that the agent's execution is too basic; it successfully retrieves information using its tools but fails to perform any further analysis or synthesis on the gathered content. It simply presents raw, un-analyzed search results.
+
+Furthermore, the agent's actions often feel disconnected from a larger objective, with responses missing the necessary context to feel complete. The quality of the retrieved information is also inconsistent; it can lack conciseness and focus, and not all search results are equally relevant to the task.
+==================================================
+
+
+==================================================
+TIMESTAMP: 2025-10-02 14:51:21
+DESCRIPTION: Final Comprehensive Analysis
+==================================================
+Based on the comprehensive analysis of the agent's workflow and the part-wise scoring summaries, the agent is failing due to a cascading effect that originates early in the process. The core issue is a fundamental misunderstanding in the query generation phase, which leads to irrelevant search results and, consequently, poor quality comments.
+
+The failure flows as follows:
+1.  **Faulty Query Generation:** The `search_agent` misunderstands its role. Instead of generating search queries that a user with a problem would type (e.g., "How do I get stock data for my app?"), it generates queries *about* the API itself (e.g., "What is the function of the FinTech API?").
+2.  **Irrelevant Search Results:** These faulty queries lead Tavily to find Reddit posts discussing the API itself, not posts from users who need the API as a solution.
+3.  **Context Mismatch for Comment Generation:** The `content_generation_agent` is then tasked with promoting the API on these irrelevant posts. This creates a logical impossibility, forcing the agent to generate generic, off-topic, and unhelpful comments, as it cannot connect the API to a non-existent user problem in the post.
+4.  **Low-Quality Final Output:** The final email report is simply a collection of these poorly matched posts and irrelevant comments, which is why scorers found it lacking context and detail.
+
+### Suggested Fixes:
+
+*   **fix_1: Revise the `Search Query Generation` Prompt:** The prompt for the `search_agent` must be re-engineered to prevent role confusion. It should explicitly instruct the LLM to adopt the persona of a potential user who is describing a problem, not an analyst examining the API. Provide clear examples of good (problem-focused) vs. bad (API-focused) queries within the prompt to guide the model's output. For instance, for a "Weather API," a good query is "Best way to add live weather to my website," not "What are the endpoints for the Weather API?"
+
+*   **fix_2: Implement a Semantic Validation Step:** The current `post_validation` step only checks for technical constraints (e.g., not archived, not locked). Add a second validation layer that uses an LLM to check for semantic relevance. This step would take the API description and the content of a candidate Reddit post and determine if the API is a genuinely relevant solution to the problem discussed in the post. This acts as a crucial quality gate, filtering out irrelevant posts before they reach the comment generation stage.
+
+*   **fix_3: Enhance the `Comment Generation` Agent's Contextual Awareness:** The prompt for the `content_generation_agent` should be updated to require a more direct synthesis of the post's content and the API's features. Instruct the agent to first explicitly identify the user's problem in the post and then explain how a specific feature of the API solves that exact problem. This will force the agent to generate more tailored, helpful, and less generic comments, directly addressing the feedback that its suggestions are often irrelevant.
+
+*   **fix_4: Improve Final Report Context:** The final HTML report generated in the `email_generation_and_sending` step should be more than just a list of post-comment pairs. Modify this stage to include a brief analytical summary for each entry, explaining *why* the post was deemed relevant and how the generated comment provides a solution. This addresses the feedback on the lack of detail and context in the final output.
+==================================================
+
