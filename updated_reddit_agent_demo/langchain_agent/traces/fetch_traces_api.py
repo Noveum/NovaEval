@@ -17,7 +17,7 @@ load_dotenv()
 
 # Get API key and project from environment
 api_key = os.getenv('NOVEUM_API_KEY')
-project = 'novaeval-ai-agents-updated'
+project = 'novaeval-ai-agents-final'
 
 if not api_key:
     print('Error: NOVEUM_API_KEY environment variable not found')
