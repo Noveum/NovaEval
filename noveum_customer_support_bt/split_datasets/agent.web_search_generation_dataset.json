@@ -1,0 +1,490 @@
+[
+  {
+    "span_id": "2aca614b-b016-4d56-abe2-43a144dc681d",
+    "trace_id": "eda4fe22-9a2b-4b73-856b-f4f3309bf719",
+    "parent_span_id": "0b19befc-5dc0-4b00-9a8b-5f2f2c914f17",
+    "name": "agent.web_search_generation",
+    "start_time": "2025-10-09 08:26:46.384000000",
+    "end_time": "2025-10-09 08:26:48.685000000",
+    "duration_ms": 2301.089,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "web_search_agent",
+      "agent.operation": "web_search_generation",
+      "agent.capabilities": [
+        "web_search",
+        "content_synthesis",
+        "response_generation"
+      ],
+      "agent.id": "noveum_web_search_agent",
+      "input_query": "What are the latest breakthroughs in artificial intelligence?",
+      "query_length": 61,
+      "query_type": "web_search_query",
+      "output_response": "Web Search Answer: The provided web search results do not contain specific information about the latest breakthroughs in artificial intelligence. To find the most recent advancements in AI, I recommend checking reputabl...",
+      "web_search.results_count": 1,
+      "web_search.context_length": 708,
+      "web_search.response_length": 423,
+      "web_search.mode": "external_web_search"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "eda4fe22-9a2b-4b73-856b-f4f3309bf719",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:46.384000000",
+    "trace_end_time": "2025-10-09 08:26:48.685000000",
+    "trace_duration_ms": 2301.488,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:49.422000000",
+    "updated_at": "2025-10-09 08:26:49.422000000"
+  },
+  {
+    "span_id": "03e3ae4d-0107-401d-8ca0-05fc0f28fb24",
+    "trace_id": "0ffffba1-8a37-443c-8866-d53ffbfa7718",
+    "parent_span_id": "30644d2a-5ab1-4a73-b4ff-cf9fa478e36b",
+    "name": "agent.web_search_generation",
+    "start_time": "2025-10-09 08:26:41.850000000",
+    "end_time": "2025-10-09 08:26:45.377000000",
+    "duration_ms": 3527.3050000000003,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "web_search_agent",
+      "agent.operation": "web_search_generation",
+      "agent.capabilities": [
+        "web_search",
+        "content_synthesis",
+        "response_generation"
+      ],
+      "agent.id": "noveum_web_search_agent",
+      "input_query": "What's happening in the software development world today?",
+      "query_length": 57,
+      "query_type": "web_search_query",
+      "output_response": "Web Search Answer: The web search did not yield any specific results regarding current events in the software development world. Therefore, I cannot provide detailed information on what's happening today in that field.\n...",
+      "web_search.results_count": 1,
+      "web_search.context_length": 159,
+      "web_search.response_length": 795,
+      "web_search.mode": "external_web_search"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "0ffffba1-8a37-443c-8866-d53ffbfa7718",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:41.850000000",
+    "trace_end_time": "2025-10-09 08:26:45.377000000",
+    "trace_duration_ms": 3527.831,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:49.422000000",
+    "updated_at": "2025-10-09 08:26:49.422000000"
+  },
+  {
+    "span_id": "dfdb9aaf-9925-4a5c-a0c6-2cb00f70d4d3",
+    "trace_id": "43cdf081-4f01-49cd-b566-dbd1619e6cd2",
+    "parent_span_id": "962afebb-26d1-45ff-acf1-218163cd6bb8",
+    "name": "agent.web_search_generation",
+    "start_time": "2025-10-09 08:26:32.240000000",
+    "end_time": "2025-10-09 08:26:34.906000000",
+    "duration_ms": 2665.69,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "web_search_agent",
+      "agent.operation": "web_search_generation",
+      "agent.capabilities": [
+        "web_search",
+        "content_synthesis",
+        "response_generation"
+      ],
+      "agent.id": "noveum_web_search_agent",
+      "input_query": "What's the current status of cryptocurrency markets?",
+      "query_length": 52,
+      "query_type": "web_search_query",
+      "output_response": "Web Search Answer: The web search results did not provide any specific information regarding the current status of cryptocurrency markets. Therefore, I cannot provide an accurate update on market conditions, trends, or ...",
+      "web_search.results_count": 1,
+      "web_search.context_length": 154,
+      "web_search.response_length": 371,
+      "web_search.mode": "external_web_search"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "43cdf081-4f01-49cd-b566-dbd1619e6cd2",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:32.237000000",
+    "trace_end_time": "2025-10-09 08:26:34.906000000",
+    "trace_duration_ms": 2668.841,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:38.618000000",
+    "updated_at": "2025-10-09 08:26:38.618000000"
+  },
+  {
+    "span_id": "eefcfdfc-6433-459e-a134-e2647b8418e4",
+    "trace_id": "9a1983f4-09da-4b53-80e6-38de6878e0e7",
+    "parent_span_id": "246cf822-4562-4d3a-8a5a-e38e0a0b02a0",
+    "name": "agent.web_search_generation",
+    "start_time": "2025-10-09 08:26:27.992000000",
+    "end_time": "2025-10-09 08:26:31.231000000",
+    "duration_ms": 3239.058,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "web_search_agent",
+      "agent.operation": "web_search_generation",
+      "agent.capabilities": [
+        "web_search",
+        "content_synthesis",
+        "response_generation"
+      ],
+      "agent.id": "noveum_web_search_agent",
+      "input_query": "What are the latest updates in Python programming?",
+      "query_length": 50,
+      "query_type": "web_search_query",
+      "output_response": "Web Search Answer: The web search results do not provide specific information about the latest updates in Python programming. They focus primarily on news related to China, including geopolitics, economy, and lifestyle,...",
+      "web_search.results_count": 1,
+      "web_search.context_length": 646,
+      "web_search.response_length": 583,
+      "web_search.mode": "external_web_search"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "9a1983f4-09da-4b53-80e6-38de6878e0e7",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:27.992000000",
+    "trace_end_time": "2025-10-09 08:26:31.231000000",
+    "trace_duration_ms": 3239.706,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:33.463000000",
+    "updated_at": "2025-10-09 08:26:33.463000000"
+  },
+  {
+    "span_id": "c57b4b54-b9b0-4a4c-b5cd-57a4cfe5301b",
+    "trace_id": "5d2517e1-220a-429d-9d59-f701bda25eed",
+    "parent_span_id": "20544f91-8828-4a0e-b253-ed1f8b95b205",
+    "name": "agent.web_search_generation",
+    "start_time": "2025-10-09 08:26:23.210000000",
+    "end_time": "2025-10-09 08:26:26.985000000",
+    "duration_ms": 3774.711,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "web_search_agent",
+      "agent.operation": "web_search_generation",
+      "agent.capabilities": [
+        "web_search",
+        "content_synthesis",
+        "response_generation"
+      ],
+      "agent.id": "noveum_web_search_agent",
+      "input_query": "What happened in tech news this week?",
+      "query_length": 37,
+      "query_type": "web_search_query",
+      "output_response": "Web Search Answer: The web search results do not provide specific information about recent events in tech news for this week. They primarily discuss the grammatical usage of the phrase \"what happened\" and its variations...",
+      "web_search.results_count": 1,
+      "web_search.context_length": 640,
+      "web_search.response_length": 501,
+      "web_search.mode": "external_web_search"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "5d2517e1-220a-429d-9d59-f701bda25eed",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:23.210000000",
+    "trace_end_time": "2025-10-09 08:26:26.985000000",
+    "trace_duration_ms": 3775.124,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:28.174000000",
+    "updated_at": "2025-10-09 08:26:28.174000000"
+  },
+  {
+    "span_id": "a062bef6-d973-489b-91df-5d40a2aef077",
+    "trace_id": "a81ca3a8-80aa-4c39-876e-8d40ea7a0aef",
+    "parent_span_id": "acf6a99a-39e0-4f87-a07e-3a61213ab032",
+    "name": "agent.web_search_generation",
+    "start_time": "2025-10-09 08:26:08.904000000",
+    "end_time": "2025-10-09 08:26:15.537000000",
+    "duration_ms": 6633.127,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "web_search_agent",
+      "agent.operation": "web_search_generation",
+      "agent.capabilities": [
+        "web_search",
+        "content_synthesis",
+        "response_generation"
+      ],
+      "agent.id": "noveum_web_search_agent",
+      "input_query": "Tell me about recent developments in machine learning",
+      "query_length": 53,
+      "query_type": "web_search_query",
+      "output_response": "Web Search Answer: The provided web search results do not contain specific information about recent developments in machine learning. Therefore, I cannot provide a detailed answer based on those results.\n\nHowever, I can...",
+      "web_search.results_count": 1,
+      "web_search.context_length": 738,
+      "web_search.response_length": 1639,
+      "web_search.mode": "external_web_search"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "a81ca3a8-80aa-4c39-876e-8d40ea7a0aef",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:08.903000000",
+    "trace_end_time": "2025-10-09 08:26:15.537000000",
+    "trace_duration_ms": 6633.662,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:16.227000000",
+    "updated_at": "2025-10-09 08:26:16.227000000"
+  },
+  {
+    "span_id": "41f82a95-620d-440c-84e6-36d6d1b9e079",
+    "trace_id": "230aad27-f3dd-4968-a45a-3c2f07ac28ed",
+    "parent_span_id": "0b47ea07-1eda-4b6a-a183-ea9ef047e431",
+    "name": "agent.web_search_generation",
+    "start_time": "2025-10-09 08:26:02.424000000",
+    "end_time": "2025-10-09 08:26:07.894000000",
+    "duration_ms": 5469.763000000001,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "web_search_agent",
+      "agent.operation": "web_search_generation",
+      "agent.capabilities": [
+        "web_search",
+        "content_synthesis",
+        "response_generation"
+      ],
+      "agent.id": "noveum_web_search_agent",
+      "input_query": "What's the weather like today?",
+      "query_length": 30,
+      "query_type": "web_search_query",
+      "output_response": "Web Search Answer: The provided web search results do not contain specific information about today's weather in any particular location. They mention weather forecasts for various places, including France and Singapore,...",
+      "web_search.results_count": 1,
+      "web_search.context_length": 899,
+      "web_search.response_length": 376,
+      "web_search.mode": "external_web_search"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "230aad27-f3dd-4968-a45a-3c2f07ac28ed",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:02.424000000",
+    "trace_end_time": "2025-10-09 08:26:07.894000000",
+    "trace_duration_ms": 5470.232,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:08.586000000",
+    "updated_at": "2025-10-09 08:26:08.586000000"
+  },
+  {
+    "span_id": "63f2a0d5-9016-4483-8ec0-e6aa6b27689f",
+    "trace_id": "83c7dcce-3d89-4da1-8b3f-d419885d4cbc",
+    "parent_span_id": "3866ddb3-b17e-47a1-8b3f-bca1e32a2ae4",
+    "name": "agent.web_search_generation",
+    "start_time": "2025-10-09 08:25:56.886000000",
+    "end_time": "2025-10-09 08:26:01.415000000",
+    "duration_ms": 4529.669,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "web_search_agent",
+      "agent.operation": "web_search_generation",
+      "agent.capabilities": [
+        "web_search",
+        "content_synthesis",
+        "response_generation"
+      ],
+      "agent.id": "noveum_web_search_agent",
+      "input_query": "What are the latest AI news today?",
+      "query_length": 34,
+      "query_type": "web_search_query",
+      "output_response": "Web Search Answer: The latest news in artificial intelligence includes several key updates:\n\n1. **AI Spending Concerns**: Jeff Bezos has expressed concerns that the current level of investment in AI resembles an \"indust...",
+      "web_search.results_count": 1,
+      "web_search.context_length": 981,
+      "web_search.response_length": 1003,
+      "web_search.mode": "external_web_search"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "83c7dcce-3d89-4da1-8b3f-d419885d4cbc",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:25:56.886000000",
+    "trace_end_time": "2025-10-09 08:26:01.416000000",
+    "trace_duration_ms": 4530.08,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:02.122000000",
+    "updated_at": "2025-10-09 08:26:02.122000000"
+  }
+]
