@@ -1,0 +1,1222 @@
+[
+  {
+    "span_id": "0b19befc-5dc0-4b00-9a8b-5f2f2c914f17",
+    "trace_id": "eda4fe22-9a2b-4b73-856b-f4f3309bf719",
+    "parent_span_id": "b6b7c1c0-3b7b-4e19-805d-a16beb7ea871",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:26:46.384000000",
+    "end_time": "2025-10-09 08:26:48.685000000",
+    "duration_ms": 2301.289,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What are the latest breakthroughs in artificial intelligence?",
+      "query_length": 61,
+      "query_type": "routing_query",
+      "output_response": "Routed to Web Search for query processing",
+      "router.classification": "Web Search",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 0,
+      "router.web_keyword_score": 1,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "eda4fe22-9a2b-4b73-856b-f4f3309bf719",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:46.384000000",
+    "trace_end_time": "2025-10-09 08:26:48.685000000",
+    "trace_duration_ms": 2301.488,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:49.422000000",
+    "updated_at": "2025-10-09 08:26:49.422000000"
+  },
+  {
+    "span_id": "30644d2a-5ab1-4a73-b4ff-cf9fa478e36b",
+    "trace_id": "0ffffba1-8a37-443c-8866-d53ffbfa7718",
+    "parent_span_id": "3045d971-b7ff-46cc-be11-6db7d65dfefd",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:26:41.850000000",
+    "end_time": "2025-10-09 08:26:45.377000000",
+    "duration_ms": 3527.556,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What's happening in the software development world today?",
+      "query_length": 57,
+      "query_type": "routing_query",
+      "output_response": "Routed to Web Search for query processing",
+      "router.classification": "Web Search",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 0,
+      "router.web_keyword_score": 1,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "0ffffba1-8a37-443c-8866-d53ffbfa7718",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:41.850000000",
+    "trace_end_time": "2025-10-09 08:26:45.377000000",
+    "trace_duration_ms": 3527.831,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:49.422000000",
+    "updated_at": "2025-10-09 08:26:49.422000000"
+  },
+  {
+    "span_id": "89eac2de-b7da-4db3-bf7c-8e87c429481e",
+    "trace_id": "f1f37bd7-0851-4659-b493-b80d3800d920",
+    "parent_span_id": "42d4cb1f-17ec-433a-8087-90292c2fa9d9",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:26:35.915000000",
+    "end_time": "2025-10-09 08:26:40.841000000",
+    "duration_ms": 4926.115000000001,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What are the newest features in cloud computing?",
+      "query_length": 48,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 1,
+      "router.web_keyword_score": 0,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "f1f37bd7-0851-4659-b493-b80d3800d920",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:35.915000000",
+    "trace_end_time": "2025-10-09 08:26:40.841000000",
+    "trace_duration_ms": 4926.342,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:44.053000000",
+    "updated_at": "2025-10-09 08:26:44.053000000"
+  },
+  {
+    "span_id": "962afebb-26d1-45ff-acf1-218163cd6bb8",
+    "trace_id": "43cdf081-4f01-49cd-b566-dbd1619e6cd2",
+    "parent_span_id": "e22b809d-5320-40b7-b78a-e3e125538a6b",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:26:32.240000000",
+    "end_time": "2025-10-09 08:26:34.906000000",
+    "duration_ms": 2666.057,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What's the current status of cryptocurrency markets?",
+      "query_length": 52,
+      "query_type": "routing_query",
+      "output_response": "Routed to Web Search for query processing",
+      "router.classification": "Web Search",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 0,
+      "router.web_keyword_score": 3,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "43cdf081-4f01-49cd-b566-dbd1619e6cd2",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:32.237000000",
+    "trace_end_time": "2025-10-09 08:26:34.906000000",
+    "trace_duration_ms": 2668.841,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:38.618000000",
+    "updated_at": "2025-10-09 08:26:38.618000000"
+  },
+  {
+    "span_id": "246cf822-4562-4d3a-8a5a-e38e0a0b02a0",
+    "trace_id": "9a1983f4-09da-4b53-80e6-38de6878e0e7",
+    "parent_span_id": "813a4450-1cf8-4d43-8493-eabfa200919b",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:26:27.992000000",
+    "end_time": "2025-10-09 08:26:31.231000000",
+    "duration_ms": 3239.343,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What are the latest updates in Python programming?",
+      "query_length": 50,
+      "query_type": "routing_query",
+      "output_response": "Routed to Web Search for query processing",
+      "router.classification": "Web Search",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 0,
+      "router.web_keyword_score": 2,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "9a1983f4-09da-4b53-80e6-38de6878e0e7",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:27.992000000",
+    "trace_end_time": "2025-10-09 08:26:31.231000000",
+    "trace_duration_ms": 3239.706,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:33.463000000",
+    "updated_at": "2025-10-09 08:26:33.463000000"
+  },
+  {
+    "span_id": "20544f91-8828-4a0e-b253-ed1f8b95b205",
+    "trace_id": "5d2517e1-220a-429d-9d59-f701bda25eed",
+    "parent_span_id": "6102352a-833e-493d-adbb-887e2af17918",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:26:23.210000000",
+    "end_time": "2025-10-09 08:26:26.985000000",
+    "duration_ms": 3774.906,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What happened in tech news this week?",
+      "query_length": 37,
+      "query_type": "routing_query",
+      "output_response": "Routed to Web Search for query processing",
+      "router.classification": "Web Search",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 0,
+      "router.web_keyword_score": 2,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "5d2517e1-220a-429d-9d59-f701bda25eed",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:23.210000000",
+    "trace_end_time": "2025-10-09 08:26:26.985000000",
+    "trace_duration_ms": 3775.124,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:28.174000000",
+    "updated_at": "2025-10-09 08:26:28.174000000"
+  },
+  {
+    "span_id": "5359c861-c51b-446d-9ad2-b3d8c21ea70f",
+    "trace_id": "52aacb67-c361-4445-9b72-c157f79f47d6",
+    "parent_span_id": "2926418a-fe09-4df0-bf19-a527bc24a478",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:26:16.544000000",
+    "end_time": "2025-10-09 08:26:22.201000000",
+    "duration_ms": 5656.666,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What are the current trends in observability tools?",
+      "query_length": 51,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 0.3333333333333333,
+      "router.rag_keyword_score": 2,
+      "router.web_keyword_score": 1,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "52aacb67-c361-4445-9b72-c157f79f47d6",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:16.544000000",
+    "trace_end_time": "2025-10-09 08:26:22.201000000",
+    "trace_duration_ms": 5657.012,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:22.904000000",
+    "updated_at": "2025-10-09 08:26:22.904000000"
+  },
+  {
+    "span_id": "acf6a99a-39e0-4f87-a07e-3a61213ab032",
+    "trace_id": "a81ca3a8-80aa-4c39-876e-8d40ea7a0aef",
+    "parent_span_id": "afe85a1d-13c8-4476-8154-52d58ba83d52",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:26:08.903000000",
+    "end_time": "2025-10-09 08:26:15.537000000",
+    "duration_ms": 6633.4220000000005,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "Tell me about recent developments in machine learning",
+      "query_length": 53,
+      "query_type": "routing_query",
+      "output_response": "Routed to Web Search for query processing",
+      "router.classification": "Web Search",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 0,
+      "router.web_keyword_score": 1,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "a81ca3a8-80aa-4c39-876e-8d40ea7a0aef",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:08.903000000",
+    "trace_end_time": "2025-10-09 08:26:15.537000000",
+    "trace_duration_ms": 6633.662,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:16.227000000",
+    "updated_at": "2025-10-09 08:26:16.227000000"
+  },
+  {
+    "span_id": "0b47ea07-1eda-4b6a-a183-ea9ef047e431",
+    "trace_id": "230aad27-f3dd-4968-a45a-3c2f07ac28ed",
+    "parent_span_id": "db8da393-6d72-421e-87dc-96f56b6576e5",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:26:02.424000000",
+    "end_time": "2025-10-09 08:26:07.894000000",
+    "duration_ms": 5469.894,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What's the weather like today?",
+      "query_length": 30,
+      "query_type": "routing_query",
+      "output_response": "Routed to Web Search for query processing",
+      "router.classification": "Web Search",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 0,
+      "router.web_keyword_score": 2,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "230aad27-f3dd-4968-a45a-3c2f07ac28ed",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:26:02.424000000",
+    "trace_end_time": "2025-10-09 08:26:07.894000000",
+    "trace_duration_ms": 5470.232,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:08.586000000",
+    "updated_at": "2025-10-09 08:26:08.586000000"
+  },
+  {
+    "span_id": "3866ddb3-b17e-47a1-8b3f-bca1e32a2ae4",
+    "trace_id": "83c7dcce-3d89-4da1-8b3f-d419885d4cbc",
+    "parent_span_id": "a290202d-1b3f-431f-8728-fcb937380f8c",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:25:56.886000000",
+    "end_time": "2025-10-09 08:26:01.415000000",
+    "duration_ms": 4529.776,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What are the latest AI news today?",
+      "query_length": 34,
+      "query_type": "routing_query",
+      "output_response": "Routed to Web Search for query processing",
+      "router.classification": "Web Search",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 0,
+      "router.web_keyword_score": 3,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "83c7dcce-3d89-4da1-8b3f-d419885d4cbc",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:25:56.886000000",
+    "trace_end_time": "2025-10-09 08:26:01.416000000",
+    "trace_duration_ms": 4530.08,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:26:02.122000000",
+    "updated_at": "2025-10-09 08:26:02.122000000"
+  },
+  {
+    "span_id": "3ce2e35e-4518-43b4-8a76-4413da6832ea",
+    "trace_id": "2218f641-604c-491a-9710-b51a9941b982",
+    "parent_span_id": "5fbaef83-95fc-4bed-9695-9d69c37c35e4",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:25:48.107000000",
+    "end_time": "2025-10-09 08:25:55.878000000",
+    "duration_ms": 7770.734,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What are the benefits of using Noveum Trace?",
+      "query_length": 44,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 2,
+      "router.web_keyword_score": 0,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "2218f641-604c-491a-9710-b51a9941b982",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:25:48.107000000",
+    "trace_end_time": "2025-10-09 08:25:55.878000000",
+    "trace_duration_ms": 7770.953,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:25:56.565000000",
+    "updated_at": "2025-10-09 08:25:56.565000000"
+  },
+  {
+    "span_id": "c0c39e8b-9a42-4c18-8737-9224cd8a45c0",
+    "trace_id": "255fd49c-84b4-4b18-887e-6308a412d535",
+    "parent_span_id": "b3ac3924-928b-4d48-a2a7-aa749802fef9",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:25:43.830000000",
+    "end_time": "2025-10-09 08:25:47.099000000",
+    "duration_ms": 3268.6980000000003,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "How do I configure Noveum for my system?",
+      "query_length": 40,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 2,
+      "router.web_keyword_score": 0,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "255fd49c-84b4-4b18-887e-6308a412d535",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:25:43.830000000",
+    "trace_end_time": "2025-10-09 08:25:47.099000000",
+    "trace_duration_ms": 3268.862,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:25:50.304000000",
+    "updated_at": "2025-10-09 08:25:50.304000000"
+  },
+  {
+    "span_id": "80987c51-ea82-4a41-97c7-ed591082b9bf",
+    "trace_id": "dc511122-c0b6-415c-9a49-c7b45132dd87",
+    "parent_span_id": "b8055ffc-ee7d-46ad-b6a0-84e80f9399e2",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:25:38.322000000",
+    "end_time": "2025-10-09 08:25:42.822000000",
+    "duration_ms": 4500.249,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What monitoring capabilities does Noveum provide?",
+      "query_length": 49,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 2,
+      "router.web_keyword_score": 0,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "dc511122-c0b6-415c-9a49-c7b45132dd87",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:25:38.322000000",
+    "trace_end_time": "2025-10-09 08:25:42.822000000",
+    "trace_duration_ms": 4500.425,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:25:45.028000000",
+    "updated_at": "2025-10-09 08:25:45.028000000"
+  },
+  {
+    "span_id": "2f89c1e0-9b62-4651-914c-b71cf561c33c",
+    "trace_id": "04bebf38-a343-4563-80db-0154bef8d927",
+    "parent_span_id": "532b9e1f-5c4f-4b41-98bb-e9a1510f0f1c",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:25:33.693000000",
+    "end_time": "2025-10-09 08:25:37.313000000",
+    "duration_ms": 3619.46,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "How does Noveum handle agent tracing?",
+      "query_length": 37,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 2,
+      "router.web_keyword_score": 0,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "04bebf38-a343-4563-80db-0154bef8d927",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:25:33.693000000",
+    "trace_end_time": "2025-10-09 08:25:37.313000000",
+    "trace_duration_ms": 3619.672,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:25:40.339000000",
+    "updated_at": "2025-10-09 08:25:40.339000000"
+  },
+  {
+    "span_id": "e30e3e61-6edd-4b62-ab77-627faa2bf741",
+    "trace_id": "5e043630-6493-42b5-beb8-79faa19bfa37",
+    "parent_span_id": "14064e3f-f9c9-4bb7-b8cb-1ad52938b075",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:25:29.901000000",
+    "end_time": "2025-10-09 08:25:32.685000000",
+    "duration_ms": 2783.166,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What APIs are available in Noveum platform?",
+      "query_length": 43,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 3,
+      "router.web_keyword_score": 0,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "5e043630-6493-42b5-beb8-79faa19bfa37",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:25:29.901000000",
+    "trace_end_time": "2025-10-09 08:25:32.685000000",
+    "trace_duration_ms": 2783.326,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:25:34.918000000",
+    "updated_at": "2025-10-09 08:25:34.918000000"
+  },
+  {
+    "span_id": "2f513795-764f-4eb6-8dd2-108d4cdf8432",
+    "trace_id": "7da9814d-a2e8-4c4e-b750-68b26bd5fd22",
+    "parent_span_id": "a74fe8a9-2654-4b9d-ba87-dc2f86b6466d",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:25:20.587000000",
+    "end_time": "2025-10-09 08:25:28.897000000",
+    "duration_ms": 8310.025,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "How do I set up observability with Noveum?",
+      "query_length": 42,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 2,
+      "router.web_keyword_score": 0,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "7da9814d-a2e8-4c4e-b750-68b26bd5fd22",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:25:20.586000000",
+    "trace_end_time": "2025-10-09 08:25:28.897000000",
+    "trace_duration_ms": 8310.205,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:25:29.588000000",
+    "updated_at": "2025-10-09 08:25:29.588000000"
+  },
+  {
+    "span_id": "29c7a515-2383-4b7d-8fc7-beac3f403641",
+    "trace_id": "16143f74-2831-4753-b33d-ce4b645093c5",
+    "parent_span_id": "c700d0f4-f1f8-4339-aa42-a3060ae2ae11",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:25:12.442000000",
+    "end_time": "2025-10-09 08:25:19.579000000",
+    "duration_ms": 7137.247,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What features does Noveum Trace offer?",
+      "query_length": 38,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 3,
+      "router.web_keyword_score": 0,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "16143f74-2831-4753-b33d-ce4b645093c5",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:25:12.442000000",
+    "trace_end_time": "2025-10-09 08:25:19.579000000",
+    "trace_duration_ms": 7137.402,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:25:20.290000000",
+    "updated_at": "2025-10-09 08:25:20.290000000"
+  },
+  {
+    "span_id": "12fee687-2a2e-401f-83c2-9c8dc7ecd853",
+    "trace_id": "fc64e6cc-6739-4256-ac4a-7b80c3028233",
+    "parent_span_id": "f7f5981f-d840-4265-8970-d319b876366d",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:25:07.932000000",
+    "end_time": "2025-10-09 08:25:11.438000000",
+    "duration_ms": 3505.9610000000002,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What are Noveum's pricing plans?",
+      "query_length": 32,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 3,
+      "router.web_keyword_score": 0,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "fc64e6cc-6739-4256-ac4a-7b80c3028233",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:25:07.932000000",
+    "trace_end_time": "2025-10-09 08:25:11.438000000",
+    "trace_duration_ms": 3506.0989999999997,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:25:12.651000000",
+    "updated_at": "2025-10-09 08:25:12.651000000"
+  },
+  {
+    "span_id": "9c5aec32-b6eb-4c42-93d5-3970fb118c00",
+    "trace_id": "b7945c49-f584-4c70-972d-536a805d8a31",
+    "parent_span_id": "0c7bbe2b-18af-4fdb-a5bf-4a91daa3bf50",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:24:58.518000000",
+    "end_time": "2025-10-09 08:25:06.920000000",
+    "duration_ms": 8402.101999999999,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "How do I integrate Noveum Trace in my application?",
+      "query_length": 50,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 2,
+      "router.web_keyword_score": 0,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "b7945c49-f584-4c70-972d-536a805d8a31",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:24:58.518000000",
+    "trace_end_time": "2025-10-09 08:25:06.920000000",
+    "trace_duration_ms": 8402.516,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:25:07.620000000",
+    "updated_at": "2025-10-09 08:25:07.620000000"
+  },
+  {
+    "span_id": "f132d053-f82c-4e66-adf4-bd7ce68b660d",
+    "trace_id": "f5c40ecf-36c0-45ba-9cc9-dc0329b0324b",
+    "parent_span_id": "dc869742-6797-4016-8061-37530fc7d433",
+    "name": "agent.query_routing",
+    "start_time": "2025-10-09 08:24:54.009000000",
+    "end_time": "2025-10-09 08:24:57.511000000",
+    "duration_ms": 3501.8790000000004,
+    "status": "ok",
+    "status_message": "",
+    "attributes": {
+      "agent.type": "query_router",
+      "agent.operation": "query_routing",
+      "agent.capabilities": [
+        "query_classification",
+        "routing_decision"
+      ],
+      "agent.id": "noveum_query_router",
+      "input_query": "What is Noveum and what does it do?",
+      "query_length": 35,
+      "query_type": "routing_query",
+      "output_response": "Routed to RAG for query processing",
+      "router.classification": "RAG",
+      "router.confidence_score": 1,
+      "router.rag_keyword_score": 1,
+      "router.web_keyword_score": 0,
+      "router.mode": "intelligent_routing"
+    },
+    "events": [],
+    "links": [],
+    "trace_trace_id": "f5c40ecf-36c0-45ba-9cc9-dc0329b0324b",
+    "trace_name": "auto_trace_tool-orchestator",
+    "project": "noveum-ai-agent-rag-websearch",
+    "environment": "development",
+    "trace_status": "ok",
+    "trace_status_message": "",
+    "trace_start_time": "2025-10-09 08:24:54.009000000",
+    "trace_end_time": "2025-10-09 08:24:57.511000000",
+    "trace_duration_ms": 3502.062,
+    "span_count": 6,
+    "error_count": 0,
+    "sdk": {
+      "name": "noveum-trace-python",
+      "version": "0.3.8"
+    },
+    "trace_attributes": {
+      "noveum.project": "noveum-ai-agent-rag-websearch",
+      "noveum.environment": "development",
+      "noveum.sdk.version": "0.3.8",
+      "noveum.sampling.decision": "record"
+    },
+    "metadata": {
+      "user_id": null,
+      "session_id": null,
+      "request_id": null,
+      "tags": {},
+      "custom_attributes": {}
+    },
+    "created_at": "2025-10-09 08:24:59.716000000",
+    "updated_at": "2025-10-09 08:24:59.716000000"
+  }
+]
