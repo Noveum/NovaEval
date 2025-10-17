@@ -10,13 +10,13 @@ from novaeval.noveum_platform.models import (
     DatasetItem,
     DatasetItemsCreateRequest,
     DatasetItemsQueryParams,
+    DatasetsQueryParams,
     DatasetUpdateRequest,
     DatasetVersionCreateRequest,
-    DatasetsQueryParams,
     ScorerResultCreateRequest,
-    ScorerResultUpdateRequest,
     ScorerResultsBatchRequest,
     ScorerResultsQueryParams,
+    ScorerResultUpdateRequest,
     TracesQueryParams,
 )
 
@@ -27,7 +27,7 @@ class TestTracesQueryParams:
     def test_init_default(self):
         """Test initialization with default values."""
         params = TracesQueryParams()
-        
+
         assert params.organization_id is None
         assert params.from_ is None
         assert params.size == 20
@@ -59,9 +59,9 @@ class TestTracesQueryParams:
             tags=["tag1", "tag2"],
             sort="end_time:asc",
             search_term="test query",
-            include_spans=True
+            include_spans=True,
         )
-        
+
         assert params.organization_id == "org-123"
         assert params.from_ == 10
         assert params.size == 50
@@ -81,31 +81,34 @@ class TestTracesQueryParams:
         """Test size validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
             TracesQueryParams(size=0)
-        
+
         assert "greater than or equal to 1" in str(exc_info.value)
 
     def test_size_validation_max(self):
         """Test size validation maximum value."""
         with pytest.raises(ValidationError) as exc_info:
             TracesQueryParams(size=101)
-        
+
         assert "less than or equal to 100" in str(exc_info.value)
 
     def test_from_validation_min(self):
         """Test from_ validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
             TracesQueryParams(from_=-1)
-        
+
         assert "greater than or equal to 0" in str(exc_info.value)
 
     def test_sort_validation(self):
         """Test sort field validation with valid values."""
         valid_sorts = [
-            "start_time:asc", "start_time:desc",
-            "end_time:asc", "end_time:desc",
-            "duration_ms:asc", "duration_ms:desc"
+            "start_time:asc",
+            "start_time:desc",
+            "end_time:asc",
+            "end_time:desc",
+            "duration_ms:asc",
+            "duration_ms:desc",
         ]
-        
+
         for sort_value in valid_sorts:
             params = TracesQueryParams(sort=sort_value)
             assert params.sort == sort_value
@@ -114,7 +117,7 @@ class TestTracesQueryParams:
         """Test sort field validation with invalid values."""
         with pytest.raises(ValidationError) as exc_info:
             TracesQueryParams(sort="invalid_sort")
-        
+
         assert "Input should be" in str(exc_info.value)
 
     def test_to_query_params(self):
@@ -125,11 +128,11 @@ class TestTracesQueryParams:
             size=50,
             project="test-project",
             tags=["tag1", "tag2"],
-            include_spans=True
+            include_spans=True,
         )
-        
+
         result = params.to_query_params()
-        
+
         expected = {
             "organization_id": "org-123",
             "from": 10,  # Note: alias conversion
@@ -137,16 +140,16 @@ class TestTracesQueryParams:
             "project": "test-project",
             "tags": ["tag1", "tag2"],
             "include_spans": True,
-            "sort": "start_time:desc"  # Default value is included
+            "sort": "start_time:desc",  # Default value is included
         }
-        
+
         assert result == expected
 
     def test_to_query_params_excludes_none(self):
         """Test to_query_params excludes None values."""
         params = TracesQueryParams(organization_id="org-123")
         result = params.to_query_params()
-        
+
         assert "organization_id" in result
         assert "from" not in result
         assert "start_time" not in result
@@ -158,7 +161,7 @@ class TestDatasetCreateRequest:
     def test_init_required_fields(self):
         """Test initialization with only required fields."""
         request = DatasetCreateRequest(name="Test Dataset")
-        
+
         assert request.name == "Test Dataset"
         assert request.slug is None
         assert request.description is None
@@ -180,9 +183,9 @@ class TestDatasetCreateRequest:
             environment="production",
             schema_version="1.0",
             tags=["test", "evaluation"],
-            custom_attributes={"key": "value"}
+            custom_attributes={"key": "value"},
         )
-        
+
         assert request.name == "Test Dataset"
         assert request.slug == "test-dataset"
         assert request.description == "A test dataset"
@@ -197,13 +200,13 @@ class TestDatasetCreateRequest:
         """Test name validation minimum length."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetCreateRequest(name="")
-        
+
         assert "at least 1 character" in str(exc_info.value)
 
     def test_visibility_validation(self):
         """Test visibility field validation."""
         valid_visibilities = ["public", "org", "private"]
-        
+
         for visibility in valid_visibilities:
             request = DatasetCreateRequest(name="Test", visibility=visibility)
             assert request.visibility == visibility
@@ -212,13 +215,13 @@ class TestDatasetCreateRequest:
         """Test visibility field validation with invalid value."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetCreateRequest(name="Test", visibility="invalid")
-        
+
         assert "Input should be" in str(exc_info.value)
 
     def test_dataset_type_validation(self):
         """Test dataset_type field validation."""
         valid_types = ["agent", "conversational", "g-eval", "custom"]
-        
+
         for dataset_type in valid_types:
             request = DatasetCreateRequest(name="Test", dataset_type=dataset_type)
             assert request.dataset_type == dataset_type
@@ -227,7 +230,7 @@ class TestDatasetCreateRequest:
         """Test dataset_type field validation with invalid value."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetCreateRequest(name="Test", dataset_type="invalid")
-        
+
         assert "Input should be" in str(exc_info.value)
 
 
@@ -237,7 +240,7 @@ class TestDatasetUpdateRequest:
     def test_init_all_optional(self):
         """Test initialization with all fields optional."""
         request = DatasetUpdateRequest()
-        
+
         assert request.name is None
         assert request.description is None
         assert request.visibility is None
@@ -252,9 +255,9 @@ class TestDatasetUpdateRequest:
         request = DatasetUpdateRequest(
             name="Updated Dataset",
             description="Updated description",
-            visibility="public"
+            visibility="public",
         )
-        
+
         assert request.name == "Updated Dataset"
         assert request.description == "Updated description"
         assert request.visibility == "public"
@@ -264,7 +267,7 @@ class TestDatasetUpdateRequest:
         """Test name validation minimum length."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetUpdateRequest(name="")
-        
+
         assert "at least 1 character" in str(exc_info.value)
 
 
@@ -274,7 +277,7 @@ class TestDatasetsQueryParams:
     def test_init_default(self):
         """Test initialization with default values."""
         params = DatasetsQueryParams()
-        
+
         assert params.limit == 20
         assert params.offset == 0
         assert params.visibility is None
@@ -288,9 +291,9 @@ class TestDatasetsQueryParams:
             offset=50,
             visibility="public",
             organizationSlug="test-org",
-            includeVersions=True
+            includeVersions=True,
         )
-        
+
         assert params.limit == 100
         assert params.offset == 50
         assert params.visibility == "public"
@@ -301,48 +304,45 @@ class TestDatasetsQueryParams:
         """Test limit validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetsQueryParams(limit=0)
-        
+
         assert "greater than or equal to 1" in str(exc_info.value)
 
     def test_limit_validation_max(self):
         """Test limit validation maximum value."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetsQueryParams(limit=1001)
-        
+
         assert "less than or equal to 1000" in str(exc_info.value)
 
     def test_offset_validation_min(self):
         """Test offset validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetsQueryParams(offset=-1)
-        
+
         assert "greater than or equal to 0" in str(exc_info.value)
 
     def test_to_query_params(self):
         """Test to_query_params method."""
         params = DatasetsQueryParams(
-            limit=50,
-            offset=10,
-            visibility="org",
-            includeVersions=True
+            limit=50, offset=10, visibility="org", includeVersions=True
         )
-        
+
         result = params.to_query_params()
-        
+
         expected = {
             "limit": 50,
             "offset": 10,
             "visibility": "org",
-            "includeVersions": True
+            "includeVersions": True,
         }
-        
+
         assert result == expected
 
     def test_to_query_params_excludes_none(self):
         """Test to_query_params excludes None values."""
         params = DatasetsQueryParams(limit=20)
         result = params.to_query_params()
-        
+
         assert "limit" in result
         assert "visibility" not in result
         assert "organizationSlug" not in result
@@ -354,7 +354,7 @@ class TestDatasetVersionCreateRequest:
     def test_init_required_fields(self):
         """Test initialization with only required fields."""
         request = DatasetVersionCreateRequest(version="1.0.0")
-        
+
         assert request.version == "1.0.0"
         assert request.description is None
         assert request.metadata is None
@@ -364,9 +364,9 @@ class TestDatasetVersionCreateRequest:
         request = DatasetVersionCreateRequest(
             version="2.0.0",
             description="Major update",
-            metadata={"changelog": "Added new features"}
+            metadata={"changelog": "Added new features"},
         )
-        
+
         assert request.version == "2.0.0"
         assert request.description == "Major update"
         assert request.metadata == {"changelog": "Added new features"}
@@ -375,7 +375,7 @@ class TestDatasetVersionCreateRequest:
         """Test version validation minimum length."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetVersionCreateRequest(version="")
-        
+
         assert "at least 1 character" in str(exc_info.value)
 
 
@@ -387,12 +387,15 @@ class TestDatasetItem:
         item = DatasetItem(
             item_key="item-1",
             item_type="question_answer",
-            content={"question": "What is AI?", "answer": "Artificial Intelligence"}
+            content={"question": "What is AI?", "answer": "Artificial Intelligence"},
         )
-        
+
         assert item.item_key == "item-1"
         assert item.item_type == "question_answer"
-        assert item.content == {"question": "What is AI?", "answer": "Artificial Intelligence"}
+        assert item.content == {
+            "question": "What is AI?",
+            "answer": "Artificial Intelligence",
+        }
         assert item.metadata is None
         assert item.trace_id is None
         assert item.span_id is None
@@ -405,12 +408,15 @@ class TestDatasetItem:
             content={"question": "What is AI?", "answer": "Artificial Intelligence"},
             metadata={"difficulty": "easy"},
             trace_id="trace-123",
-            span_id="span-456"
+            span_id="span-456",
         )
-        
+
         assert item.item_key == "item-1"
         assert item.item_type == "question_answer"
-        assert item.content == {"question": "What is AI?", "answer": "Artificial Intelligence"}
+        assert item.content == {
+            "question": "What is AI?",
+            "answer": "Artificial Intelligence",
+        }
         assert item.metadata == {"difficulty": "easy"}
         assert item.trace_id == "trace-123"
         assert item.span_id == "span-456"
@@ -419,14 +425,14 @@ class TestDatasetItem:
         """Test item_key validation minimum length."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetItem(item_key="", item_type="test", content={})
-        
+
         assert "at least 1 character" in str(exc_info.value)
 
     def test_item_type_validation_min_length(self):
         """Test item_type validation minimum length."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetItem(item_key="test", item_type="", content={})
-        
+
         assert "at least 1 character" in str(exc_info.value)
 
 
@@ -437,10 +443,10 @@ class TestDatasetItemsCreateRequest:
         """Test initialization with required fields."""
         items = [
             DatasetItem(item_key="item-1", item_type="test", content={}),
-            DatasetItem(item_key="item-2", item_type="test", content={})
+            DatasetItem(item_key="item-2", item_type="test", content={}),
         ]
         request = DatasetItemsCreateRequest(version="1.0.0", items=items)
-        
+
         assert request.version == "1.0.0"
         assert len(request.items) == 2
         items_list = list(request.items)
@@ -451,7 +457,7 @@ class TestDatasetItemsCreateRequest:
         """Test items validation minimum items."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetItemsCreateRequest(version="1.0.0", items=[])
-        
+
         assert "at least 1 item" in str(exc_info.value)
 
 
@@ -461,19 +467,15 @@ class TestDatasetItemsQueryParams:
     def test_init_default(self):
         """Test initialization with default values."""
         params = DatasetItemsQueryParams()
-        
+
         assert params.version is None
         assert params.limit is None
         assert params.offset is None
 
     def test_init_with_values(self):
         """Test initialization with custom values."""
-        params = DatasetItemsQueryParams(
-            version="1.0.0",
-            limit=50,
-            offset=10
-        )
-        
+        params = DatasetItemsQueryParams(version="1.0.0", limit=50, offset=10)
+
         assert params.version == "1.0.0"
         assert params.limit == 50
         assert params.offset == 10
@@ -482,39 +484,31 @@ class TestDatasetItemsQueryParams:
         """Test limit validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetItemsQueryParams(limit=0)
-        
+
         assert "greater than or equal to 1" in str(exc_info.value)
 
     def test_limit_validation_max(self):
         """Test limit validation maximum value."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetItemsQueryParams(limit=1001)
-        
+
         assert "less than or equal to 1000" in str(exc_info.value)
 
     def test_offset_validation_min(self):
         """Test offset validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
             DatasetItemsQueryParams(offset=-1)
-        
+
         assert "greater than or equal to 0" in str(exc_info.value)
 
     def test_to_query_params(self):
         """Test to_query_params method."""
-        params = DatasetItemsQueryParams(
-            version="1.0.0",
-            limit=50,
-            offset=10
-        )
-        
+        params = DatasetItemsQueryParams(version="1.0.0", limit=50, offset=10)
+
         result = params.to_query_params()
-        
-        expected = {
-            "version": "1.0.0",
-            "limit": 50,
-            "offset": 10
-        }
-        
+
+        expected = {"version": "1.0.0", "limit": 50, "offset": 10}
+
         assert result == expected
 
 
@@ -524,11 +518,9 @@ class TestScorerResultCreateRequest:
     def test_init_required_fields(self):
         """Test initialization with only required fields."""
         request = ScorerResultCreateRequest(
-            datasetSlug="test-dataset",
-            itemId="item-1",
-            scorerId="accuracy-scorer"
+            datasetSlug="test-dataset", itemId="item-1", scorerId="accuracy-scorer"
         )
-        
+
         assert request.datasetSlug == "test-dataset"
         assert request.itemId == "item-1"
         assert request.scorerId == "accuracy-scorer"
@@ -544,9 +536,9 @@ class TestScorerResultCreateRequest:
             scorerId="accuracy-scorer",
             score=0.95,
             metadata={"confidence": 0.9},
-            details={"correct_answer": True}
+            details={"correct_answer": True},
         )
-        
+
         assert request.datasetSlug == "test-dataset"
         assert request.itemId == "item-1"
         assert request.scorerId == "accuracy-scorer"
@@ -561,18 +553,15 @@ class TestScorerResultUpdateRequest:
     def test_init_all_optional(self):
         """Test initialization with all fields optional."""
         request = ScorerResultUpdateRequest()
-        
+
         assert request.score is None
         assert request.metadata is None
         assert request.details is None
 
     def test_init_with_values(self):
         """Test initialization with some values."""
-        request = ScorerResultUpdateRequest(
-            score=0.87,
-            metadata={"updated": True}
-        )
-        
+        request = ScorerResultUpdateRequest(score=0.87, metadata={"updated": True})
+
         assert request.score == 0.87
         assert request.metadata == {"updated": True}
         assert request.details is None
@@ -584,7 +573,7 @@ class TestScorerResultsQueryParams:
     def test_init_required_fields(self):
         """Test initialization with required organizationSlug."""
         params = ScorerResultsQueryParams(organizationSlug="test-org")
-        
+
         assert params.organizationSlug == "test-org"
         assert params.datasetSlug is None
         assert params.itemId is None
@@ -600,9 +589,9 @@ class TestScorerResultsQueryParams:
             itemId="item-1",
             scorerId="accuracy-scorer",
             limit=50,
-            offset=25
+            offset=25,
         )
-        
+
         assert params.organizationSlug == "test-org"
         assert params.datasetSlug == "test-dataset"
         assert params.itemId == "item-1"
@@ -614,48 +603,45 @@ class TestScorerResultsQueryParams:
         """Test organizationSlug is required."""
         with pytest.raises(ValidationError) as exc_info:
             ScorerResultsQueryParams()
-        
+
         assert "Field required" in str(exc_info.value)
 
     def test_limit_validation_min(self):
         """Test limit validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
             ScorerResultsQueryParams(organizationSlug="test", limit=0)
-        
+
         assert "greater than or equal to 1" in str(exc_info.value)
 
     def test_limit_validation_max(self):
         """Test limit validation maximum value."""
         with pytest.raises(ValidationError) as exc_info:
             ScorerResultsQueryParams(organizationSlug="test", limit=1001)
-        
+
         assert "less than or equal to 1000" in str(exc_info.value)
 
     def test_offset_validation_min(self):
         """Test offset validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
             ScorerResultsQueryParams(organizationSlug="test", offset=-1)
-        
+
         assert "greater than or equal to 0" in str(exc_info.value)
 
     def test_to_query_params(self):
         """Test to_query_params method."""
         params = ScorerResultsQueryParams(
-            organizationSlug="test-org",
-            datasetSlug="test-dataset",
-            limit=50,
-            offset=10
+            organizationSlug="test-org", datasetSlug="test-dataset", limit=50, offset=10
         )
-        
+
         result = params.to_query_params()
-        
+
         expected = {
             "organizationSlug": "test-org",
             "datasetSlug": "test-dataset",
             "limit": 50,
-            "offset": 10
+            "offset": 10,
         }
-        
+
         assert result == expected
 
 
@@ -666,18 +652,14 @@ class TestScorerResultsBatchRequest:
         """Test initialization with required fields."""
         results = [
             ScorerResultCreateRequest(
-                datasetSlug="test-dataset",
-                itemId="item-1",
-                scorerId="scorer-1"
+                datasetSlug="test-dataset", itemId="item-1", scorerId="scorer-1"
             ),
             ScorerResultCreateRequest(
-                datasetSlug="test-dataset",
-                itemId="item-2",
-                scorerId="scorer-1"
-            )
+                datasetSlug="test-dataset", itemId="item-2", scorerId="scorer-1"
+            ),
         ]
         request = ScorerResultsBatchRequest(results=results)
-        
+
         assert len(request.results) == 2
         results_list = list(request.results)
         assert results_list[0].itemId == "item-1"
@@ -687,5 +669,5 @@ class TestScorerResultsBatchRequest:
         """Test results validation minimum items."""
         with pytest.raises(ValidationError) as exc_info:
             ScorerResultsBatchRequest(results=[])
-        
+
         assert "at least 1 item" in str(exc_info.value)

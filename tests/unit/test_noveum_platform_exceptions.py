@@ -20,7 +20,7 @@ class TestNoveumAPIError:
     def test_init_basic(self):
         """Test basic initialization."""
         error = NoveumAPIError("Test error", 500)
-        
+
         assert error.status_code == 500
         assert error.message == "Test error"
         assert error.response_body is None
@@ -30,7 +30,7 @@ class TestNoveumAPIError:
         """Test initialization with response body."""
         response_body = {"error": "Something went wrong", "details": "More info"}
         error = NoveumAPIError("Test error", 500, response_body)
-        
+
         assert error.status_code == 500
         assert error.message == "Test error"
         assert error.response_body == response_body
@@ -47,7 +47,7 @@ class TestAuthenticationError:
     def test_init_default(self):
         """Test initialization with default message."""
         error = AuthenticationError()
-        
+
         assert error.status_code == 401
         assert error.message == "Authentication failed"
         assert error.response_body is None
@@ -56,7 +56,7 @@ class TestAuthenticationError:
     def test_init_custom_message(self):
         """Test initialization with custom message."""
         error = AuthenticationError("Invalid API key")
-        
+
         assert error.status_code == 401
         assert error.message == "Invalid API key"
 
@@ -64,7 +64,7 @@ class TestAuthenticationError:
         """Test initialization with response body."""
         response_body = {"error": "Invalid token"}
         error = AuthenticationError("Custom auth error", response_body)
-        
+
         assert error.status_code == 401
         assert error.response_body == response_body
 
@@ -81,7 +81,7 @@ class TestValidationError:
     def test_init_default(self):
         """Test initialization with default message."""
         error = ValidationError()
-        
+
         assert error.status_code == 400
         assert error.message == "Invalid request format"
         assert str(error) == "Invalid request format (HTTP 400)"
@@ -89,7 +89,7 @@ class TestValidationError:
     def test_init_custom_message(self):
         """Test initialization with custom message."""
         error = ValidationError("Missing required field")
-        
+
         assert error.status_code == 400
         assert error.message == "Missing required field"
 
@@ -97,7 +97,7 @@ class TestValidationError:
         """Test initialization with response body."""
         response_body = {"error": "Validation failed", "fields": ["name", "slug"]}
         error = ValidationError("Validation failed", response_body)
-        
+
         assert error.status_code == 400
         assert error.response_body == response_body
 
@@ -113,7 +113,7 @@ class TestForbiddenError:
     def test_init_default(self):
         """Test initialization with default message."""
         error = ForbiddenError()
-        
+
         assert error.status_code == 403
         assert error.message == "Access forbidden"
         assert str(error) == "Access forbidden (HTTP 403)"
@@ -121,7 +121,7 @@ class TestForbiddenError:
     def test_init_custom_message(self):
         """Test initialization with custom message."""
         error = ForbiddenError("Organization mismatch")
-        
+
         assert error.status_code == 403
         assert error.message == "Organization mismatch"
 
@@ -137,7 +137,7 @@ class TestNotFoundError:
     def test_init_default(self):
         """Test initialization with default message."""
         error = NotFoundError()
-        
+
         assert error.status_code == 404
         assert error.message == "Resource not found"
         assert str(error) == "Resource not found (HTTP 404)"
@@ -145,7 +145,7 @@ class TestNotFoundError:
     def test_init_custom_message(self):
         """Test initialization with custom message."""
         error = NotFoundError("Dataset not found")
-        
+
         assert error.status_code == 404
         assert error.message == "Dataset not found"
 
@@ -153,7 +153,7 @@ class TestNotFoundError:
         """Test initialization with response body."""
         response_body = {"error": "Not found", "resource": "dataset/test-slug"}
         error = NotFoundError("Dataset not found", response_body)
-        
+
         assert error.status_code == 404
         assert error.response_body == response_body
 
@@ -169,7 +169,7 @@ class TestConflictError:
     def test_init_default(self):
         """Test initialization with default message."""
         error = ConflictError()
-        
+
         assert error.status_code == 409
         assert error.message == "Request conflict"
         assert str(error) == "Request conflict (HTTP 409)"
@@ -177,7 +177,7 @@ class TestConflictError:
     def test_init_custom_message(self):
         """Test initialization with custom message."""
         error = ConflictError("Trace is immutable")
-        
+
         assert error.status_code == 409
         assert error.message == "Trace is immutable"
 
@@ -193,7 +193,7 @@ class TestRateLimitError:
     def test_init_default(self):
         """Test initialization with default message."""
         error = RateLimitError()
-        
+
         assert error.status_code == 429
         assert error.message == "Rate limit exceeded"
         assert str(error) == "Rate limit exceeded (HTTP 429)"
@@ -201,7 +201,7 @@ class TestRateLimitError:
     def test_init_custom_message(self):
         """Test initialization with custom message."""
         error = RateLimitError("Too many requests")
-        
+
         assert error.status_code == 429
         assert error.message == "Too many requests"
 
@@ -209,7 +209,7 @@ class TestRateLimitError:
         """Test initialization with response body."""
         response_body = {"error": "Rate limit", "retry_after": 60}
         error = RateLimitError("Rate limit exceeded", response_body)
-        
+
         assert error.status_code == 429
         assert error.response_body == response_body
 
@@ -225,7 +225,7 @@ class TestServerError:
     def test_init_default(self):
         """Test initialization with default message."""
         error = ServerError()
-        
+
         assert error.status_code == 500
         assert error.message == "Internal server error"
         assert str(error) == "Internal server error (HTTP 500)"
@@ -233,7 +233,7 @@ class TestServerError:
     def test_init_custom_message(self):
         """Test initialization with custom message."""
         error = ServerError("Database connection failed")
-        
+
         assert error.status_code == 500
         assert error.message == "Database connection failed"
 
@@ -241,7 +241,7 @@ class TestServerError:
         """Test initialization with response body."""
         response_body = {"error": "Server error", "trace_id": "abc123"}
         error = ServerError("Internal server error", 500, response_body)
-        
+
         assert error.status_code == 500
         assert error.response_body == response_body
 
@@ -249,4 +249,3 @@ class TestServerError:
         """Test inheritance from NoveumAPIError."""
         error = ServerError()
         assert isinstance(error, NoveumAPIError)
-
