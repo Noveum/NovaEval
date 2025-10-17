@@ -9,6 +9,7 @@ traces, datasets, and scorer results.
 import os
 from typing import Any, Optional
 
+import pydantic
 import requests
 from dotenv import load_dotenv
 
@@ -332,7 +333,22 @@ class NoveumClient:
             NoveumAPIError: If the API request fails
         """
         # Validate request data
-        request_data = DatasetCreateRequest(name=name, **kwargs)
+        try:
+            request_data = DatasetCreateRequest(name=name, **kwargs)
+        except pydantic.ValidationError as e:
+            # Convert Pydantic validation error to custom ValidationError
+            error_messages = []
+            for error in e.errors():
+                field = (
+                    error.get("loc", ["unknown"])[0] if error.get("loc") else "unknown"
+                )
+                msg = error.get("msg", "Validation error")
+                error_messages.append(f"{field}: {msg}")
+
+            raise ValidationError(
+                message="; ".join(error_messages),
+                response_body={"validation_errors": e.errors()},
+            ) from e
 
         logger.info("Creating dataset: %s", name)
 
