@@ -41,30 +41,30 @@ client.create_scorer_result({
 ### Trace Methods (7)
 - `ingest_trace(trace: Dict[str, Any])` - Ingest single trace
 - `ingest_traces(traces: List[Dict[str, Any]])` - Ingest multiple traces
-- `query_traces(**kwargs)` - Query traces with filters and pagination
+- `query_traces(organization_id, from_, size, start_time, end_time, project, environment, status, user_id, session_id, tags, sort, search_term, include_spans)` - Query traces with filters and pagination
 - `get_trace(trace_id: str)` - Get specific trace by ID
 - `get_trace_spans(trace_id: str)` - Get spans for a trace
 - `get_directory_tree()` - Get organization directory structure
 - `get_connection_status()` - Check API connection status
 
 ### Dataset Methods (14)
-- `create_dataset(name: str, **kwargs)` - Create new dataset
-- `list_datasets(**kwargs)` - List datasets with filters and pagination
+- `create_dataset(name, slug, description, visibility, dataset_type, environment, schema_version, tags, custom_attributes)` - Create new dataset
+- `list_datasets(limit, offset, visibility, organizationSlug, includeVersions)` - List datasets with filters and pagination
 - `get_dataset(slug: str)` - Get specific dataset
-- `update_dataset(slug: str, **kwargs)` - Update dataset metadata
+- `update_dataset(slug, name, description, visibility, dataset_type, environment, schema_version, tags, custom_attributes)` - Update dataset metadata
 - `delete_dataset(slug: str)` - Delete dataset
 - `list_dataset_versions(dataset_slug: str)` - List dataset versions
 - `create_dataset_version(dataset_slug: str, version_data: Dict[str, Any])` - Create version
 - `get_dataset_version(dataset_slug: str, version: str)` - Get specific version
 - `publish_dataset_version(dataset_slug: str, version: str)` - Publish version
-- `list_dataset_items(dataset_slug: str, **kwargs)` - List dataset items
+- `list_dataset_items(dataset_slug, version, limit, offset)` - List dataset items
 - `add_dataset_items(dataset_slug: str, version: str, items: List[Dict[str, Any]])` - Add items
 - `delete_all_dataset_items(dataset_slug: str, version: Optional[str])` - Delete all items
 - `get_dataset_item(dataset_slug: str, item_key: str)` - Get specific item
 - `delete_dataset_item(dataset_slug: str, item_id: str)` - Delete specific item
 
 ### Scorer Results Methods (6)
-- `list_scorer_results(**kwargs)` - List scorer results with filters
+- `list_scorer_results(organizationSlug, datasetSlug, itemId, scorerId, limit, offset)` - List scorer results with filters
 - `create_scorer_result(result_data: Dict[str, Any])` - Create single result
 - `create_scorer_results_batch(results: List[Dict[str, Any]])` - Batch create results
 - `get_scorer_result(dataset_slug: str, item_id: str, scorer_id: str)` - Get specific result

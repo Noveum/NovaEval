@@ -7,7 +7,7 @@ traces, datasets, and scorer results.
 """
 
 import os
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 import pydantic
 import requests
@@ -157,6 +157,33 @@ class NoveumClient:
         response.raise_for_status()  # This will raise for any other error status codes
         return response_body
 
+    def _parse_model(self, model_cls, data: dict[str, Any]):
+        """
+        Parse data into a Pydantic model and convert ValidationError into our API ValidationError.
+
+        Args:
+            model_cls: The Pydantic model class to instantiate
+            data: Dictionary of data to parse into the model
+
+        Returns:
+            Instantiated Pydantic model instance
+
+        Raises:
+            ValidationError: If validation fails, converted from pydantic.ValidationError
+        """
+        try:
+            return model_cls(**data)
+        except pydantic.ValidationError as e:
+            error_messages = []
+            for err in e.errors():
+                loc = ".".join(str(p) for p in err.get("loc", []) or ["unknown"])
+                msg = err.get("msg", "Validation error")
+                error_messages.append(f"{loc}: {msg}")
+            raise ValidationError(
+                message="; ".join(error_messages),
+                response_body={"validation_errors": e.errors()},
+            ) from e
+
     def ingest_traces(self, traces: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Ingest multiple traces in a single batch request.
@@ -199,26 +226,50 @@ class NoveumClient:
 
         return self._handle_response(response)
 
-    def query_traces(self, **kwargs: Any) -> dict[str, Any]:
+    def query_traces(
+        self,
+        organization_id: Optional[str] = None,
+        from_: Optional[int] = None,
+        size: Optional[int] = 20,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        project: Optional[str] = None,
+        environment: Optional[str] = None,
+        status: Optional[str] = None,
+        user_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+        tags: Optional[list[str]] = None,
+        sort: Optional[
+            Literal[
+                "start_time:asc",
+                "start_time:desc",
+                "end_time:asc",
+                "end_time:desc",
+                "duration_ms:asc",
+                "duration_ms:desc",
+            ]
+        ] = "start_time:desc",
+        search_term: Optional[str] = None,
+        include_spans: Optional[bool] = False,
+    ) -> dict[str, Any]:
         """
         Query traces with optional filters and pagination.
 
         Args:
-            **kwargs: Query parameters including:
-                - organization_id: Organization ID filter
-                - from_: Pagination offset (0-based)
-                - size: Number of traces to return (1-100, default 20)
-                - start_time: Start time filter (ISO datetime)
-                - end_time: End time filter (ISO datetime)
-                - project: Project name filter
-                - environment: Environment filter
-                - status: Status filter
-                - user_id: User ID filter
-                - session_id: Session ID filter
-                - tags: List of tags to filter by
-                - sort: Sort order (e.g., "start_time:desc")
-                - search_term: Text search term
-                - include_spans: Whether to include spans (default False)
+            organization_id: Organization ID filter
+            from_: Pagination offset (0-based)
+            size: Number of traces to return (1-100, default 20)
+            start_time: Start time filter (ISO datetime)
+            end_time: End time filter (ISO datetime)
+            project: Project name filter
+            environment: Environment filter
+            status: Status filter
+            user_id: User ID filter
+            session_id: Session ID filter
+            tags: List of tags to filter by
+            sort: Sort order (e.g., "start_time:desc")
+            search_term: Text search term
+            include_spans: Whether to include spans (default False)
 
         Returns:
             API response containing traces and metadata
@@ -226,8 +277,26 @@ class NoveumClient:
         Raises:
             NoveumAPIError: If the API request fails
         """
+        # Build kwargs dict from parameters
+        kwargs = {
+            "organization_id": organization_id,
+            "from_": from_,
+            "size": size,
+            "start_time": start_time,
+            "end_time": end_time,
+            "project": project,
+            "environment": environment,
+            "status": status,
+            "user_id": user_id,
+            "session_id": session_id,
+            "tags": tags,
+            "sort": sort,
+            "search_term": search_term,
+            "include_spans": include_spans,
+        }
+        
         # Validate parameters using Pydantic model
-        query_params = TracesQueryParams(**kwargs)
+        query_params = self._parse_model(TracesQueryParams, kwargs)
         params = query_params.to_query_params()
 
         logger.info("Querying traces with params: %s", params)
@@ -318,13 +387,31 @@ class NoveumClient:
 
     # Dataset Methods
 
-    def create_dataset(self, name: str, **kwargs: Any) -> dict[str, Any]:
+    def create_dataset(
+        self,
+        name: str,
+        slug: Optional[str] = None,
+        description: Optional[str] = None,
+        visibility: Literal["public", "org", "private"] = "org",
+        dataset_type: Literal["agent", "conversational", "g-eval", "custom"] = "custom",
+        environment: Optional[str] = None,
+        schema_version: Optional[str] = None,
+        tags: Optional[list[str]] = None,
+        custom_attributes: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         """
         Create a new dataset.
 
         Args:
             name: Dataset name (required)
-            **kwargs: Additional dataset fields (slug, description, visibility, etc.)
+            slug: Dataset slug (auto-generated if not provided)
+            description: Dataset description
+            visibility: Dataset visibility (default: "org")
+            dataset_type: Dataset type (default: "custom")
+            environment: Environment
+            schema_version: Schema version
+            tags: Dataset tags
+            custom_attributes: Custom attributes
 
         Returns:
             API response containing created dataset data
@@ -332,23 +419,21 @@ class NoveumClient:
         Raises:
             NoveumAPIError: If the API request fails
         """
+        # Build kwargs dict from parameters
+        kwargs = {
+            "name": name,
+            "slug": slug,
+            "description": description,
+            "visibility": visibility,
+            "dataset_type": dataset_type,
+            "environment": environment,
+            "schema_version": schema_version,
+            "tags": tags,
+            "custom_attributes": custom_attributes,
+        }
+        
         # Validate request data
-        try:
-            request_data = DatasetCreateRequest(name=name, **kwargs)
-        except pydantic.ValidationError as e:
-            # Convert Pydantic validation error to custom ValidationError
-            error_messages = []
-            for error in e.errors():
-                field = (
-                    error.get("loc", ["unknown"])[0] if error.get("loc") else "unknown"
-                )
-                msg = error.get("msg", "Validation error")
-                error_messages.append(f"{field}: {msg}")
-
-            raise ValidationError(
-                message="; ".join(error_messages),
-                response_body={"validation_errors": e.errors()},
-            ) from e
+        request_data = self._parse_model(DatasetCreateRequest, kwargs)
 
         logger.info("Creating dataset: %s", name)
 
@@ -360,17 +445,23 @@ class NoveumClient:
 
         return self._handle_response(response)
 
-    def list_datasets(self, **kwargs: Any) -> dict[str, Any]:
+    def list_datasets(
+        self,
+        limit: Optional[int] = 20,
+        offset: Optional[int] = 0,
+        visibility: Optional[Literal["public", "org", "private"]] = None,
+        organizationSlug: Optional[str] = None,
+        includeVersions: Optional[bool] = False,
+    ) -> dict[str, Any]:
         """
         List datasets with optional filters and pagination.
 
         Args:
-            **kwargs: Query parameters including:
-                - limit: Number of datasets to return (1-1000, default 20)
-                - offset: Number of datasets to skip (default 0)
-                - visibility: Filter by visibility (public, org, private)
-                - organizationSlug: Filter by organization slug
-                - includeVersions: Whether to include versions (default False)
+            limit: Number of datasets to return (1-1000, default 20)
+            offset: Number of datasets to skip (default 0)
+            visibility: Filter by visibility (public, org, private)
+            organizationSlug: Filter by organization slug
+            includeVersions: Whether to include versions (default False)
 
         Returns:
             API response containing datasets and metadata
@@ -378,8 +469,17 @@ class NoveumClient:
         Raises:
             NoveumAPIError: If the API request fails
         """
+        # Build kwargs dict from parameters
+        kwargs = {
+            "limit": limit,
+            "offset": offset,
+            "visibility": visibility,
+            "organizationSlug": organizationSlug,
+            "includeVersions": includeVersions,
+        }
+        
         # Validate parameters using Pydantic model
-        query_params = DatasetsQueryParams(**kwargs)
+        query_params = self._parse_model(DatasetsQueryParams, kwargs)
         params = query_params.to_query_params()
 
         logger.info("Listing datasets with params: %s", params)
@@ -411,13 +511,31 @@ class NoveumClient:
 
         return self._handle_response(response)
 
-    def update_dataset(self, slug: str, **kwargs: Any) -> dict[str, Any]:
+    def update_dataset(
+        self,
+        slug: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        visibility: Optional[Literal["public", "org", "private"]] = None,
+        dataset_type: Optional[Literal["agent", "conversational", "g-eval", "custom"]] = None,
+        environment: Optional[str] = None,
+        schema_version: Optional[str] = None,
+        tags: Optional[list[str]] = None,
+        custom_attributes: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
         """
         Update an existing dataset.
 
         Args:
             slug: Dataset slug
-            **kwargs: Fields to update (name, description, visibility, etc.)
+            name: Dataset name
+            description: Dataset description
+            visibility: Dataset visibility
+            dataset_type: Dataset type
+            environment: Environment
+            schema_version: Schema version
+            tags: Dataset tags
+            custom_attributes: Custom attributes
 
         Returns:
             API response containing updated dataset data
@@ -425,8 +543,20 @@ class NoveumClient:
         Raises:
             NoveumAPIError: If the API request fails
         """
+        # Build kwargs dict from parameters
+        kwargs = {
+            "name": name,
+            "description": description,
+            "visibility": visibility,
+            "dataset_type": dataset_type,
+            "environment": environment,
+            "schema_version": schema_version,
+            "tags": tags,
+            "custom_attributes": custom_attributes,
+        }
+        
         # Validate request data
-        request_data = DatasetUpdateRequest(**kwargs)
+        request_data = self._parse_model(DatasetUpdateRequest, kwargs)
 
         logger.info("Updating dataset: %s", slug)
 
@@ -498,7 +628,7 @@ class NoveumClient:
             NoveumAPIError: If the API request fails
         """
         # Validate request data
-        request_data = DatasetVersionCreateRequest(**version_data)
+        request_data = self._parse_model(DatasetVersionCreateRequest, version_data)
 
         logger.info("Creating version for dataset: %s", dataset_slug)
 
@@ -558,16 +688,21 @@ class NoveumClient:
 
         return self._handle_response(response)
 
-    def list_dataset_items(self, dataset_slug: str, **kwargs: Any) -> dict[str, Any]:
+    def list_dataset_items(
+        self,
+        dataset_slug: str,
+        version: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+    ) -> dict[str, Any]:
         """
         List items in a dataset with optional filters and pagination.
 
         Args:
             dataset_slug: Dataset slug
-            **kwargs: Query parameters including:
-                - version: Filter by version
-                - limit: Number of items to return (1-1000)
-                - offset: Number of items to skip
+            version: Filter by version
+            limit: Number of items to return (1-1000)
+            offset: Number of items to skip
 
         Returns:
             API response containing dataset items and metadata
@@ -575,8 +710,15 @@ class NoveumClient:
         Raises:
             NoveumAPIError: If the API request fails
         """
+        # Build kwargs dict from parameters
+        kwargs = {
+            "version": version,
+            "limit": limit,
+            "offset": offset,
+        }
+        
         # Validate parameters using Pydantic model
-        query_params = DatasetItemsQueryParams(**kwargs)
+        query_params = self._parse_model(DatasetItemsQueryParams, kwargs)
         params = query_params.to_query_params()
 
         logger.info(
@@ -609,10 +751,13 @@ class NoveumClient:
             NoveumAPIError: If the API request fails
         """
         # Convert dict items to DatasetItem objects
-        dataset_items = [DatasetItem(**item) for item in items]
+        dataset_items = [self._parse_model(DatasetItem, item) for item in items]
 
         # Validate request data
-        request_data = DatasetItemsCreateRequest(version=version, items=dataset_items)
+        request_data = self._parse_model(
+            DatasetItemsCreateRequest, 
+            {"version": version, "items": dataset_items}
+        )
 
         logger.info("Adding %d items to dataset %s", len(items), dataset_slug)
 
@@ -700,18 +845,25 @@ class NoveumClient:
 
     # Scorer Results Methods
 
-    def list_scorer_results(self, **kwargs: Any) -> dict[str, Any]:
+    def list_scorer_results(
+        self,
+        organizationSlug: str,
+        datasetSlug: Optional[str] = None,
+        itemId: Optional[str] = None,
+        scorerId: Optional[str] = None,
+        limit: Optional[int] = 100,
+        offset: Optional[int] = 0,
+    ) -> dict[str, Any]:
         """
         List scorer results with optional filters and pagination.
 
         Args:
-            **kwargs: Query parameters including:
-                - organizationSlug: Organization slug (required)
-                - datasetSlug: Filter by dataset slug
-                - itemId: Filter by item ID
-                - scorerId: Filter by scorer ID
-                - limit: Number of results to return (1-1000, default 100)
-                - offset: Number of results to skip (default 0)
+            organizationSlug: Organization slug (required)
+            datasetSlug: Filter by dataset slug
+            itemId: Filter by item ID
+            scorerId: Filter by scorer ID
+            limit: Number of results to return (1-1000, default 100)
+            offset: Number of results to skip (default 0)
 
         Returns:
             API response containing scorer results and metadata
@@ -719,8 +871,18 @@ class NoveumClient:
         Raises:
             NoveumAPIError: If the API request fails
         """
+        # Build kwargs dict from parameters
+        kwargs = {
+            "organizationSlug": organizationSlug,
+            "datasetSlug": datasetSlug,
+            "itemId": itemId,
+            "scorerId": scorerId,
+            "limit": limit,
+            "offset": offset,
+        }
+        
         # Validate parameters using Pydantic model
-        query_params = ScorerResultsQueryParams(**kwargs)
+        query_params = self._parse_model(ScorerResultsQueryParams, kwargs)
         params = query_params.to_query_params()
 
         logger.info("Listing scorer results with params: %s", params)
@@ -747,7 +909,7 @@ class NoveumClient:
             NoveumAPIError: If the API request fails
         """
         # Validate request data
-        request_data = ScorerResultCreateRequest(**result_data)
+        request_data = self._parse_model(ScorerResultCreateRequest, result_data)
 
         logger.info(
             "Creating scorer result for dataset %s, item %s, scorer %s",
@@ -780,10 +942,10 @@ class NoveumClient:
             NoveumAPIError: If the API request fails
         """
         # Convert dict results to ScorerResultCreateRequest objects
-        scorer_results = [ScorerResultCreateRequest(**result) for result in results]
+        scorer_results = [self._parse_model(ScorerResultCreateRequest, result) for result in results]
 
         # Validate request data
-        request_data = ScorerResultsBatchRequest(results=scorer_results)
+        request_data = self._parse_model(ScorerResultsBatchRequest, {"results": scorer_results})
 
         logger.info("Creating %d scorer results in batch", len(results))
 
@@ -849,7 +1011,7 @@ class NoveumClient:
             NoveumAPIError: If the API request fails
         """
         # Validate request data
-        request_data = ScorerResultUpdateRequest(**result_data)
+        request_data = self._parse_model(ScorerResultUpdateRequest, result_data)
 
         logger.info(
             "Updating scorer result for dataset %s, item %s, scorer %s",

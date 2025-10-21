@@ -26,8 +26,6 @@ Example:
     })
 """
 
-from dotenv import load_dotenv
-
 from .client import NoveumClient
 from .exceptions import (
     AuthenticationError,
@@ -53,8 +51,8 @@ from .models import (
     TracesQueryParams,
 )
 
-# Load environment variables at package level
-load_dotenv()
+# Environment loading is handled in client.py or must be performed by the importer
+# before importing this module to avoid side effects and duplication.
 
 __all__ = [
     # Specific exceptions

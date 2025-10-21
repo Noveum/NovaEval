@@ -24,6 +24,7 @@ from novaeval.noveum_platform.models import (
 class TestTracesQueryParams:
     """Test cases for TracesQueryParams model."""
 
+    @pytest.mark.unit
     def test_init_default(self):
         """Test initialization with default values."""
         params = TracesQueryParams()
@@ -43,6 +44,7 @@ class TestTracesQueryParams:
         assert params.search_term is None
         assert params.include_spans is False
 
+    @pytest.mark.unit
     def test_init_with_values(self):
         """Test initialization with custom values."""
         params = TracesQueryParams(
@@ -77,6 +79,7 @@ class TestTracesQueryParams:
         assert params.search_term == "test query"
         assert params.include_spans is True
 
+    @pytest.mark.unit
     def test_size_validation_min(self):
         """Test size validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -84,6 +87,7 @@ class TestTracesQueryParams:
 
         assert "greater than or equal to 1" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_size_validation_max(self):
         """Test size validation maximum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -91,6 +95,7 @@ class TestTracesQueryParams:
 
         assert "less than or equal to 100" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_from_validation_min(self):
         """Test from_ validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -98,6 +103,7 @@ class TestTracesQueryParams:
 
         assert "greater than or equal to 0" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_sort_validation(self):
         """Test sort field validation with valid values."""
         valid_sorts = [
@@ -113,6 +119,7 @@ class TestTracesQueryParams:
             params = TracesQueryParams(sort=sort_value)
             assert params.sort == sort_value
 
+    @pytest.mark.unit
     def test_sort_validation_invalid(self):
         """Test sort field validation with invalid values."""
         with pytest.raises(ValidationError) as exc_info:
@@ -120,6 +127,7 @@ class TestTracesQueryParams:
 
         assert "Input should be" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_to_query_params(self):
         """Test to_query_params method."""
         params = TracesQueryParams(
@@ -145,6 +153,7 @@ class TestTracesQueryParams:
 
         assert result == expected
 
+    @pytest.mark.unit
     def test_to_query_params_excludes_none(self):
         """Test to_query_params excludes None values."""
         params = TracesQueryParams(organization_id="org-123")
@@ -158,6 +167,7 @@ class TestTracesQueryParams:
 class TestDatasetCreateRequest:
     """Test cases for DatasetCreateRequest model."""
 
+    @pytest.mark.unit
     def test_init_required_fields(self):
         """Test initialization with only required fields."""
         request = DatasetCreateRequest(name="Test Dataset")
@@ -172,6 +182,7 @@ class TestDatasetCreateRequest:
         assert request.tags is None
         assert request.custom_attributes is None
 
+    @pytest.mark.unit
     def test_init_all_fields(self):
         """Test initialization with all fields."""
         request = DatasetCreateRequest(
@@ -196,6 +207,7 @@ class TestDatasetCreateRequest:
         assert request.tags == ["test", "evaluation"]
         assert request.custom_attributes == {"key": "value"}
 
+    @pytest.mark.unit
     def test_name_validation_min_length(self):
         """Test name validation minimum length."""
         with pytest.raises(ValidationError) as exc_info:
@@ -203,6 +215,7 @@ class TestDatasetCreateRequest:
 
         assert "at least 1 character" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_visibility_validation(self):
         """Test visibility field validation."""
         valid_visibilities = ["public", "org", "private"]
@@ -211,6 +224,7 @@ class TestDatasetCreateRequest:
             request = DatasetCreateRequest(name="Test", visibility=visibility)
             assert request.visibility == visibility
 
+    @pytest.mark.unit
     def test_visibility_validation_invalid(self):
         """Test visibility field validation with invalid value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -218,6 +232,7 @@ class TestDatasetCreateRequest:
 
         assert "Input should be" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_dataset_type_validation(self):
         """Test dataset_type field validation."""
         valid_types = ["agent", "conversational", "g-eval", "custom"]
@@ -226,6 +241,7 @@ class TestDatasetCreateRequest:
             request = DatasetCreateRequest(name="Test", dataset_type=dataset_type)
             assert request.dataset_type == dataset_type
 
+    @pytest.mark.unit
     def test_dataset_type_validation_invalid(self):
         """Test dataset_type field validation with invalid value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -237,6 +253,7 @@ class TestDatasetCreateRequest:
 class TestDatasetUpdateRequest:
     """Test cases for DatasetUpdateRequest model."""
 
+    @pytest.mark.unit
     def test_init_all_optional(self):
         """Test initialization with all fields optional."""
         request = DatasetUpdateRequest()
@@ -250,6 +267,7 @@ class TestDatasetUpdateRequest:
         assert request.tags is None
         assert request.custom_attributes is None
 
+    @pytest.mark.unit
     def test_init_with_values(self):
         """Test initialization with some values."""
         request = DatasetUpdateRequest(
@@ -263,6 +281,7 @@ class TestDatasetUpdateRequest:
         assert request.visibility == "public"
         assert request.dataset_type is None
 
+    @pytest.mark.unit
     def test_name_validation_min_length(self):
         """Test name validation minimum length."""
         with pytest.raises(ValidationError) as exc_info:
@@ -274,6 +293,7 @@ class TestDatasetUpdateRequest:
 class TestDatasetsQueryParams:
     """Test cases for DatasetsQueryParams model."""
 
+    @pytest.mark.unit
     def test_init_default(self):
         """Test initialization with default values."""
         params = DatasetsQueryParams()
@@ -284,6 +304,7 @@ class TestDatasetsQueryParams:
         assert params.organizationSlug is None
         assert params.includeVersions is False
 
+    @pytest.mark.unit
     def test_init_with_values(self):
         """Test initialization with custom values."""
         params = DatasetsQueryParams(
@@ -300,6 +321,7 @@ class TestDatasetsQueryParams:
         assert params.organizationSlug == "test-org"
         assert params.includeVersions is True
 
+    @pytest.mark.unit
     def test_limit_validation_min(self):
         """Test limit validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -307,6 +329,7 @@ class TestDatasetsQueryParams:
 
         assert "greater than or equal to 1" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_limit_validation_max(self):
         """Test limit validation maximum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -314,6 +337,7 @@ class TestDatasetsQueryParams:
 
         assert "less than or equal to 1000" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_offset_validation_min(self):
         """Test offset validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -321,6 +345,7 @@ class TestDatasetsQueryParams:
 
         assert "greater than or equal to 0" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_to_query_params(self):
         """Test to_query_params method."""
         params = DatasetsQueryParams(
@@ -338,6 +363,7 @@ class TestDatasetsQueryParams:
 
         assert result == expected
 
+    @pytest.mark.unit
     def test_to_query_params_excludes_none(self):
         """Test to_query_params excludes None values."""
         params = DatasetsQueryParams(limit=20)
@@ -351,6 +377,7 @@ class TestDatasetsQueryParams:
 class TestDatasetVersionCreateRequest:
     """Test cases for DatasetVersionCreateRequest model."""
 
+    @pytest.mark.unit
     def test_init_required_fields(self):
         """Test initialization with only required fields."""
         request = DatasetVersionCreateRequest(version="1.0.0")
@@ -359,6 +386,7 @@ class TestDatasetVersionCreateRequest:
         assert request.description is None
         assert request.metadata is None
 
+    @pytest.mark.unit
     def test_init_all_fields(self):
         """Test initialization with all fields."""
         request = DatasetVersionCreateRequest(
@@ -371,6 +399,7 @@ class TestDatasetVersionCreateRequest:
         assert request.description == "Major update"
         assert request.metadata == {"changelog": "Added new features"}
 
+    @pytest.mark.unit
     def test_version_validation_min_length(self):
         """Test version validation minimum length."""
         with pytest.raises(ValidationError) as exc_info:
@@ -382,6 +411,7 @@ class TestDatasetVersionCreateRequest:
 class TestDatasetItem:
     """Test cases for DatasetItem model."""
 
+    @pytest.mark.unit
     def test_init_required_fields(self):
         """Test initialization with only required fields."""
         item = DatasetItem(
@@ -400,6 +430,7 @@ class TestDatasetItem:
         assert item.trace_id is None
         assert item.span_id is None
 
+    @pytest.mark.unit
     def test_init_all_fields(self):
         """Test initialization with all fields."""
         item = DatasetItem(
@@ -421,6 +452,7 @@ class TestDatasetItem:
         assert item.trace_id == "trace-123"
         assert item.span_id == "span-456"
 
+    @pytest.mark.unit
     def test_item_key_validation_min_length(self):
         """Test item_key validation minimum length."""
         with pytest.raises(ValidationError) as exc_info:
@@ -428,6 +460,7 @@ class TestDatasetItem:
 
         assert "at least 1 character" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_item_type_validation_min_length(self):
         """Test item_type validation minimum length."""
         with pytest.raises(ValidationError) as exc_info:
@@ -439,6 +472,7 @@ class TestDatasetItem:
 class TestDatasetItemsCreateRequest:
     """Test cases for DatasetItemsCreateRequest model."""
 
+    @pytest.mark.unit
     def test_init_required_fields(self):
         """Test initialization with required fields."""
         items = [
@@ -453,6 +487,7 @@ class TestDatasetItemsCreateRequest:
         assert items_list[0].item_key == "item-1"
         assert items_list[1].item_key == "item-2"
 
+    @pytest.mark.unit
     def test_items_validation_min_items(self):
         """Test items validation minimum items."""
         with pytest.raises(ValidationError) as exc_info:
@@ -464,6 +499,7 @@ class TestDatasetItemsCreateRequest:
 class TestDatasetItemsQueryParams:
     """Test cases for DatasetItemsQueryParams model."""
 
+    @pytest.mark.unit
     def test_init_default(self):
         """Test initialization with default values."""
         params = DatasetItemsQueryParams()
@@ -472,6 +508,7 @@ class TestDatasetItemsQueryParams:
         assert params.limit is None
         assert params.offset is None
 
+    @pytest.mark.unit
     def test_init_with_values(self):
         """Test initialization with custom values."""
         params = DatasetItemsQueryParams(version="1.0.0", limit=50, offset=10)
@@ -480,6 +517,7 @@ class TestDatasetItemsQueryParams:
         assert params.limit == 50
         assert params.offset == 10
 
+    @pytest.mark.unit
     def test_limit_validation_min(self):
         """Test limit validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -487,6 +525,7 @@ class TestDatasetItemsQueryParams:
 
         assert "greater than or equal to 1" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_limit_validation_max(self):
         """Test limit validation maximum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -494,6 +533,7 @@ class TestDatasetItemsQueryParams:
 
         assert "less than or equal to 1000" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_offset_validation_min(self):
         """Test offset validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -501,6 +541,7 @@ class TestDatasetItemsQueryParams:
 
         assert "greater than or equal to 0" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_to_query_params(self):
         """Test to_query_params method."""
         params = DatasetItemsQueryParams(version="1.0.0", limit=50, offset=10)
@@ -515,6 +556,7 @@ class TestDatasetItemsQueryParams:
 class TestScorerResultCreateRequest:
     """Test cases for ScorerResultCreateRequest model."""
 
+    @pytest.mark.unit
     def test_init_required_fields(self):
         """Test initialization with only required fields."""
         request = ScorerResultCreateRequest(
@@ -528,6 +570,7 @@ class TestScorerResultCreateRequest:
         assert request.metadata is None
         assert request.details is None
 
+    @pytest.mark.unit
     def test_init_all_fields(self):
         """Test initialization with all fields."""
         request = ScorerResultCreateRequest(
@@ -550,6 +593,7 @@ class TestScorerResultCreateRequest:
 class TestScorerResultUpdateRequest:
     """Test cases for ScorerResultUpdateRequest model."""
 
+    @pytest.mark.unit
     def test_init_all_optional(self):
         """Test initialization with all fields optional."""
         request = ScorerResultUpdateRequest()
@@ -558,6 +602,7 @@ class TestScorerResultUpdateRequest:
         assert request.metadata is None
         assert request.details is None
 
+    @pytest.mark.unit
     def test_init_with_values(self):
         """Test initialization with some values."""
         request = ScorerResultUpdateRequest(score=0.87, metadata={"updated": True})
@@ -570,6 +615,7 @@ class TestScorerResultUpdateRequest:
 class TestScorerResultsQueryParams:
     """Test cases for ScorerResultsQueryParams model."""
 
+    @pytest.mark.unit
     def test_init_required_fields(self):
         """Test initialization with required organizationSlug."""
         params = ScorerResultsQueryParams(organizationSlug="test-org")
@@ -581,6 +627,7 @@ class TestScorerResultsQueryParams:
         assert params.limit == 100
         assert params.offset == 0
 
+    @pytest.mark.unit
     def test_init_all_fields(self):
         """Test initialization with all fields."""
         params = ScorerResultsQueryParams(
@@ -599,6 +646,7 @@ class TestScorerResultsQueryParams:
         assert params.limit == 50
         assert params.offset == 25
 
+    @pytest.mark.unit
     def test_organization_slug_required(self):
         """Test organizationSlug is required."""
         with pytest.raises(ValidationError) as exc_info:
@@ -606,6 +654,7 @@ class TestScorerResultsQueryParams:
 
         assert "Field required" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_limit_validation_min(self):
         """Test limit validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -613,6 +662,7 @@ class TestScorerResultsQueryParams:
 
         assert "greater than or equal to 1" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_limit_validation_max(self):
         """Test limit validation maximum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -620,6 +670,7 @@ class TestScorerResultsQueryParams:
 
         assert "less than or equal to 1000" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_offset_validation_min(self):
         """Test offset validation minimum value."""
         with pytest.raises(ValidationError) as exc_info:
@@ -627,6 +678,7 @@ class TestScorerResultsQueryParams:
 
         assert "greater than or equal to 0" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_to_query_params(self):
         """Test to_query_params method."""
         params = ScorerResultsQueryParams(
@@ -648,6 +700,7 @@ class TestScorerResultsQueryParams:
 class TestScorerResultsBatchRequest:
     """Test cases for ScorerResultsBatchRequest model."""
 
+    @pytest.mark.unit
     def test_init_required_fields(self):
         """Test initialization with required fields."""
         results = [
@@ -665,6 +718,7 @@ class TestScorerResultsBatchRequest:
         assert results_list[0].itemId == "item-1"
         assert results_list[1].itemId == "item-2"
 
+    @pytest.mark.unit
     def test_results_validation_min_items(self):
         """Test results validation minimum items."""
         with pytest.raises(ValidationError) as exc_info:

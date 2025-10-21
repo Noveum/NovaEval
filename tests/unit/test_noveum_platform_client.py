@@ -25,6 +25,7 @@ class TestNoveumClientInit:
     @patch.dict(
         os.environ, {"NOVEUM_API_KEY": "test-key", "NOVEUM_ORGANIZATION_ID": "test-org"}
     )
+    @pytest.mark.unit
     def test_init_with_env_vars(self):
         """Test initialization using environment variables."""
         with patch(
@@ -49,6 +50,7 @@ class TestNoveumClientInit:
                 {"X-Organization-Id": "test-org"}
             )
 
+    @pytest.mark.unit
     def test_init_with_params(self):
         """Test initialization with direct parameters."""
         with patch("novaeval.noveum_platform.client.requests.Session"):
@@ -64,12 +66,14 @@ class TestNoveumClientInit:
             assert client.organization_id == "direct-org"
             assert client.timeout == 60.0
 
+    @pytest.mark.unit
     def test_init_base_url_stripping(self):
         """Test that base_url trailing slash is stripped."""
         with patch("novaeval.noveum_platform.client.requests.Session"):
             client = NoveumClient(api_key="test-key", base_url="https://api.test.com/")
             assert client.base_url == "https://api.test.com"
 
+    @pytest.mark.unit
     def test_init_no_api_key_raises_error(self):
         """Test that missing API key raises ValueError."""
         with patch.dict(os.environ, {}, clear=True):
@@ -78,6 +82,7 @@ class TestNoveumClientInit:
 
             assert "API key is required" in str(exc_info.value)
 
+    @pytest.mark.unit
     def test_init_no_organization_id(self):
         """Test initialization without organization ID."""
         with (
@@ -105,6 +110,7 @@ class TestNoveumClientHandleResponse:
         with patch("novaeval.noveum_platform.client.requests.Session"):
             self.client = NoveumClient(api_key="test-key")
 
+    @pytest.mark.unit
     def test_handle_response_success(self):
         """Test successful response handling."""
         mock_response = Mock()
@@ -116,6 +122,7 @@ class TestNoveumClientHandleResponse:
 
         assert result == {"data": "test"}
 
+    @pytest.mark.unit
     def test_handle_response_empty_content(self):
         """Test response with empty content."""
         mock_response = Mock()
@@ -127,6 +134,7 @@ class TestNoveumClientHandleResponse:
 
         assert result == {}
 
+    @pytest.mark.unit
     def test_handle_response_invalid_json(self):
         """Test response with invalid JSON."""
         mock_response = Mock()
@@ -138,6 +146,7 @@ class TestNoveumClientHandleResponse:
 
         assert result == {"error": "Invalid JSON response"}
 
+    @pytest.mark.unit
     def test_handle_response_400_validation_error(self):
         """Test 400 status code raises ValidationError."""
         mock_response = Mock()
@@ -152,6 +161,7 @@ class TestNoveumClientHandleResponse:
         assert exc_info.value.message == "Invalid request"
         assert exc_info.value.response_body == {"message": "Invalid request"}
 
+    @pytest.mark.unit
     def test_handle_response_401_authentication_error(self):
         """Test 401 status code raises AuthenticationError."""
         mock_response = Mock()
@@ -165,6 +175,7 @@ class TestNoveumClientHandleResponse:
         assert exc_info.value.status_code == 401
         assert exc_info.value.message == "Invalid API key"
 
+    @pytest.mark.unit
     def test_handle_response_403_forbidden_error(self):
         """Test 403 status code raises ForbiddenError."""
         mock_response = Mock()
@@ -178,6 +189,7 @@ class TestNoveumClientHandleResponse:
         assert exc_info.value.status_code == 403
         assert exc_info.value.message == "Access denied"
 
+    @pytest.mark.unit
     def test_handle_response_404_not_found_error(self):
         """Test 404 status code raises NotFoundError."""
         mock_response = Mock()
@@ -191,6 +203,7 @@ class TestNoveumClientHandleResponse:
         assert exc_info.value.status_code == 404
         assert exc_info.value.message == "Resource not found"
 
+    @pytest.mark.unit
     def test_handle_response_409_conflict_error(self):
         """Test 409 status code raises ConflictError."""
         mock_response = Mock()
@@ -204,6 +217,7 @@ class TestNoveumClientHandleResponse:
         assert exc_info.value.status_code == 409
         assert exc_info.value.message == "Trace is immutable"
 
+    @pytest.mark.unit
     def test_handle_response_429_rate_limit_error(self):
         """Test 429 status code raises RateLimitError."""
         mock_response = Mock()
@@ -217,6 +231,7 @@ class TestNoveumClientHandleResponse:
         assert exc_info.value.status_code == 429
         assert exc_info.value.message == "Rate limit exceeded"
 
+    @pytest.mark.unit
     def test_handle_response_500_server_error(self):
         """Test 500 status code raises ServerError."""
         mock_response = Mock()
@@ -230,6 +245,7 @@ class TestNoveumClientHandleResponse:
         assert exc_info.value.status_code == 500
         assert exc_info.value.message == "Internal server error"
 
+    @pytest.mark.unit
     def test_handle_response_502_server_error(self):
         """Test 502 status code raises ServerError."""
         mock_response = Mock()
@@ -243,6 +259,7 @@ class TestNoveumClientHandleResponse:
         assert exc_info.value.status_code == 502
         assert exc_info.value.message == "Bad gateway"
 
+    @pytest.mark.unit
     def test_handle_response_default_message(self):
         """Test default error messages when API doesn't provide message."""
         mock_response = Mock()
@@ -265,6 +282,7 @@ class TestNoveumClientTraces:
             self.client = NoveumClient(api_key="test-key")
             self.mock_session = mock_session.return_value
 
+    @pytest.mark.unit
     def test_ingest_traces(self):
         """Test ingest_traces method."""
         traces = [{"trace_id": "1"}, {"trace_id": "2"}]
@@ -285,6 +303,7 @@ class TestNoveumClientTraces:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_ingest_trace(self):
         """Test ingest_trace method."""
         trace = {"trace_id": "1", "name": "test"}
@@ -305,6 +324,7 @@ class TestNoveumClientTraces:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_query_traces(self):
         """Test query_traces method."""
         mock_response = Mock()
@@ -325,6 +345,7 @@ class TestNoveumClientTraces:
             assert "params" in call_args[1]
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_get_trace(self):
         """Test get_trace method."""
         trace_id = "trace-123"
@@ -345,6 +366,7 @@ class TestNoveumClientTraces:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_get_directory_tree(self):
         """Test get_directory_tree method."""
         mock_response = Mock()
@@ -364,6 +386,7 @@ class TestNoveumClientTraces:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_get_connection_status(self):
         """Test get_connection_status method."""
         mock_response = Mock()
@@ -383,6 +406,7 @@ class TestNoveumClientTraces:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_get_trace_spans(self):
         """Test get_trace_spans method."""
         trace_id = "trace-123"
@@ -413,6 +437,7 @@ class TestNoveumClientDatasets:
             self.client = NoveumClient(api_key="test-key")
             self.mock_session = mock_session.return_value
 
+    @pytest.mark.unit
     def test_create_dataset(self):
         """Test create_dataset method."""
         mock_response = Mock()
@@ -435,6 +460,7 @@ class TestNoveumClientDatasets:
             assert "json" in call_args[1]
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_list_datasets(self):
         """Test list_datasets method."""
         mock_response = Mock()
@@ -455,6 +481,7 @@ class TestNoveumClientDatasets:
             assert "params" in call_args[1]
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_get_dataset(self):
         """Test get_dataset method."""
         slug = "test-dataset"
@@ -475,6 +502,7 @@ class TestNoveumClientDatasets:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_update_dataset(self):
         """Test update_dataset method."""
         slug = "test-dataset"
@@ -498,6 +526,7 @@ class TestNoveumClientDatasets:
             assert "json" in call_args[1]
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_delete_dataset(self):
         """Test delete_dataset method."""
         slug = "test-dataset"
@@ -518,6 +547,7 @@ class TestNoveumClientDatasets:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_list_dataset_versions(self):
         """Test list_dataset_versions method."""
         dataset_slug = "test-dataset"
@@ -539,6 +569,7 @@ class TestNoveumClientDatasets:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_create_dataset_version(self):
         """Test create_dataset_version method."""
         dataset_slug = "test-dataset"
@@ -564,6 +595,7 @@ class TestNoveumClientDatasets:
             assert "json" in call_args[1]
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_get_dataset_version(self):
         """Test get_dataset_version method."""
         dataset_slug = "test-dataset"
@@ -586,6 +618,7 @@ class TestNoveumClientDatasets:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_publish_dataset_version(self):
         """Test publish_dataset_version method."""
         dataset_slug = "test-dataset"
@@ -608,6 +641,7 @@ class TestNoveumClientDatasets:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_list_dataset_items(self):
         """Test list_dataset_items method."""
         dataset_slug = "test-dataset"
@@ -634,6 +668,7 @@ class TestNoveumClientDatasets:
             assert "params" in call_args[1]
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_add_dataset_items(self):
         """Test add_dataset_items method."""
         dataset_slug = "test-dataset"
@@ -660,6 +695,7 @@ class TestNoveumClientDatasets:
             assert "json" in call_args[1]
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_delete_all_dataset_items(self):
         """Test delete_all_dataset_items method."""
         dataset_slug = "test-dataset"
@@ -684,6 +720,7 @@ class TestNoveumClientDatasets:
             assert call_args[1]["params"] == {"version": "1.0.0"}
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_delete_all_dataset_items_no_version(self):
         """Test delete_all_dataset_items method without version."""
         dataset_slug = "test-dataset"
@@ -708,6 +745,7 @@ class TestNoveumClientDatasets:
             assert call_args[1]["params"] == {}
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_get_dataset_item(self):
         """Test get_dataset_item method."""
         dataset_slug = "test-dataset"
@@ -730,6 +768,7 @@ class TestNoveumClientDatasets:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_delete_dataset_item(self):
         """Test delete_dataset_item method."""
         dataset_slug = "test-dataset"
@@ -762,6 +801,7 @@ class TestNoveumClientScorerResults:
             self.client = NoveumClient(api_key="test-key")
             self.mock_session = mock_session.return_value
 
+    @pytest.mark.unit
     def test_list_scorer_results(self):
         """Test list_scorer_results method."""
         mock_response = Mock()
@@ -784,6 +824,7 @@ class TestNoveumClientScorerResults:
             assert "params" in call_args[1]
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_create_scorer_result(self):
         """Test create_scorer_result method."""
         result_data = {
@@ -810,6 +851,7 @@ class TestNoveumClientScorerResults:
             assert "json" in call_args[1]
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_create_scorer_results_batch(self):
         """Test create_scorer_results_batch method."""
         results = [
@@ -844,6 +886,7 @@ class TestNoveumClientScorerResults:
             assert "json" in call_args[1]
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_get_scorer_result(self):
         """Test get_scorer_result method."""
         dataset_slug = "test-dataset"
@@ -867,6 +910,7 @@ class TestNoveumClientScorerResults:
             )
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_update_scorer_result(self):
         """Test update_scorer_result method."""
         dataset_slug = "test-dataset"
@@ -896,6 +940,7 @@ class TestNoveumClientScorerResults:
             assert "json" in call_args[1]
             mock_handle.assert_called_once_with(mock_response)
 
+    @pytest.mark.unit
     def test_delete_scorer_result(self):
         """Test delete_scorer_result method."""
         dataset_slug = "test-dataset"

@@ -42,6 +42,7 @@ class TestNoveumClientIntegration:
         )
 
     @responses_activate
+    @pytest.mark.unit
     def test_complete_dataset_workflow(self):
         """Test complete dataset workflow: create → add items → create scorer results."""
         # Mock create dataset
@@ -105,6 +106,7 @@ class TestNoveumClientIntegration:
         assert scorer_result["id"] == "result-123"
 
     @responses_activate
+    @pytest.mark.unit
     def test_trace_ingestion_workflow(self):
         """Test trace ingestion workflow."""
         # Mock trace ingestion
@@ -155,6 +157,7 @@ class TestNoveumClientIntegration:
         assert query_result["total"] == 2
 
     @responses_activate
+    @pytest.mark.unit
     def test_error_handling_workflow(self):
         """Test error handling across different scenarios."""
         # Mock authentication error
@@ -200,6 +203,7 @@ class TestNoveumClientIntegration:
         assert exc_info.value.status_code == 404
 
     @responses_activate
+    @pytest.mark.unit
     def test_batch_scorer_results_workflow(self):
         """Test batch scorer results creation workflow."""
         # Mock batch scorer results creation
@@ -265,6 +269,7 @@ class TestNoveumClientIntegration:
         assert list_result["total"] == 3
 
     @responses_activate
+    @pytest.mark.unit
     def test_dataset_version_workflow(self):
         """Test dataset version management workflow."""
         # Mock create dataset version
@@ -311,6 +316,7 @@ class TestNoveumClientIntegration:
         assert get_result["status"] == "published"
 
     @responses_activate
+    @pytest.mark.unit
     def test_session_reuse_across_requests(self):
         """Test that session is reused across multiple requests."""
         # Mock multiple requests
@@ -341,6 +347,7 @@ class TestNoveumClientIntegration:
             assert call.request.headers["X-Organization-Id"] == "test-org"
 
     @responses_activate
+    @pytest.mark.unit
     def test_timeout_behavior(self):
         """Test timeout behavior with slow responses."""
         import time
@@ -365,6 +372,7 @@ class TestNoveumClientIntegration:
         assert result["data"] == "slow response"
 
     @responses_activate
+    @pytest.mark.unit
     def test_query_parameters_encoding(self):
         """Test that query parameters are properly encoded."""
         # Mock query traces with complex parameters
@@ -402,6 +410,7 @@ class TestNoveumClientIntegration:
         assert "from=10" in call.request.url
 
     @responses_activate
+    @pytest.mark.unit
     def test_json_request_body_encoding(self):
         """Test that JSON request bodies are properly encoded."""
         # Mock create dataset
@@ -439,6 +448,7 @@ class TestNoveumClientIntegration:
         assert request_body["custom_attributes"]["special_chars"] == "!@#$%^&*()"
 
     @responses_activate
+    @pytest.mark.unit
     def test_empty_response_handling(self):
         """Test handling of empty responses."""
         # Mock empty response
@@ -456,6 +466,7 @@ class TestNoveumClientIntegration:
         assert result == {}
 
     @responses_activate
+    @pytest.mark.unit
     def test_large_response_handling(self):
         """Test handling of large responses."""
         # Create large response data

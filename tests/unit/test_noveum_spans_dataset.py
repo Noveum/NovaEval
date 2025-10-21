@@ -24,6 +24,7 @@ from novaeval.datasets.noveum_spans_dataset import (
 class TestNoveumSpansPreprocessing:
     """Test the noveum_spans_preprocessing function."""
 
+    @pytest.mark.unit
     def test_both_parameters_provided_raises_error(self):
         """Test that providing both json_dir and json_files raises ValueError."""
         with pytest.raises(
@@ -31,6 +32,7 @@ class TestNoveumSpansPreprocessing:
         ):
             noveum_spans_preprocessing(json_dir="/path", json_files=["file.json"])
 
+    @pytest.mark.unit
     def test_neither_parameter_provided_raises_error(self):
         """Test that providing neither json_dir nor json_files raises ValueError."""
         with pytest.raises(
@@ -38,11 +40,13 @@ class TestNoveumSpansPreprocessing:
         ):
             noveum_spans_preprocessing()
 
+    @pytest.mark.unit
     def test_invalid_directory_raises_error(self):
         """Test that invalid directory path raises ValueError."""
         with pytest.raises(ValueError, match="is not a valid directory"):
             noveum_spans_preprocessing(json_dir="/nonexistent/path")
 
+    @pytest.mark.unit
     def test_non_json_files_in_directory_raises_error(self):
         """Test that non-JSON files in directory raise ValueError."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -53,6 +57,7 @@ class TestNoveumSpansPreprocessing:
             with pytest.raises(ValueError, match="Directory contains non-JSON files"):
                 noveum_spans_preprocessing(json_dir=temp_dir)
 
+    @pytest.mark.unit
     def test_no_json_files_in_directory_raises_error(self):
         """Test that directory with no JSON files raises ValueError."""
         with (
@@ -61,6 +66,7 @@ class TestNoveumSpansPreprocessing:
         ):
             noveum_spans_preprocessing(json_dir=temp_dir)
 
+    @pytest.mark.unit
     def test_invalid_json_files_list_raises_error(self):
         """Test that invalid json_files parameter raises ValueError."""
         with pytest.raises(ValueError, match="json_files must be a non-empty list"):
@@ -69,6 +75,7 @@ class TestNoveumSpansPreprocessing:
         with pytest.raises(ValueError, match="json_files must be a non-empty list"):
             noveum_spans_preprocessing(json_files=[])
 
+    @pytest.mark.unit
     def test_non_json_file_in_list_raises_error(self):
         """Test that non-JSON file in list raises ValueError."""
         with pytest.raises(ValueError, match="is not a JSON file"):
@@ -76,6 +83,7 @@ class TestNoveumSpansPreprocessing:
 
     @patch("builtins.open", new_callable=mock_open)
     @patch("os.path.exists")
+    @pytest.mark.unit
     def test_json_file_not_found_continues(self, mock_exists, mock_file):
         """Test that FileNotFoundError is handled gracefully."""
         mock_exists.return_value = True
@@ -94,6 +102,7 @@ class TestNoveumSpansPreprocessing:
 
     @patch("builtins.open")
     @patch("os.path.exists")
+    @pytest.mark.unit
     def test_invalid_json_continues(self, mock_exists, mock_open_func):
         """Test that invalid JSON is handled gracefully."""
         mock_exists.return_value = True
@@ -112,6 +121,7 @@ class TestNoveumSpansPreprocessing:
         finally:
             os.unlink(temp_csv_path)
 
+    @pytest.mark.unit
     def test_successful_preprocessing_with_valid_json_files(self):
         """Test successful preprocessing with valid JSON files."""
         # Create sample JSON data
@@ -150,6 +160,7 @@ class TestNoveumSpansPreprocessing:
             assert df.iloc[0]["trace_id"] == "trace123"
             assert df.iloc[0]["turn_id"] == "span1"  # span_id is mapped to turn_id
 
+    @pytest.mark.unit
     def test_successful_preprocessing_with_json_directory(self):
         """Test successful preprocessing with JSON directory."""
         sample_data = {
@@ -189,6 +200,7 @@ class TestNoveumSpansPreprocessing:
 class TestNoveumSpansDatasetFunctions:
     """Test the dataset creation and streaming functions."""
 
+    @pytest.mark.unit
     def test_create_dataset_success(self):
         """Test create_dataset with valid CSV file."""
         # Create sample CSV data matching expected format
@@ -221,6 +233,7 @@ class TestNoveumSpansDatasetFunctions:
             if temp_file_path and os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
 
+    @pytest.mark.unit
     def test_stream_dataset_success(self):
         """Test stream_dataset with valid CSV file."""
         # Create sample CSV data
@@ -252,16 +265,19 @@ class TestNoveumSpansDatasetFunctions:
             if temp_file_path and os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
 
+    @pytest.mark.unit
     def test_create_dataset_file_not_found(self):
         """Test create_dataset with non-existent file."""
         with contextlib.suppress(FileNotFoundError, Exception):
             create_dataset("/nonexistent/file.csv")
 
+    @pytest.mark.unit
     def test_stream_dataset_file_not_found(self):
         """Test stream_dataset with non-existent file."""
         with contextlib.suppress(FileNotFoundError, Exception):
             list(stream_dataset("/nonexistent/file.csv"))
 
+    @pytest.mark.unit
     def test_preprocessing_with_tool_input_fields(self):
         """Test preprocessing with tool.input.* fields."""
         sample_data = {
@@ -295,6 +311,7 @@ class TestNoveumSpansDatasetFunctions:
             assert len(df) == 1
             assert df.iloc[0]["agent_task"] == "search query"
 
+    @pytest.mark.unit
     def test_preprocessing_with_llm_prompts_field(self):
         """Test preprocessing with llm.prompts field when no other input fields exist."""
         sample_data = {
@@ -328,6 +345,7 @@ class TestNoveumSpansDatasetFunctions:
             assert len(df) == 1
             assert df.iloc[0]["agent_task"] == "prompt text"
 
+    @pytest.mark.unit
     def test_preprocessing_multiple_input_fields_error(self):
         """Test preprocessing handles error when multiple input fields are found."""
         sample_data = {
@@ -361,6 +379,7 @@ class TestNoveumSpansDatasetFunctions:
             # This tests the error handling path
 
     @patch("csv.field_size_limit")
+    @pytest.mark.unit
     def test_create_dataset_overflow_error_handling(self, mock_field_size_limit):
         """Test create_dataset with OverflowError in field_size_limit."""
         # Mock field_size_limit to raise OverflowError initially
@@ -393,6 +412,7 @@ class TestNoveumSpansDatasetFunctions:
                 os.unlink(temp_file_path)
 
     @patch("csv.field_size_limit")
+    @pytest.mark.unit
     def test_stream_dataset_overflow_error_handling(self, mock_field_size_limit):
         """Test stream_dataset with OverflowError in field_size_limit."""
         # Mock field_size_limit to raise OverflowError initially
@@ -424,6 +444,7 @@ class TestNoveumSpansDatasetFunctions:
             if temp_file_path and os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
 
+    @pytest.mark.unit
     def test_create_dataset_json_decode_error_handling(self):
         """Test create_dataset with invalid JSON in metadata field."""
         sample_data = {
@@ -455,6 +476,7 @@ class TestNoveumSpansDatasetFunctions:
             if temp_file_path and os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
 
+    @pytest.mark.unit
     def test_stream_dataset_json_decode_error_handling(self):
         """Test stream_dataset with invalid JSON in metadata field."""
         sample_data = {
