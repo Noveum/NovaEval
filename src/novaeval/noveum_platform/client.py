@@ -623,7 +623,9 @@ class NoveumClient:
         """
         params = {"limit": limit, "offset": offset}
 
-        logger.info("Listing versions for dataset: %s with params: %s", dataset_slug, params)
+        logger.info(
+            "Listing versions for dataset: %s with params: %s", dataset_slug, params
+        )
 
         response = self.session.get(
             f"{self.base_url}/api/v1/datasets/{dataset_slug}/versions",
@@ -807,7 +809,9 @@ class NoveumClient:
         dataset_items = [self._parse_model(DatasetItem, item) for item in items]
 
         # Validate request data
-        request_data = self._parse_model(DatasetItemsCreateRequest, {"items": dataset_items})
+        request_data = self._parse_model(
+            DatasetItemsCreateRequest, {"items": dataset_items}
+        )
 
         logger.info("Adding %d items to dataset %s", len(items), dataset_slug)
 

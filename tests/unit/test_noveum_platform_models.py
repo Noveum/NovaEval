@@ -515,13 +515,13 @@ class TestDatasetItemsQueryParams:
     def test_init_with_values(self):
         """Test initialization with custom values."""
         params = DatasetItemsQueryParams(
-            version="1.0.0", 
-            limit=25, 
+            version="1.0.0",
+            limit=25,
             offset=10,
             item_type="conversation",
             search="test query",
             sort_by="created_at",
-            sort_order="desc"
+            sort_order="desc",
         )
 
         assert params.version == "1.0.0"
@@ -560,25 +560,25 @@ class TestDatasetItemsQueryParams:
     def test_to_query_params(self):
         """Test to_query_params method."""
         params = DatasetItemsQueryParams(
-            version="1.0.0", 
-            limit=25, 
+            version="1.0.0",
+            limit=25,
             offset=10,
             item_type="conversation",
             search="test",
             sort_by="created_at",
-            sort_order="desc"
+            sort_order="desc",
         )
 
         result = params.to_query_params()
 
         expected = {
-            "version": "1.0.0", 
-            "limit": 25, 
+            "version": "1.0.0",
+            "limit": 25,
             "offset": 10,
             "item_type": "conversation",
             "search": "test",
             "sort_by": "created_at",
-            "sort_order": "desc"
+            "sort_order": "desc",
         }
 
         assert result == expected

@@ -653,7 +653,9 @@ class TestNoveumClientDatasets:
         self.mock_session.get.return_value = mock_response
 
         with patch.object(
-            self.client, "_handle_response", return_value={"diff": {"added": 1, "deleted": 0}}
+            self.client,
+            "_handle_response",
+            return_value={"diff": {"added": 1, "deleted": 0}},
         ) as mock_handle:
             result = self.client.get_dataset_versions_diff(dataset_slug)
 

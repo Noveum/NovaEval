@@ -91,7 +91,7 @@ class TestNoveumClientIntegration:
                 "content": {"question": "What is ML?", "answer": "Machine Learning"},
             },
         ]
-        add_result = self.client.add_dataset_items("test-dataset", "1.0.0", items)
+        add_result = self.client.add_dataset_items("test-dataset", items)
         assert add_result["added"] == 2
 
         # Create scorer result
@@ -283,7 +283,7 @@ class TestNoveumClientIntegration:
         # Mock publish dataset version
         responses.add(
             responses.POST,
-            "https://api.test.com/api/v1/datasets/test-dataset/versions/1.0.0/publish",
+            "https://api.test.com/api/v1/datasets/test-dataset/versions/publish",
             json={"version": "1.0.0", "status": "published"},
             status=200,
         )
@@ -307,7 +307,7 @@ class TestNoveumClientIntegration:
         assert create_result["status"] == "draft"
 
         # Publish dataset version
-        publish_result = self.client.publish_dataset_version("test-dataset", "1.0.0")
+        publish_result = self.client.publish_dataset_version("test-dataset")
         assert publish_result["status"] == "published"
 
         # Get dataset version
