@@ -479,9 +479,8 @@ class TestDatasetItemsCreateRequest:
             DatasetItem(item_key="item-1", item_type="test", content={}),
             DatasetItem(item_key="item-2", item_type="test", content={}),
         ]
-        request = DatasetItemsCreateRequest(version="1.0.0", items=items)
+        request = DatasetItemsCreateRequest(items=items)
 
-        assert request.version == "1.0.0"
         assert len(request.items) == 2
         items_list = list(request.items)
         assert items_list[0].item_key == "item-1"
@@ -491,7 +490,7 @@ class TestDatasetItemsCreateRequest:
     def test_items_validation_min_items(self):
         """Test items validation minimum items."""
         with pytest.raises(ValidationError) as exc_info:
-            DatasetItemsCreateRequest(version="1.0.0", items=[])
+            DatasetItemsCreateRequest(items=[])
 
         assert "at least 1 item" in str(exc_info.value)
 
@@ -505,17 +504,33 @@ class TestDatasetItemsQueryParams:
         params = DatasetItemsQueryParams()
 
         assert params.version is None
-        assert params.limit is None
-        assert params.offset is None
+        assert params.limit == 50
+        assert params.offset == 0
+        assert params.item_type is None
+        assert params.search is None
+        assert params.sort_by is None
+        assert params.sort_order == "asc"
 
     @pytest.mark.unit
     def test_init_with_values(self):
         """Test initialization with custom values."""
-        params = DatasetItemsQueryParams(version="1.0.0", limit=50, offset=10)
+        params = DatasetItemsQueryParams(
+            version="1.0.0", 
+            limit=25, 
+            offset=10,
+            item_type="conversation",
+            search="test query",
+            sort_by="created_at",
+            sort_order="desc"
+        )
 
         assert params.version == "1.0.0"
-        assert params.limit == 50
+        assert params.limit == 25
         assert params.offset == 10
+        assert params.item_type == "conversation"
+        assert params.search == "test query"
+        assert params.sort_by == "created_at"
+        assert params.sort_order == "desc"
 
     @pytest.mark.unit
     def test_limit_validation_min(self):
@@ -544,13 +559,73 @@ class TestDatasetItemsQueryParams:
     @pytest.mark.unit
     def test_to_query_params(self):
         """Test to_query_params method."""
-        params = DatasetItemsQueryParams(version="1.0.0", limit=50, offset=10)
+        params = DatasetItemsQueryParams(
+            version="1.0.0", 
+            limit=25, 
+            offset=10,
+            item_type="conversation",
+            search="test",
+            sort_by="created_at",
+            sort_order="desc"
+        )
 
         result = params.to_query_params()
 
-        expected = {"version": "1.0.0", "limit": 50, "offset": 10}
+        expected = {
+            "version": "1.0.0", 
+            "limit": 25, 
+            "offset": 10,
+            "item_type": "conversation",
+            "search": "test",
+            "sort_by": "created_at",
+            "sort_order": "desc"
+        }
 
         assert result == expected
+
+    @pytest.mark.unit
+    def test_item_type_validation_max_length(self):
+        """Test item_type validation maximum length."""
+        with pytest.raises(ValidationError) as exc_info:
+            DatasetItemsQueryParams(item_type="x" * 101)
+
+        assert "at most 100 characters" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_search_validation_max_length(self):
+        """Test search validation maximum length."""
+        with pytest.raises(ValidationError) as exc_info:
+            DatasetItemsQueryParams(search="x" * 257)
+
+        assert "at most 256 characters" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_sort_by_validation_pattern(self):
+        """Test sort_by validation pattern."""
+        # Valid patterns
+        valid_sorts = ["created_at", "item_key", "scorer.accuracy", "scorer.confidence"]
+        for sort_val in valid_sorts:
+            params = DatasetItemsQueryParams(sort_by=sort_val)
+            assert params.sort_by == sort_val
+
+        # Invalid patterns
+        with pytest.raises(ValidationError) as exc_info:
+            DatasetItemsQueryParams(sort_by="invalid-sort")
+
+        assert "String should match pattern" in str(exc_info.value)
+
+    @pytest.mark.unit
+    def test_sort_order_validation(self):
+        """Test sort_order validation."""
+        valid_orders = ["asc", "desc"]
+        for order in valid_orders:
+            params = DatasetItemsQueryParams(sort_order=order)
+            assert params.sort_order == order
+
+        with pytest.raises(ValidationError) as exc_info:
+            DatasetItemsQueryParams(sort_order="invalid")
+
+        assert "Input should be" in str(exc_info.value)
 
 
 class TestScorerResultCreateRequest:

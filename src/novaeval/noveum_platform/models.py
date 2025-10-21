@@ -170,18 +170,33 @@ class DatasetItem(BaseModel):
 class DatasetItemsCreateRequest(BaseModel):
     """Model for creating dataset items."""
 
-    version: str = Field(..., description="Dataset version")
     items: list[DatasetItem] = Field(..., min_length=1, description="Items to add")
 
 
 class DatasetItemsQueryParams(BaseModel):
     """Query parameters for listing dataset items."""
 
-    version: Optional[str] = Field(None, description="Filter by version")
-    limit: Optional[int] = Field(
-        None, ge=1, le=1000, description="Number of items to return"
+    version: Optional[str] = Field(
+        None, pattern=r"^\s*\d+\.\d+\.\d+\s*$", description="Filter by version"
     )
-    offset: Optional[int] = Field(None, ge=0, description="Number of items to skip")
+    limit: Optional[int] = Field(
+        50, ge=1, le=1000, description="Number of items to return"
+    )
+    offset: Optional[int] = Field(0, ge=0, description="Number of items to skip")
+    item_type: Optional[str] = Field(
+        None, max_length=100, description="Filter by item type"
+    )
+    search: Optional[str] = Field(
+        None, max_length=256, description="Search term for filtering items"
+    )
+    sort_by: Optional[str] = Field(
+        None,
+        pattern=r"^(scorer\.[a-zA-Z0-9_-]{1,64}|[a-zA-Z_][a-zA-Z0-9_]{0,63})$",
+        description="Field to sort by",
+    )
+    sort_order: Optional[Literal["asc", "desc"]] = Field(
+        "asc", description="Sort order"
+    )
 
     def to_query_params(self) -> dict:
         """Convert to query parameters dictionary."""

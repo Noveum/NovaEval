@@ -11,26 +11,26 @@ import pytest
 def test_imports():
     """Test that all classes can be imported from the noveum_platform module."""
     from novaeval.noveum_platform import (
-        NoveumClient,
         AuthenticationError,
         ConflictError,
-        ForbiddenError,
-        NotFoundError,
-        NoveumAPIError,
-        RateLimitError,
-        ServerError,
-        ValidationError,
         DatasetCreateRequest,
         DatasetItemsCreateRequest,
         DatasetItemsQueryParams,
         DatasetsQueryParams,
         DatasetUpdateRequest,
         DatasetVersionCreateRequest,
+        ForbiddenError,
+        NotFoundError,
+        NoveumAPIError,
+        NoveumClient,
+        RateLimitError,
         ScorerResultCreateRequest,
         ScorerResultsBatchRequest,
         ScorerResultsQueryParams,
         ScorerResultUpdateRequest,
+        ServerError,
         TracesQueryParams,
+        ValidationError,
     )
 
     # Verify all classes are imported correctly
@@ -109,6 +109,7 @@ def test_direct_imports():
     """Test that classes can be imported directly from submodules."""
     # Test client import
     from novaeval.noveum_platform.client import NoveumClient
+
     assert NoveumClient is not None
 
     # Test exceptions import
@@ -122,6 +123,7 @@ def test_direct_imports():
         ServerError,
         ValidationError,
     )
+
     assert AuthenticationError is not None
     assert ConflictError is not None
     assert ForbiddenError is not None
@@ -145,6 +147,7 @@ def test_direct_imports():
         ScorerResultUpdateRequest,
         TracesQueryParams,
     )
+
     assert DatasetCreateRequest is not None
     assert DatasetItemsCreateRequest is not None
     assert DatasetItemsQueryParams is not None
@@ -174,12 +177,12 @@ def test_import_without_load_dotenv():
     # This test ensures that removing load_dotenv() from __init__.py doesn't break imports
     # The module should still be importable, but environment variables won't be loaded
     # unless load_dotenv() is called explicitly or client.py is imported
-    
+
     # Import the module without calling load_dotenv() first
     from novaeval.noveum_platform import NoveumClient
-    
+
     # The import should succeed
     assert NoveumClient is not None
-    
+
     # Note: This test doesn't verify that environment variables are loaded,
     # just that the import doesn't fail due to the removal of load_dotenv()

@@ -7,7 +7,7 @@ traces, datasets, and scorer results.
 """
 
 import os
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 
 import pydantic
 import requests
@@ -157,7 +157,9 @@ class NoveumClient:
         response.raise_for_status()  # This will raise for any other error status codes
         return response_body
 
-    def _parse_model(self, model_cls, data: dict[str, Any]):
+    def _parse_model(
+        self, model_cls: type[pydantic.BaseModel], data: dict[str, Any]
+    ) -> Any:
         """
         Parse data into a Pydantic model and convert ValidationError into our API ValidationError.
 
@@ -184,12 +186,15 @@ class NoveumClient:
                 response_body={"validation_errors": e.errors()},
             ) from e
 
-    def ingest_traces(self, traces: list[dict[str, Any]]) -> dict[str, Any]:
+    def ingest_traces(
+        self, traces: Union[list[dict[str, Any]], dict[str, Any]]
+    ) -> dict[str, Any]:
         """
         Ingest multiple traces in a single batch request.
 
         Args:
-            traces: List of trace dictionaries to ingest
+            traces: List of trace dictionaries to ingest, or dict with 'traces' key
+                   containing the list of traces (already wrapped format)
 
         Returns:
             API response containing ingestion results
@@ -199,8 +204,16 @@ class NoveumClient:
         """
         logger.info("Ingesting %d traces", len(traces))
 
+        # Check if traces are already wrapped in the expected format
+        if isinstance(traces, dict) and "traces" in traces:
+            # Already wrapped, use as-is
+            batch_data = traces
+        else:
+            # Not wrapped, wrap in the format expected by the API
+            batch_data = {"traces": traces}
+
         response = self.session.post(
-            f"{self.base_url}/api/v1/traces", json=traces, timeout=self.timeout
+            f"{self.base_url}/api/v1/traces", json=batch_data, timeout=self.timeout
         )
 
         return self._handle_response(response)
@@ -294,7 +307,7 @@ class NoveumClient:
             "search_term": search_term,
             "include_spans": include_spans,
         }
-        
+
         # Validate parameters using Pydantic model
         query_params = self._parse_model(TracesQueryParams, kwargs)
         params = query_params.to_query_params()
@@ -431,7 +444,7 @@ class NoveumClient:
             "tags": tags,
             "custom_attributes": custom_attributes,
         }
-        
+
         # Validate request data
         request_data = self._parse_model(DatasetCreateRequest, kwargs)
 
@@ -477,7 +490,7 @@ class NoveumClient:
             "organizationSlug": organizationSlug,
             "includeVersions": includeVersions,
         }
-        
+
         # Validate parameters using Pydantic model
         query_params = self._parse_model(DatasetsQueryParams, kwargs)
         params = query_params.to_query_params()
@@ -517,7 +530,9 @@ class NoveumClient:
         name: Optional[str] = None,
         description: Optional[str] = None,
         visibility: Optional[Literal["public", "org", "private"]] = None,
-        dataset_type: Optional[Literal["agent", "conversational", "g-eval", "custom"]] = None,
+        dataset_type: Optional[
+            Literal["agent", "conversational", "g-eval", "custom"]
+        ] = None,
         environment: Optional[str] = None,
         schema_version: Optional[str] = None,
         tags: Optional[list[str]] = None,
@@ -554,7 +569,7 @@ class NoveumClient:
             "tags": tags,
             "custom_attributes": custom_attributes,
         }
-        
+
         # Validate request data
         request_data = self._parse_model(DatasetUpdateRequest, kwargs)
 
@@ -589,12 +604,16 @@ class NoveumClient:
 
         return self._handle_response(response)
 
-    def list_dataset_versions(self, dataset_slug: str) -> dict[str, Any]:
+    def list_dataset_versions(
+        self, dataset_slug: str, limit: Optional[int] = 50, offset: Optional[int] = 0
+    ) -> dict[str, Any]:
         """
         List versions for a dataset.
 
         Args:
             dataset_slug: Dataset slug
+            limit: Number of versions to return (1-100, default 50)
+            offset: Number of versions to skip (default 0)
 
         Returns:
             API response containing dataset versions
@@ -602,10 +621,13 @@ class NoveumClient:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Listing versions for dataset: %s", dataset_slug)
+        params = {"limit": limit, "offset": offset}
+
+        logger.info("Listing versions for dataset: %s with params: %s", dataset_slug, params)
 
         response = self.session.get(
             f"{self.base_url}/api/v1/datasets/{dataset_slug}/versions",
+            params=params,
             timeout=self.timeout,
         )
 
@@ -663,15 +685,12 @@ class NoveumClient:
 
         return self._handle_response(response)
 
-    def publish_dataset_version(
-        self, dataset_slug: str, version: str
-    ) -> dict[str, Any]:
+    def publish_dataset_version(self, dataset_slug: str) -> dict[str, Any]:
         """
-        Publish a dataset version.
+        Publish the next dataset version and automatically increment version number.
 
         Args:
             dataset_slug: Dataset slug
-            version: Version identifier to publish
 
         Returns:
             API response confirming publication
@@ -679,10 +698,32 @@ class NoveumClient:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Publishing version %s for dataset: %s", version, dataset_slug)
+        logger.info("Publishing next version for dataset: %s", dataset_slug)
 
         response = self.session.post(
-            f"{self.base_url}/api/v1/datasets/{dataset_slug}/versions/{version}/publish",
+            f"{self.base_url}/api/v1/datasets/{dataset_slug}/versions/publish",
+            timeout=self.timeout,
+        )
+
+        return self._handle_response(response)
+
+    def get_dataset_versions_diff(self, dataset_slug: str) -> dict[str, Any]:
+        """
+        Get changes between current_release and next_release.
+
+        Args:
+            dataset_slug: Dataset slug
+
+        Returns:
+            API response containing diff between current and next release
+
+        Raises:
+            NoveumAPIError: If the API request fails
+        """
+        logger.info("Getting version diff for dataset: %s", dataset_slug)
+
+        response = self.session.get(
+            f"{self.base_url}/api/v1/datasets/{dataset_slug}/versions/diff",
             timeout=self.timeout,
         )
 
@@ -692,17 +733,25 @@ class NoveumClient:
         self,
         dataset_slug: str,
         version: Optional[str] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
+        limit: Optional[int] = 50,
+        offset: Optional[int] = 0,
+        item_type: Optional[str] = None,
+        search: Optional[str] = None,
+        sort_by: Optional[str] = None,
+        sort_order: Optional[Literal["asc", "desc"]] = "asc",
     ) -> dict[str, Any]:
         """
         List items in a dataset with optional filters and pagination.
 
         Args:
             dataset_slug: Dataset slug
-            version: Filter by version
-            limit: Number of items to return (1-1000)
-            offset: Number of items to skip
+            version: Filter by version (defaults to current_release if not specified)
+            limit: Number of items to return (1-1000, default 50)
+            offset: Number of items to skip (default 0)
+            item_type: Filter by item type (max 100 chars)
+            search: Search term for filtering items (max 256 chars)
+            sort_by: Field to sort by (scorer.field_name or field_name)
+            sort_order: Sort order (asc or desc, default asc)
 
         Returns:
             API response containing dataset items and metadata
@@ -715,8 +764,12 @@ class NoveumClient:
             "version": version,
             "limit": limit,
             "offset": offset,
+            "item_type": item_type,
+            "search": search,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
         }
-        
+
         # Validate parameters using Pydantic model
         query_params = self._parse_model(DatasetItemsQueryParams, kwargs)
         params = query_params.to_query_params()
@@ -734,15 +787,15 @@ class NoveumClient:
         return self._handle_response(response)
 
     def add_dataset_items(
-        self, dataset_slug: str, version: str, items: list[dict[str, Any]]
+        self, dataset_slug: str, items: list[dict[str, Any]]
     ) -> dict[str, Any]:
         """
         Add items to a dataset.
 
         Args:
             dataset_slug: Dataset slug
-            version: Dataset version
             items: List of items to add (each must have item_key, item_type, content)
+                   Items will be added to the next_release version
 
         Returns:
             API response containing added items data
@@ -754,10 +807,7 @@ class NoveumClient:
         dataset_items = [self._parse_model(DatasetItem, item) for item in items]
 
         # Validate request data
-        request_data = self._parse_model(
-            DatasetItemsCreateRequest, 
-            {"version": version, "items": dataset_items}
-        )
+        request_data = self._parse_model(DatasetItemsCreateRequest, {"items": dataset_items})
 
         logger.info("Adding %d items to dataset %s", len(items), dataset_slug)
 
@@ -770,28 +820,36 @@ class NoveumClient:
         return self._handle_response(response)
 
     def delete_all_dataset_items(
-        self, dataset_slug: str, version: Optional[str] = None
+        self,
+        dataset_slug: str,
+        item_ids: list[str],
     ) -> dict[str, Any]:
         """
-        Delete all items from a dataset.
+        Delete items from a dataset.
 
         Args:
             dataset_slug: Dataset slug
-            version: Optional version filter
+            item_ids: List of item IDs to delete. Required parameter.
 
         Returns:
             API response confirming deletion
 
         Raises:
+            ValidationError: If no item_ids are provided
             NoveumAPIError: If the API request fails
         """
-        params = {"version": version} if version else {}
+        if not item_ids:
+            raise ValidationError(
+                message="item_ids parameter is required and cannot be empty",
+                response_body={"error": "item_ids is required for deletion"},
+            )
 
-        logger.info("Deleting all items from dataset %s", dataset_slug)
+        logger.info("Deleting %d items from dataset %s", len(item_ids), dataset_slug)
 
+        # Send DELETE request with item IDs in request body
         response = self.session.delete(
             f"{self.base_url}/api/v1/datasets/{dataset_slug}/items",
-            params=params,
+            json={"itemIds": item_ids},
             timeout=self.timeout,
         )
 
@@ -880,7 +938,7 @@ class NoveumClient:
             "limit": limit,
             "offset": offset,
         }
-        
+
         # Validate parameters using Pydantic model
         query_params = self._parse_model(ScorerResultsQueryParams, kwargs)
         params = query_params.to_query_params()
@@ -895,12 +953,15 @@ class NoveumClient:
 
         return self._handle_response(response)
 
-    def create_scorer_result(self, result_data: dict[str, Any]) -> dict[str, Any]:
+    def create_scorer_result(
+        self, result_data: dict[str, Any], organizationSlug: Optional[str] = None
+    ) -> dict[str, Any]:
         """
         Create a single scorer result.
 
         Args:
             result_data: Result data dictionary (datasetSlug, itemId, scorerId, score, etc.)
+            organizationSlug: Organization slug (required by API). If not provided, will use organization_id from client.
 
         Returns:
             API response containing created result data
@@ -911,6 +972,11 @@ class NoveumClient:
         # Validate request data
         request_data = self._parse_model(ScorerResultCreateRequest, result_data)
 
+        # Use provided organizationSlug or fall back to organization_id
+        org_slug = organizationSlug or self.organization_id
+        if not org_slug:
+            raise ValueError("organizationSlug is required for creating scorer results")
+
         logger.info(
             "Creating scorer result for dataset %s, item %s, scorer %s",
             result_data.get("datasetSlug"),
@@ -920,6 +986,7 @@ class NoveumClient:
 
         response = self.session.post(
             f"{self.base_url}/api/v1/scorers/results",
+            params={"organizationSlug": org_slug},
             json=request_data.model_dump(exclude_none=True),
             timeout=self.timeout,
         )
@@ -927,13 +994,14 @@ class NoveumClient:
         return self._handle_response(response)
 
     def create_scorer_results_batch(
-        self, results: list[dict[str, Any]]
+        self, results: list[dict[str, Any]], organizationSlug: Optional[str] = None
     ) -> dict[str, Any]:
         """
         Create multiple scorer results in a single batch request.
 
         Args:
             results: List of result data dictionaries
+            organizationSlug: Organization slug (required by API). If not provided, will use organization_id from client.
 
         Returns:
             API response containing batch creation results
@@ -942,15 +1010,27 @@ class NoveumClient:
             NoveumAPIError: If the API request fails
         """
         # Convert dict results to ScorerResultCreateRequest objects
-        scorer_results = [self._parse_model(ScorerResultCreateRequest, result) for result in results]
+        scorer_results = [
+            self._parse_model(ScorerResultCreateRequest, result) for result in results
+        ]
 
         # Validate request data
-        request_data = self._parse_model(ScorerResultsBatchRequest, {"results": scorer_results})
+        request_data = self._parse_model(
+            ScorerResultsBatchRequest, {"results": scorer_results}
+        )
+
+        # Use provided organizationSlug or fall back to organization_id
+        org_slug = organizationSlug or self.organization_id
+        if not org_slug:
+            raise ValueError(
+                "organizationSlug is required for creating scorer results in batch"
+            )
 
         logger.info("Creating %d scorer results in batch", len(results))
 
         response = self.session.post(
             f"{self.base_url}/api/v1/scorers/results/batch",
+            params={"organizationSlug": org_slug},
             json=request_data.model_dump(exclude_none=True),
             timeout=self.timeout,
         )
@@ -958,7 +1038,11 @@ class NoveumClient:
         return self._handle_response(response)
 
     def get_scorer_result(
-        self, dataset_slug: str, item_id: str, scorer_id: str
+        self,
+        dataset_slug: str,
+        item_id: str,
+        scorer_id: str,
+        organizationSlug: Optional[str] = None,
     ) -> dict[str, Any]:
         """
         Get a specific scorer result.
@@ -967,6 +1051,7 @@ class NoveumClient:
             dataset_slug: Dataset slug
             item_id: Item ID
             scorer_id: Scorer ID
+            organizationSlug: Organization slug (required by API). If not provided, will use organization_id from client.
 
         Returns:
             Scorer result data dictionary
@@ -974,6 +1059,11 @@ class NoveumClient:
         Raises:
             NoveumAPIError: If the API request fails
         """
+        # Use provided organizationSlug or fall back to organization_id
+        org_slug = organizationSlug or self.organization_id
+        if not org_slug:
+            raise ValueError("organizationSlug is required for getting scorer results")
+
         logger.info(
             "Getting scorer result for dataset %s, item %s, scorer %s",
             dataset_slug,
@@ -983,6 +1073,7 @@ class NoveumClient:
 
         response = self.session.get(
             f"{self.base_url}/api/v1/scorers/results/{dataset_slug}/{item_id}/{scorer_id}",
+            params={"organizationSlug": org_slug},
             timeout=self.timeout,
         )
 
@@ -994,6 +1085,7 @@ class NoveumClient:
         item_id: str,
         scorer_id: str,
         result_data: dict[str, Any],
+        organizationSlug: Optional[str] = None,
     ) -> dict[str, Any]:
         """
         Update a scorer result.
@@ -1003,6 +1095,7 @@ class NoveumClient:
             item_id: Item ID
             scorer_id: Scorer ID
             result_data: Updated result data (score, metadata, details)
+            organizationSlug: Organization slug (required by API). If not provided, will use organization_id from client.
 
         Returns:
             API response containing updated result data
@@ -1013,6 +1106,11 @@ class NoveumClient:
         # Validate request data
         request_data = self._parse_model(ScorerResultUpdateRequest, result_data)
 
+        # Use provided organizationSlug or fall back to organization_id
+        org_slug = organizationSlug or self.organization_id
+        if not org_slug:
+            raise ValueError("organizationSlug is required for updating scorer results")
+
         logger.info(
             "Updating scorer result for dataset %s, item %s, scorer %s",
             dataset_slug,
@@ -1022,6 +1120,7 @@ class NoveumClient:
 
         response = self.session.put(
             f"{self.base_url}/api/v1/scorers/results/{dataset_slug}/{item_id}/{scorer_id}",
+            params={"organizationSlug": org_slug},
             json=request_data.model_dump(exclude_none=True),
             timeout=self.timeout,
         )
@@ -1029,7 +1128,11 @@ class NoveumClient:
         return self._handle_response(response)
 
     def delete_scorer_result(
-        self, dataset_slug: str, item_id: str, scorer_id: str
+        self,
+        dataset_slug: str,
+        item_id: str,
+        scorer_id: str,
+        organizationSlug: Optional[str] = None,
     ) -> dict[str, Any]:
         """
         Delete a scorer result.
@@ -1038,6 +1141,7 @@ class NoveumClient:
             dataset_slug: Dataset slug
             item_id: Item ID
             scorer_id: Scorer ID
+            organizationSlug: Organization slug (required by API). If not provided, will use organization_id from client.
 
         Returns:
             API response confirming deletion
@@ -1045,6 +1149,11 @@ class NoveumClient:
         Raises:
             NoveumAPIError: If the API request fails
         """
+        # Use provided organizationSlug or fall back to organization_id
+        org_slug = organizationSlug or self.organization_id
+        if not org_slug:
+            raise ValueError("organizationSlug is required for deleting scorer results")
+
         logger.info(
             "Deleting scorer result for dataset %s, item %s, scorer %s",
             dataset_slug,
@@ -1054,6 +1163,7 @@ class NoveumClient:
 
         response = self.session.delete(
             f"{self.base_url}/api/v1/scorers/results/{dataset_slug}/{item_id}/{scorer_id}",
+            params={"organizationSlug": org_slug},
             timeout=self.timeout,
         )
 

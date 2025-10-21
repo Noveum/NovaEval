@@ -241,6 +241,72 @@ traces = client.query_traces(
 pip install -e .
 ```
 
+## Known Issues
+
+### 🚨 API Issues (For API Developer)
+
+These are functional problems with the API endpoints that need to be fixed on the server side:
+
+#### 1. **Connection Status Endpoint - Routing Issue**
+- **Endpoint**: `GET /api/v1/traces/connection-status`
+- **Problem**: Returns 404 with error "Trace with ID 'connection-status' not found"
+- **Root Cause**: The API incorrectly interprets the endpoint as a trace ID lookup instead of executing the connection status check
+- **Impact**: Cannot verify API connectivity
+- **Fix Needed**: Fix routing to properly handle the connection-status endpoint
+
+#### 2. **Dataset Version Publishing - Authentication Issue**
+- **Endpoint**: `POST /api/v1/datasets/{datasetSlug}/versions/{version}/publish`
+- **Problem**: Returns 401 Unauthorized even with valid API key and existing dataset versions
+- **Tested Versions**: 0.0.1, 1.0.0 (both fail)
+- **Root Cause**: Either endpoint is deprecated, requires elevated permissions, or has authentication issues
+- **Impact**: Cannot publish dataset versions, blocking dataset item access
+- **Fix Needed**: Either fix authentication or provide alternative publishing method
+
+#### 3. **Dataset Item Access - Dependency Issue**
+- **Endpoint**: `GET /api/v1/datasets/{datasetSlug}/items/{itemKey}`
+- **Problem**: Returns 404 Not Found even with valid dataset slugs and item keys
+- **Root Cause**: Dataset items are only accessible after publishing, but publishing is broken (see issue #2)
+- **Impact**: Cannot retrieve individual dataset items
+- **Fix Needed**: Either fix publishing or make items accessible without publishing
+
+### 📚 Documentation Issues (For Documentation Developer)
+
+These are missing or incorrect specifications in the OpenAPI documentation that make the API difficult to use:
+
+#### 1. **Trace Ingestion - Missing Required Fields**
+- **Endpoints**: `POST /api/v1/traces/single`, `POST /api/v1/traces`
+- **Problem**: OpenAPI spec doesn't document required request body schema
+- **Missing Fields**:
+  - `duration_ms` (number) - Required at trace level
+  - `span_count` (number) - Required at trace level  
+  - `sdk` (object) - Required at trace level
+  - `spans` (array) - Required, each span needs `duration_ms`
+- **Impact**: Developers get 400 ValidationError without knowing what fields are required
+- **Fix Needed**: Add complete request body schema to OpenAPI spec
+
+#### 2. **Dataset Item Deletion - Missing Request Body Schema**
+- **Endpoint**: `DELETE /api/v1/datasets/{datasetSlug}/items`
+- **Problem**: OpenAPI spec doesn't document that request body is required
+- **Missing Schema**: `{"itemIds": ["id1", "id2", ...]}` array in request body
+- **Impact**: Developers send DELETE without body and get 400 ValidationError
+- **Fix Needed**: Add request body schema to OpenAPI spec
+
+#### 3. **Scorer Results - Missing Query Parameters**
+- **Endpoints**: All scorer result endpoints
+- **Problem**: OpenAPI spec doesn't document required `organizationSlug` query parameter
+- **Missing Parameter**: `organizationSlug` (string) - Required for all scorer operations
+- **Impact**: Developers get 400 ValidationError without knowing the parameter is required
+- **Fix Needed**: Add `organizationSlug` query parameter to all scorer result endpoints in OpenAPI spec
+
+### ✅ Client-Side Fixes Applied
+
+These issues were resolved by updating the client implementation:
+
+- **`ingest_traces()`** - Fixed to handle both wrapped and unwrapped trace formats
+- **`delete_all_dataset_items()`** - Fixed to require and send proper item IDs
+- **All Scorer Result methods** - Fixed to include required `organizationSlug` parameter
+
+
 ## License
 
 See the main project license.

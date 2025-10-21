@@ -286,6 +286,7 @@ class TestNoveumClientTraces:
     def test_ingest_traces(self):
         """Test ingest_traces method."""
         traces = [{"trace_id": "1"}, {"trace_id": "2"}]
+        expected_json = {"traces": traces}
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"ingested": 2}
@@ -299,7 +300,7 @@ class TestNoveumClientTraces:
 
             assert result == {"ingested": 2}
             self.mock_session.post.assert_called_once_with(
-                "https://noveum.ai/api/v1/traces", json=traces, timeout=30.0
+                "https://noveum.ai/api/v1/traces", json=expected_json, timeout=30.0
             )
             mock_handle.assert_called_once_with(mock_response)
 
@@ -565,6 +566,7 @@ class TestNoveumClientDatasets:
             assert result == {"versions": []}
             self.mock_session.get.assert_called_once_with(
                 f"https://noveum.ai/api/v1/datasets/{dataset_slug}/versions",
+                params={"limit": 50, "offset": 0},
                 timeout=30.0,
             )
             mock_handle.assert_called_once_with(mock_response)
@@ -622,7 +624,6 @@ class TestNoveumClientDatasets:
     def test_publish_dataset_version(self):
         """Test publish_dataset_version method."""
         dataset_slug = "test-dataset"
-        version = "1.0.0"
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"published": True}
@@ -632,11 +633,33 @@ class TestNoveumClientDatasets:
         with patch.object(
             self.client, "_handle_response", return_value={"published": True}
         ) as mock_handle:
-            result = self.client.publish_dataset_version(dataset_slug, version)
+            result = self.client.publish_dataset_version(dataset_slug)
 
             assert result == {"published": True}
             self.mock_session.post.assert_called_once_with(
-                f"https://noveum.ai/api/v1/datasets/{dataset_slug}/versions/{version}/publish",
+                f"https://noveum.ai/api/v1/datasets/{dataset_slug}/versions/publish",
+                timeout=30.0,
+            )
+            mock_handle.assert_called_once_with(mock_response)
+
+    @pytest.mark.unit
+    def test_get_dataset_versions_diff(self):
+        """Test get_dataset_versions_diff method."""
+        dataset_slug = "test-dataset"
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"diff": {"added": 1, "deleted": 0}}
+        mock_response.content = b'{"diff": {"added": 1, "deleted": 0}}'
+        self.mock_session.get.return_value = mock_response
+
+        with patch.object(
+            self.client, "_handle_response", return_value={"diff": {"added": 1, "deleted": 0}}
+        ) as mock_handle:
+            result = self.client.get_dataset_versions_diff(dataset_slug)
+
+            assert result == {"diff": {"added": 1, "deleted": 0}}
+            self.mock_session.get.assert_called_once_with(
+                f"https://noveum.ai/api/v1/datasets/{dataset_slug}/versions/diff",
                 timeout=30.0,
             )
             mock_handle.assert_called_once_with(mock_response)
@@ -672,7 +695,6 @@ class TestNoveumClientDatasets:
     def test_add_dataset_items(self):
         """Test add_dataset_items method."""
         dataset_slug = "test-dataset"
-        version = "1.0.0"
         items = [{"item_key": "item1", "item_type": "test", "content": {}}]
         mock_response = Mock()
         mock_response.status_code = 201
@@ -683,7 +705,7 @@ class TestNoveumClientDatasets:
         with patch.object(
             self.client, "_handle_response", return_value={"added": 1}
         ) as mock_handle:
-            result = self.client.add_dataset_items(dataset_slug, version, items)
+            result = self.client.add_dataset_items(dataset_slug, items)
 
             assert result == {"added": 1}
             self.mock_session.post.assert_called_once()
@@ -699,6 +721,7 @@ class TestNoveumClientDatasets:
     def test_delete_all_dataset_items(self):
         """Test delete_all_dataset_items method."""
         dataset_slug = "test-dataset"
+        item_ids = ["item-1", "item-2"]
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"deleted": True}
@@ -708,7 +731,7 @@ class TestNoveumClientDatasets:
         with patch.object(
             self.client, "_handle_response", return_value={"deleted": True}
         ) as mock_handle:
-            result = self.client.delete_all_dataset_items(dataset_slug, version="1.0.0")
+            result = self.client.delete_all_dataset_items(dataset_slug, item_ids)
 
             assert result == {"deleted": True}
             self.mock_session.delete.assert_called_once()
@@ -717,13 +740,14 @@ class TestNoveumClientDatasets:
                 call_args[0][0]
                 == f"https://noveum.ai/api/v1/datasets/{dataset_slug}/items"
             )
-            assert call_args[1]["params"] == {"version": "1.0.0"}
+            assert call_args[1]["json"] == {"itemIds": ["item-1", "item-2"]}
             mock_handle.assert_called_once_with(mock_response)
 
     @pytest.mark.unit
     def test_delete_all_dataset_items_no_version(self):
         """Test delete_all_dataset_items method without version."""
         dataset_slug = "test-dataset"
+        item_ids = ["item-1", "item-2"]
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {"deleted": True}
@@ -733,7 +757,7 @@ class TestNoveumClientDatasets:
         with patch.object(
             self.client, "_handle_response", return_value={"deleted": True}
         ) as mock_handle:
-            result = self.client.delete_all_dataset_items(dataset_slug)
+            result = self.client.delete_all_dataset_items(dataset_slug, item_ids)
 
             assert result == {"deleted": True}
             self.mock_session.delete.assert_called_once()
@@ -742,7 +766,7 @@ class TestNoveumClientDatasets:
                 call_args[0][0]
                 == f"https://noveum.ai/api/v1/datasets/{dataset_slug}/items"
             )
-            assert call_args[1]["params"] == {}
+            assert call_args[1]["json"] == {"itemIds": ["item-1", "item-2"]}
             mock_handle.assert_called_once_with(mock_response)
 
     @pytest.mark.unit
@@ -842,7 +866,9 @@ class TestNoveumClientScorerResults:
         with patch.object(
             self.client, "_handle_response", return_value={"id": "result-123"}
         ) as mock_handle:
-            result = self.client.create_scorer_result(result_data)
+            result = self.client.create_scorer_result(
+                result_data, organizationSlug="test-org"
+            )
 
             assert result == {"id": "result-123"}
             self.mock_session.post.assert_called_once()
@@ -877,7 +903,9 @@ class TestNoveumClientScorerResults:
         with patch.object(
             self.client, "_handle_response", return_value={"created": 2}
         ) as mock_handle:
-            result = self.client.create_scorer_results_batch(results)
+            result = self.client.create_scorer_results_batch(
+                results, organizationSlug="test-org"
+            )
 
             assert result == {"created": 2}
             self.mock_session.post.assert_called_once()
@@ -901,11 +929,14 @@ class TestNoveumClientScorerResults:
         with patch.object(
             self.client, "_handle_response", return_value={"score": 0.95}
         ) as mock_handle:
-            result = self.client.get_scorer_result(dataset_slug, item_id, scorer_id)
+            result = self.client.get_scorer_result(
+                dataset_slug, item_id, scorer_id, organizationSlug="test-org"
+            )
 
             assert result == {"score": 0.95}
             self.mock_session.get.assert_called_once_with(
                 f"https://noveum.ai/api/v1/scorers/results/{dataset_slug}/{item_id}/{scorer_id}",
+                params={"organizationSlug": "test-org"},
                 timeout=30.0,
             )
             mock_handle.assert_called_once_with(mock_response)
@@ -927,7 +958,11 @@ class TestNoveumClientScorerResults:
             self.client, "_handle_response", return_value={"updated": True}
         ) as mock_handle:
             result = self.client.update_scorer_result(
-                dataset_slug, item_id, scorer_id, result_data
+                dataset_slug,
+                item_id,
+                scorer_id,
+                result_data,
+                organizationSlug="test-org",
             )
 
             assert result == {"updated": True}
@@ -955,11 +990,14 @@ class TestNoveumClientScorerResults:
         with patch.object(
             self.client, "_handle_response", return_value={"deleted": True}
         ) as mock_handle:
-            result = self.client.delete_scorer_result(dataset_slug, item_id, scorer_id)
+            result = self.client.delete_scorer_result(
+                dataset_slug, item_id, scorer_id, organizationSlug="test-org"
+            )
 
             assert result == {"deleted": True}
             self.mock_session.delete.assert_called_once_with(
                 f"https://noveum.ai/api/v1/scorers/results/{dataset_slug}/{item_id}/{scorer_id}",
+                params={"organizationSlug": "test-org"},
                 timeout=30.0,
             )
             mock_handle.assert_called_once_with(mock_response)

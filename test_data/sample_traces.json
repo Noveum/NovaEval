@@ -1,0 +1,637 @@
+[
+  {
+    "trace_id": "e5eebd9b-3f9e-463f-b8f3-96e20a1f771a",
+    "name": "Sample Trace 1",
+    "start_time": "2025-10-21T13:09:01.180210Z",
+    "end_time": "2025-10-21T13:09:01.736210Z",
+    "duration_ms": 556,
+    "span_count": 2,
+    "status": "ok",
+    "project": "noveum-api-wrapper-demo",
+    "environment": "development",
+    "sdk": {
+      "name": "noveum-python",
+      "version": "0.5.3"
+    },
+    "spans": [
+      {
+        "span_id": "c889ca64-04c8-4c52-b2d0-f159c0676916",
+        "trace_id": "e5eebd9b-3f9e-463f-b8f3-96e20a1f771a",
+        "name": "Sample Trace 1_span_1",
+        "start_time": "2025-10-21T13:09:01.180210Z",
+        "end_time": "2025-10-21T13:09:01.473210Z",
+        "duration_ms": 293,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-1",
+          "operation.type": "query",
+          "user.id": "user-9725",
+          "request.size": 5755
+        }
+      },
+      {
+        "span_id": "f2c6413e-f9fa-444d-869f-580fdee3eb56",
+        "trace_id": "e5eebd9b-3f9e-463f-b8f3-96e20a1f771a",
+        "name": "Sample Trace 1_span_2",
+        "start_time": "2025-10-21T13:09:01.458210Z",
+        "end_time": "2025-10-21T13:09:01.700210Z",
+        "duration_ms": 242,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-2",
+          "operation.type": "query",
+          "user.id": "user-9133",
+          "request.size": 4864
+        }
+      }
+    ]
+  },
+  {
+    "trace_id": "e4e5e9ec-32de-40dc-b89d-80aa636cb45c",
+    "name": "Sample Trace 2",
+    "start_time": "2025-10-21T13:09:01.180278Z",
+    "end_time": "2025-10-21T13:09:03.456278Z",
+    "duration_ms": 2276,
+    "span_count": 1,
+    "status": "ok",
+    "project": "noveum-api-wrapper-demo",
+    "environment": "development",
+    "sdk": {
+      "name": "noveum-python",
+      "version": "0.5.3"
+    },
+    "spans": [
+      {
+        "span_id": "82b018f5-b336-46fd-8474-ce0528b721f2",
+        "trace_id": "e4e5e9ec-32de-40dc-b89d-80aa636cb45c",
+        "name": "Sample Trace 2_span_1",
+        "start_time": "2025-10-21T13:09:01.180278Z",
+        "end_time": "2025-10-21T13:09:03.521278Z",
+        "duration_ms": 2341,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-1",
+          "operation.type": "mutation",
+          "user.id": "user-3585",
+          "request.size": 6475
+        }
+      }
+    ]
+  },
+  {
+    "trace_id": "82f70a57-cdac-44ee-9d76-5c14daed1ac4",
+    "name": "Sample Trace 3",
+    "start_time": "2025-10-21T13:09:01.180297Z",
+    "end_time": "2025-10-21T13:09:02.086297Z",
+    "duration_ms": 906,
+    "span_count": 5,
+    "status": "ok",
+    "project": "noveum-api-wrapper-demo",
+    "environment": "development",
+    "sdk": {
+      "name": "noveum-python",
+      "version": "0.5.3"
+    },
+    "spans": [
+      {
+        "span_id": "472262fa-7dfa-48b1-89bd-d379b2c60e56",
+        "trace_id": "82f70a57-cdac-44ee-9d76-5c14daed1ac4",
+        "name": "Sample Trace 3_span_1",
+        "start_time": "2025-10-21T13:09:01.180297Z",
+        "end_time": "2025-10-21T13:09:01.452297Z",
+        "duration_ms": 272,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-1",
+          "operation.type": "query",
+          "user.id": "user-4989",
+          "request.size": 9355
+        }
+      },
+      {
+        "span_id": "aa2f87e5-5f03-4e53-817f-16e9ae69a6a0",
+        "trace_id": "82f70a57-cdac-44ee-9d76-5c14daed1ac4",
+        "name": "Sample Trace 3_span_2",
+        "start_time": "2025-10-21T13:09:01.361297Z",
+        "end_time": "2025-10-21T13:09:01.490297Z",
+        "duration_ms": 129,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-2",
+          "operation.type": "mutation",
+          "user.id": "user-7296",
+          "request.size": 554
+        }
+      },
+      {
+        "span_id": "5e6b66fb-5315-4569-893e-0f1ff1dd5bd8",
+        "trace_id": "82f70a57-cdac-44ee-9d76-5c14daed1ac4",
+        "name": "Sample Trace 3_span_3",
+        "start_time": "2025-10-21T13:09:01.542297Z",
+        "end_time": "2025-10-21T13:09:01.732297Z",
+        "duration_ms": 190,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-3",
+          "operation.type": "mutation",
+          "user.id": "user-5736",
+          "request.size": 8890
+        }
+      },
+      {
+        "span_id": "51446d03-13d4-45b6-a95a-c1dc36737acc",
+        "trace_id": "82f70a57-cdac-44ee-9d76-5c14daed1ac4",
+        "name": "Sample Trace 3_span_4",
+        "start_time": "2025-10-21T13:09:01.723297Z",
+        "end_time": "2025-10-21T13:09:01.837297Z",
+        "duration_ms": 114,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-4",
+          "operation.type": "subscription",
+          "user.id": "user-9448",
+          "request.size": 2483
+        }
+      },
+      {
+        "span_id": "d13eef3f-0836-4b0c-8abf-5245a7d073d7",
+        "trace_id": "82f70a57-cdac-44ee-9d76-5c14daed1ac4",
+        "name": "Sample Trace 3_span_5",
+        "start_time": "2025-10-21T13:09:01.904297Z",
+        "end_time": "2025-10-21T13:09:02.021297Z",
+        "duration_ms": 117,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-5",
+          "operation.type": "subscription",
+          "user.id": "user-9171",
+          "request.size": 2077
+        }
+      }
+    ]
+  },
+  {
+    "trace_id": "d3df971e-4206-40ba-81b1-cfb0f456f22a",
+    "name": "Sample Trace 4",
+    "start_time": "2025-10-21T13:09:01.180348Z",
+    "end_time": "2025-10-21T13:09:02.243348Z",
+    "duration_ms": 1063,
+    "span_count": 5,
+    "status": "ok",
+    "project": "noveum-api-wrapper-demo",
+    "environment": "development",
+    "sdk": {
+      "name": "noveum-python",
+      "version": "0.5.3"
+    },
+    "spans": [
+      {
+        "span_id": "fb5bf964-4f67-4924-b983-603b0158d4da",
+        "trace_id": "d3df971e-4206-40ba-81b1-cfb0f456f22a",
+        "name": "Sample Trace 4_span_1",
+        "start_time": "2025-10-21T13:09:01.180348Z",
+        "end_time": "2025-10-21T13:09:01.312348Z",
+        "duration_ms": 132,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-1",
+          "operation.type": "query",
+          "user.id": "user-2075",
+          "request.size": 1476
+        }
+      },
+      {
+        "span_id": "5a130cbc-43e2-47dd-8063-42609b315d95",
+        "trace_id": "d3df971e-4206-40ba-81b1-cfb0f456f22a",
+        "name": "Sample Trace 4_span_2",
+        "start_time": "2025-10-21T13:09:01.392348Z",
+        "end_time": "2025-10-21T13:09:01.557348Z",
+        "duration_ms": 165,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-2",
+          "operation.type": "subscription",
+          "user.id": "user-5537",
+          "request.size": 2455
+        }
+      },
+      {
+        "span_id": "740ef107-5bc9-4821-9936-61cb9cc2f755",
+        "trace_id": "d3df971e-4206-40ba-81b1-cfb0f456f22a",
+        "name": "Sample Trace 4_span_3",
+        "start_time": "2025-10-21T13:09:01.604348Z",
+        "end_time": "2025-10-21T13:09:01.718348Z",
+        "duration_ms": 114,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-3",
+          "operation.type": "mutation",
+          "user.id": "user-6584",
+          "request.size": 2170
+        }
+      },
+      {
+        "span_id": "a3c656f6-9dfe-4556-adde-c1748a3de493",
+        "trace_id": "d3df971e-4206-40ba-81b1-cfb0f456f22a",
+        "name": "Sample Trace 4_span_4",
+        "start_time": "2025-10-21T13:09:01.816348Z",
+        "end_time": "2025-10-21T13:09:02.030348Z",
+        "duration_ms": 214,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-4",
+          "operation.type": "mutation",
+          "user.id": "user-2443",
+          "request.size": 1629
+        }
+      },
+      {
+        "span_id": "5b70c260-d019-4656-880d-5cb768e73117",
+        "trace_id": "d3df971e-4206-40ba-81b1-cfb0f456f22a",
+        "name": "Sample Trace 4_span_5",
+        "start_time": "2025-10-21T13:09:02.028348Z",
+        "end_time": "2025-10-21T13:09:02.170348Z",
+        "duration_ms": 142,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-5",
+          "operation.type": "query",
+          "user.id": "user-8135",
+          "request.size": 4978
+        }
+      }
+    ]
+  },
+  {
+    "trace_id": "77828ea1-8a55-4dee-9df3-6ce914ebeaab",
+    "name": "Sample Trace 5",
+    "start_time": "2025-10-21T13:09:01.180403Z",
+    "end_time": "2025-10-21T13:09:01.712403Z",
+    "duration_ms": 532,
+    "span_count": 5,
+    "status": "ok",
+    "project": "noveum-api-wrapper-demo",
+    "environment": "development",
+    "sdk": {
+      "name": "noveum-python",
+      "version": "0.5.3"
+    },
+    "spans": [
+      {
+        "span_id": "4b4a6371-353b-4412-bc1a-7aedcb8c5423",
+        "trace_id": "77828ea1-8a55-4dee-9df3-6ce914ebeaab",
+        "name": "Sample Trace 5_span_1",
+        "start_time": "2025-10-21T13:09:01.180403Z",
+        "end_time": "2025-10-21T13:09:01.322403Z",
+        "duration_ms": 142,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-1",
+          "operation.type": "query",
+          "user.id": "user-4857",
+          "request.size": 5136
+        }
+      },
+      {
+        "span_id": "fc9c3073-712a-487e-bf98-92d2861ed5b7",
+        "trace_id": "77828ea1-8a55-4dee-9df3-6ce914ebeaab",
+        "name": "Sample Trace 5_span_2",
+        "start_time": "2025-10-21T13:09:01.286403Z",
+        "end_time": "2025-10-21T13:09:01.435403Z",
+        "duration_ms": 149,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-2",
+          "operation.type": "subscription",
+          "user.id": "user-4734",
+          "request.size": 8956
+        }
+      },
+      {
+        "span_id": "256e9596-ecde-49f9-bc0e-089857be6dbf",
+        "trace_id": "77828ea1-8a55-4dee-9df3-6ce914ebeaab",
+        "name": "Sample Trace 5_span_3",
+        "start_time": "2025-10-21T13:09:01.392403Z",
+        "end_time": "2025-10-21T13:09:01.533403Z",
+        "duration_ms": 141,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-3",
+          "operation.type": "query",
+          "user.id": "user-8455",
+          "request.size": 9823
+        }
+      },
+      {
+        "span_id": "450b137e-fd92-4d03-a550-70e678923662",
+        "trace_id": "77828ea1-8a55-4dee-9df3-6ce914ebeaab",
+        "name": "Sample Trace 5_span_4",
+        "start_time": "2025-10-21T13:09:01.498403Z",
+        "end_time": "2025-10-21T13:09:01.682403Z",
+        "duration_ms": 184,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-4",
+          "operation.type": "query",
+          "user.id": "user-3606",
+          "request.size": 9626
+        }
+      },
+      {
+        "span_id": "f43fe893-0bdb-4e26-9855-78bc85d0395f",
+        "trace_id": "77828ea1-8a55-4dee-9df3-6ce914ebeaab",
+        "name": "Sample Trace 5_span_5",
+        "start_time": "2025-10-21T13:09:01.604403Z",
+        "end_time": "2025-10-21T13:09:01.786403Z",
+        "duration_ms": 182,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-5",
+          "operation.type": "subscription",
+          "user.id": "user-9170",
+          "request.size": 413
+        }
+      }
+    ]
+  },
+  {
+    "trace_id": "e22ce493-b6d1-4b47-bc37-81ed92d7b300",
+    "name": "Sample Trace 6",
+    "start_time": "2025-10-21T13:09:01.180452Z",
+    "end_time": "2025-10-21T13:09:04.834452Z",
+    "duration_ms": 3654,
+    "span_count": 3,
+    "status": "ok",
+    "project": "noveum-api-wrapper-demo",
+    "environment": "development",
+    "sdk": {
+      "name": "noveum-python",
+      "version": "0.5.3"
+    },
+    "spans": [
+      {
+        "span_id": "e0512854-2899-4532-9792-667bc55ccfd1",
+        "trace_id": "e22ce493-b6d1-4b47-bc37-81ed92d7b300",
+        "name": "Sample Trace 6_span_1",
+        "start_time": "2025-10-21T13:09:01.180452Z",
+        "end_time": "2025-10-21T13:09:02.303452Z",
+        "duration_ms": 1123,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-1",
+          "operation.type": "query",
+          "user.id": "user-9936",
+          "request.size": 5018
+        }
+      },
+      {
+        "span_id": "e5c40d66-c549-41d2-93f0-949202b93cd2",
+        "trace_id": "e22ce493-b6d1-4b47-bc37-81ed92d7b300",
+        "name": "Sample Trace 6_span_2",
+        "start_time": "2025-10-21T13:09:02.398452Z",
+        "end_time": "2025-10-21T13:09:03.675452Z",
+        "duration_ms": 1277,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-2",
+          "operation.type": "mutation",
+          "user.id": "user-4991",
+          "request.size": 7564
+        }
+      },
+      {
+        "span_id": "b9fa5009-67ca-4a85-996e-92557834999a",
+        "trace_id": "e22ce493-b6d1-4b47-bc37-81ed92d7b300",
+        "name": "Sample Trace 6_span_3",
+        "start_time": "2025-10-21T13:09:03.616452Z",
+        "end_time": "2025-10-21T13:09:04.855452Z",
+        "duration_ms": 1239,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-3",
+          "operation.type": "subscription",
+          "user.id": "user-2427",
+          "request.size": 2012
+        }
+      }
+    ]
+  },
+  {
+    "trace_id": "fb6f5237-6f40-4a36-9bc3-ebad1bf8d4fd",
+    "name": "Sample Trace 7",
+    "start_time": "2025-10-21T13:09:01.180485Z",
+    "end_time": "2025-10-21T13:09:04.130485Z",
+    "duration_ms": 2950,
+    "span_count": 1,
+    "status": "ok",
+    "project": "noveum-api-wrapper-demo",
+    "environment": "development",
+    "sdk": {
+      "name": "noveum-python",
+      "version": "0.5.3"
+    },
+    "spans": [
+      {
+        "span_id": "bfcced14-422c-46c6-aaef-a40846220201",
+        "trace_id": "fb6f5237-6f40-4a36-9bc3-ebad1bf8d4fd",
+        "name": "Sample Trace 7_span_1",
+        "start_time": "2025-10-21T13:09:01.180485Z",
+        "end_time": "2025-10-21T13:09:04.229485Z",
+        "duration_ms": 3049,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-1",
+          "operation.type": "subscription",
+          "user.id": "user-9634",
+          "request.size": 7456
+        }
+      }
+    ]
+  },
+  {
+    "trace_id": "16f0a3e6-4b0b-4963-adcf-e430f100577f",
+    "name": "Sample Trace 8",
+    "start_time": "2025-10-21T13:09:01.180501Z",
+    "end_time": "2025-10-21T13:09:03.519501Z",
+    "duration_ms": 2339,
+    "span_count": 3,
+    "status": "ok",
+    "project": "noveum-api-wrapper-demo",
+    "environment": "development",
+    "sdk": {
+      "name": "noveum-python",
+      "version": "0.5.3"
+    },
+    "spans": [
+      {
+        "span_id": "50261c51-40cf-49fe-9dd0-da0ad8bb5325",
+        "trace_id": "16f0a3e6-4b0b-4963-adcf-e430f100577f",
+        "name": "Sample Trace 8_span_1",
+        "start_time": "2025-10-21T13:09:01.180501Z",
+        "end_time": "2025-10-21T13:09:01.872501Z",
+        "duration_ms": 692,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-1",
+          "operation.type": "subscription",
+          "user.id": "user-5305",
+          "request.size": 2512
+        }
+      },
+      {
+        "span_id": "7c988d59-eb4a-4c2d-b56c-c633905ccd19",
+        "trace_id": "16f0a3e6-4b0b-4963-adcf-e430f100577f",
+        "name": "Sample Trace 8_span_2",
+        "start_time": "2025-10-21T13:09:01.959501Z",
+        "end_time": "2025-10-21T13:09:02.750501Z",
+        "duration_ms": 791,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-2",
+          "operation.type": "mutation",
+          "user.id": "user-1209",
+          "request.size": 1360
+        }
+      },
+      {
+        "span_id": "4809d7f6-db81-4261-9307-3223ac0505bb",
+        "trace_id": "16f0a3e6-4b0b-4963-adcf-e430f100577f",
+        "name": "Sample Trace 8_span_3",
+        "start_time": "2025-10-21T13:09:02.738501Z",
+        "end_time": "2025-10-21T13:09:03.532501Z",
+        "duration_ms": 794,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-3",
+          "operation.type": "query",
+          "user.id": "user-9861",
+          "request.size": 2639
+        }
+      }
+    ]
+  },
+  {
+    "trace_id": "f28a4558-ec88-46f4-b599-bdb866d6f163",
+    "name": "Sample Trace 9",
+    "start_time": "2025-10-21T13:09:01.180538Z",
+    "end_time": "2025-10-21T13:09:03.899538Z",
+    "duration_ms": 2719,
+    "span_count": 1,
+    "status": "ok",
+    "project": "noveum-api-wrapper-demo",
+    "environment": "development",
+    "sdk": {
+      "name": "noveum-python",
+      "version": "0.5.3"
+    },
+    "spans": [
+      {
+        "span_id": "85c716d3-6aee-4df9-8afa-79355571a05f",
+        "trace_id": "f28a4558-ec88-46f4-b599-bdb866d6f163",
+        "name": "Sample Trace 9_span_1",
+        "start_time": "2025-10-21T13:09:01.180538Z",
+        "end_time": "2025-10-21T13:09:03.891538Z",
+        "duration_ms": 2711,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-1",
+          "operation.type": "mutation",
+          "user.id": "user-4888",
+          "request.size": 4712
+        }
+      }
+    ]
+  },
+  {
+    "trace_id": "ce23f2a2-9ee8-410b-bdf2-dd1d585376c6",
+    "name": "Sample Trace 10",
+    "start_time": "2025-10-21T13:09:01.180554Z",
+    "end_time": "2025-10-21T13:09:04.182554Z",
+    "duration_ms": 3002,
+    "span_count": 5,
+    "status": "ok",
+    "project": "noveum-api-wrapper-demo",
+    "environment": "development",
+    "sdk": {
+      "name": "noveum-python",
+      "version": "0.5.3"
+    },
+    "spans": [
+      {
+        "span_id": "d0d8222f-5200-47a5-a4ab-4b4c9952b801",
+        "trace_id": "ce23f2a2-9ee8-410b-bdf2-dd1d585376c6",
+        "name": "Sample Trace 10_span_1",
+        "start_time": "2025-10-21T13:09:01.180554Z",
+        "end_time": "2025-10-21T13:09:01.807554Z",
+        "duration_ms": 627,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-1",
+          "operation.type": "query",
+          "user.id": "user-5378",
+          "request.size": 2854
+        }
+      },
+      {
+        "span_id": "3a5afb32-7da1-4399-8e07-b473b3320e1e",
+        "trace_id": "ce23f2a2-9ee8-410b-bdf2-dd1d585376c6",
+        "name": "Sample Trace 10_span_2",
+        "start_time": "2025-10-21T13:09:01.780554Z",
+        "end_time": "2025-10-21T13:09:02.468554Z",
+        "duration_ms": 688,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-2",
+          "operation.type": "mutation",
+          "user.id": "user-4397",
+          "request.size": 7306
+        }
+      },
+      {
+        "span_id": "02d3be5f-61eb-414d-991e-50f2b22467bd",
+        "trace_id": "ce23f2a2-9ee8-410b-bdf2-dd1d585376c6",
+        "name": "Sample Trace 10_span_3",
+        "start_time": "2025-10-21T13:09:02.380554Z",
+        "end_time": "2025-10-21T13:09:03.042554Z",
+        "duration_ms": 662,
+        "status": "error",
+        "attributes": {
+          "service.name": "service-3",
+          "operation.type": "subscription",
+          "user.id": "user-6559",
+          "request.size": 4138
+        }
+      },
+      {
+        "span_id": "9414e9d2-0fca-46d5-8c58-718a37b31d26",
+        "trace_id": "ce23f2a2-9ee8-410b-bdf2-dd1d585376c6",
+        "name": "Sample Trace 10_span_4",
+        "start_time": "2025-10-21T13:09:02.980554Z",
+        "end_time": "2025-10-21T13:09:03.519554Z",
+        "duration_ms": 539,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-4",
+          "operation.type": "query",
+          "user.id": "user-6040",
+          "request.size": 3273
+        }
+      },
+      {
+        "span_id": "158accd6-e239-4d75-8843-9d7f60b022d8",
+        "trace_id": "ce23f2a2-9ee8-410b-bdf2-dd1d585376c6",
+        "name": "Sample Trace 10_span_5",
+        "start_time": "2025-10-21T13:09:03.580554Z",
+        "end_time": "2025-10-21T13:09:04.124554Z",
+        "duration_ms": 544,
+        "status": "ok",
+        "attributes": {
+          "service.name": "service-5",
+          "operation.type": "subscription",
+          "user.id": "user-8228",
+          "request.size": 4793
+        }
+      }
+    ]
+  }
+]
