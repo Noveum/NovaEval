@@ -17,7 +17,6 @@ class TracesQueryParams(BaseModel):
     before being sent to the API.
     """
 
-    organization_id: Optional[str] = Field(None, description="Organization ID")
     from_: Optional[int] = Field(
         None, alias="from", ge=0, description="Pagination offset (0-based)"
     )
@@ -136,9 +135,6 @@ class DatasetsQueryParams(BaseModel):
     visibility: Optional[Literal["public", "org", "private"]] = Field(
         None, description="Filter by visibility"
     )
-    organizationSlug: Optional[str] = Field(
-        None, description="Filter by organization slug"
-    )
     includeVersions: Optional[bool] = Field(
         False, description="Include dataset versions"
     )
@@ -232,7 +228,6 @@ class ScorerResultUpdateRequest(BaseModel):
 class ScorerResultsQueryParams(BaseModel):
     """Query parameters for listing scorer results."""
 
-    organizationSlug: str = Field(..., description="Organization slug (required)")
     datasetSlug: Optional[str] = Field(None, description="Filter by dataset slug")
     itemId: Optional[str] = Field(None, description="Filter by item ID")
     scorerId: Optional[str] = Field(None, description="Filter by scorer ID")

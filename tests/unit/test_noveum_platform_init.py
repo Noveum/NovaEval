@@ -16,6 +16,7 @@ def test_imports():
         DatasetCreateRequest,
         DatasetItemsCreateRequest,
         DatasetItemsQueryParams,
+        DatasetsAPI,
         DatasetsQueryParams,
         DatasetUpdateRequest,
         DatasetVersionCreateRequest,
@@ -25,10 +26,12 @@ def test_imports():
         NoveumClient,
         RateLimitError,
         ScorerResultCreateRequest,
+        ScorerResultsAPI,
         ScorerResultsBatchRequest,
         ScorerResultsQueryParams,
         ScorerResultUpdateRequest,
         ServerError,
+        TracesAPI,
         TracesQueryParams,
         ValidationError,
     )
@@ -54,6 +57,9 @@ def test_imports():
     assert ScorerResultsQueryParams is not None
     assert ScorerResultUpdateRequest is not None
     assert TracesQueryParams is not None
+    assert DatasetsAPI is not None
+    assert ScorerResultsAPI is not None
+    assert TracesAPI is not None
 
 
 @pytest.mark.unit
@@ -82,6 +88,10 @@ def test_all_exports():
         "ServerError",
         "TracesQueryParams",
         "ValidationError",
+        # API Classes
+        "DatasetsAPI",
+        "ScorerResultsAPI",
+        "TracesAPI",
     ]
 
     # Check that all expected exports are present
@@ -159,6 +169,15 @@ def test_direct_imports():
     assert ScorerResultsQueryParams is not None
     assert ScorerResultUpdateRequest is not None
     assert TracesQueryParams is not None
+
+    # Test API classes import
+    from novaeval.noveum_platform.noveum_datasets_api import DatasetsAPI
+    from novaeval.noveum_platform.noveum_scorer_results_api import ScorerResultsAPI
+    from novaeval.noveum_platform.noveum_traces_api import TracesAPI
+
+    assert DatasetsAPI is not None
+    assert ScorerResultsAPI is not None
+    assert TracesAPI is not None
 
 
 @pytest.mark.unit

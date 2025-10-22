@@ -5,25 +5,6 @@ This package provides a Python client for interacting with the Noveum Platform
 API. It includes authentication, request/response handling, and comprehensive
 error handling for traces, datasets, and scorer results.
 
-Example:
-    from novaeval.noveum_platform import NoveumClient
-
-    client = NoveumClient(api_key="your-api-key")
-
-    # Traces
-    traces = client.query_traces(project="my-project", size=10)
-
-    # Datasets
-    dataset = client.create_dataset(name="My Dataset")
-    client.add_dataset_items("my-dataset", "1.0.0", items=[...])
-
-    # Scorer Results
-    client.create_scorer_result({
-        "datasetSlug": "my-dataset",
-        "itemId": "001",
-        "scorerId": "quality-score",
-        "score": 0.95
-    })
 """
 
 from .client import NoveumClient
@@ -50,6 +31,9 @@ from .models import (
     ScorerResultUpdateRequest,
     TracesQueryParams,
 )
+from .noveum_datasets_api import DatasetsAPI
+from .noveum_scorer_results_api import ScorerResultsAPI
+from .noveum_traces_api import TracesAPI
 
 # Environment loading is handled in client.py or must be performed by the importer
 # before importing this module to avoid side effects and duplication.
@@ -63,6 +47,8 @@ __all__ = [
     "DatasetItemsQueryParams",
     "DatasetUpdateRequest",
     "DatasetVersionCreateRequest",
+    # API Classes
+    "DatasetsAPI",
     "DatasetsQueryParams",
     "ForbiddenError",
     "NotFoundError",
@@ -73,9 +59,11 @@ __all__ = [
     "RateLimitError",
     "ScorerResultCreateRequest",
     "ScorerResultUpdateRequest",
+    "ScorerResultsAPI",
     "ScorerResultsBatchRequest",
     "ScorerResultsQueryParams",
     "ServerError",
+    "TracesAPI",
     # Models
     "TracesQueryParams",
     "ValidationError",

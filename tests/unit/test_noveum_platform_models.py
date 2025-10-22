@@ -29,7 +29,6 @@ class TestTracesQueryParams:
         """Test initialization with default values."""
         params = TracesQueryParams()
 
-        assert params.organization_id is None
         assert params.from_ is None
         assert params.size == 20
         assert params.start_time is None
@@ -48,7 +47,6 @@ class TestTracesQueryParams:
     def test_init_with_values(self):
         """Test initialization with custom values."""
         params = TracesQueryParams(
-            organization_id="org-123",
             from_=10,
             size=50,
             start_time="2024-01-01T00:00:00Z",
@@ -64,7 +62,6 @@ class TestTracesQueryParams:
             include_spans=True,
         )
 
-        assert params.organization_id == "org-123"
         assert params.from_ == 10
         assert params.size == 50
         assert params.start_time == "2024-01-01T00:00:00Z"
@@ -131,7 +128,6 @@ class TestTracesQueryParams:
     def test_to_query_params(self):
         """Test to_query_params method."""
         params = TracesQueryParams(
-            organization_id="org-123",
             from_=10,
             size=50,
             project="test-project",
@@ -142,7 +138,6 @@ class TestTracesQueryParams:
         result = params.to_query_params()
 
         expected = {
-            "organization_id": "org-123",
             "from": 10,  # Note: alias conversion
             "size": 50,
             "project": "test-project",
@@ -156,10 +151,10 @@ class TestTracesQueryParams:
     @pytest.mark.unit
     def test_to_query_params_excludes_none(self):
         """Test to_query_params excludes None values."""
-        params = TracesQueryParams(organization_id="org-123")
+        params = TracesQueryParams(project="test-project")
         result = params.to_query_params()
 
-        assert "organization_id" in result
+        assert "project" in result
         assert "from" not in result
         assert "start_time" not in result
 
@@ -301,7 +296,6 @@ class TestDatasetsQueryParams:
         assert params.limit == 20
         assert params.offset == 0
         assert params.visibility is None
-        assert params.organizationSlug is None
         assert params.includeVersions is False
 
     @pytest.mark.unit
@@ -311,14 +305,12 @@ class TestDatasetsQueryParams:
             limit=100,
             offset=50,
             visibility="public",
-            organizationSlug="test-org",
             includeVersions=True,
         )
 
         assert params.limit == 100
         assert params.offset == 50
         assert params.visibility == "public"
-        assert params.organizationSlug == "test-org"
         assert params.includeVersions is True
 
     @pytest.mark.unit
@@ -371,7 +363,6 @@ class TestDatasetsQueryParams:
 
         assert "limit" in result
         assert "visibility" not in result
-        assert "organizationSlug" not in result
 
 
 class TestDatasetVersionCreateRequest:
@@ -692,10 +683,9 @@ class TestScorerResultsQueryParams:
 
     @pytest.mark.unit
     def test_init_required_fields(self):
-        """Test initialization with required organizationSlug."""
-        params = ScorerResultsQueryParams(organizationSlug="test-org")
+        """Test initialization with default values."""
+        params = ScorerResultsQueryParams()
 
-        assert params.organizationSlug == "test-org"
         assert params.datasetSlug is None
         assert params.itemId is None
         assert params.scorerId is None
@@ -706,7 +696,6 @@ class TestScorerResultsQueryParams:
     def test_init_all_fields(self):
         """Test initialization with all fields."""
         params = ScorerResultsQueryParams(
-            organizationSlug="test-org",
             datasetSlug="test-dataset",
             itemId="item-1",
             scorerId="accuracy-scorer",
@@ -714,7 +703,6 @@ class TestScorerResultsQueryParams:
             offset=25,
         )
 
-        assert params.organizationSlug == "test-org"
         assert params.datasetSlug == "test-dataset"
         assert params.itemId == "item-1"
         assert params.scorerId == "accuracy-scorer"
@@ -722,12 +710,11 @@ class TestScorerResultsQueryParams:
         assert params.offset == 25
 
     @pytest.mark.unit
-    def test_organization_slug_required(self):
-        """Test organizationSlug is required."""
-        with pytest.raises(ValidationError) as exc_info:
-            ScorerResultsQueryParams()
-
-        assert "Field required" in str(exc_info.value)
+    def test_organization_slug_optional(self):
+        """Test organizationSlug is optional."""
+        # Should not raise ValidationError when organizationSlug is not provided
+        params = ScorerResultsQueryParams()
+        assert params.datasetSlug is None
 
     @pytest.mark.unit
     def test_limit_validation_min(self):
@@ -757,13 +744,12 @@ class TestScorerResultsQueryParams:
     def test_to_query_params(self):
         """Test to_query_params method."""
         params = ScorerResultsQueryParams(
-            organizationSlug="test-org", datasetSlug="test-dataset", limit=50, offset=10
+            datasetSlug="test-dataset", limit=50, offset=10
         )
 
         result = params.to_query_params()
 
         expected = {
-            "organizationSlug": "test-org",
             "datasetSlug": "test-dataset",
             "limit": 50,
             "offset": 10,

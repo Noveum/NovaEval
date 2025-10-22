@@ -27,6 +27,8 @@ if responses_available:
 else:
     responses_activate = pytest.mark.skip(reason="responses library not available")
 
+TEST_URL = "https://api.test.com/api/v1/"
+
 
 @pytest.mark.skipif(not responses_available, reason="responses library not available")
 class TestNoveumClientIntegration:
@@ -37,7 +39,6 @@ class TestNoveumClientIntegration:
         self.client = NoveumClient(
             api_key="test-key",
             base_url="https://api.test.com",
-            organization_id="test-org",
             timeout=30.0,
         )
 
@@ -48,7 +49,7 @@ class TestNoveumClientIntegration:
         # Mock create dataset
         responses.add(
             responses.POST,
-            "https://api.test.com/api/v1/datasets",
+            f"{TEST_URL}datasets",
             json={"slug": "test-dataset", "name": "Test Dataset"},
             status=201,
         )
@@ -56,7 +57,7 @@ class TestNoveumClientIntegration:
         # Mock add dataset items
         responses.add(
             responses.POST,
-            "https://api.test.com/api/v1/datasets/test-dataset/items",
+            f"{TEST_URL}datasets/test-dataset/items",
             json={"added": 2},
             status=201,
         )
@@ -64,7 +65,7 @@ class TestNoveumClientIntegration:
         # Mock create scorer result
         responses.add(
             responses.POST,
-            "https://api.test.com/api/v1/scorers/results",
+            f"{TEST_URL}scorers/results",
             json={"id": "result-123"},
             status=201,
         )
@@ -112,7 +113,7 @@ class TestNoveumClientIntegration:
         # Mock trace ingestion
         responses.add(
             responses.POST,
-            "https://api.test.com/api/v1/traces",
+            f"{TEST_URL}traces",
             json={"ingested": 2, "trace_ids": ["trace-1", "trace-2"]},
             status=200,
         )
@@ -120,7 +121,7 @@ class TestNoveumClientIntegration:
         # Mock query traces
         responses.add(
             responses.GET,
-            "https://api.test.com/api/v1/traces",
+            f"{TEST_URL}traces",
             json={
                 "traces": [
                     {"trace_id": "trace-1", "name": "Test Trace 1"},
@@ -163,7 +164,7 @@ class TestNoveumClientIntegration:
         # Mock authentication error
         responses.add(
             responses.GET,
-            "https://api.test.com/api/v1/datasets",
+            f"{TEST_URL}datasets",
             json={"message": "Invalid API key"},
             status=401,
         )
@@ -171,7 +172,7 @@ class TestNoveumClientIntegration:
         # Mock validation error
         responses.add(
             responses.POST,
-            "https://api.test.com/api/v1/datasets",
+            f"{TEST_URL}datasets",
             json={"message": "Missing required field: name"},
             status=400,
         )
@@ -179,7 +180,7 @@ class TestNoveumClientIntegration:
         # Mock not found error
         responses.add(
             responses.GET,
-            "https://api.test.com/api/v1/datasets/non-existent",
+            f"{TEST_URL}datasets/non-existent",
             json={"message": "Dataset not found"},
             status=404,
         )
@@ -209,7 +210,7 @@ class TestNoveumClientIntegration:
         # Mock batch scorer results creation
         responses.add(
             responses.POST,
-            "https://api.test.com/api/v1/scorers/results/batch",
+            f"{TEST_URL}scorers/results/batch",
             json={
                 "created": 3,
                 "results": [
@@ -224,7 +225,7 @@ class TestNoveumClientIntegration:
         # Mock list scorer results
         responses.add(
             responses.GET,
-            "https://api.test.com/api/v1/scorers/results",
+            f"{TEST_URL}scorers/results",
             json={
                 "results": [
                     {"id": "result-1", "score": 0.95},
@@ -262,9 +263,7 @@ class TestNoveumClientIntegration:
         assert len(batch_result["results"]) == 3
 
         # List scorer results
-        list_result = self.client.list_scorer_results(
-            organizationSlug="test-org", datasetSlug="test-dataset"
-        )
+        list_result = self.client.list_scorer_results(datasetSlug="test-dataset")
         assert len(list_result["results"]) == 3
         assert list_result["total"] == 3
 
@@ -275,7 +274,7 @@ class TestNoveumClientIntegration:
         # Mock create dataset version
         responses.add(
             responses.POST,
-            "https://api.test.com/api/v1/datasets/test-dataset/versions",
+            f"{TEST_URL}datasets/test-dataset/versions",
             json={"version": "1.0.0", "status": "draft"},
             status=201,
         )
@@ -283,7 +282,7 @@ class TestNoveumClientIntegration:
         # Mock publish dataset version
         responses.add(
             responses.POST,
-            "https://api.test.com/api/v1/datasets/test-dataset/versions/publish",
+            f"{TEST_URL}datasets/test-dataset/versions/publish",
             json={"version": "1.0.0", "status": "published"},
             status=200,
         )
@@ -291,7 +290,7 @@ class TestNoveumClientIntegration:
         # Mock get dataset version
         responses.add(
             responses.GET,
-            "https://api.test.com/api/v1/datasets/test-dataset/versions/1.0.0",
+            f"{TEST_URL}datasets/test-dataset/versions/1.0.0",
             json={"version": "1.0.0", "status": "published"},
             status=200,
         )
@@ -322,13 +321,13 @@ class TestNoveumClientIntegration:
         # Mock multiple requests
         responses.add(
             responses.GET,
-            "https://api.test.com/api/v1/datasets",
+            f"{TEST_URL}datasets",
             json={"datasets": []},
             status=200,
         )
         responses.add(
             responses.GET,
-            "https://api.test.com/api/v1/traces",
+            f"{TEST_URL}traces",
             json={"traces": []},
             status=200,
         )
@@ -344,7 +343,6 @@ class TestNoveumClientIntegration:
         for call in responses.calls:
             assert call.request.headers["Authorization"] == "Bearer test-key"
             assert call.request.headers["Content-Type"] == "application/json"
-            assert call.request.headers["X-Organization-Id"] == "test-org"
 
     @responses_activate
     @pytest.mark.unit
@@ -359,7 +357,7 @@ class TestNoveumClientIntegration:
 
         responses.add_callback(
             responses.GET,
-            "https://api.test.com/api/v1/datasets",
+            f"{TEST_URL}datasets",
             callback=slow_response,
         )
 
@@ -378,7 +376,7 @@ class TestNoveumClientIntegration:
         # Mock query traces with complex parameters
         responses.add(
             responses.GET,
-            "https://api.test.com/api/v1/traces",
+            f"{TEST_URL}traces",
             json={"traces": []},
             status=200,
         )
@@ -416,7 +414,7 @@ class TestNoveumClientIntegration:
         # Mock create dataset
         responses.add(
             responses.POST,
-            "https://api.test.com/api/v1/datasets",
+            f"{TEST_URL}datasets",
             json={"slug": "test-dataset"},
             status=201,
         )
@@ -454,7 +452,7 @@ class TestNoveumClientIntegration:
         # Mock empty response
         responses.add(
             responses.DELETE,
-            "https://api.test.com/api/v1/datasets/test-dataset",
+            f"{TEST_URL}datasets/test-dataset",
             body="",  # Empty response body
             status=204,
         )
@@ -481,7 +479,7 @@ class TestNoveumClientIntegration:
 
         responses.add(
             responses.GET,
-            "https://api.test.com/api/v1/traces",
+            f"{TEST_URL}traces",
             json={"traces": large_traces, "total": 100},
             status=200,
         )
