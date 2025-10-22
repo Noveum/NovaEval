@@ -1,1 +1,0 @@
-"""Request and response schemas."""
