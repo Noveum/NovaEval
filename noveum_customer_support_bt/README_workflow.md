@@ -78,3 +78,4 @@ Make sure your .env file contains:
 - If upload fails, verify the JSON format matches expected schema
 - Use --pretty flag for better formatted output
 - Check API responses for specific error messages
+
