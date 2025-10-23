@@ -52,13 +52,19 @@ class TestNoveumPlatformScorerResultsIntegration:
             }
         ]
 
-        noveum_client.add_dataset_items(scorer_test_context["scorer_dataset_slug"], items)
+        noveum_client.add_dataset_items(
+            scorer_test_context["scorer_dataset_slug"], items
+        )
         # Publish the version to make items available
-        noveum_client.publish_dataset_version(scorer_test_context["scorer_dataset_slug"])
+        noveum_client.publish_dataset_version(
+            scorer_test_context["scorer_dataset_slug"]
+        )
 
         # Get the item ID by listing items
         list_response = noveum_client.list_dataset_items(
-            dataset_slug=scorer_test_context["scorer_dataset_slug"], version="0.0.1", limit=1
+            dataset_slug=scorer_test_context["scorer_dataset_slug"],
+            version="0.0.1",
+            limit=1,
         )
         scorer_test_context["scorer_item_id"] = list_response["items"][0]["item_id"]
         scorer_test_context["scorer_id"] = "integration-test-scorer"
@@ -100,9 +106,13 @@ class TestNoveumPlatformScorerResultsIntegration:
             },
         ]
 
-        noveum_client.add_dataset_items(scorer_test_context["scorer_dataset_slug"], items)
+        noveum_client.add_dataset_items(
+            scorer_test_context["scorer_dataset_slug"], items
+        )
         # Publish the version to make items available
-        noveum_client.publish_dataset_version(scorer_test_context["scorer_dataset_slug"])
+        noveum_client.publish_dataset_version(
+            scorer_test_context["scorer_dataset_slug"]
+        )
 
         # Get the item IDs by listing items
         list_response = noveum_client.list_dataset_items(
