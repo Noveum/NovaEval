@@ -1,0 +1,622 @@
+[
+  {
+    "user_id": null,
+    "task_id": "eda4fe22-9a2b-4b73-856b-f4f3309bf719",
+    "turn_id": "0b19befc-5dc0-4b00-9a8b-5f2f2c914f17",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What are the latest breakthroughs in artificial intelligence?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "0ffffba1-8a37-443c-8866-d53ffbfa7718",
+    "turn_id": "30644d2a-5ab1-4a73-b4ff-cf9fa478e36b",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What's happening in the software development world today?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "f1f37bd7-0851-4659-b493-b80d3800d920",
+    "turn_id": "89eac2de-b7da-4db3-bf7c-8e87c429481e",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What are the newest features in cloud computing?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "43cdf081-4f01-49cd-b566-dbd1619e6cd2",
+    "turn_id": "962afebb-26d1-45ff-acf1-218163cd6bb8",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What's the current status of cryptocurrency markets?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "9a1983f4-09da-4b53-80e6-38de6878e0e7",
+    "turn_id": "246cf822-4562-4d3a-8a5a-e38e0a0b02a0",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What are the latest updates in Python programming?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "5d2517e1-220a-429d-9d59-f701bda25eed",
+    "turn_id": "20544f91-8828-4a0e-b253-ed1f8b95b205",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What happened in tech news this week?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "52aacb67-c361-4445-9b72-c157f79f47d6",
+    "turn_id": "5359c861-c51b-446d-9ad2-b3d8c21ea70f",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What are the current trends in observability tools?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "a81ca3a8-80aa-4c39-876e-8d40ea7a0aef",
+    "turn_id": "acf6a99a-39e0-4f87-a07e-3a61213ab032",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "Tell me about recent developments in machine learning",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "230aad27-f3dd-4968-a45a-3c2f07ac28ed",
+    "turn_id": "0b47ea07-1eda-4b6a-a183-ea9ef047e431",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What's the weather like today?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "83c7dcce-3d89-4da1-8b3f-d419885d4cbc",
+    "turn_id": "3866ddb3-b17e-47a1-8b3f-bca1e32a2ae4",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What are the latest AI news today?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "2218f641-604c-491a-9710-b51a9941b982",
+    "turn_id": "3ce2e35e-4518-43b4-8a76-4413da6832ea",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What are the benefits of using Noveum Trace?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "255fd49c-84b4-4b18-887e-6308a412d535",
+    "turn_id": "c0c39e8b-9a42-4c18-8737-9224cd8a45c0",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "How do I configure Noveum for my system?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "dc511122-c0b6-415c-9a49-c7b45132dd87",
+    "turn_id": "80987c51-ea82-4a41-97c7-ed591082b9bf",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What monitoring capabilities does Noveum provide?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "04bebf38-a343-4563-80db-0154bef8d927",
+    "turn_id": "2f89c1e0-9b62-4651-914c-b71cf561c33c",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "How does Noveum handle agent tracing?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "5e043630-6493-42b5-beb8-79faa19bfa37",
+    "turn_id": "e30e3e61-6edd-4b62-ab77-627faa2bf741",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What APIs are available in Noveum platform?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "7da9814d-a2e8-4c4e-b750-68b26bd5fd22",
+    "turn_id": "2f513795-764f-4eb6-8dd2-108d4cdf8432",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "How do I set up observability with Noveum?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "16143f74-2831-4753-b33d-ce4b645093c5",
+    "turn_id": "29c7a515-2383-4b7d-8fc7-beac3f403641",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What features does Noveum Trace offer?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "fc64e6cc-6739-4256-ac4a-7b80c3028233",
+    "turn_id": "12fee687-2a2e-401f-83c2-9c8dc7ecd853",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What are Noveum's pricing plans?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "b7945c49-f584-4c70-972d-536a805d8a31",
+    "turn_id": "9c5aec32-b6eb-4c42-93d5-3970fb118c00",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "How do I integrate Noveum Trace in my application?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  },
+  {
+    "user_id": null,
+    "task_id": "f5c40ecf-36c0-45ba-9cc9-dc0329b0324b",
+    "turn_id": "f132d053-f82c-4e66-adf4-bd7ce68b660d",
+    "ground_truth": null,
+    "expected_tool_call": null,
+    "agent_name": "agent",
+    "agent_role": "agent",
+    "agent_task": "What is Noveum and what does it do?",
+    "system_prompt": "You are a helpful customer support agent",
+    "agent_response": "",
+    "trace": null,
+    "tools_available": [
+      {
+        "name": "query_routing",
+        "description": "Routes queries to appropriate handlers",
+        "args_schema": {},
+        "return_schema": {
+          "type": "routing_decision"
+        }
+      }
+    ],
+    "tool_calls": [],
+    "parameters_passed": {},
+    "tool_call_results": [],
+    "retrieval_query": null,
+    "retrieved_context": null,
+    "exit_status": "ok",
+    "agent_exit": false,
+    "metadata": null
+  }
+]

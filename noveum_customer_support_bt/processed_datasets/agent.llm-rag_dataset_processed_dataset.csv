@@ -1,0 +1,13 @@
+user_id,task_id,turn_id,ground_truth,expected_tool_call,agent_name,agent_role,agent_task,system_prompt,agent_response,trace,tools_available,tool_calls,parameters_passed,tool_call_results,retrieval_query,retrieved_context,exit_status,agent_exit,metadata
+,f1f37bd7-0851-4659-b493-b80d3800d920,ea4d61c5-b8dd-4677-b21b-2b17170e2163,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
+,52aacb67-c361-4445-9b72-c157f79f47d6,7505f97a-cbc0-42fe-8a72-95387d723daa,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
+,2218f641-604c-491a-9710-b51a9941b982,8a6e18a1-babc-4166-926f-188f344d514e,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
+,255fd49c-84b4-4b18-887e-6308a412d535,5bec4165-6596-43ac-930b-acfcde1cc02a,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
+,dc511122-c0b6-415c-9a49-c7b45132dd87,f9f79a07-4eda-41b8-9634-d4460114caad,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
+,04bebf38-a343-4563-80db-0154bef8d927,edc52a5d-8450-4d0f-ad14-958ec4d147f4,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
+,5e043630-6493-42b5-beb8-79faa19bfa37,6c362c73-e063-4813-8180-d26b6a52b798,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
+,7da9814d-a2e8-4c4e-b750-68b26bd5fd22,1393d065-a9a4-4475-808f-2d00b3c68939,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
+,16143f74-2831-4753-b33d-ce4b645093c5,f419377a-fc24-4abf-8a1c-03857824e374,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
+,fc64e6cc-6739-4256-ac4a-7b80c3028233,0e58e31f-a8ab-4aee-8fc2-abcae1e21d9d,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
+,b7945c49-f584-4c70-972d-536a805d8a31,48155aad-6204-4a52-8624-8fa5d6fe407f,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
+,f5c40ecf-36c0-45ba-9cc9-dc0329b0324b,57ded2eb-0f3f-474e-8704-5ad9974ab4bb,,,agent,agent,,You are a helpful customer support agent,,,[],[],{},[],,,ok,False,
