@@ -36,7 +36,7 @@ class NoveumClient(TracesAPI, DatasetsAPI, ScorerResultsAPI):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        base_url: str = "https://noveum.ai",
+        base_url: str = "https://api.noveum.ai",
         timeout: float = 30.0,
     ):
         """
@@ -45,7 +45,7 @@ class NoveumClient(TracesAPI, DatasetsAPI, ScorerResultsAPI):
         Args:
             api_key: Noveum API key. If not provided, will try to load from
                      NOVEUM_API_KEY environment variable.
-            base_url: Base URL for the Noveum API. Defaults to https://noveum.ai
+            base_url: Base URL for the Noveum API. Defaults to https://api.noveum.ai
             timeout: Request timeout in seconds. Defaults to 30.0.
         """
         self.api_key = api_key or os.getenv("NOVEUM_API_KEY")

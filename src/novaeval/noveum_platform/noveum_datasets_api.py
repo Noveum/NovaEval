@@ -95,7 +95,7 @@ class DatasetsAPI:
         # Validate request data
         request_data = parse_model(DatasetCreateRequest, kwargs)
 
-        logger.info("Creating dataset: %s", name)
+        logger.debug("Creating dataset: %s", name)
 
         response = self.session.post(
             f"{self.base_url}/api/v1/datasets",
@@ -139,7 +139,7 @@ class DatasetsAPI:
         query_params = parse_model(DatasetsQueryParams, kwargs)
         params = query_params.to_query_params()
 
-        logger.info("Listing datasets with params: %s", params)
+        logger.debug("Listing datasets with params: %s", params)
 
         response = self.session.get(
             f"{self.base_url}/api/v1/datasets", params=params, timeout=self.timeout
@@ -160,7 +160,7 @@ class DatasetsAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Getting dataset: %s", slug)
+        logger.debug("Getting dataset: %s", slug)
 
         response = self.session.get(
             f"{self.base_url}/api/v1/datasets/{slug}", timeout=self.timeout
@@ -217,7 +217,7 @@ class DatasetsAPI:
         # Validate request data
         request_data = parse_model(DatasetUpdateRequest, kwargs)
 
-        logger.info("Updating dataset: %s", slug)
+        logger.debug("Updating dataset: %s", slug)
 
         response = self.session.put(
             f"{self.base_url}/api/v1/datasets/{slug}",
@@ -240,7 +240,7 @@ class DatasetsAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Deleting dataset: %s", slug)
+        logger.debug("Deleting dataset: %s", slug)
 
         response = self.session.delete(
             f"{self.base_url}/api/v1/datasets/{slug}", timeout=self.timeout
@@ -267,7 +267,7 @@ class DatasetsAPI:
         """
         params = {"limit": limit, "offset": offset}
 
-        logger.info(
+        logger.debug(
             "Listing versions for dataset: %s with params: %s", dataset_slug, params
         )
 
@@ -298,7 +298,7 @@ class DatasetsAPI:
         # Validate request data
         request_data = parse_model(DatasetVersionCreateRequest, version_data)
 
-        logger.info("Creating version for dataset: %s", dataset_slug)
+        logger.debug("Creating version for dataset: %s", dataset_slug)
 
         response = self.session.post(
             f"{self.base_url}/api/v1/datasets/{dataset_slug}/versions",
@@ -322,7 +322,7 @@ class DatasetsAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Getting version %s for dataset: %s", version, dataset_slug)
+        logger.debug("Getting version %s for dataset: %s", version, dataset_slug)
 
         response = self.session.get(
             f"{self.base_url}/api/v1/datasets/{dataset_slug}/versions/{version}",
@@ -344,7 +344,7 @@ class DatasetsAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Publishing next version for dataset: %s", dataset_slug)
+        logger.debug("Publishing next version for dataset: %s", dataset_slug)
 
         response = self.session.post(
             f"{self.base_url}/api/v1/datasets/{dataset_slug}/versions/publish",
@@ -366,7 +366,7 @@ class DatasetsAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Getting version diff for dataset: %s", dataset_slug)
+        logger.debug("Getting version diff for dataset: %s", dataset_slug)
 
         response = self.session.get(
             f"{self.base_url}/api/v1/datasets/{dataset_slug}/versions/diff",
@@ -420,7 +420,7 @@ class DatasetsAPI:
         query_params = parse_model(DatasetItemsQueryParams, kwargs)
         params = query_params.to_query_params()
 
-        logger.info(
+        logger.debug(
             "Listing items for dataset %s with params: %s", dataset_slug, params
         )
 
@@ -455,7 +455,7 @@ class DatasetsAPI:
         # Validate request data
         request_data = parse_model(DatasetItemsCreateRequest, {"items": dataset_items})
 
-        logger.info("Adding %d items to dataset %s", len(items), dataset_slug)
+        logger.debug("Adding %d items to dataset %s", len(items), dataset_slug)
 
         response = self.session.post(
             f"{self.base_url}/api/v1/datasets/{dataset_slug}/items",
@@ -490,7 +490,7 @@ class DatasetsAPI:
                 response_body={"error": "item_ids is required for deletion"},
             )
 
-        logger.info("Deleting %d items from dataset %s", len(item_ids), dataset_slug)
+        logger.debug("Deleting %d items from dataset %s", len(item_ids), dataset_slug)
 
         # Send DELETE request with item IDs in request body
         response = self.session.delete(
@@ -515,7 +515,7 @@ class DatasetsAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Getting item %s from dataset %s", item_key, dataset_slug)
+        logger.debug("Getting item %s from dataset %s", item_key, dataset_slug)
 
         response = self.session.get(
             f"{self.base_url}/api/v1/datasets/{dataset_slug}/items/{item_key}",
@@ -538,7 +538,7 @@ class DatasetsAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Deleting item %s from dataset %s", item_id, dataset_slug)
+        logger.debug("Deleting item %s from dataset %s", item_id, dataset_slug)
 
         response = self.session.delete(
             f"{self.base_url}/api/v1/datasets/{dataset_slug}/items/{item_id}",

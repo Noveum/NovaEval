@@ -8,7 +8,7 @@ import pytest
 
 from novaeval.noveum_platform.client import NoveumClient
 
-BASE_URL = "https://noveum.ai/api/v1/"
+BASE_URL = "https://api.noveum.ai/api/v1/"
 
 
 class TestNoveumClientDatasets:

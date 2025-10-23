@@ -233,7 +233,7 @@ print(f"Evaluation started: {task_id}")
 
 ## 🌐 Noveum Platform Integration
 
-NovaEval now includes comprehensive integration with the Noveum Platform API, providing 26 methods for traces, datasets, and scorer results to ease access to the Noveum platform. The `NoveumClient` provides a unified interface for all platform operations with complete type safety and error handling.
+NovaEval includes comprehensive integration with the Noveum Platform API, providing 26 methods for traces, datasets, and scorer results to ease access to the Noveum platform. The `NoveumClient` provides a unified interface for all platform operations with complete type safety and error handling.
 
 📖 **[Complete Platform API Documentation](src/novaeval/noveum_platform/README.md)** - Detailed API reference, examples, and usage patterns
 

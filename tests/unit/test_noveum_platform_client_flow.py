@@ -5,14 +5,7 @@ Integration tests for Noveum Platform API client using responses library.
 import json
 
 import pytest
-
-try:
-    import responses
-
-    responses_available = True
-except ImportError:
-    responses = None
-    responses_available = False
+import responses
 
 from novaeval.noveum_platform.client import NoveumClient
 from novaeval.noveum_platform.exceptions import (
@@ -21,16 +14,9 @@ from novaeval.noveum_platform.exceptions import (
     ValidationError,
 )
 
-# Create conditional decorator
-if responses_available:
-    responses_activate = responses.activate
-else:
-    responses_activate = pytest.mark.skip(reason="responses library not available")
-
 TEST_URL = "https://api.test.com/api/v1/"
 
 
-@pytest.mark.skipif(not responses_available, reason="responses library not available")
 class TestNoveumClientIntegration:
     """Integration tests for NoveumClient using responses library."""
 
@@ -42,7 +28,7 @@ class TestNoveumClientIntegration:
             timeout=30.0,
         )
 
-    @responses_activate
+    @responses.activate
     @pytest.mark.unit
     def test_complete_dataset_workflow(self):
         """Test complete dataset workflow: create → add items → create scorer results."""
@@ -106,7 +92,7 @@ class TestNoveumClientIntegration:
         )
         assert scorer_result["id"] == "result-123"
 
-    @responses_activate
+    @responses.activate
     @pytest.mark.unit
     def test_trace_ingestion_workflow(self):
         """Test trace ingestion workflow."""
@@ -157,7 +143,7 @@ class TestNoveumClientIntegration:
         assert len(query_result["traces"]) == 2
         assert query_result["total"] == 2
 
-    @responses_activate
+    @responses.activate
     @pytest.mark.unit
     def test_error_handling_workflow(self):
         """Test error handling across different scenarios."""
@@ -203,7 +189,7 @@ class TestNoveumClientIntegration:
         assert exc_info.value.message == "Dataset not found"
         assert exc_info.value.status_code == 404
 
-    @responses_activate
+    @responses.activate
     @pytest.mark.unit
     def test_batch_scorer_results_workflow(self):
         """Test batch scorer results creation workflow."""
@@ -267,7 +253,7 @@ class TestNoveumClientIntegration:
         assert len(list_result["results"]) == 3
         assert list_result["total"] == 3
 
-    @responses_activate
+    @responses.activate
     @pytest.mark.unit
     def test_dataset_version_workflow(self):
         """Test dataset version management workflow."""
@@ -314,7 +300,7 @@ class TestNoveumClientIntegration:
         assert get_result["version"] == "1.0.0"
         assert get_result["status"] == "published"
 
-    @responses_activate
+    @responses.activate
     @pytest.mark.unit
     def test_session_reuse_across_requests(self):
         """Test that session is reused across multiple requests."""
@@ -344,7 +330,7 @@ class TestNoveumClientIntegration:
             assert call.request.headers["Authorization"] == "Bearer test-key"
             assert call.request.headers["Content-Type"] == "application/json"
 
-    @responses_activate
+    @responses.activate
     @pytest.mark.unit
     def test_timeout_behavior(self):
         """Test timeout behavior with slow responses."""
@@ -369,7 +355,7 @@ class TestNoveumClientIntegration:
         result = client_short_timeout.list_datasets()
         assert result["data"] == "slow response"
 
-    @responses_activate
+    @responses.activate
     @pytest.mark.unit
     def test_query_parameters_encoding(self):
         """Test that query parameters are properly encoded."""
@@ -407,7 +393,7 @@ class TestNoveumClientIntegration:
         assert "size=50" in call.request.url
         assert "from=10" in call.request.url
 
-    @responses_activate
+    @responses.activate
     @pytest.mark.unit
     def test_json_request_body_encoding(self):
         """Test that JSON request bodies are properly encoded."""
@@ -445,7 +431,7 @@ class TestNoveumClientIntegration:
         assert request_body["custom_attributes"]["unicode"] == "éñ中文"
         assert request_body["custom_attributes"]["special_chars"] == "!@#$%^&*()"
 
-    @responses_activate
+    @responses.activate
     @pytest.mark.unit
     def test_empty_response_handling(self):
         """Test handling of empty responses."""
@@ -463,7 +449,7 @@ class TestNoveumClientIntegration:
         # Should return empty dict for empty response
         assert result == {}
 
-    @responses_activate
+    @responses.activate
     @pytest.mark.unit
     def test_large_response_handling(self):
         """Test handling of large responses."""

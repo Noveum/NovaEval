@@ -81,7 +81,7 @@ class ScorerResultsAPI:
         query_params = parse_model(ScorerResultsQueryParams, kwargs)
         params = query_params.to_query_params()
 
-        logger.info("Listing scorer results with params: %s", params)
+        logger.debug("Listing scorer results with params: %s", params)
 
         response = self.session.get(
             f"{self.base_url}/api/v1/scorers/results",
@@ -107,7 +107,7 @@ class ScorerResultsAPI:
         # Validate request data
         request_data = parse_model(ScorerResultCreateRequest, result_data)
 
-        logger.info(
+        logger.debug(
             "Creating scorer result for dataset %s, item %s, scorer %s",
             result_data.get("datasetSlug"),
             result_data.get("itemId"),
@@ -147,7 +147,7 @@ class ScorerResultsAPI:
             ScorerResultsBatchRequest, {"results": scorer_results}
         )
 
-        logger.info("Creating %d scorer results in batch", len(results))
+        logger.debug("Creating %d scorer results in batch", len(results))
 
         response = self.session.post(
             f"{self.base_url}/api/v1/scorers/results/batch",
@@ -177,7 +177,7 @@ class ScorerResultsAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info(
+        logger.debug(
             "Getting scorer result for dataset %s, item %s, scorer %s",
             dataset_slug,
             item_id,
@@ -216,7 +216,7 @@ class ScorerResultsAPI:
         # Validate request data
         request_data = parse_model(ScorerResultUpdateRequest, result_data)
 
-        logger.info(
+        logger.debug(
             "Updating scorer result for dataset %s, item %s, scorer %s",
             dataset_slug,
             item_id,
@@ -251,7 +251,7 @@ class ScorerResultsAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info(
+        logger.debug(
             "Deleting scorer result for dataset %s, item %s, scorer %s",
             dataset_slug,
             item_id,

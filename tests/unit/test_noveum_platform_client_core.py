@@ -19,7 +19,7 @@ from novaeval.noveum_platform.exceptions import (
 )
 from novaeval.noveum_platform.utils import handle_response
 
-BASE_URL = "https://noveum.ai/api/v1/"
+BASE_URL = "https://api.noveum.ai/api/v1/"
 
 
 class TestNoveumClientInit:
@@ -35,7 +35,7 @@ class TestNoveumClientInit:
             client = NoveumClient()
 
             assert client.api_key == "test-key"
-            assert client.base_url == "https://noveum.ai"
+            assert client.base_url == "https://api.noveum.ai"
             assert client.timeout == 30.0
 
             # Check session headers

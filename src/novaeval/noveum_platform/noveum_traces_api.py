@@ -55,7 +55,7 @@ class TracesAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Ingesting %d traces", len(traces))
+        logger.debug("Ingesting %d traces", len(traces))
 
         # Check if traces are already wrapped in the expected format
         if isinstance(traces, dict) and "traces" in traces:
@@ -84,7 +84,7 @@ class TracesAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Ingesting single trace")
+        logger.debug("Ingesting single trace")
 
         response = self.session.post(
             f"{self.base_url}/api/v1/traces/single", json=trace, timeout=self.timeout
@@ -162,7 +162,7 @@ class TracesAPI:
         query_params = parse_model(TracesQueryParams, kwargs)
         params = query_params.to_query_params()
 
-        logger.info("Querying traces with params: %s", params)
+        logger.debug("Querying traces with params: %s", params)
 
         response = self.session.get(
             f"{self.base_url}/api/v1/traces", params=params, timeout=self.timeout
@@ -183,7 +183,7 @@ class TracesAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Getting trace: %s", trace_id)
+        logger.debug("Getting trace: %s", trace_id)
 
         response = self.session.get(
             f"{self.base_url}/api/v1/traces/{trace_id}", timeout=self.timeout
@@ -201,7 +201,7 @@ class TracesAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Getting connection status")
+        logger.debug("Getting connection status")
 
         response = self.session.get(
             f"{self.base_url}/api/v1/traces/connection-status", timeout=self.timeout
@@ -222,7 +222,7 @@ class TracesAPI:
         Raises:
             NoveumAPIError: If the API request fails
         """
-        logger.info("Getting spans for trace: %s", trace_id)
+        logger.debug("Getting spans for trace: %s", trace_id)
 
         response = self.session.get(
             f"{self.base_url}/api/v1/traces/{trace_id}/spans", timeout=self.timeout
