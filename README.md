@@ -231,6 +231,12 @@ print(f"Evaluation started: {task_id}")
 
 📖 **[Complete API Documentation](app/README.md)** - Detailed API reference, examples, and deployment guide
 
+## 🌐 Noveum Platform Integration
+
+NovaEval includes comprehensive integration with the Noveum Platform API, providing 26 methods for traces, datasets, and scorer results to ease access to the Noveum platform. The `NoveumClient` provides a unified interface for all platform operations with complete type safety and error handling.
+
+📖 **[Complete Platform API Documentation](src/novaeval/noveum_platform/README.md)** - Detailed API reference, examples, and usage patterns
+
 ## 🏗️ Architecture
 
 NovaEval is built with extensibility and modularity in mind:
@@ -241,6 +247,7 @@ src/novaeval/
 ├── evaluators/        # Core evaluation logic
 ├── integrations/      # External service integrations
 ├── models/           # Model interfaces and adapters
+├── noveum_platform/  # Noveum Platform API client and integration
 ├── reporting/        # Report generation and visualization
 ├── scorers/          # Scoring mechanisms and metrics
 └── utils/            # Utility functions and helpers
@@ -254,6 +261,7 @@ src/novaeval/
 - **Evaluators**: Orchestrates the evaluation process
 - **Reporting**: Generates comprehensive reports and artifacts
 - **Integrations**: Handles external services (S3, credential stores, etc.)
+- **Noveum Platform**: Complete API client for traces, datasets, and scorer results
 
 ## 📊 Supported Datasets
 

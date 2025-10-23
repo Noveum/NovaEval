@@ -21,6 +21,7 @@ def pytest_configure(config):
         "markers", "requires_api_key: mark test as requiring API key"
     )
     config.addinivalue_line("markers", "gemini: mark test as Gemini-specific")
+    config.addinivalue_line("markers", "noveum: mark test as Noveum Platform-specific")
     config.addinivalue_line("markers", "slow: mark test as slow running")
     config.addinivalue_line("markers", "smoke: mark test as a smoke test")
     config.addinivalue_line("markers", "stress: mark test as a stress test")
@@ -255,3 +256,51 @@ def token_counting_test_data():
     from tests.integration.test_utils import GeminiTestHelper
 
     return GeminiTestHelper.generate_test_data_for_token_counting()
+
+
+# Noveum Platform API fixtures
+@pytest.fixture(scope="session")
+def noveum_api_key() -> Optional[str]:
+    """Get Noveum API key from environment."""
+    return os.getenv("NOVEUM_API_KEY")
+
+
+@pytest.fixture
+def skip_if_no_noveum_key(noveum_api_key):
+    """Skip test if no Noveum API key available."""
+    if not noveum_api_key:
+        pytest.skip("NOVEUM_API_KEY environment variable not set")
+
+
+@pytest.fixture
+def noveum_client(noveum_api_key):
+    """Provide NoveumClient instance for testing."""
+    if not noveum_api_key:
+        pytest.skip("NOVEUM_API_KEY environment variable not set")
+
+    from novaeval.noveum_platform import NoveumClient
+
+    return NoveumClient(api_key=noveum_api_key)
+
+
+@pytest.fixture
+def integration_dataset_name():
+    """Generate unique dataset name with timestamp."""
+    from datetime import datetime
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return f"integration_test_{timestamp}"
+
+
+@pytest.fixture
+def sample_traces():
+    """Load first 10 traces from sample_traces.json."""
+    import json
+    from pathlib import Path
+
+    test_data_path = (
+        Path(__file__).parent.parent.parent / "test_data" / "sample_traces.json"
+    )
+    with open(test_data_path, encoding="utf-8") as f:
+        all_traces = json.load(f)
+    return all_traces[:10]
